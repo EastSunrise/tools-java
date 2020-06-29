@@ -1,0 +1,20 @@
+spring:
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+  thymeleaf:
+    cache: false
+  datasource:
+    url: jdbc:mysql://192.168.1.108:3306/tools?useUnicdeo=true&characterEncoding=UTF-8
+    username: root
+    password: root
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    default-enum-type-handler: com.baomidou.mybatisplus.extension.handlers.MybatisEnumTypeHandler
+  type-enums-package: wsg.tools.boot.entity.subject.enums
+  global-config:
+    db-config:
+      update-strategy: not_empty
+  type-handlers-package: wsg.tools.boot.dao.handler
