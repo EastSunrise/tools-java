@@ -2,7 +2,7 @@ package wsg.tools.boot.entity.subject.query;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.entity.base.BaseQuery;
+import wsg.tools.boot.entity.base.dto.BaseQuery;
 import wsg.tools.boot.entity.subject.enums.ArchivedEnum;
 import wsg.tools.boot.entity.subject.enums.StatusEnum;
 import wsg.tools.boot.entity.subject.enums.SubtypeEnum;

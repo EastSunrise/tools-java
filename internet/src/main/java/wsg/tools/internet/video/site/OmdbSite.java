@@ -36,7 +36,7 @@ public class OmdbSite extends AbstractVideoSite {
     private String apiKey;
 
     public OmdbSite(String apiKey) {
-        super("OMDb", "omdbapi.com", 0);
+        super("OMDb", "omdbapi.com");
         this.apiKey = apiKey;
     }
 

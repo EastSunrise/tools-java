@@ -1,10 +1,10 @@
-package wsg.tools.boot.entity.base;
+package wsg.tools.boot.entity.base.dto;
 
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.collections.CollectionUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 

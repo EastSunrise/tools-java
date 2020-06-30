@@ -19,8 +19,12 @@ import wsg.tools.internet.video.jackson.deserializer.LanguageExtDeserializer;
  */
 public abstract class AbstractVideoSite extends BaseSite {
 
-    public AbstractVideoSite(String name, String domain, int interval) {
-        super(name, domain, interval);
+    public AbstractVideoSite(String name, String domain) {
+        super(name, domain);
+    }
+
+    public AbstractVideoSite(String name, String domain, double permitsPerSecond) {
+        super(name, domain, permitsPerSecond);
     }
 
     @Override

@@ -52,7 +52,7 @@ public class ImdbSite extends AbstractVideoSite {
         Element head = document.selectFirst("head");
         JsonNode root = getObjectMapper().readTree(head.selectFirst("script[type=application/ld+json]").html());
         Map<String, Element> details = new HashMap<>(10);
-        for (Element element : document.selectFirst("div#titleDetails").select("div.txt-block")) {
+        for (Element element : document.selectFirst("#titleDetails").select(".txt-block")) {
             Element h4 = element.selectFirst("h4");
             if (h4 != null) {
                 details.put(h4.text(), element);

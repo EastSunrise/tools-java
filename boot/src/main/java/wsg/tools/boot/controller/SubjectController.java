@@ -7,7 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import wsg.tools.boot.entity.base.Result;
+import wsg.tools.boot.entity.base.dto.GenericResult;
+import wsg.tools.boot.entity.base.dto.Result;
 import wsg.tools.boot.entity.subject.dto.SubjectDto;
 import wsg.tools.boot.entity.subject.enums.ArchivedEnum;
 import wsg.tools.boot.entity.subject.enums.StatusEnum;
@@ -15,6 +16,7 @@ import wsg.tools.boot.entity.subject.enums.SubtypeEnum;
 import wsg.tools.boot.entity.subject.query.QuerySubject;
 import wsg.tools.boot.service.intf.SubjectService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -45,7 +47,7 @@ public class SubjectController extends AbstractController {
     @RequestMapping(value = "/updateInfo", method = RequestMethod.POST)
     @ResponseBody
     public Result updateInfo(long id) {
-        return subjectService.updateInfo(id);
+        return subjectService.saveOrUpdateInfo(id);
     }
 
     @RequestMapping(value = "/update", method = RequestMethod.POST)
@@ -61,6 +63,12 @@ public class SubjectController extends AbstractController {
     @ResponseBody
     public Result play(long id) {
         return subjectService.play(id);
+    }
+
+    @RequestMapping(value = "/user/collect", method = RequestMethod.POST)
+    @ResponseBody
+    public GenericResult<Integer> collectUser(long userId, LocalDate startDate) {
+        return subjectService.collectSubjects(userId, startDate);
     }
 
     @Autowired

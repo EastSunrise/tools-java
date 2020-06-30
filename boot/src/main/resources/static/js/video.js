@@ -23,6 +23,9 @@ function updateInfo(id) {
         type: "post",
         data: {
             'id': id
+        },
+        callback: function () {
+            window.location.reload();
         }
     });
 }
@@ -43,4 +46,20 @@ function update(id) {
             window.location.reload();
         }
     });
+}
+
+function updateMyMovies(this_) {
+    let userId = prompt("请输入用户ID: ") || "";
+    if ("" !== userId) {
+        ajaxAsync($(this_), "正在更新", {
+            url: "/video/user/collect",
+            type: 'post',
+            data: {
+                'userId': userId
+            },
+            callback: function (result) {
+                alert("已更新：" + result["record"]);
+            }
+        });
+    }
 }

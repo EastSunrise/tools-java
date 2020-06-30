@@ -1,12 +1,14 @@
-package wsg.tools.boot.config;
+package wsg.tools.boot.dao.api;
 
-import lombok.Getter;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import wsg.tools.boot.entity.subject.dto.SubjectDto;
+import wsg.tools.boot.entity.subject.enums.StatusEnum;
 import wsg.tools.boot.entity.subject.enums.SubtypeEnum;
+import wsg.tools.internet.video.entity.SimpleSubject;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.site.DoubanSite;
 import wsg.tools.internet.video.site.ImdbSite;
@@ -14,65 +16,36 @@ import wsg.tools.internet.video.site.OmdbSite;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Configuration for video.
+ * Configuration for video, transfer objects of other modules to those of this module.
  *
  * @author Kingen
  * @since 2020/6/26
  */
-@Getter
 @Configuration
 @PropertySource("classpath:config/private/video.properties")
-public class VideoConfig {
+public class VideoSite implements InitializingBean {
 
-    private static DoubanSite doubanSite;
-    private static ImdbSite imdbSite;
-    private static OmdbSite omdbSite;
+    private ImdbSite imdbSite;
 
     @Value("${douban.api.key}")
     private String doubanApiKey;
+    private DoubanSite doubanSite;
 
     @Value("${omdb.api.key}")
     private String omdbApiKey;
+    private OmdbSite omdbSite;
 
     /**
-     * Obtains an instance of {@link DoubanSite}
-     */
-    public DoubanSite doubanSite() {
-        if (doubanSite == null) {
-            doubanSite = new DoubanSite(doubanApiKey);
-        }
-        return doubanSite;
-    }
-
-    /**
-     * Obtains an instance of {@link OmdbSite}
-     */
-    public OmdbSite omdbSite() {
-        if (omdbSite == null) {
-            omdbSite = new OmdbSite(omdbApiKey);
-        }
-        return omdbSite;
-    }
-
-    /**
-     * Obtains an instance of {@link ImdbSite}
-     */
-    public ImdbSite imdbSite() {
-        if (imdbSite == null) {
-            imdbSite = new ImdbSite();
-        }
-        return imdbSite;
-    }
-
-    /**
-     * Obtains full info of a subject.
+     * Obtains info of a subject from {@link DoubanSite}.
      */
     public SubjectDto subjectDto(long id) throws IOException, URISyntaxException {
         SubjectDto subjectDto = new SubjectDto();
-        DoubanSite doubanSite = doubanSite();
         BeanUtils.copyProperties(doubanSite.movieSubject(id), subjectDto);
         Subject subject = doubanSite.apiMovieSubject(id);
         BeanUtils.copyProperties(subject, subjectDto, "imdbId");
@@ -80,9 +53,11 @@ public class VideoConfig {
         return subjectDto;
     }
 
+    /**
+     * Obtains info of a subject from {@link OmdbSite} and {@link ImdbSite}.
+     */
     public SubjectDto subjectDto(String imdbId) throws IOException, URISyntaxException {
         SubjectDto subjectDto = new SubjectDto();
-        OmdbSite omdbSite = omdbSite();
         Subject subject = omdbSite.getSubjectById(imdbId);
         BeanUtils.copyProperties(subject, subjectDto);
         subjectDto.setSubtype(SubtypeEnum.of(subject.getSubtype()));
@@ -93,5 +68,22 @@ public class VideoConfig {
             subjectDto.getDurations().add(subject.getRuntime());
         }
         return subjectDto;
+    }
+
+    public List<SubjectDto> userSubjects(long userId, LocalDate startDate) throws IOException, URISyntaxException {
+        List<SimpleSubject> subjects = doubanSite.collectUserMovies(userId, startDate);
+        return subjects.stream().map(s -> {
+            SubjectDto subjectDto = new SubjectDto();
+            BeanUtils.copyProperties(s, subjectDto);
+            subjectDto.setStatus(StatusEnum.of(s.getRecord()));
+            return subjectDto;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        doubanSite = new DoubanSite(doubanApiKey);
+        omdbSite = new OmdbSite(omdbApiKey);
+        imdbSite = new ImdbSite();
     }
 }

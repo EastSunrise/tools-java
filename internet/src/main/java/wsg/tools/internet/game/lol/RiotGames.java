@@ -13,7 +13,7 @@ public class RiotGames extends BaseSite {
     private String apiKey;
 
     public RiotGames(String apiKey) {
-        super("Riot Games", "riotgames.com", 3);
+        super("Riot Games", "riotgames.com");
         this.apiKey = apiKey;
     }
 }

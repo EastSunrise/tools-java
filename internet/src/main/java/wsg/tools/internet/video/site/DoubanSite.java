@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.site;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import lombok.extern.slf4j.Slf4j;
@@ -11,13 +12,11 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.CodecUtils;
 import wsg.tools.common.util.EnumUtils;
+import wsg.tools.internet.video.entity.Celebrity;
+import wsg.tools.internet.video.entity.SimpleSubject;
 import wsg.tools.internet.video.entity.Subject;
-import wsg.tools.internet.video.enums.Country;
-import wsg.tools.internet.video.enums.GenreEnum;
-import wsg.tools.internet.video.enums.Language;
-import wsg.tools.internet.video.enums.SubtypeEnum;
+import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.PubDateDeserializer;
 
@@ -33,7 +32,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * <a href="https://douban.com">豆瓣</a>
+ * Obtains info from <a href="https://douban.com">豆瓣</a>.
  * <p>
  * An api key is required.
  *
@@ -43,6 +42,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DoubanSite extends AbstractVideoSite {
 
+    public static final LocalDate START_DATE = LocalDate.of(2005, 3, 6);
     private static final String DELIMITER = "/";
     private static final PubDateDeserializer PUB_DATE_DESERIALIZER = new PubDateDeserializer();
     private static final DurationExtDeserializer DURATION_DESERIALIZER = new DurationExtDeserializer();
@@ -56,7 +56,39 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
+     * Collect user movies data since startDate.
+     */
+    public List<SimpleSubject> collectUserMovies(long userId, LocalDate startDate) throws IOException, URISyntaxException {
+        LinkedList<SimpleSubject> subjects = new LinkedList<>();
+        for (RecordEnum record : RecordEnum.values()) {
+            int start = 0;
+            while (true) {
+                boolean done = false;
+                PageResult<SimpleSubject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
+                for (SimpleSubject subject : pageResult.data) {
+                    if (subject.getTagDate().isAfter(startDate)) {
+                        subjects.add(subject);
+                    } else {
+                        done = true;
+                        break;
+                    }
+                }
+                start += pageResult.count;
+                if (start >= pageResult.total || done) {
+                    break;
+                }
+            }
+        }
+        return subjects;
+    }
+
+    /**
      * Get movie subject by parsing html.
+     * <p>
+     * This is a backup of {@link #apiMovieSubject(long)} to get IMDb identity of a subjects.
+     * <p>
+     * Same as {@link #apiMovieSubject(long)}, this method can't obtains the subject that is probably x-rated
+     * and restricted to be accessed only after logging in.
      */
     public Subject movieSubject(long id) throws IOException, URISyntaxException {
         Document document = getDocument(buildUri("/subject/" + id, "movie").build());
@@ -126,7 +158,7 @@ public class DoubanSite extends AbstractVideoSite {
         if (span != null) {
             List<GenreEnum> genres = new LinkedList<>();
             Element genre = span.nextElementSibling();
-            while (hasProperty(genre, "genre")) {
+            while (genre.is("span[property=v:genre]")) {
                 genres.add(EnumUtils.deserializeTitle(genre.text().strip(), GenreEnum.class));
                 genre = genre.nextElementSibling();
             }
@@ -153,7 +185,7 @@ public class DoubanSite extends AbstractVideoSite {
         if (dateEle != null) {
             Set<LocalDate> dates = new HashSet<>();
             dateEle = dateEle.nextElementSibling();
-            while (hasProperty(dateEle, "initialReleaseDate")) {
+            while (dateEle.is("span[property=v:initialReleaseDate]")) {
                 String content = dateEle.attr("content");
                 dates.add(PUB_DATE_DESERIALIZER.toNonNullT(content));
                 dateEle = dateEle.nextElementSibling();
@@ -179,15 +211,26 @@ public class DoubanSite extends AbstractVideoSite {
         return subject;
     }
 
-    private boolean hasProperty(Element element, String property) {
-        return element.is(String.format("span[property=v:%s]", property));
-    }
-
     /**
-     * Get movie subject through api
+     * Get movie subject through api.
+     * <p>
+     * Same as {@link #movieSubject(long)}, this method can't obtains the subject that is probably x-rated
+     * and restricted to be accessed only after logging in.
      */
     public Subject apiMovieSubject(long id) throws URISyntaxException, IOException {
         return getApiObject(String.format("/v2/movie/subject/%d", id), Subject.class);
+    }
+
+    public Celebrity apiMovieCelebrity(long id) throws IOException, URISyntaxException {
+        return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
+    }
+
+    public List<Subject> apiMovieTop250() throws IOException, URISyntaxException {
+        return getApiObjects("/v2/movie/top250");
+    }
+
+    public List<Subject> apiMovieWeekly() throws IOException, URISyntaxException {
+        return getApiObjects("/v2/movie/weekly");
     }
 
     @Override
@@ -198,9 +241,41 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
+     * Parse pages of user collections to get user data.
+     *
+     * @param catalog movie/book/music/...
+     * @param record  wish/do/collect
+     * @param start   start index
+     */
+    private PageResult<SimpleSubject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws URISyntaxException, IOException {
+        URI uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
+                Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
+        Document document = getDocument(uri);
+        List<SimpleSubject> subjects = new LinkedList<>();
+        for (Element li : document.selectFirst("ul.list-view").select("li")) {
+            Element div = li.selectFirst(".title");
+            Element a = div.selectFirst(">a");
+            List<String> titles = Arrays.stream(a.text().strip().split("/")).map(String::strip).collect(Collectors.toList());
+            Subject subject = new Subject();
+            String href = a.attr("href");
+            subject.setId(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
+            subject.setTitle(titles.get(0));
+            subject.setTagDate(LocalDate.parse(div.nextElementSibling().text().strip()));
+            subject.setRecord(record);
+            subjects.add(subject);
+        }
+
+        String numStr = document.selectFirst("span.subject-num").text().strip();
+        String[] parts = StringUtils.split(numStr, "/- ");
+        return new PageResult<>(Integer.parseInt(parts[0]) - 1,
+                Integer.parseInt(parts[1]) - Integer.parseInt(parts[0]) + 1, Integer.parseInt(parts[2]), subjects);
+    }
+
+    /**
      * Get next sibling node which isn't an empty string
      */
     private Node nextSibling(Node node) {
+        Objects.requireNonNull(node);
         Node next = node.nextSibling();
         while ("".equals(next.toString().strip())) {
             next = next.nextSibling();
@@ -218,8 +293,33 @@ public class DoubanSite extends AbstractVideoSite {
         return getObject(builder.build(), clazz);
     }
 
-    @Override
-    protected String getContent(URI uri) throws IOException {
-        return CodecUtils.unicodeDecode(super.getContent(uri));
+    private <T> List<T> getApiObjects(String path) throws URISyntaxException, IOException {
+        int start = 0;
+        List<T> list = new LinkedList<>();
+        while (true) {
+            URIBuilder builder = super.buildUri(path, "api", Parameter.of("start", start));
+            builder.addParameter("apikey", apiKey);
+            PageResult<T> pageResult = getObject(builder.build(), new TypeReference<>() {});
+            list.addAll(pageResult.data);
+            start += pageResult.count;
+            if (start >= pageResult.count) {
+                break;
+            }
+        }
+        return list;
+    }
+
+    private static class PageResult<T> {
+        int start;
+        int count;
+        int total;
+        List<T> data;
+
+        public PageResult(int start, int count, int total, List<T> data) {
+            this.start = start;
+            this.count = count;
+            this.total = total;
+            this.data = data;
+        }
     }
 }

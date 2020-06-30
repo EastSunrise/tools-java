@@ -18,3 +18,6 @@ mybatis-plus:
     db-config:
       update-strategy: not_empty
   type-handlers-package: wsg.tools.boot.dao.handler
+server:
+  address: 0.0.0.0
+  port: 6808

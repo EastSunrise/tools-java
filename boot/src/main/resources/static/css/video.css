@@ -3,8 +3,13 @@
 }
 
 .head {
-    margin-left: auto;
+    width: 90%;
+    margin-left: 5%;
     margin-top: 1%;
+}
+
+.head .batch {
+    float: right;
 }
 
 .content {

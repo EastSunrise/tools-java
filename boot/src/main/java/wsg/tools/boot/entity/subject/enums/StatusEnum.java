@@ -2,6 +2,7 @@ package wsg.tools.boot.entity.subject.enums;
 
 import com.baomidou.mybatisplus.core.enums.IEnum;
 import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.internet.video.enums.RecordEnum;
 
 /**
  * Status of tag
@@ -24,6 +25,22 @@ public enum StatusEnum implements TitleSerializable, IEnum<Integer> {
     StatusEnum(int code, String title) {
         this.code = code;
         this.title = title;
+    }
+
+    public static StatusEnum of(RecordEnum record) {
+        if (record != null) {
+            switch (record) {
+                case WISH:
+                    return WISH;
+                case DO:
+                    return DO;
+                case COLLECT:
+                    return COLLECT;
+                default:
+                    break;
+            }
+        }
+        return UNMARKED;
     }
 
     @Override

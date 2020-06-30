@@ -1,8 +1,9 @@
 package wsg.tools.internet.base;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,10 +25,10 @@ import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.config.BaseJacksonConfig;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * Base class for a website.
@@ -38,27 +39,30 @@ import java.net.URI;
  * @since 2020/6/15
  */
 @Slf4j
+@SuppressWarnings("UnstableApiUsage")
 public abstract class BaseSite {
 
     protected static final String HTML_A = "a";
     protected static final String HTML_SELECT = "select";
+    private static final int TIME_OUT = 30000;
 
     @Getter
     private String name;
     private SchemeEnum scheme = SchemeEnum.HTTPS;
     private String domain;
-    private int interval;
-    @Setter
-    private int timeout = 30000;
 
     private ObjectMapper objectMapper;
     private CloseableHttpClient client;
-    private long lastAccess = 0L;
+    private RateLimiter limiter;
 
-    public BaseSite(String name, String domain, int interval) {
+    public BaseSite(String name, String domain) {
+        this(name, domain, 10D);
+    }
+
+    public BaseSite(String name, String domain, double permitsPerSecond) {
         this.name = name;
         this.domain = domain;
-        this.interval = interval;
+        this.limiter = RateLimiter.create(permitsPerSecond);
     }
 
     /**
@@ -73,6 +77,13 @@ public abstract class BaseSite {
      */
     protected <T> T getObject(URI uri, Class<T> clazz) throws IOException {
         return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+    }
+
+    /**
+     * Return the content of response with a generic Java object.
+     */
+    protected <T> T getObject(URI uri, TypeReference<T> type) throws IOException {
+        return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
     }
 
     /**
@@ -113,33 +124,21 @@ public abstract class BaseSite {
     protected String getContent(URI uri) throws IOException {
         // do request
         HttpGet httpGet = new HttpGet(uri);
-        httpGet.setConfig(builderRequestConfig().build());
+        httpGet.setConfig(buildRequestConfig().build());
         log.info("Get from {}", uri.toString());
         httpGet.addHeader(HTTP.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                 "(KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
         CloseableHttpClient client = getClient();
-        nextAccess();
-        HttpResponse response = client.execute(httpGet);
-        int code = response.getStatusLine().getStatusCode();
-        if (code == HttpStatus.SC_OK) {
-            return EntityUtils.toString(response.getEntity());
-        }
-        throw new HttpResponseException(code, response.getStatusLine().getReasonPhrase());
-    }
-
-    /**
-     * Open a uri with the default browser of the system.
-     */
-    protected void openUri(URI uri) {
-        if (Desktop.isDesktopSupported()) {
-            try {
-                Desktop desktop = Desktop.getDesktop();
-                if (desktop.isSupported(Desktop.Action.BROWSE)) {
-                    desktop.browse(uri);
-                }
-            } catch (NullPointerException | IOException e) {
-                e.printStackTrace();
+        limiter.acquire();
+        try {
+            HttpResponse response = client.execute(httpGet);
+            int code = response.getStatusLine().getStatusCode();
+            if (code == HttpStatus.SC_OK) {
+                return EntityUtils.toString(response.getEntity());
             }
+            throw new HttpResponseException(code, response.getStatusLine().getReasonPhrase());
+        } finally {
+            httpGet.releaseConnection();
         }
     }
 
@@ -150,8 +149,8 @@ public abstract class BaseSite {
         return client;
     }
 
-    protected RequestConfig.Builder builderRequestConfig() {
-        return RequestConfig.custom().setConnectTimeout(timeout);
+    protected RequestConfig.Builder buildRequestConfig() {
+        return RequestConfig.custom().setConnectTimeout(TIME_OUT).setSocketTimeout(TIME_OUT);
     }
 
     /**
@@ -186,29 +185,16 @@ public abstract class BaseSite {
         return objectMapper;
     }
 
-    private void nextAccess() {
-        if (interval == 0) {
-            return;
-        }
-        long waiting = interval * 1000 + lastAccess - System.currentTimeMillis();
-        if (waiting > 0) {
-            try {
-                Thread.sleep(waiting);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        lastAccess = System.currentTimeMillis();
-    }
-
     protected static class Parameter extends MutablePair<String, String> {
 
         private Parameter(final String left, final String right) {
             super(left, right);
         }
 
-        public static Parameter of(final String left, final String right) {
-            return new Parameter(left, right);
+        public static Parameter of(final String left, final Object right) {
+            Objects.requireNonNull(left);
+            Objects.requireNonNull(right);
+            return new Parameter(left, right.toString());
         }
     }
 }

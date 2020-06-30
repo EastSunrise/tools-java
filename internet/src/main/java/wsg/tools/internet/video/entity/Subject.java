@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Object of subject.
+ * Object of a subject.
  *
  * @author Kingen
  * @since 2020/6/27
@@ -29,14 +29,12 @@ import java.util.Set;
 @Setter
 @Getter
 @JsonIgnoreProperties({"collection", "Director", "Writer", "Actors", "Response"})
-public class Subject {
+public class Subject extends SimpleSubject {
 
-    private Long id;
     private String imdbId;
 
     @JsonAlias("Type")
     private SubtypeEnum subtype;
-    private String title;
     private String text;
     private String originalTitle;
     @JsonDeserialize(using = YearExtDeserializer.class)
@@ -160,16 +158,6 @@ public class Subject {
 
     @Setter
     @Getter
-    private static class Celebrity {
-        private Image avatars;
-        private String nameEn;
-        private String name;
-        private String alt;
-        private Long id;
-    }
-
-    @Setter
-    @Getter
     private static class User {
         private String uid;
         private String avatar;
@@ -200,14 +188,6 @@ public class Subject {
         private Integer stars;
         private Integer min;
         private Integer value;
-    }
-
-    @Setter
-    @Getter
-    private static class Image {
-        private String small;
-        private String large;
-        private String medium;
     }
 
     @Setter
