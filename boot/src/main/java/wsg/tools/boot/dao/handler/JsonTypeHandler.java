@@ -27,7 +27,7 @@ import java.util.*;
 public class JsonTypeHandler extends JacksonTypeHandler {
 
     static {
-        JacksonTypeHandler.setObjectMapper(BaseJacksonConfig.objectMapper().registerModule(new SimpleModule()
+        JacksonTypeHandler.setObjectMapper(BaseJacksonConfig.createObjectMapper().registerModule(new SimpleModule()
                 .addSerializer(Language.class, AbstractLocaleSerializer.LANGUAGE)
                 .addDeserializer(Language.class, new LanguageDeserializer())
                 .addSerializer(Country.class, AbstractLocaleSerializer.COUNTRY)

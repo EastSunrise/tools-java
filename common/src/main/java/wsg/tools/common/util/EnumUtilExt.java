@@ -13,7 +13,7 @@ import java.util.Arrays;
  * @author Kingen
  * @since 2020/6/17
  */
-public class EnumUtils {
+public class EnumUtilExt {
 
     /**
      * Get Enum from the name

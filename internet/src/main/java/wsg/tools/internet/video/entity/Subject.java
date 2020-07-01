@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.entity.Money;
+import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.deserializer.CollectionFromStringDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
@@ -28,11 +28,16 @@ import java.util.Set;
  */
 @Setter
 @Getter
-@JsonIgnoreProperties({"collection", "Director", "Writer", "Actors", "Response"})
-public class Subject extends SimpleSubject {
+@JsonIgnoreProperties({"collection", "Director", "Writer", "Actors"})
+public class Subject {
 
+    private Long id;
     private String imdbId;
 
+    private RecordEnum record;
+    private LocalDate tagDate;
+
+    private String title;
     @JsonAlias("Type")
     private SubtypeEnum subtype;
     private String text;
@@ -40,7 +45,7 @@ public class Subject extends SimpleSubject {
     @JsonDeserialize(using = YearExtDeserializer.class)
     private Year year;
     private String alt;
-    @JsonAlias("genre")
+    @JsonAlias("Genre")
     @JsonDeserialize(using = CollectionFromStringDeserializer.class)
     private List<GenreEnum> genres;
     @JsonAlias("Country")

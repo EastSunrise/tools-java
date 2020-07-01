@@ -3,30 +3,33 @@ package wsg.tools.boot.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.dao.api.VideoSite;
+import wsg.tools.boot.common.BeanUtilExt;
+import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.mapper.SubjectMapper;
 import wsg.tools.boot.entity.base.dto.GenericResult;
 import wsg.tools.boot.entity.base.dto.Result;
 import wsg.tools.boot.entity.subject.dto.SubjectDto;
 import wsg.tools.boot.entity.subject.enums.ArchivedEnum;
+import wsg.tools.boot.entity.subject.enums.StatusEnum;
 import wsg.tools.boot.entity.subject.enums.SubtypeEnum;
 import wsg.tools.boot.entity.subject.query.QuerySubject;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.util.SystemUtils;
+import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.site.DoubanSite;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Implement of subject service.
@@ -38,7 +41,7 @@ import java.util.Objects;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDto> implements SubjectService {
 
-    private VideoSite videoSite;
+    private VideoConfig videoConfig;
 
     @Override
     public Page<SubjectDto> list(QuerySubject querySubject) {
@@ -49,9 +52,9 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
         }
         if (querySubject.isBadSeason()) {
             wrapper.and(w -> w.eq("subtype", SubtypeEnum.SERIES)
-                    .and(w1 -> w1.isNull("current_season")
-                            .isNull("episodes_count")
-                            .isNull("seasons_count")));
+                    .and(w1 -> w1.or(w2 -> w2.isNull("current_season"))
+                            .or(w2 -> w2.isNull("episodes_count"))
+                            .or(w2 -> w2.isNull("seasons_count"))));
         }
         if (querySubject.isNullImdb()) {
             wrapper.isNull("imdb_id");
@@ -64,11 +67,17 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
 
     @Override
     public Result saveOrUpdateInfo(long id) {
-        GenericResult<SubjectDto> result = getSubjectInfo(id);
-        if (!result.isSuccess()) {
-            return result;
+        SubjectDto subject = getById(id);
+        String imdbId = null;
+        if (subject != null) {
+            imdbId = subject.getImdbId();
         }
-        if (!saveOrUpdate(result.getRecord())) {
+        subject = getSubjectInfo(id, imdbId);
+        if (subject == null) {
+            log.warn("Can't obtain info of subject {}", id);
+            return Result.fail("Can't obtain info of subject %d", id);
+        }
+        if (!saveOrUpdate(subject)) {
             log.error("Failed to update info of subject {}", id);
             return Result.fail("Failed to update info: %d", id);
         }
@@ -104,7 +113,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
     public GenericResult<Integer> collectSubjects(long userId, LocalDate startDate) {
         log.info("Start to collect subjects of {} since {}", userId, startDate);
         if (startDate == null) {
-            QueryWrapper<SubjectDto> wrapper = new QueryWrapper<SubjectDto>().select("MAX(tag_date)");
+            QueryWrapper<SubjectDto> wrapper = new QueryWrapper<SubjectDto>().select("MAX(tag_date) AS tag_date");
             SubjectDto subjectDto = getOne(wrapper);
             if (subjectDto == null || subjectDto.getTagDate() == null) {
                 startDate = DoubanSite.START_DATE;
@@ -112,63 +121,99 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                 startDate = subjectDto.getTagDate();
             }
         }
-        List<SubjectDto> subjects;
-        try {
-            subjects = videoSite.userSubjects(userId, startDate);
-        } catch (IOException | URISyntaxException e) {
-            log.error(e.getMessage());
-            return new GenericResult<>(e);
+        List<SubjectDto> subjects = userSubjects(userId, startDate);
+        if (subjects == null) {
+            log.error("Failed to obtains subjects of user {}", userId);
+            return new GenericResult<>("Failed to obtains subjects of user " + userId);
         }
 
-        int successCount = 0;
-        for (SubjectDto simple : subjects) {
-            GenericResult<SubjectDto> result = getSubjectInfo(simple.getId());
-            if (result.isSuccess()) {
-                BeanUtils.copyProperties(result.getRecord(), simple, "status", "tagDate");
-            }
-            simple.setArchived(ArchivedEnum.ADDED);
-            if (saveOrUpdate(simple)) {
-                successCount++;
+        final int[] count = {0};
+        subjects = subjects.stream().peek(s -> {
+            SubjectDto subjectDto = getSubjectInfo(s.getId(), null);
+            if (subjectDto != null) {
+                try {
+                    BeanUtilExt.copyPropertiesExceptNull(s, subjectDto);
+                } catch (InvocationTargetException | IllegalAccessException e) {
+                    log.error(e.getMessage());
+                }
             } else {
-                log.error("Failed to update subject of {}", simple.getTitle());
+                count[0]++;
             }
+        }).collect(Collectors.toList());
+
+        if (subjects.size() != 0 && !saveOrUpdateBatch(subjects)) {
+            log.error("Failed to batch update subjects.");
+            return new GenericResult<>("Failed to batch update subjects.");
         }
 
-        log.info("Finish to collect subjects of {}", userId);
-        int errorCount = subjects.size() - successCount;
-        if (errorCount > 0) {
-            return new GenericResult<>(String.format("Not all succeed, fail: %d, success: %d", errorCount, successCount));
-        }
-        return new GenericResult<>(successCount);
+        log.info("Finish to collect subjects of {}, total: {}, not found: {}", userId, subjects.size(), count[0]);
+        return new GenericResult<>(subjects.size());
     }
 
-    private GenericResult<SubjectDto> getSubjectInfo(long id) {
+    private List<SubjectDto> userSubjects(long userId, LocalDate startDate) {
+        List<Subject> subjects;
         try {
-            return new GenericResult<>(videoSite.subjectDto(id));
-        } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                SubjectDto subjectDto = getById(id);
-                if (subjectDto != null && subjectDto.getImdbId() != null) {
-                    try {
-                        SubjectDto subject = videoSite.subjectDto(subjectDto.getImdbId());
-                        subject.setId(id);
-                        return new GenericResult<>(subject);
-                    } catch (IOException | URISyntaxException ex) {
-                        log.error(e.getMessage());
-                        return new GenericResult<>(ex);
-                    }
-                }
-            }
-            log.error("Not Found");
-            return new GenericResult<>("Not Found");
+            subjects = videoConfig.getDoubanSite().collectUserMovies(userId, startDate);
         } catch (IOException | URISyntaxException e) {
             log.error(e.getMessage());
-            return new GenericResult<>(e);
+            return null;
         }
+        return subjects.stream().map(s -> {
+            SubjectDto subjectDto = new SubjectDto();
+            try {
+                BeanUtilExt.copyPropertiesExceptNull(subjectDto, s);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                log.error(e.getMessage());
+            }
+            subjectDto.setStatus(StatusEnum.of(s.getRecord()));
+            return subjectDto;
+        }).collect(Collectors.toList());
+    }
+
+    private SubjectDto getSubjectInfo(long id, String imdbId) {
+        SubjectDto subjectDto = new SubjectDto();
+        try {
+            Subject apiMovieSubject = videoConfig.getDoubanSite().apiMovieSubject(id);
+            BeanUtilExt.copyPropertiesExceptNull(subjectDto, apiMovieSubject);
+            if (apiMovieSubject.getSubtype() != null) {
+                subjectDto.setSubtype(SubtypeEnum.of(apiMovieSubject.getSubtype()));
+            }
+            Subject movieSubject = videoConfig.getDoubanSite().movieSubject(id);
+            if (movieSubject != null) {
+                subjectDto.setImdbId(movieSubject.getImdbId());
+            }
+        } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
+            log.error(e.getMessage());
+        }
+        if (subjectDto.getImdbId() != null) {
+            imdbId = subjectDto.getImdbId();
+        }
+        if (imdbId != null) {
+            try {
+                Subject omSubject = videoConfig.getOmdbSite().getSubjectById(imdbId);
+                BeanUtilExt.copyPropertiesExceptNull(subjectDto, omSubject);
+                if (omSubject.getSubtype() != null) {
+                    subjectDto.setSubtype(SubtypeEnum.of(omSubject.getSubtype()));
+                }
+                if (omSubject.getRuntime() != null) {
+                    if (subjectDto.getDurations() == null) {
+                        subjectDto.setDurations(new HashSet<>());
+                    }
+                    subjectDto.getDurations().add(omSubject.getRuntime());
+                }
+                omSubject.setId(id);
+            } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
+                log.error(e.getMessage());
+            }
+        }
+        if (subjectDto.getId() == null) {
+            return null;
+        }
+        return subjectDto;
     }
 
     @Autowired
-    public void setVideoConfig(VideoSite videoSite) {
-        this.videoSite = videoSite;
+    public void setVideoConfig(VideoConfig videoConfig) {
+        this.videoConfig = videoConfig;
     }
 }

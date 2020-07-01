@@ -59,7 +59,8 @@
                     <td th:text="${start+stat.index}"></td>
                     <td th:text="${record.id}"></td>
                     <td>
-                        <a target="_blank" th:href="${record.alt}" th:text="${record.title}"
+                        <a target="_blank" th:href="|https://movie.douban.com/subject/${record.id}/|"
+                           th:text="${record.title}"
                            th:title="${record.originalTitle}"> </a>
                     </td>
                     <td th:text="${record.year}"></td>

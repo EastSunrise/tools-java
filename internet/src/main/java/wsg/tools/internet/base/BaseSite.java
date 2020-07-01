@@ -180,7 +180,7 @@ public abstract class BaseSite {
      */
     public ObjectMapper getObjectMapper() {
         if (objectMapper == null) {
-            objectMapper = BaseJacksonConfig.objectMapper();
+            objectMapper = BaseJacksonConfig.createObjectMapper();
         }
         return objectMapper;
     }

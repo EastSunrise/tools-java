@@ -12,9 +12,8 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtils;
+import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.entity.Celebrity;
-import wsg.tools.internet.video.entity.SimpleSubject;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
@@ -58,14 +57,14 @@ public class DoubanSite extends AbstractVideoSite {
     /**
      * Collect user movies data since startDate.
      */
-    public List<SimpleSubject> collectUserMovies(long userId, LocalDate startDate) throws IOException, URISyntaxException {
-        LinkedList<SimpleSubject> subjects = new LinkedList<>();
+    public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws IOException, URISyntaxException {
+        LinkedList<Subject> subjects = new LinkedList<>();
         for (RecordEnum record : RecordEnum.values()) {
             int start = 0;
             while (true) {
                 boolean done = false;
-                PageResult<SimpleSubject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
-                for (SimpleSubject subject : pageResult.data) {
+                PageResult<Subject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
+                for (Subject subject : pageResult.data) {
                     if (subject.getTagDate().isAfter(startDate)) {
                         subjects.add(subject);
                     } else {
@@ -159,7 +158,7 @@ public class DoubanSite extends AbstractVideoSite {
             List<GenreEnum> genres = new LinkedList<>();
             Element genre = span.nextElementSibling();
             while (genre.is("span[property=v:genre]")) {
-                genres.add(EnumUtils.deserializeTitle(genre.text().strip(), GenreEnum.class));
+                genres.add(EnumUtilExt.deserializeTitle(genre.text().strip(), GenreEnum.class));
                 genre = genre.nextElementSibling();
             }
             subject.setGenres(genres);
@@ -247,11 +246,11 @@ public class DoubanSite extends AbstractVideoSite {
      * @param record  wish/do/collect
      * @param start   start index
      */
-    private PageResult<SimpleSubject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws URISyntaxException, IOException {
+    private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws URISyntaxException, IOException {
         URI uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
                 Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
         Document document = getDocument(uri);
-        List<SimpleSubject> subjects = new LinkedList<>();
+        List<Subject> subjects = new LinkedList<>();
         for (Element li : document.selectFirst("ul.list-view").select("li")) {
             Element div = li.selectFirst(".title");
             Element a = div.selectFirst(">a");

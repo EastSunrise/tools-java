@@ -48,4 +48,6 @@ public class SubjectDto {
     private Integer seasonsCount;
     @TableField(update = "now()")
     private LocalDateTime gmtModified;
+
+
 }

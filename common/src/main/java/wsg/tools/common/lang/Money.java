@@ -1,4 +1,4 @@
-package wsg.tools.common.entity;
+package wsg.tools.common.lang;
 
 import lombok.Getter;
 import wsg.tools.common.jackson.intf.CodeSerializable;

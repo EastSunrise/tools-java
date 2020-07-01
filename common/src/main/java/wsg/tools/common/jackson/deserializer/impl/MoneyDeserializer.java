@@ -1,10 +1,10 @@
 package wsg.tools.common.jackson.deserializer.impl;
 
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.entity.Money;
 import wsg.tools.common.jackson.deserializer.base.AbstractStringDeserializer;
+import wsg.tools.common.lang.Money;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtils;
+import wsg.tools.common.util.EnumUtilExt;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -31,7 +31,7 @@ public class MoneyDeserializer extends AbstractStringDeserializer<Money> {
     @Override
     public Money toNonNullT(String text) {
         Matcher matcher = AssertUtils.matches(MONEY_REGEX, text);
-        Money.CurrencyEnum currency = EnumUtils.deserializeCode(matcher.group(1), Money.CurrencyEnum.class);
+        Money.CurrencyEnum currency = EnumUtilExt.deserializeCode(matcher.group(1), Money.CurrencyEnum.class);
         long value = Long.parseLong(matcher.group(2).replace(Constants.NUMBER_DELIMITER, ""));
         return new Money(currency, (double) value);
     }

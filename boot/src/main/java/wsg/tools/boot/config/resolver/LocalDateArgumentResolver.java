@@ -1,5 +1,6 @@
 package wsg.tools.boot.config.resolver;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -29,6 +30,9 @@ public class LocalDateArgumentResolver implements HandlerMethodArgumentResolver 
         HttpServletRequest request = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
         Objects.requireNonNull(request);
         String text = request.getParameter(methodParameter.getParameter().getName());
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
         return LocalDate.parse(text);
     }
 }

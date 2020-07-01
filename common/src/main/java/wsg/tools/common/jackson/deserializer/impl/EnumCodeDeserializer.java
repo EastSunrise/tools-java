@@ -2,7 +2,7 @@ package wsg.tools.common.jackson.deserializer.impl;
 
 import wsg.tools.common.jackson.deserializer.base.AbstractNonNullDeserializer;
 import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.util.EnumUtils;
+import wsg.tools.common.util.EnumUtilExt;
 
 /**
  * Generic deserializer for {@link Enum} which are compared based on {@link CodeSerializable#getCode()}
@@ -21,6 +21,6 @@ public class EnumCodeDeserializer<C, E extends Enum<E> & CodeSerializable<C>> ex
 
     @Override
     public E toNonNullT(C c) {
-        return EnumUtils.deserializeCode(c, eClass);
+        return EnumUtilExt.deserializeCode(c, eClass);
     }
 }

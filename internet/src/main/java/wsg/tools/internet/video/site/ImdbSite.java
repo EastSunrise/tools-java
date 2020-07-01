@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtils;
+import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.enums.Country;
 import wsg.tools.internet.video.enums.GenreEnum;
@@ -59,7 +59,7 @@ public class ImdbSite extends AbstractVideoSite {
             }
         }
 
-        SubtypeEnum type = EnumUtils.deserializeAka(root.get("@type").textValue(), SubtypeEnum.class);
+        SubtypeEnum type = EnumUtilExt.deserializeAka(root.get("@type").textValue(), SubtypeEnum.class);
         subject.setSubtype(type);
         String yearStr;
         if (SubtypeEnum.MOVIE.equals(type)) {
@@ -83,10 +83,10 @@ public class ImdbSite extends AbstractVideoSite {
             if (JsonNodeType.ARRAY.equals(genres.getNodeType())) {
                 ArrayNode nodes = (ArrayNode) genres;
                 for (Iterator<JsonNode> iterator = nodes.elements(); iterator.hasNext(); ) {
-                    genreList.add(EnumUtils.deserializeText(iterator.next().textValue(), GenreEnum.class));
+                    genreList.add(EnumUtilExt.deserializeText(iterator.next().textValue(), GenreEnum.class));
                 }
             } else {
-                genreList.add(EnumUtils.deserializeText(genres.textValue(), GenreEnum.class));
+                genreList.add(EnumUtilExt.deserializeText(genres.textValue(), GenreEnum.class));
             }
             subject.setGenres(genreList);
         }

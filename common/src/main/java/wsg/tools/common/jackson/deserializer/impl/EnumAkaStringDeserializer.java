@@ -2,7 +2,7 @@ package wsg.tools.common.jackson.deserializer.impl;
 
 import wsg.tools.common.jackson.deserializer.base.AbstractStringDeserializer;
 import wsg.tools.common.jackson.intf.AkaSerializable;
-import wsg.tools.common.util.EnumUtils;
+import wsg.tools.common.util.EnumUtilExt;
 
 /**
  * Generic deserializer for {@link Enum} which are compared based on {@link AkaSerializable<String>#alsoKnownAs(String)}}
@@ -24,6 +24,6 @@ public class EnumAkaStringDeserializer<T extends Enum<T> & AkaSerializable<Strin
 
     @Override
     public T toNonNullT(String s) {
-        return EnumUtils.deserializeAka(s, clazz);
+        return EnumUtilExt.deserializeAka(s, clazz);
     }
 }

@@ -2,13 +2,17 @@ package wsg.tools.internet.video.site;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import lombok.Setter;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
-import wsg.tools.common.entity.Money;
 import wsg.tools.common.jackson.deserializer.impl.EnumAkaStringDeserializer;
 import wsg.tools.common.jackson.deserializer.impl.LocalDateDeserializer;
 import wsg.tools.common.jackson.deserializer.impl.MoneyDeserializer;
 import wsg.tools.common.jackson.deserializer.impl.YearDeserializer;
+import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.enums.RatedEnum;
 import wsg.tools.internet.video.enums.SearchTypeEnum;
@@ -47,7 +51,13 @@ public class OmdbSite extends AbstractVideoSite {
      */
     public Subject getSubjectById(String id) throws IOException, URISyntaxException {
         URI uri = buildUri("/", null, Parameter.of("i", id), Parameter.of("plot", "full")).build();
-        return getObject(uri, Subject.class);
+        ResponseResult subject = getObject(uri, ResponseResult.class);
+        if (!subject.response) {
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, subject.error);
+        }
+        subject.setText(subject.getTitle());
+        subject.setTitle(null);
+        return subject;
     }
 
     /**
@@ -84,6 +94,7 @@ public class OmdbSite extends AbstractVideoSite {
     public ObjectMapper getObjectMapper() {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
         objectMapper.registerModule(new SimpleModule()
                 .addDeserializer(LocalDate.class,
                         new LocalDateDeserializer(DateTimeFormatter.ofPattern("d MMM yyy").withLocale(Locale.ENGLISH)))
@@ -104,5 +115,11 @@ public class OmdbSite extends AbstractVideoSite {
         URIBuilder builder = super.buildUri(path, lowDomain, params);
         builder.addParameter("apikey", apiKey);
         return builder;
+    }
+
+    @Setter
+    static class ResponseResult extends Subject {
+        boolean response;
+        String error;
     }
 }
