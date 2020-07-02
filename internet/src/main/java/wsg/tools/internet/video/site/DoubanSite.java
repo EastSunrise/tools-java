@@ -82,17 +82,46 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Get movie subject by parsing html.
+     * Obtains movie subject through api, with id of IMDb acquired by parsing the web page of the subject.
      * <p>
-     * This is a backup of {@link #apiMovieSubject(long)} to get IMDb identity of a subjects.
-     * <p>
-     * Same as {@link #apiMovieSubject(long)}, this method can't obtains the subject that is probably x-rated
-     * and restricted to be accessed only after logging in.
+     * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
-    public Subject movieSubject(long id) throws IOException, URISyntaxException {
-        Document document = getDocument(buildUri("/subject/" + id, "movie").build());
+    public Subject movieSubject(long dbId) throws URISyntaxException, IOException {
+        Subject subject = getApiObject(String.format("/v2/movie/subject/%d", dbId), Subject.class);
+        subject.setImdbId(parseSubjectPage(dbId).getImdbId());
+        return subject;
+    }
+
+    public Celebrity apiMovieCelebrity(long id) throws IOException, URISyntaxException {
+        return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
+    }
+
+    public List<Subject> apiMovieTop250() throws IOException, URISyntaxException {
+        return getApiObjects("/v2/movie/top250");
+    }
+
+    public List<Subject> apiMovieWeekly() throws IOException, URISyntaxException {
+        return getApiObjects("/v2/movie/weekly");
+    }
+
+    @Override
+    public ObjectMapper getObjectMapper() {
+        ObjectMapper objectMapper = super.getObjectMapper();
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+        return objectMapper;
+    }
+
+    /**
+     * Parse pages of subjects.
+     * <p>
+     * This is supplement of {@link #movieSubject(long)} (long)} to get IMDb identity of a subject.
+     * <p>
+     * Same as {@link #movieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
+     */
+    private Subject parseSubjectPage(long dbId) throws IOException, URISyntaxException {
+        Document document = getDocument(buildUri("/subject/" + dbId, "movie").build());
         Subject subject = new Subject();
-        subject.setId(id);
+        subject.setDbId(dbId);
         Element wrapper = document.getElementById("wrapper");
 
         Elements spans = wrapper.selectFirst("div#info").select("span.pl");
@@ -211,35 +240,6 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Get movie subject through api.
-     * <p>
-     * Same as {@link #movieSubject(long)}, this method can't obtains the subject that is probably x-rated
-     * and restricted to be accessed only after logging in.
-     */
-    public Subject apiMovieSubject(long id) throws URISyntaxException, IOException {
-        return getApiObject(String.format("/v2/movie/subject/%d", id), Subject.class);
-    }
-
-    public Celebrity apiMovieCelebrity(long id) throws IOException, URISyntaxException {
-        return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
-    }
-
-    public List<Subject> apiMovieTop250() throws IOException, URISyntaxException {
-        return getApiObjects("/v2/movie/top250");
-    }
-
-    public List<Subject> apiMovieWeekly() throws IOException, URISyntaxException {
-        return getApiObjects("/v2/movie/weekly");
-    }
-
-    @Override
-    public ObjectMapper getObjectMapper() {
-        ObjectMapper objectMapper = super.getObjectMapper();
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
-        return objectMapper;
-    }
-
-    /**
      * Parse pages of user collections to get user data.
      *
      * @param catalog movie/book/music/...
@@ -251,13 +251,13 @@ public class DoubanSite extends AbstractVideoSite {
                 Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
         Document document = getDocument(uri);
         List<Subject> subjects = new LinkedList<>();
-        for (Element li : document.selectFirst("ul.list-view").select("li")) {
+        for (Element li : document.selectFirst(".list-view").select(HTML_LI)) {
             Element div = li.selectFirst(".title");
             Element a = div.selectFirst(">a");
             List<String> titles = Arrays.stream(a.text().strip().split("/")).map(String::strip).collect(Collectors.toList());
             Subject subject = new Subject();
             String href = a.attr("href");
-            subject.setId(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
+            subject.setDbId(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
             subject.setTitle(titles.get(0));
             subject.setTagDate(LocalDate.parse(div.nextElementSibling().text().strip()));
             subject.setRecord(record);

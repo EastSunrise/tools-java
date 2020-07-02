@@ -31,7 +31,7 @@ public interface SubjectService extends IService<SubjectDto> {
      * @param id id of the subject
      * @return update result
      */
-    Result saveOrUpdateInfo(long id);
+    Result updateInfo(long id);
 
     /**
      * Play specified subject

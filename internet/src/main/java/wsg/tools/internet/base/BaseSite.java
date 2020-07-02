@@ -43,6 +43,7 @@ import java.util.Objects;
 public abstract class BaseSite {
 
     protected static final String HTML_A = "a";
+    protected static final String HTML_LI = "li";
     protected static final String HTML_SELECT = "select";
     private static final int TIME_OUT = 30000;
 

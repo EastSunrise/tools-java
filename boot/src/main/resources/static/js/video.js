@@ -48,8 +48,8 @@ function update(id) {
     });
 }
 
-function updateMyMovies(this_) {
-    let userId = prompt("请输入用户ID: ") || "";
+function updateDouban(this_) {
+    let userId = prompt("请输入豆瓣用户ID: ") || "";
     if ("" !== userId) {
         ajaxAsync($(this_), "正在更新", {
             url: "/video/user/collect",

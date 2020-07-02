@@ -29,10 +29,11 @@ import java.util.Set;
 public class SubjectDto {
     @TableId
     private Long id;
+    private Long dbId;
     private String imdbId;
 
     private String title;
-    private String alt;
+    private String text;
     private StatusEnum status;
     private LocalDate tagDate;
     private String originalTitle;

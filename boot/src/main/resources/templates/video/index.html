@@ -31,7 +31,7 @@
         </form>
         <div class="batch">
             <input id="archiveBtn" onclick="archiveAll()" type="button" value="批量归档"/>
-            <input onclick="updateMyMovies(this)" type="button" value="更新档案"/>
+            <input onclick="updateDouban(this)" type="button" value="更新豆瓣"/>
         </div>
     </div>
     <div class="content" th:with="start=${(page.current - 1)*page.size+1}">
@@ -45,22 +45,25 @@
                 <thead>
                 <tr>
                     <th>序号</th>
-                    <th class="sortable id">ID</th>
-                    <th class="sortable title">名称</th>
+                    <th class="sortable title">豆瓣</th>
+                    <th class="sortable text">IMDb</th>
                     <th class="sortable year">年份</th>
                     <th class="sortable archived">归档</th>
                     <th class="sortable status">标记</th>
-                    <th class="sortable imdbId">IMDb</th>
                     <th>管理</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:class="${stat.even}?'even':'odd'" th:each="record,stat:${records}" th:id="${record.id}">
                     <td th:text="${start+stat.index}"></td>
-                    <td th:text="${record.id}"></td>
                     <td>
-                        <a target="_blank" th:href="|https://movie.douban.com/subject/${record.id}/|"
-                           th:text="${record.title}"
+                        <a target="_blank" th:href="|https://movie.douban.com/subject/${record.dbId}/|"
+                           th:if="${record.title ne null}" th:text="${record.title}"
+                           th:title="${record.originalTitle}"> </a>
+                    </td>
+                    <td>
+                        <a target="_blank" th:href="|https://imdb.com/title/${record.imdbId}/|"
+                           th:if="${record.text ne null}" th:text="${record.text}"
                            th:title="${record.originalTitle}"> </a>
                     </td>
                     <td th:text="${record.year}"></td>
@@ -73,17 +76,6 @@
                         <span th:text="${record.archived.title}"></span>
                     </td>
                     <td th:text="${record.status.title}"></td>
-                    <td>
-                        <a target="_blank" th:href="|https://imdb.com/title/${record.imdbId}/|"
-                           th:if="${record.imdbId ne null}" th:text="${record.imdbId}"> </a>
-                        <a target="_blank"
-                           th:href="'https://baike.baidu.com/search?word='+${record.title.replace(' ','+')}"
-                           th:if="${record.imdbId eq null}">百度百科/
-                        </a>
-                        <a href="javascript:void(0);" th:if="${record.imdbId eq null}"
-                           th:onclick="update([[${record.id}]])">输入</a>
-                    </td>
-                    <!--                    <td th:text="${#temporals.format(record.gmtModified, 'yyyy-MM-dd HH:mm:ss')}"></td>-->
                     <td>
                         <a href="javascript:void(0);" th:onclick="updateInfo([[${record.id}]])">更新</a>
                         <a href="javascript:void(0);" target="_blank">搜索</a>

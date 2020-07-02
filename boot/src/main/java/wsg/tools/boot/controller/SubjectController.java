@@ -47,7 +47,7 @@ public class SubjectController extends AbstractController {
     @RequestMapping(value = "/updateInfo", method = RequestMethod.POST)
     @ResponseBody
     public Result updateInfo(long id) {
-        return subjectService.saveOrUpdateInfo(id);
+        return subjectService.updateInfo(id);
     }
 
     @RequestMapping(value = "/update", method = RequestMethod.POST)

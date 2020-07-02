@@ -1,6 +1,8 @@
 package wsg.tools.boot.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +47,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
 
     @Override
     public Page<SubjectDto> list(QuerySubject querySubject) {
-        QueryWrapper<SubjectDto> wrapper = new QueryWrapper<>();
+        QueryWrapper<SubjectDto> wrapper = Wrappers.query();
         if (querySubject.isNullDuration()) {
             int year = LocalDate.now().getYear();
             wrapper.and(w -> w.isNull("durations").le("year", year));
@@ -66,17 +68,17 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
     }
 
     @Override
-    public Result saveOrUpdateInfo(long id) {
+    public Result updateInfo(long id) {
         SubjectDto subject = getById(id);
-        String imdbId = null;
-        if (subject != null) {
-            imdbId = subject.getImdbId();
+        if (subject == null) {
+            return Result.fail("Not exist does the subject %d", id);
         }
-        subject = getSubjectInfo(id, imdbId);
+        subject = getSubjectInfo(subject.getDbId(), subject.getImdbId());
         if (subject == null) {
             log.warn("Can't obtain info of subject {}", id);
             return Result.fail("Can't obtain info of subject %d", id);
         }
+        subject.setId(id);
         if (!saveOrUpdate(subject)) {
             log.error("Failed to update info of subject {}", id);
             return Result.fail("Failed to update info: %d", id);
@@ -88,7 +90,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
     public Result play(long id) {
         SubjectDto subject = getById(id);
         if (subject == null) {
-            return Result.fail("Not exist does the subject.");
+            return Result.fail("Not exist does the subject %d", id);
         }
         if (!ArchivedEnum.PLAYABLE.equals(subject.getArchived())) {
             return Result.fail("Not archived yet.");
@@ -129,7 +131,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
 
         final int[] count = {0};
         subjects = subjects.stream().peek(s -> {
-            SubjectDto subjectDto = getSubjectInfo(s.getId(), null);
+            SubjectDto subjectDto = getSubjectInfo(s.getDbId(), null);
             if (subjectDto != null) {
                 try {
                     BeanUtilExt.copyPropertiesExceptNull(s, subjectDto);
@@ -141,9 +143,14 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
             }
         }).collect(Collectors.toList());
 
-        if (subjects.size() != 0 && !saveOrUpdateBatch(subjects)) {
-            log.error("Failed to batch update subjects.");
-            return new GenericResult<>("Failed to batch update subjects.");
+        if (subjects.size() != 0) {
+            for (SubjectDto subject : subjects) {
+                UpdateWrapper<SubjectDto> wrapper = Wrappers.update();
+                wrapper.eq("db_id", subject.getDbId());
+                if (!saveOrUpdate(subject, wrapper)) {
+                    log.error("Failed to update subject {}", subject.getDbId());
+                }
+            }
         }
 
         log.info("Finish to collect subjects of {}, total: {}, not found: {}", userId, subjects.size(), count[0]);
@@ -170,20 +177,18 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
         }).collect(Collectors.toList());
     }
 
-    private SubjectDto getSubjectInfo(long id, String imdbId) {
+    private SubjectDto getSubjectInfo(Long dbId, String imdbId) {
         SubjectDto subjectDto = new SubjectDto();
-        try {
-            Subject apiMovieSubject = videoConfig.getDoubanSite().apiMovieSubject(id);
-            BeanUtilExt.copyPropertiesExceptNull(subjectDto, apiMovieSubject);
-            if (apiMovieSubject.getSubtype() != null) {
-                subjectDto.setSubtype(SubtypeEnum.of(apiMovieSubject.getSubtype()));
+        if (dbId != null) {
+            try {
+                Subject movieSubject = videoConfig.getDoubanSite().movieSubject(dbId);
+                BeanUtilExt.copyPropertiesExceptNull(subjectDto, movieSubject);
+                if (movieSubject.getSubtype() != null) {
+                    subjectDto.setSubtype(SubtypeEnum.of(movieSubject.getSubtype()));
+                }
+            } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
+                log.error(e.getMessage());
             }
-            Subject movieSubject = videoConfig.getDoubanSite().movieSubject(id);
-            if (movieSubject != null) {
-                subjectDto.setImdbId(movieSubject.getImdbId());
-            }
-        } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
-            log.error(e.getMessage());
         }
         if (subjectDto.getImdbId() != null) {
             imdbId = subjectDto.getImdbId();
@@ -201,12 +206,11 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                     }
                     subjectDto.getDurations().add(omSubject.getRuntime());
                 }
-                omSubject.setId(id);
             } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
                 log.error(e.getMessage());
             }
         }
-        if (subjectDto.getId() == null) {
+        if (subjectDto.getDbId() == null && subjectDto.getImdbId() == null) {
             return null;
         }
         return subjectDto;

@@ -31,7 +31,8 @@ import java.util.Set;
 @JsonIgnoreProperties({"collection", "Director", "Writer", "Actors"})
 public class Subject {
 
-    private Long id;
+    @JsonAlias("id")
+    private Long dbId;
     private String imdbId;
 
     private RecordEnum record;
@@ -54,6 +55,9 @@ public class Subject {
     @JsonAlias("Language")
     @JsonDeserialize(using = CollectionFromStringDeserializer.class)
     private Set<Language> languages;
+    /**
+     * todo merge
+     */
     @JsonAlias({"pubdate", "Released"})
     private LocalDate pubDate;
     @JsonAlias("mainland_pubdate")
