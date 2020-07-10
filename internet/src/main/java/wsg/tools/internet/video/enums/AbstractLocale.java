@@ -57,4 +57,9 @@ public abstract class AbstractLocale<T extends AbstractLocale<T>> implements Cod
         }
         return ArrayUtils.contains(aka, other);
     }
+
+    @Override
+    public String toString() {
+        return text;
+    }
 }

@@ -9,7 +9,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.Consts;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -29,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Base class for a website.
@@ -67,10 +68,23 @@ public abstract class BaseSite {
     }
 
     /**
-     * Return the content of response in form of a parsed HTML document.
+     * Return the content of response in form of a parsed HTML document, using cached files.
      */
     protected Document getDocument(URI uri) throws IOException {
-        return Jsoup.parse(getCachedContent(uri, ContentTypeEnum.HTML));
+        return getDocument(uri, true);
+    }
+
+    /**
+     * Return the content of response in form of a parsed HTML document.
+     *
+     * @param cached whether use the cached file.
+     */
+    protected Document getDocument(URI uri, boolean cached) throws IOException {
+        if (cached) {
+            return Jsoup.parse(getCachedContent(uri, ContentTypeEnum.HTML));
+        } else {
+            return Jsoup.parse(getContent(uri));
+        }
     }
 
     /**
@@ -99,7 +113,7 @@ public abstract class BaseSite {
         File file = new File(filepath);
         if (file.isFile()) {
             log.info("Read from {}", file.getPath());
-            String content = FileUtils.readFileToString(file, Consts.UTF_8);
+            String content = FileUtils.readFileToString(file, UTF_8);
             if (Constants.NULL_NA.equals(content)) {
                 throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not Found");
             }
@@ -111,11 +125,11 @@ public abstract class BaseSite {
             data = getContent(uri);
         } catch (HttpResponseException e) {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
-                FileUtils.write(file, Constants.NULL_NA, Consts.UTF_8);
+                FileUtils.write(file, Constants.NULL_NA, UTF_8);
             }
             throw e;
         }
-        FileUtils.write(file, data, Consts.UTF_8);
+        FileUtils.write(file, data, UTF_8);
         return data;
     }
 

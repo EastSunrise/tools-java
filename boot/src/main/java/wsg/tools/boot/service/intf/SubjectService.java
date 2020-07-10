@@ -2,12 +2,13 @@ package wsg.tools.boot.service.intf;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import wsg.tools.boot.entity.base.dto.GenericResult;
+import wsg.tools.boot.entity.base.dto.BatchResult;
 import wsg.tools.boot.entity.base.dto.Result;
 import wsg.tools.boot.entity.subject.dto.SubjectDto;
 import wsg.tools.boot.entity.subject.query.QuerySubject;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Interface of subject service.
@@ -46,7 +47,15 @@ public interface SubjectService extends IService<SubjectDto> {
      *
      * @param userId    user id
      * @param startDate since when
-     * @return result of collecting
+     * @return count of collected subjects
      */
-    GenericResult<Integer> collectSubjects(long userId, LocalDate startDate);
+    BatchResult importDouban(long userId, LocalDate startDate);
+
+    /**
+     * Import subjects from IMDb with ids.
+     *
+     * @param ids ids of IMDb
+     * @return count of imported subjects
+     */
+    BatchResult importImdbIds(List<String> ids);
 }

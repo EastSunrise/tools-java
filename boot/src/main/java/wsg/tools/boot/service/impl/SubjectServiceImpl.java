@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.mapper.SubjectMapper;
-import wsg.tools.boot.entity.base.dto.GenericResult;
+import wsg.tools.boot.entity.base.dto.BatchResult;
 import wsg.tools.boot.entity.base.dto.Result;
 import wsg.tools.boot.entity.subject.dto.SubjectDto;
 import wsg.tools.boot.entity.subject.enums.ArchivedEnum;
@@ -23,6 +23,7 @@ import wsg.tools.common.util.SystemUtils;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.site.DoubanSite;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -112,8 +113,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
     }
 
     @Override
-    public GenericResult<Integer> collectSubjects(long userId, LocalDate startDate) {
-        log.info("Start to collect subjects of {} since {}", userId, startDate);
+    public BatchResult importDouban(long userId, LocalDate startDate) {
         if (startDate == null) {
             QueryWrapper<SubjectDto> wrapper = new QueryWrapper<SubjectDto>().select("MAX(tag_date) AS tag_date");
             SubjectDto subjectDto = getOne(wrapper);
@@ -123,40 +123,61 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                 startDate = subjectDto.getTagDate();
             }
         }
+        log.info("Start to import douban subjects of {} since {}", userId, startDate);
         List<SubjectDto> subjects = userSubjects(userId, startDate);
         if (subjects == null) {
             log.error("Failed to obtains subjects of user {}", userId);
-            return new GenericResult<>("Failed to obtains subjects of user " + userId);
+            return new BatchResult("Failed to obtains subjects of user " + userId);
         }
 
-        final int[] count = {0};
+        return batchSaveOrUpdate(subjects);
+    }
+
+    @Override
+    public BatchResult importImdbIds(List<String> ids) {
+        return batchSaveOrUpdate(ids.stream().map(id -> {
+            SubjectDto subjectDto = new SubjectDto();
+            subjectDto.setImdbId(id);
+            return subjectDto;
+        }).collect(Collectors.toList()));
+    }
+
+    private BatchResult batchSaveOrUpdate(List<SubjectDto> subjects) {
         subjects = subjects.stream().peek(s -> {
-            SubjectDto subjectDto = getSubjectInfo(s.getDbId(), null);
+            if (s == null) {
+                return;
+            }
+            SubjectDto subjectDto = getSubjectInfo(s.getDbId(), s.getImdbId());
             if (subjectDto != null) {
                 try {
                     BeanUtilExt.copyPropertiesExceptNull(s, subjectDto);
                 } catch (InvocationTargetException | IllegalAccessException e) {
                     log.error(e.getMessage());
                 }
-            } else {
-                count[0]++;
             }
         }).collect(Collectors.toList());
 
+        final int[] count = {0};
         if (subjects.size() != 0) {
-            for (SubjectDto subject : subjects) {
-                UpdateWrapper<SubjectDto> wrapper = Wrappers.update();
-                wrapper.eq("db_id", subject.getDbId());
-                if (!saveOrUpdate(subject, wrapper)) {
-                    log.error("Failed to update subject {}", subject.getDbId());
+            subjects.forEach(subject -> {
+                if (subject == null) {
+                    return;
                 }
-            }
+                UpdateWrapper<SubjectDto> wrapper = Wrappers.update();
+                wrapper.eq("db_id", subject.getDbId()).or(w -> w.eq("imdb_id", subject.getImdbId()));
+                if (!saveOrUpdate(subject, wrapper)) {
+                    Object id = subject.getDbId() != null ? subject.getDbId() : subject.getImdbId();
+                    log.error("Failed to update subject {}", id);
+                    return;
+                }
+                count[0]++;
+            });
         }
-
-        log.info("Finish to collect subjects of {}, total: {}, not found: {}", userId, subjects.size(), count[0]);
-        return new GenericResult<>(subjects.size());
+        log.info("Finish batch, total: {}, success: {}, fail: {}", subjects.size(), count[0], subjects.size() - count[0]);
+        return new BatchResult(subjects.size(), count[0]);
     }
 
+    @Nullable
     private List<SubjectDto> userSubjects(long userId, LocalDate startDate) {
         List<Subject> subjects;
         try {
@@ -177,6 +198,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
         }).collect(Collectors.toList());
     }
 
+    @Nullable
     private SubjectDto getSubjectInfo(Long dbId, String imdbId) {
         SubjectDto subjectDto = new SubjectDto();
         if (dbId != null) {
@@ -202,7 +224,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                 }
                 if (omSubject.getRuntime() != null) {
                     if (subjectDto.getDurations() == null) {
-                        subjectDto.setDurations(new HashSet<>());
+                        subjectDto.setDurations(new HashSet<>(5));
                     }
                     subjectDto.getDurations().add(omSubject.getRuntime());
                 }

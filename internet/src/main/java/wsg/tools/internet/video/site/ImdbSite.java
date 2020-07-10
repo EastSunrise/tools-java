@@ -113,7 +113,7 @@ public class ImdbSite extends AbstractVideoSite {
         }
 
         if ((detail = details.get("Official Sites:")) != null) {
-            if ((detail = detail.nextElementSibling()).is("a")) {
+            if ((detail = detail.nextElementSibling()).is(HTML_A)) {
                 subject.setWebsite(buildUri(detail.attr("href"), null).toString());
             }
         }

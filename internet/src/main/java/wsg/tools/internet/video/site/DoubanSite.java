@@ -65,7 +65,7 @@ public class DoubanSite extends AbstractVideoSite {
                 boolean done = false;
                 PageResult<Subject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
                 for (Subject subject : pageResult.data) {
-                    if (subject.getTagDate().isAfter(startDate)) {
+                    if (!subject.getTagDate().isBefore(startDate)) {
                         subjects.add(subject);
                     } else {
                         done = true;
@@ -249,7 +249,7 @@ public class DoubanSite extends AbstractVideoSite {
     private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws URISyntaxException, IOException {
         URI uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
                 Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
-        Document document = getDocument(uri);
+        Document document = getDocument(uri, false);
         List<Subject> subjects = new LinkedList<>();
         for (Element li : document.selectFirst(".list-view").select(HTML_LI)) {
             Element div = li.selectFirst(".title");

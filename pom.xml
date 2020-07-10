@@ -32,6 +32,8 @@
         <internet.version>0.0.1-SNAPSHOT</internet.version>
         <jsoup.version>1.11.3</jsoup.version>
         <commons-io.version>2.4</commons-io.version>
+        <commons-beanutils.version>1.9.3</commons-beanutils.version>
+        <commons-csv.version>1.8</commons-csv.version>
         <guava.version>28.1-jre</guava.version>
     </properties>
 
@@ -51,12 +53,17 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.3</version>
+                <version>${commons-beanutils.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${commons-csv.version}</version>
             </dependency>
 
             <dependency>

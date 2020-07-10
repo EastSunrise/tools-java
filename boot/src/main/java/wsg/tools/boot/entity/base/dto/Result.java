@@ -2,6 +2,7 @@ package wsg.tools.boot.entity.base.dto;
 
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -11,7 +12,7 @@ import java.util.Objects;
  * @since 2020/6/26
  */
 @Getter
-public class Result {
+public class Result implements Serializable {
 
     private boolean success;
     private String message;
