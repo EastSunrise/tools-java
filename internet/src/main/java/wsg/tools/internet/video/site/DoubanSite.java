@@ -5,24 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.entity.Celebrity;
 import wsg.tools.internet.video.entity.Subject;
-import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.PubDateDeserializer;
+import wsg.tools.internet.video.enums.CatalogEnum;
+import wsg.tools.internet.video.enums.RecordEnum;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.*;
@@ -42,9 +38,6 @@ import java.util.stream.Collectors;
 public class DoubanSite extends AbstractVideoSite {
 
     public static final LocalDate START_DATE = LocalDate.of(2005, 3, 6);
-    private static final String DELIMITER = "/";
-    private static final PubDateDeserializer PUB_DATE_DESERIALIZER = new PubDateDeserializer();
-    private static final DurationExtDeserializer DURATION_DESERIALIZER = new DurationExtDeserializer();
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
 
     private String apiKey;
@@ -57,7 +50,7 @@ public class DoubanSite extends AbstractVideoSite {
     /**
      * Collect user movies data since startDate.
      */
-    public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws IOException, URISyntaxException {
+    public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws HttpResponseException {
         LinkedList<Subject> subjects = new LinkedList<>();
         for (RecordEnum record : RecordEnum.values()) {
             int start = 0;
@@ -82,25 +75,25 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Obtains movie subject through api, with id of IMDb acquired by parsing the web page of the subject.
+     * Obtains movie subject through api, with id getInstance IMDb acquired by parsing the web page getInstance the subject.
      * <p>
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
-    public Subject movieSubject(long dbId) throws URISyntaxException, IOException {
+    public Subject movieSubject(long dbId) throws HttpResponseException {
         Subject subject = getApiObject(String.format("/v2/movie/subject/%d", dbId), Subject.class);
         subject.setImdbId(parseSubjectPage(dbId).getImdbId());
         return subject;
     }
 
-    public Celebrity apiMovieCelebrity(long id) throws IOException, URISyntaxException {
+    public Celebrity apiMovieCelebrity(long id) throws HttpResponseException {
         return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
     }
 
-    public List<Subject> apiMovieTop250() throws IOException, URISyntaxException {
+    public List<Subject> apiMovieTop250() throws HttpResponseException {
         return getApiObjects("/v2/movie/top250");
     }
 
-    public List<Subject> apiMovieWeekly() throws IOException, URISyntaxException {
+    public List<Subject> apiMovieWeekly() throws HttpResponseException {
         return getApiObjects("/v2/movie/weekly");
     }
 
@@ -112,14 +105,19 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Parse pages of subjects.
+     * Parse pages getInstance subjects.
      * <p>
-     * This is supplement of {@link #movieSubject(long)} (long)} to get IMDb identity of a subject.
+     * This is supplement getInstance {@link #movieSubject(long)} (long)} to get IMDb identity getInstance a subject.
      * <p>
      * Same as {@link #movieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
      */
-    private Subject parseSubjectPage(long dbId) throws IOException, URISyntaxException {
-        Document document = getDocument(buildUri("/subject/" + dbId, "movie").build());
+    private Subject parseSubjectPage(long dbId) throws HttpResponseException {
+        Document document;
+        try {
+            document = getDocument(buildUri("/subject/" + dbId, "movie").build());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
         Subject subject = new Subject();
         subject.setDbId(dbId);
         Element wrapper = document.getElementById("wrapper");
@@ -127,51 +125,6 @@ public class DoubanSite extends AbstractVideoSite {
         Elements spans = wrapper.selectFirst("div#info").select("span.pl");
         Map<String, Element> spanMap = spans.stream().collect(Collectors.toMap(span -> span.text().strip(), span -> span));
         Element span;
-
-        Element dateEle = spanMap.get("上映日期:");
-        if (dateEle != null) {
-            subject.setSubtype(SubtypeEnum.MOVIE);
-            span = spanMap.get("片长:");
-            Set<Duration> durations = new HashSet<>();
-            if ((span = span.nextElementSibling()).is("span[property=v:runtime]")) {
-                durations.add(Duration.ofMinutes(Integer.parseInt(span.attr("content"))));
-            }
-            Node node = nextSibling(span);
-            if (node instanceof TextNode) {
-                String[] contents = StringUtils.strip(node.toString(), " /").split("/");
-                for (String content : contents) {
-                    durations.add(DURATION_DESERIALIZER.toNonNullT(content.strip()));
-                }
-            }
-            subject.setDurations(durations);
-        } else if ((dateEle = spanMap.get("首播:")) != null) {
-            subject.setSubtype(SubtypeEnum.TV);
-            span = spanMap.get("单集片长:");
-            if (span != null) {
-                Set<Duration> durations = new HashSet<>();
-                String[] contents = StringUtils.strip(nextSiblingString(span), " /").split("/");
-                for (String content : contents) {
-                    durations.add(DURATION_DESERIALIZER.toNonNullT(content.strip()));
-                }
-                subject.setDurations(durations);
-            }
-            subject.setEpisodesCount(Integer.parseInt(nextSiblingString(spanMap.get("集数:"))));
-            span = spanMap.get("季数:");
-            if (span != null) {
-                Node node = nextSibling(span);
-                if (node instanceof TextNode) {
-                    subject.setCurrentSeason(Integer.parseInt(node.toString().strip()));
-                } else if (node instanceof Element) {
-                    Element element = (Element) node;
-                    if (HTML_SELECT.equals((element).tagName())) {
-                        subject.setCurrentSeason(Integer.parseInt(element.selectFirst("option[selected=selected]").text().strip()));
-                        subject.setSeasonsCount(element.select("option").size());
-                    }
-                }
-            }
-        } else {
-            subject.setSubtype(null);
-        }
 
         // title and original title
         String[] keywords = document.selectFirst("meta[name=keywords]").attr("content").split(",");
@@ -181,52 +134,6 @@ public class DoubanSite extends AbstractVideoSite {
         // year
         String yearStr = StringUtils.strip(wrapper.selectFirst("h1").selectFirst("span.year").text(), "( )");
         subject.setYear(Year.of(Integer.parseInt(yearStr)));
-
-        span = spanMap.get("类型:");
-        if (span != null) {
-            List<GenreEnum> genres = new LinkedList<>();
-            Element genre = span.nextElementSibling();
-            while (genre.is("span[property=v:genre]")) {
-                genres.add(EnumUtilExt.deserializeTitle(genre.text().strip(), GenreEnum.class));
-                genre = genre.nextElementSibling();
-            }
-            subject.setGenres(genres);
-        }
-
-        span = spanMap.get("制片国家/地区:");
-        Set<Country> countries = Arrays.stream(nextSiblingString(span).split(DELIMITER))
-                .map(part -> Country.ofTitle(part.strip())).collect(Collectors.toSet());
-        subject.setCountries(countries);
-
-        span = spanMap.get("语言:");
-        Set<Language> languages = Arrays.stream(nextSiblingString(span).split(DELIMITER))
-                .map(part -> Language.ofTitle(part.strip())).collect(Collectors.toSet());
-        subject.setLanguages(languages);
-
-        span = spanMap.get("又名:");
-        if (span != null) {
-            List<String> aka = Arrays.stream(nextSiblingString(span).split(DELIMITER))
-                    .map(String::strip).collect(Collectors.toList());
-            subject.setAka(aka);
-        }
-
-        if (dateEle != null) {
-            Set<LocalDate> dates = new HashSet<>();
-            dateEle = dateEle.nextElementSibling();
-            while (dateEle.is("span[property=v:initialReleaseDate]")) {
-                String content = dateEle.attr("content");
-                dates.add(PUB_DATE_DESERIALIZER.toNonNullT(content));
-                dateEle = dateEle.nextElementSibling();
-            }
-            subject.setPubDates(dates);
-        }
-
-        span = spanMap.get("官方网站:");
-        if (span != null) {
-            if ((span = span.nextElementSibling()).is(HTML_A)) {
-                subject.setWebsite(span.attr("href"));
-            }
-        }
 
         span = spanMap.get("IMDb链接:");
         if (span != null) {
@@ -240,18 +147,24 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Parse pages of user collections to get user data.
+     * Parse pages getInstance user collections to get user data.
      *
      * @param catalog movie/book/music/...
      * @param record  wish/do/collect
      * @param start   start index
      */
-    private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws URISyntaxException, IOException {
-        URI uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
-                Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
+    private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws HttpResponseException {
+        URI uri;
+        try {
+            uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
+                    Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
         Document document = getDocument(uri, false);
         List<Subject> subjects = new LinkedList<>();
-        for (Element li : document.selectFirst(".list-view").select(HTML_LI)) {
+        String listClass = ".list-view";
+        for (Element li : document.selectFirst(listClass).select(HTML_LI)) {
             Element div = li.selectFirst(".title");
             Element a = div.selectFirst(">a");
             List<String> titles = Arrays.stream(a.text().strip().split("/")).map(String::strip).collect(Collectors.toList());
@@ -286,19 +199,28 @@ public class DoubanSite extends AbstractVideoSite {
         return nextSibling(node).toString().strip();
     }
 
-    private <T> T getApiObject(String path, Class<T> clazz, Parameter... params) throws URISyntaxException, IOException {
+    private <T> T getApiObject(String path, Class<T> clazz, Parameter... params) throws HttpResponseException {
         URIBuilder builder = super.buildUri(path, "api", params);
         builder.addParameter("apikey", apiKey);
-        return getObject(builder.build(), clazz);
+        try {
+            return getObject(builder.build(), clazz);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private <T> List<T> getApiObjects(String path) throws URISyntaxException, IOException {
+    private <T> List<T> getApiObjects(String path) throws HttpResponseException {
         int start = 0;
         List<T> list = new LinkedList<>();
         while (true) {
             URIBuilder builder = super.buildUri(path, "api", Parameter.of("start", start));
             builder.addParameter("apikey", apiKey);
-            PageResult<T> pageResult = getObject(builder.build(), new TypeReference<>() {});
+            PageResult<T> pageResult;
+            try {
+                pageResult = getObject(builder.build(), new TypeReference<>() {});
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
             list.addAll(pageResult.data);
             start += pageResult.count;
             if (start >= pageResult.count) {

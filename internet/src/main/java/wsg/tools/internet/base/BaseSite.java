@@ -1,5 +1,6 @@
 package wsg.tools.internet.base;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
@@ -22,7 +23,6 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.config.BaseJacksonConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +70,7 @@ public abstract class BaseSite {
     /**
      * Return the content of response in form of a parsed HTML document, using cached files.
      */
-    protected Document getDocument(URI uri) throws IOException {
+    protected Document getDocument(URI uri) throws HttpResponseException {
         return getDocument(uri, true);
     }
 
@@ -79,7 +79,7 @@ public abstract class BaseSite {
      *
      * @param cached whether use the cached file.
      */
-    protected Document getDocument(URI uri, boolean cached) throws IOException {
+    protected Document getDocument(URI uri, boolean cached) throws HttpResponseException {
         if (cached) {
             return Jsoup.parse(getCachedContent(uri, ContentTypeEnum.HTML));
         } else {
@@ -90,21 +90,29 @@ public abstract class BaseSite {
     /**
      * Return the content of response with a Java object.
      */
-    protected <T> T getObject(URI uri, Class<T> clazz) throws IOException {
-        return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+    protected <T> T getObject(URI uri, Class<T> clazz) throws HttpResponseException {
+        try {
+            return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
-    protected <T> T getObject(URI uri, TypeReference<T> type) throws IOException {
-        return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
+    protected <T> T getObject(URI uri, TypeReference<T> type) throws HttpResponseException {
+        try {
+            return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Get requested content. Read from files if exists
      */
-    protected String getCachedContent(URI uri, ContentTypeEnum contentType) throws IOException {
+    protected String getCachedContent(URI uri, ContentTypeEnum contentType) throws HttpResponseException {
         // read from file if exists
         String filepath = uri.toString().replaceAll("[:?]", "\\$");
         if (contentType != null) {
@@ -113,7 +121,12 @@ public abstract class BaseSite {
         File file = new File(filepath);
         if (file.isFile()) {
             log.info("Read from {}", file.getPath());
-            String content = FileUtils.readFileToString(file, UTF_8);
+            String content;
+            try {
+                content = FileUtils.readFileToString(file, UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             if (Constants.NULL_NA.equals(content)) {
                 throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not Found");
             }
@@ -125,18 +138,26 @@ public abstract class BaseSite {
             data = getContent(uri);
         } catch (HttpResponseException e) {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
-                FileUtils.write(file, Constants.NULL_NA, UTF_8);
+                try {
+                    FileUtils.write(file, Constants.NULL_NA, UTF_8);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
             throw e;
         }
-        FileUtils.write(file, data, UTF_8);
+        try {
+            FileUtils.write(file, data, UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return data;
     }
 
     /**
      * Do request and return content of response.
      */
-    protected String getContent(URI uri) throws IOException {
+    protected String getContent(URI uri) throws HttpResponseException {
         // do request
         HttpGet httpGet = new HttpGet(uri);
         httpGet.setConfig(buildRequestConfig().build());
@@ -152,6 +173,10 @@ public abstract class BaseSite {
                 return EntityUtils.toString(response.getEntity());
             }
             throw new HttpResponseException(code, response.getStatusLine().getReasonPhrase());
+        } catch (HttpResponseException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             httpGet.releaseConnection();
         }
@@ -195,7 +220,7 @@ public abstract class BaseSite {
      */
     public ObjectMapper getObjectMapper() {
         if (objectMapper == null) {
-            objectMapper = BaseJacksonConfig.createObjectMapper();
+            objectMapper = new ObjectMapper();
         }
         return objectMapper;
     }

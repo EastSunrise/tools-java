@@ -36,3 +36,6 @@ build/
 
 ### private
 /boot/src/main/resources/config/private/
+
+### log
+*.log

@@ -6,12 +6,12 @@ package wsg.tools.common.jackson.intf;
  * @author Kingen
  * @since 2020/6/19
  */
-public interface AkaSerializable<T> {
+public interface AkaSerializable<Aka> {
     /**
      * Also known as, similar to {@link #equals(Object)}
      *
      * @param other aka
      * @return if this is also known as {@code other}
      */
-    boolean alsoKnownAs(T other);
+    boolean alsoKnownAs(Aka other);
 }

@@ -1,22 +1,19 @@
 package wsg.tools.boot.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.BeanUtilExt;
+import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.dao.api.VideoConfig;
-import wsg.tools.boot.dao.mapper.SubjectMapper;
-import wsg.tools.boot.entity.base.dto.BatchResult;
-import wsg.tools.boot.entity.base.dto.Result;
-import wsg.tools.boot.entity.subject.dto.SubjectDto;
-import wsg.tools.boot.entity.subject.enums.ArchivedEnum;
-import wsg.tools.boot.entity.subject.enums.StatusEnum;
-import wsg.tools.boot.entity.subject.enums.SubtypeEnum;
-import wsg.tools.boot.entity.subject.query.QuerySubject;
+import wsg.tools.boot.pojo.base.BatchResult;
+import wsg.tools.boot.pojo.base.Result;
+import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.pojo.entity.SubjectEntity;
+import wsg.tools.boot.pojo.enums.ArchivedEnum;
+import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.util.SystemUtils;
@@ -24,12 +21,11 @@ import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.site.DoubanSite;
 
 import javax.annotation.Nullable;
+import javax.persistence.criteria.Path;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -42,54 +38,46 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDto> implements SubjectService {
+public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntity, Long> implements SubjectService {
 
     private VideoConfig videoConfig;
 
     @Override
-    public Page<SubjectDto> list(QuerySubject querySubject) {
-        QueryWrapper<SubjectDto> wrapper = Wrappers.query();
-        if (querySubject.isNullDuration()) {
-            int year = LocalDate.now().getYear();
-            wrapper.and(w -> w.isNull("durations").le("year", year));
+    public BatchResult importDouban(long userId, LocalDate startDate) {
+        if (startDate == null) {
+            SubjectDto subject = findOne((Specification<SubjectEntity>) (root, criteriaQuery, criteriaBuilder) -> {
+                Path<LocalDate> tagDate = root.get("tagDate");
+                criteriaBuilder.greatest(tagDate);
+                return criteriaQuery.getRestriction();
+            });
+            if (subject == null || subject.getTagDate() == null) {
+                startDate = DoubanSite.START_DATE;
+            } else {
+                startDate = subject.getTagDate();
+            }
         }
-        if (querySubject.isBadSeason()) {
-            wrapper.and(w -> w.eq("subtype", SubtypeEnum.SERIES)
-                    .and(w1 -> w1.or(w2 -> w2.isNull("current_season"))
-                            .or(w2 -> w2.isNull("episodes_count"))
-                            .or(w2 -> w2.isNull("seasons_count"))));
+        log.info("Start to import douban subjects getInstance {} since {}", userId, startDate);
+        List<SubjectDto> subjects = userSubjects(userId, startDate);
+        if (subjects == null) {
+            log.error("Failed to obtains subjects getInstance user {}", userId);
+            return new BatchResult("Failed to obtains subjects getInstance user " + userId);
         }
-        if (querySubject.isNullImdb()) {
-            wrapper.isNull("imdb_id");
-        }
-        invokeWrapper(querySubject.getStatus(), status -> wrapper.eq("status", status));
-        invokeWrapper(querySubject.getArchived(), archived -> wrapper.eq("archived", archived));
-        invokeWrapper(querySubject.getSubtype(), subtype -> wrapper.eq("subtype", subtype));
-        return page(querySubject.getPage(), wrapper);
+
+        return batchSaveOrUpdate(subjects);
     }
 
     @Override
-    public Result updateInfo(long id) {
-        SubjectDto subject = getById(id);
-        if (subject == null) {
-            return Result.fail("Not exist does the subject %d", id);
-        }
-        subject = getSubjectInfo(subject.getDbId(), subject.getImdbId());
-        if (subject == null) {
-            log.warn("Can't obtain info of subject {}", id);
-            return Result.fail("Can't obtain info of subject %d", id);
-        }
-        subject.setId(id);
-        if (!saveOrUpdate(subject)) {
-            log.error("Failed to update info of subject {}", id);
-            return Result.fail("Failed to update info: %d", id);
-        }
-        return Result.success();
+    public BatchResult importImdbIds(List<String> ids) {
+        return batchSaveOrUpdate(ids.stream().map(id -> {
+            SubjectDto subject = new SubjectDto();
+            subject.setImdbId(id);
+            return subject;
+        }).collect(Collectors.toList()));
     }
 
     @Override
     public Result play(long id) {
-        SubjectDto subject = getById(id);
+        SubjectDto subject = findById(id);
         if (subject == null) {
             return Result.fail("Not exist does the subject %d", id);
         }
@@ -113,33 +101,8 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
     }
 
     @Override
-    public BatchResult importDouban(long userId, LocalDate startDate) {
-        if (startDate == null) {
-            QueryWrapper<SubjectDto> wrapper = new QueryWrapper<SubjectDto>().select("MAX(tag_date) AS tag_date");
-            SubjectDto subjectDto = getOne(wrapper);
-            if (subjectDto == null || subjectDto.getTagDate() == null) {
-                startDate = DoubanSite.START_DATE;
-            } else {
-                startDate = subjectDto.getTagDate();
-            }
-        }
-        log.info("Start to import douban subjects of {} since {}", userId, startDate);
-        List<SubjectDto> subjects = userSubjects(userId, startDate);
-        if (subjects == null) {
-            log.error("Failed to obtains subjects of user {}", userId);
-            return new BatchResult("Failed to obtains subjects of user " + userId);
-        }
-
-        return batchSaveOrUpdate(subjects);
-    }
-
-    @Override
-    public BatchResult importImdbIds(List<String> ids) {
-        return batchSaveOrUpdate(ids.stream().map(id -> {
-            SubjectDto subjectDto = new SubjectDto();
-            subjectDto.setImdbId(id);
-            return subjectDto;
-        }).collect(Collectors.toList()));
+    public void updateById(SubjectDto subject) {
+        save(subject);
     }
 
     private BatchResult batchSaveOrUpdate(List<SubjectDto> subjects) {
@@ -149,11 +112,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
             }
             SubjectDto subjectDto = getSubjectInfo(s.getDbId(), s.getImdbId());
             if (subjectDto != null) {
-                try {
-                    BeanUtilExt.copyPropertiesExceptNull(s, subjectDto);
-                } catch (InvocationTargetException | IllegalAccessException e) {
-                    log.error(e.getMessage());
-                }
+                BeanUtilExt.copyPropertiesExceptNull(s, subjectDto);
             }
         }).collect(Collectors.toList());
 
@@ -161,13 +120,6 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
         if (subjects.size() != 0) {
             subjects.forEach(subject -> {
                 if (subject == null) {
-                    return;
-                }
-                UpdateWrapper<SubjectDto> wrapper = Wrappers.update();
-                wrapper.eq("db_id", subject.getDbId()).or(w -> w.eq("imdb_id", subject.getImdbId()));
-                if (!saveOrUpdate(subject, wrapper)) {
-                    Object id = subject.getDbId() != null ? subject.getDbId() : subject.getImdbId();
-                    log.error("Failed to update subject {}", id);
                     return;
                 }
                 count[0]++;
@@ -182,19 +134,15 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
         List<Subject> subjects;
         try {
             subjects = videoConfig.getDoubanSite().collectUserMovies(userId, startDate);
-        } catch (IOException | URISyntaxException e) {
+        } catch (HttpResponseException e) {
             log.error(e.getMessage());
             return null;
         }
         return subjects.stream().map(s -> {
-            SubjectDto subjectDto = new SubjectDto();
-            try {
-                BeanUtilExt.copyPropertiesExceptNull(subjectDto, s);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                log.error(e.getMessage());
-            }
-            subjectDto.setStatus(StatusEnum.of(s.getRecord()));
-            return subjectDto;
+            SubjectDto subject = new SubjectDto();
+            BeanUtilExt.copyPropertiesExceptNull(subject, s);
+            subject.setStatus(StatusEnum.of(s.getRecord()));
+            return subject;
         }).collect(Collectors.toList());
     }
 
@@ -208,7 +156,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                 if (movieSubject.getSubtype() != null) {
                     subjectDto.setSubtype(SubtypeEnum.of(movieSubject.getSubtype()));
                 }
-            } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
+            } catch (HttpResponseException e) {
                 log.error(e.getMessage());
             }
         }
@@ -224,11 +172,11 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectMapper, SubjectDt
                 }
                 if (omSubject.getRuntime() != null) {
                     if (subjectDto.getDurations() == null) {
-                        subjectDto.setDurations(new HashSet<>(5));
+                        subjectDto.setDurations(new LinkedList<>());
                     }
                     subjectDto.getDurations().add(omSubject.getRuntime());
                 }
-            } catch (IOException | URISyntaxException | IllegalAccessException | InvocationTargetException e) {
+            } catch (HttpResponseException e) {
                 log.error(e.getMessage());
             }
         }

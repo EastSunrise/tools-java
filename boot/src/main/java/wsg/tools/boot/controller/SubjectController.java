@@ -1,17 +1,17 @@
 package wsg.tools.boot.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import wsg.tools.boot.common.WatchlistReader;
-import wsg.tools.boot.entity.base.dto.BatchResult;
-import wsg.tools.boot.entity.base.dto.Result;
-import wsg.tools.boot.entity.subject.dto.SubjectDto;
-import wsg.tools.boot.entity.subject.dto.SubjectsResult;
-import wsg.tools.boot.entity.subject.query.QuerySubject;
+import wsg.tools.boot.common.util.WatchlistReader;
+import wsg.tools.boot.pojo.base.BatchResult;
+import wsg.tools.boot.pojo.base.Result;
+import wsg.tools.boot.pojo.dto.QuerySubjectDto;
+import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.pojo.result.SubjectsResult;
 import wsg.tools.boot.service.intf.SubjectService;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Management of video subjects.
+ * API of video subjects.
  *
  * @author Kingen
  * @since 2020/6/22
@@ -31,8 +31,8 @@ public class SubjectController extends AbstractController {
     private SubjectService subjectService;
 
     @RequestMapping(value = "/subjects", method = RequestMethod.GET)
-    public SubjectsResult index(QuerySubject querySubject) {
-        Page<SubjectDto> page = subjectService.list(querySubject);
+    public SubjectsResult index(QuerySubjectDto querySubject) {
+        Page<SubjectDto> page = subjectService.findAll(querySubject);
         return new SubjectsResult(page);
     }
 
@@ -58,10 +58,8 @@ public class SubjectController extends AbstractController {
 
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     public Result updateById(SubjectDto subject) {
-        if (subjectService.updateById(subject)) {
-            return Result.success();
-        }
-        return Result.fail("Failed to update info: %d", subject.getId());
+        subjectService.updateById(subject);
+        return Result.success();
     }
 
     @Autowired

@@ -9,7 +9,7 @@ import wsg.tools.internet.video.site.ImdbSite;
 import wsg.tools.internet.video.site.OmdbSite;
 
 /**
- * Configuration for video, transfer objects of other modules to those of this module.
+ * Configuration for video to get instances of video sites.
  *
  * @author Kingen
  * @since 2020/6/26

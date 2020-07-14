@@ -1,16 +1,15 @@
 package wsg.tools.boot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import wsg.tools.common.jackson.config.BaseJacksonConfig;
-import wsg.tools.internet.video.enums.Country;
+import wsg.tools.boot.pojo.enums.ArchivedEnum;
+import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.SubtypeEnum;
+import wsg.tools.common.jackson.CodeModule;
 import wsg.tools.internet.video.enums.Language;
-import wsg.tools.internet.video.jackson.deserializer.CountryDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.LanguageDeserializer;
-import wsg.tools.internet.video.jackson.serializer.AbstractLocaleSerializer;
 
 /**
  * Configurations for Jackson.
@@ -24,13 +23,14 @@ public class JacksonConfig {
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
-        ObjectMapper mapper = BaseJacksonConfig.createObjectMapper();
-        mapper.registerModule(new SimpleModule()
-                .addSerializer(Language.class, AbstractLocaleSerializer.LANGUAGE)
-                .addSerializer(Country.class, AbstractLocaleSerializer.COUNTRY)
-                .addDeserializer(Language.class, new LanguageDeserializer())
-                .addDeserializer(Country.class, new CountryDeserializer())
-        );
-        return mapper;
+        return new ObjectMapper()
+                .registerModule(new CodeModule()
+                        .addTitleSerializer(StatusEnum.class)
+                        .addTitleSerializer(SubtypeEnum.class)
+                        .addTitleSerializer(Language.class)
+                        .addTitleSerializer(ArchivedEnum.class)
+                        .addTitleSerializer(Language.class)
+                )
+                .registerModule(new JavaTimeModule());
     }
 }

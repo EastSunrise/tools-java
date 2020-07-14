@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.jackson.deserializer;
 
-import wsg.tools.common.jackson.deserializer.base.AbstractStringDeserializer;
+import wsg.tools.common.jackson.deserializer.AbstractNonNullDeserializer;
 import wsg.tools.common.util.AssertUtils;
 
 import java.time.Duration;
@@ -14,12 +14,17 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/20
  */
-public class YearExtDeserializer extends AbstractStringDeserializer<Year> {
+public class YearExtDeserializer extends AbstractNonNullDeserializer<Year, String> {
 
+    public static final YearExtDeserializer INSTANCE = new YearExtDeserializer();
     private static final Pattern YEAR_REGEX = Pattern.compile("(\\d{4})(–(\\d{4})?)?");
 
+    protected YearExtDeserializer() {
+        super(Year.class, String.class);
+    }
+
     @Override
-    public Year toNonNullT(String text) {
+    public Year apply(String text) {
         Matcher matcher = AssertUtils.matches(YEAR_REGEX, text);
         return Year.of(Integer.parseInt(matcher.group(1)));
     }

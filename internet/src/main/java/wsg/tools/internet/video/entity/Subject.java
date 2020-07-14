@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.deserializer.CollectionFromStringDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.CollectionDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.PubDateDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.YearExtDeserializer;
@@ -47,13 +47,13 @@ public class Subject {
     private Year year;
     private String alt;
     @JsonAlias("Genre")
-    @JsonDeserialize(using = CollectionFromStringDeserializer.class)
+    @JsonDeserialize(using = CollectionDeserializer.class)
     private List<GenreEnum> genres;
     @JsonAlias("Country")
-    @JsonDeserialize(using = CollectionFromStringDeserializer.class)
+    @JsonDeserialize(using = CollectionDeserializer.class)
     private Set<Country> countries;
     @JsonAlias("Language")
-    @JsonDeserialize(using = CollectionFromStringDeserializer.class)
+    @JsonDeserialize(using = CollectionDeserializer.class)
     private Set<Language> languages;
     /**
      * todo merge

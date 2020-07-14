@@ -6,11 +6,11 @@ package wsg.tools.common.jackson.intf;
  * @author Kingen
  * @since 2020/6/17
  */
-public interface CodeSerializable<T> {
+public interface CodeSerializable<Code> {
     /**
      * Serialize to a code
      *
      * @return code serialized
      */
-    T getCode();
+    Code getCode();
 }

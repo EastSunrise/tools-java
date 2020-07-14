@@ -1,8 +1,8 @@
 package wsg.tools.boot;
 
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * Application startup
@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Kingen
  */
 @SpringBootApplication
-@MapperScan("wsg.tools.boot.dao.mapper")
+@EnableJpaRepositories("wsg.tools.boot.dao.jpa.mapper")
 public class ToolsBootApplication {
 
     public static void main(String[] args) {
