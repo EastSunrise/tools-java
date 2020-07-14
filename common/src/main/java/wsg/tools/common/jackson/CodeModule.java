@@ -32,6 +32,12 @@ public class CodeModule extends SimpleModule {
         return this;
     }
 
+    public <Code, E extends Enum<E> & CodeSerializable<Code>> CodeModule addCodeEnumSerAndDeser(Class<Code> codeClass, Class<E> eClass) {
+        addDeserializer(eClass, EnumCodeDeserializer.getInstance(codeClass, eClass));
+        addSerializer(CodeSerializer.getInstance(codeClass, eClass));
+        return this;
+    }
+
     public <JavaType extends TitleSerializable> CodeModule addTitleSerializer(Class<JavaType> javaType) {
         addSerializer(TitleSerializer.getInstance(javaType));
         return this;

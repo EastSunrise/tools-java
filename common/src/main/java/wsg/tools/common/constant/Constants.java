@@ -1,6 +1,7 @@
 package wsg.tools.common.constant;
 
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 /**
  * Constant variables
@@ -17,4 +18,5 @@ public class Constants {
     public static final String STANDARD_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final DateTimeFormatter STANDARD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(STANDARD_DATE_TIME_PATTERN);
     public static final DateTimeFormatter STANDARD_YEAR_FORMATTER = DateTimeFormatter.ofPattern("yyyy");
+    public static final DateTimeFormatter NULL_FORMATTER = new DateTimeFormatterBuilder().toFormatter();
 }

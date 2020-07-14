@@ -48,7 +48,9 @@ public class ContainerJsonJpaConverters {
         private static ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .registerModule(new CodeModule()
-                        .addDeserializer(Language.class, LanguageCodeDeserializer.INSTANCE));
+                        .addCodeSerializer(String.class, Language.class)
+                        .addDeserializer(Language.class, LanguageCodeDeserializer.INSTANCE)
+                );
         private TypeReference<Container> type;
 
         public AbstractContainerJsonConverter(TypeReference<Container> type) {
