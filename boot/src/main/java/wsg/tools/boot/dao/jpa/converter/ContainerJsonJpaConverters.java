@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import wsg.tools.common.jackson.CodeModule;
+import wsg.tools.boot.config.serializer.DurationSerializerExt;
+import wsg.tools.common.jackson.CommonModule;
 import wsg.tools.internet.video.enums.Language;
 import wsg.tools.internet.video.jackson.deserializer.LanguageCodeDeserializer;
 
@@ -46,8 +47,10 @@ public class ContainerJsonJpaConverters {
     static class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
 
         private static ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .registerModule(new CodeModule()
+                .registerModule(new JavaTimeModule()
+                        .addSerializer(DurationSerializerExt.INSTANCE)
+                )
+                .registerModule(new CommonModule()
                         .addCodeSerializer(String.class, Language.class)
                         .addDeserializer(Language.class, LanguageCodeDeserializer.INSTANCE)
                 );

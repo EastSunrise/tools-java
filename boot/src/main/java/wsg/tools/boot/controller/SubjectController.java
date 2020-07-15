@@ -1,12 +1,12 @@
 package wsg.tools.boot.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import wsg.tools.boot.common.util.WatchlistReader;
+import wsg.tools.boot.common.WatchlistReader;
 import wsg.tools.boot.pojo.base.BatchResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
@@ -31,9 +31,8 @@ public class SubjectController extends AbstractController {
     private SubjectService subjectService;
 
     @RequestMapping(value = "/subjects", method = RequestMethod.GET)
-    public SubjectsResult index(QuerySubjectDto querySubject) {
-        Page<SubjectDto> page = subjectService.findAll(querySubject);
-        return new SubjectsResult(page);
+    public SubjectsResult index(QuerySubjectDto querySubject, Pageable pageable) {
+        return subjectService.list(querySubject, pageable);
     }
 
     @RequestMapping(value = "/douban", method = RequestMethod.POST)

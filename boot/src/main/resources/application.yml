@@ -3,14 +3,15 @@ spring:
     restart:
       enabled: true
       additional-paths: src/main/java
-  thymeleaf:
-    cache: false
   datasource:
-    url: jdbc:mysql://192.168.1.108:3306/tools?useUnicdeo=true&characterEncoding=UTF-8
+    url: jdbc:mysql://192.168.1.108:3306/tools?useUnicdeo=true&characterEncoding=UTF-8&serverTimezone=GMT%2B8
     username: root
     password: root
   jpa:
     show-sql: true
+    open-in-view: false
+    properties:
+      hibernate.format_sql: true
 server:
   address: 0.0.0.0
   port: 6808

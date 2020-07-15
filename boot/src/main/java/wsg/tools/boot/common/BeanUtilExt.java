@@ -1,17 +1,16 @@
-package wsg.tools.boot.common.util;
+package wsg.tools.boot.common;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
+import wsg.tools.common.constant.Constants;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Utility extension for bean operations.
@@ -21,10 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BeanUtilExt {
 
+    private static final String PROPERTY_NAME_CLASS = "class";
     private static Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> copiersMap = new ConcurrentHashMap<>();
 
     public static <From, To> To convert(From from, Class<To> toClass) {
-        Objects.requireNonNull(from);
+        if (from == null) {
+            return null;
+        }
         To to = BeanUtils.instantiateClass(toClass);
         copyPropertiesExceptNull(to, from, true, true);
         return to;
@@ -33,9 +35,9 @@ public class BeanUtilExt {
     /**
      * Copy properties from an object to another object.
      * <p>
-     * Ignore a property if its value getInstance the destination object is not null;
-     * Ignore a property if its value getInstance the original object is null.
-     * It means that properties getInstance the destination object are more important.
+     * Ignore a property if its value getDeserializer the destination object is not null;
+     * Ignore a property if its value getDeserializer the original object is null.
+     * It means that properties getDeserializer the destination object are more important.
      */
     public static void copyPropertiesExceptNull(final Object dest, final Object orig) {
         copyPropertiesExceptNull(dest, orig, false, true);
@@ -44,8 +46,8 @@ public class BeanUtilExt {
     /**
      * Copy properties from an object to another object.
      *
-     * @param replaced   whether replace the non-null values getInstance destination while copying
-     * @param ignoreNull whether ignore null-value properties getInstance the original object
+     * @param replaced   whether replace the non-null values getDeserializer destination while copying
+     * @param ignoreNull whether ignore null-value properties getDeserializer the original object
      */
     public static void copyPropertiesExceptNull(final Object dest, final Object orig, boolean replaced, boolean ignoreNull) {
         Objects.requireNonNull(dest);
@@ -69,6 +71,26 @@ public class BeanUtilExt {
     }
 
     /**
+     * Get all properties and values of the given type.
+     */
+    public static Map<String, Object> convertToMap(Object o, boolean ignoreNull) {
+        Objects.requireNonNull(o);
+        Map<String, Object> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        for (PropertyDescriptor descriptor : getDescriptorsExceptClass(o.getClass(), true, false)) {
+            Object value;
+            try {
+                value = descriptor.getReadMethod().invoke(o);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+            if (!ignoreNull || value != null) {
+                map.put(descriptor.getName(), value);
+            }
+        }
+        return map;
+    }
+
+    /**
      * Get common properties between the two types.
      * Also, the property has to be writeable for destination object.
      */
@@ -77,7 +99,7 @@ public class BeanUtilExt {
         List<PropertyCopier> copiers = copiersMap.get(key);
         if (copiers == null) {
             copiers = new LinkedList<>();
-            for (PropertyDescriptor origDesc : BeanUtils.getPropertyDescriptors(orig)) {
+            for (PropertyDescriptor origDesc : getDescriptorsExceptClass(orig, true, false)) {
                 PropertyDescriptor destDesc = BeanUtils.getPropertyDescriptor(dest, origDesc.getName());
                 if (destDesc != null) {
                     Method writeMethod = destDesc.getWriteMethod();
@@ -89,6 +111,14 @@ public class BeanUtilExt {
             copiersMap.put(key, copiers);
         }
         return copiers;
+    }
+
+    private static List<PropertyDescriptor> getDescriptorsExceptClass(Class<?> type, boolean readable, boolean writeable) {
+        return Arrays.stream(BeanUtils.getPropertyDescriptors(type))
+                .filter(d -> !PROPERTY_NAME_CLASS.equals(d.getName())
+                        && (!readable || d.getReadMethod() != null)
+                        && (!writeable || d.getWriteMethod() != null))
+                .collect(Collectors.toList());
     }
 
     static class PropertyCopier {

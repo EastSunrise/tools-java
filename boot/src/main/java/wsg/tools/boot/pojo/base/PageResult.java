@@ -1,8 +1,9 @@
 package wsg.tools.boot.pojo.base;
 
 import lombok.Getter;
-import lombok.Setter;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 /**
  * Result with pagination info.
@@ -11,12 +12,18 @@ import org.springframework.data.domain.Page;
  * @since 2020/7/10
  */
 @Getter
-@Setter
 public class PageResult<T extends BaseDto> extends Result {
-    private Page<T> records;
 
-    public PageResult(Page<T> records) {
-        this.records = records;
+    private long total;
+    private int page;
+    private int size;
+    private List<T> records;
+
+    public PageResult(Page<T> page) {
+        this.page = page.getNumber();
+        this.size = page.getSize();
+        this.total = page.getTotalElements();
+        this.records = page.getContent();
     }
 
     public PageResult(String message) {
@@ -29,10 +36,5 @@ public class PageResult<T extends BaseDto> extends Result {
 
     public PageResult(Exception e) {
         super(e);
-    }
-
-    public PageResult(Result other, Page<T> records) {
-        super(other);
-        this.records = records;
     }
 }

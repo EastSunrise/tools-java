@@ -3,16 +3,23 @@ package wsg.tools.internet.video.site;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import lombok.Setter;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
+import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.enums.SearchTypeEnum;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 /**
  * <a href="https://www.omdbapi.com/">OMDb</a>
@@ -89,6 +96,10 @@ public class OmdbSite extends AbstractVideoSite {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
+        objectMapper.registerModule(new SimpleModule()
+                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
+                .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
+        );
         return objectMapper;
     }
 

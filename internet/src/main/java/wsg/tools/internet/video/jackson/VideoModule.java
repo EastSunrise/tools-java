@@ -1,9 +1,12 @@
 package wsg.tools.internet.video.jackson;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import wsg.tools.common.jackson.deserializer.AbstractNonNullDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.PubDateDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.YearExtDeserializer;
+import wsg.tools.common.jackson.CommonModule;
+import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
+import wsg.tools.internet.video.enums.GenreEnum;
+import wsg.tools.internet.video.enums.RatedEnum;
+import wsg.tools.internet.video.enums.SubtypeEnum;
+import wsg.tools.internet.video.jackson.deserializer.CountryAkaDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.LanguageAkaDeserializer;
 
 /**
  * A simple module registering video-related serializers.
@@ -11,13 +14,14 @@ import wsg.tools.internet.video.jackson.deserializer.YearExtDeserializer;
  * @author Kingen
  * @since 2020/7/13
  */
-public class VideoModule extends SimpleModule {
+public class VideoModule extends CommonModule {
     public VideoModule() {
-        addDeserializer(YearExtDeserializer.INSTANCE);
-        addDeserializer(PubDateDeserializer.INSTANCE);
-    }
+        addDeserializer(LanguageAkaDeserializer.INSTANCE);
+        addDeserializer(CountryAkaDeserializer.INSTANCE);
+        addStringAkaEnumDeserializer(GenreEnum.class);
+        addStringAkaEnumDeserializer(SubtypeEnum.class);
+        addStringAkaEnumDeserializer(RatedEnum.class);
 
-    private <JavaType, JsonType> void addDeserializer(AbstractNonNullDeserializer<JavaType, JsonType> deserializer) {
-        addDeserializer(deserializer.getJavaType(), deserializer);
+        addDeserializer(NumberDeserializersExt.LongDeserializer.INSTANCE);
     }
 }

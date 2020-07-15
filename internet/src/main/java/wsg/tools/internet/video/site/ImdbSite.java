@@ -14,8 +14,8 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,7 +76,7 @@ public class ImdbSite extends AbstractVideoSite {
 
         JsonNode datePublished = root.get("datePublished");
         if (datePublished != null) {
-            subject.setPubDates(Set.of(LocalDate.parse(datePublished.textValue())));
+            subject.setReleases(List.of(LocalDate.parse(datePublished.textValue())));
         }
         Map<String, Element> details = new HashMap<>(10);
         String detailsId = "#titleDetails", blockClass = ".txt-block";

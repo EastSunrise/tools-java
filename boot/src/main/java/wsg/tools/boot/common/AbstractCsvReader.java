@@ -1,4 +1,4 @@
-package wsg.tools.boot.common.util;
+package wsg.tools.boot.common;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -29,21 +29,21 @@ public abstract class AbstractCsvReader<T> {
     }
 
     /**
-     * Read list getInstance data from a multipart file.
+     * Read list getDeserializer data from a multipart file.
      *
      * @param file target file, not null
-     * @return list getInstance data
+     * @return list getDeserializer data
      */
     public List<T> readMultipartFile(MultipartFile file) throws IOException {
         return readMultipartFile(file, StandardCharsets.UTF_8);
     }
 
     /**
-     * Read list getInstance data from a multipart file with a specified charset.
+     * Read list getDeserializer data from a multipart file with a specified charset.
      *
      * @param file    target file, not null
      * @param charset charset
-     * @return list getInstance data
+     * @return list getDeserializer data
      */
     public List<T> readMultipartFile(MultipartFile file, Charset charset) throws IOException {
         Objects.requireNonNull(file);
@@ -62,7 +62,7 @@ public abstract class AbstractCsvReader<T> {
     /**
      * Obtains an object from the record
      *
-     * @param record a record getInstance a line
+     * @param record a record getDeserializer a line
      * @return target object
      */
     protected abstract T readRecord(CSVRecord record);

@@ -61,28 +61,28 @@ public class Result implements Serializable {
     }
 
     /**
-     * Obtain an instance getInstance successful result.
+     * Obtain an instance getDeserializer successful result.
      */
     public static Result success() {
         return new Result();
     }
 
     /**
-     * Obtain an instance getInstance failed result.
+     * Obtain an instance getDeserializer failed result.
      */
     public static Result fail(String message, Object... args) {
         return new Result(String.format(message, args));
     }
 
     /**
-     * Obtain an instance getInstance failed result.
+     * Obtain an instance getDeserializer failed result.
      */
     public static Result fail(String message, Object[] args, Object... formatArgs) {
         return new Result(String.format(message, formatArgs), args);
     }
 
     /**
-     * Obtain an instance getInstance failed result from an {@link Exception}.
+     * Obtain an instance getDeserializer failed result from an {@link Exception}.
      */
     public static Result fail(Exception e) {
         return new Result(e);

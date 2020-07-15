@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import wsg.tools.boot.config.serializer.DurationSerializerExt;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.MarkEnum;
 import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.CodeModule;
+import wsg.tools.common.jackson.CommonModule;
 import wsg.tools.internet.video.enums.Language;
 
 import java.time.format.DateTimeFormatter;
@@ -30,8 +30,8 @@ public class JacksonConfig {
     @Primary
     public ObjectMapper objectMapper() {
         return new ObjectMapper()
-                .registerModule(new CodeModule()
-                        .addTitleSerializer(StatusEnum.class)
+                .registerModule(new CommonModule()
+                        .addTitleSerializer(MarkEnum.class)
                         .addTitleSerializer(SubtypeEnum.class)
                         .addTitleSerializer(Language.class)
                         .addTitleSerializer(ArchivedEnum.class)

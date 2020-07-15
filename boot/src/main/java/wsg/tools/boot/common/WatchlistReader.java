@@ -1,4 +1,4 @@
-package wsg.tools.boot.common.util;
+package wsg.tools.boot.common;
 
 import org.apache.commons.csv.CSVRecord;
 

@@ -3,14 +3,17 @@ package wsg.tools.internet.video.site;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.Celebrity;
 import wsg.tools.internet.video.entity.Subject;
@@ -20,8 +23,12 @@ import wsg.tools.internet.video.enums.RecordEnum;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -75,7 +82,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Obtains movie subject through api, with id getInstance IMDb acquired by parsing the web page getInstance the subject.
+     * Obtains movie subject through api, with id getDeserializer IMDb acquired by parsing the web page getDeserializer the subject.
      * <p>
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
@@ -101,13 +108,17 @@ public class DoubanSite extends AbstractVideoSite {
     public ObjectMapper getObjectMapper() {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+        objectMapper.registerModule(new SimpleModule()
+                .addDeserializer(LocalDate.class, LocalDateDeserializer.INSTANCE)
+                .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
+        );
         return objectMapper;
     }
 
     /**
-     * Parse pages getInstance subjects.
+     * Parse pages getDeserializer subjects.
      * <p>
-     * This is supplement getInstance {@link #movieSubject(long)} (long)} to get IMDb identity getInstance a subject.
+     * This is supplement getDeserializer {@link #movieSubject(long)} (long)} to get IMDb identity getDeserializer a subject.
      * <p>
      * Same as {@link #movieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
      */
@@ -147,7 +158,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Parse pages getInstance user collections to get user data.
+     * Parse pages getDeserializer user collections to get user data.
      *
      * @param catalog movie/book/music/...
      * @param record  wish/do/collect
@@ -181,22 +192,6 @@ public class DoubanSite extends AbstractVideoSite {
         String[] parts = StringUtils.split(numStr, "/- ");
         return new PageResult<>(Integer.parseInt(parts[0]) - 1,
                 Integer.parseInt(parts[1]) - Integer.parseInt(parts[0]) + 1, Integer.parseInt(parts[2]), subjects);
-    }
-
-    /**
-     * Get next sibling node which isn't an empty string
-     */
-    private Node nextSibling(Node node) {
-        Objects.requireNonNull(node);
-        Node next = node.nextSibling();
-        while ("".equals(next.toString().strip())) {
-            next = next.nextSibling();
-        }
-        return next;
-    }
-
-    private String nextSiblingString(Node node) {
-        return nextSibling(node).toString().strip();
     }
 
     private <T> T getApiObject(String path, Class<T> clazz, Parameter... params) throws HttpResponseException {

@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.MarkEnum;
 import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.internet.video.enums.Language;
 
@@ -30,7 +30,7 @@ public class SubjectDto extends BaseDto {
 
     private String title;
     private String text;
-    private StatusEnum status;
+    private MarkEnum mark;
     private LocalDate tagDate;
     private String originalTitle;
     private List<String> aka;

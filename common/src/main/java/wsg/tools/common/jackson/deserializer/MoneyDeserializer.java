@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
  */
 public class MoneyDeserializer extends AbstractNonNullDeserializer<Money, String> {
 
+    public static final MoneyDeserializer INSTANCE = new MoneyDeserializer();
+
     private static final Pattern MONEY_REGEX;
 
     static {
@@ -27,7 +29,7 @@ public class MoneyDeserializer extends AbstractNonNullDeserializer<Money, String
         MONEY_REGEX = Pattern.compile(builder.toString());
     }
 
-    public MoneyDeserializer() {
+    protected MoneyDeserializer() {
         super(Money.class, String.class);
     }
 

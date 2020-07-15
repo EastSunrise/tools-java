@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.jpa.converter;
 
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.MarkEnum;
 import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.common.jackson.intf.CodeSerializable;
 import wsg.tools.common.util.EnumUtilExt;
@@ -20,9 +20,9 @@ import javax.persistence.Converter;
 public class CodeEnumJpaConverters {
 
     @Converter(autoApply = true)
-    public static class StatusEnumConverter extends CodeEnumConverter<StatusEnum> {
+    public static class StatusEnumConverter extends CodeEnumConverter<MarkEnum> {
         public StatusEnumConverter() {
-            super(StatusEnum.class);
+            super(MarkEnum.class);
         }
     }
 

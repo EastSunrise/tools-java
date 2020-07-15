@@ -9,7 +9,7 @@ import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.deserializer.CollectionDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.PubDateDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.ReleaseDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.YearExtDeserializer;
 
 import java.time.Duration;
@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Object of a subject.
@@ -51,10 +50,10 @@ public class Subject {
     private List<GenreEnum> genres;
     @JsonAlias("Country")
     @JsonDeserialize(using = CollectionDeserializer.class)
-    private Set<Country> countries;
+    private List<Country> countries;
     @JsonAlias("Language")
     @JsonDeserialize(using = CollectionDeserializer.class)
-    private Set<Language> languages;
+    private List<Language> languages;
     /**
      * todo merge
      */
@@ -63,12 +62,12 @@ public class Subject {
     @JsonAlias("mainland_pubdate")
     private LocalDate mainlandPubDate;
     @JsonAlias("pubdates")
-    @JsonDeserialize(contentUsing = PubDateDeserializer.class)
-    private Set<LocalDate> pubDates;
+    @JsonDeserialize(contentUsing = ReleaseDeserializer.class)
+    private List<LocalDate> releases;
     @JsonDeserialize(using = DurationExtDeserializer.class)
     private Duration runtime;
     @JsonDeserialize(contentUsing = DurationExtDeserializer.class)
-    private Set<Duration> durations;
+    private List<Duration> durations;
     private List<String> aka;
     private List<String> tags;
     private RatedEnum rated;

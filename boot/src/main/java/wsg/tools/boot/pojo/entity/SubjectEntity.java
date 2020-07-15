@@ -2,9 +2,11 @@ package wsg.tools.boot.pojo.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.UpdateTimestamp;
 import wsg.tools.boot.pojo.base.BaseEntity;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.StatusEnum;
+import wsg.tools.boot.pojo.enums.MarkEnum;
 import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.internet.video.enums.Language;
 
@@ -24,6 +26,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+@DynamicInsert
 @Table(name = "video_subject")
 public class SubjectEntity extends BaseEntity {
     @Id
@@ -34,7 +37,7 @@ public class SubjectEntity extends BaseEntity {
 
     private String title;
     private String text;
-    private StatusEnum status;
+    private MarkEnum mark;
     private LocalDate tagDate;
     private String originalTitle;
     private List<String> aka;
@@ -47,5 +50,6 @@ public class SubjectEntity extends BaseEntity {
     private Integer currentSeason;
     private Integer episodesCount;
     private Integer seasonsCount;
+    @UpdateTimestamp
     private LocalDateTime gmtModified;
 }
