@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
-import wsg.tools.boot.pojo.base.BatchResult;
+import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
@@ -18,7 +18,6 @@ import wsg.tools.boot.pojo.entity.SubjectEntity_;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.boot.pojo.enums.MarkEnum;
 import wsg.tools.boot.pojo.enums.SubtypeEnum;
-import wsg.tools.boot.pojo.result.SubjectsResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.util.SystemUtils;
@@ -50,19 +49,19 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
     private SubjectRepository subjectRepository;
 
     @Override
-    public SubjectsResult list(QuerySubjectDto querySubjectDto, Pageable pageable) {
+    public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
         Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
             Predicate predicate = getPredicate(querySubjectDto, root, builder);
-            if (querySubjectDto.isNullImdb()) {
+            if (querySubjectDto.getNullDuration()) {
                 predicate = builder.and(predicate, root.get(SubjectEntity_.imdbId).isNull());
             }
             return predicate;
         };
-        return new SubjectsResult(findAll(spec, pageable));
+        return PageResult.of(findAll(spec, pageable));
     }
 
     @Override
-    public BatchResult importDouban(long userId, LocalDate startDate) {
+    public Result importDouban(long userId, LocalDate startDate) {
         if (startDate == null) {
             startDate = subjectRepository.findMaxTagDate();
             if (startDate == null) {
@@ -70,17 +69,16 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             }
         }
         log.info("Start to import douban subjects of {} since {}", userId, startDate);
-        List<SubjectDto> subjects = userSubjects(userId, startDate);
-        if (subjects == null) {
-            log.error("Failed to obtains subjects getDeserializer user {}", userId);
-            return new BatchResult("Failed to obtains subjects getDeserializer user " + userId);
+        try {
+            return batchSaveOrUpdate(userSubjects(userId, startDate));
+        } catch (HttpResponseException e) {
+            log.error(e.getReasonPhrase());
+            return Result.fail(e);
         }
-
-        return batchSaveOrUpdate(subjects);
     }
 
     @Override
-    public BatchResult importImdbIds(List<String> ids) {
+    public Result importImdbIds(List<String> ids) {
         return batchSaveOrUpdate(ids.stream().map(id -> {
             SubjectDto subject = new SubjectDto();
             subject.setImdbId(id);
@@ -114,7 +112,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
         return Result.success();
     }
 
-    private BatchResult batchSaveOrUpdate(List<SubjectDto> subjects) {
+    private Result batchSaveOrUpdate(List<SubjectDto> subjects) {
         final int[] count = {0};
         subjects.forEach(source -> {
             if (source == null) {
@@ -128,22 +126,16 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             count[0]++;
         });
         log.info("Finish batch, total: {}, success: {}, fail: {}", subjects.size(), count[0], subjects.size() - count[0]);
-        return new BatchResult(subjects.size(), count[0]);
+        return Result.batchResult(subjects.size(), count[0]);
     }
 
-    @Nullable
-    private List<SubjectDto> userSubjects(long userId, LocalDate startDate) {
-        try {
-            return videoConfig.getDoubanSite().collectUserMovies(userId, startDate)
-                    .stream().map(s -> {
-                        SubjectDto subject = BeanUtilExt.convert(s, SubjectDto.class);
-                        subject.setMark(MarkEnum.of(s.getRecord()));
-                        return subject;
-                    }).collect(Collectors.toList());
-        } catch (HttpResponseException e) {
-            log.error(e.getMessage());
-            return null;
-        }
+    private List<SubjectDto> userSubjects(long userId, LocalDate startDate) throws HttpResponseException {
+        return videoConfig.getDoubanSite().collectUserMovies(userId, startDate)
+                .stream().map(s -> {
+                    SubjectDto subject = BeanUtilExt.convert(s, SubjectDto.class);
+                    subject.setMark(MarkEnum.of(s.getRecord()));
+                    return subject;
+                }).collect(Collectors.toList());
     }
 
     @Nullable

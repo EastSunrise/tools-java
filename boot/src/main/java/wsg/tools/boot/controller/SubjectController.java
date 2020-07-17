@@ -2,16 +2,20 @@ package wsg.tools.boot.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import wsg.tools.boot.common.WatchlistReader;
-import wsg.tools.boot.pojo.base.BatchResult;
+import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
-import wsg.tools.boot.pojo.result.SubjectsResult;
+import wsg.tools.boot.pojo.enums.ArchivedEnum;
+import wsg.tools.boot.pojo.enums.MarkEnum;
+import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.boot.service.intf.SubjectService;
 
 import java.io.IOException;
@@ -31,34 +35,38 @@ public class SubjectController extends AbstractController {
     private SubjectService subjectService;
 
     @RequestMapping(value = "/subjects", method = RequestMethod.GET)
-    public SubjectsResult index(QuerySubjectDto querySubject, Pageable pageable) {
-        return subjectService.list(querySubject, pageable);
+    public ResponseEntity<?> index(QuerySubjectDto querySubject, Pageable pageable, PagedResourcesAssembler<SubjectDto> assembler) {
+        PageResult<SubjectDto> result = subjectService.list(querySubject, pageable);
+        result.put("subtypes", SubtypeEnum.values());
+        result.put("archivedEnums", ArchivedEnum.values());
+        result.put("marks", MarkEnum.values());
+        return result.toResponse(assembler);
     }
 
     @RequestMapping(value = "/douban", method = RequestMethod.POST)
-    public BatchResult updateDouban(long user, LocalDate since) {
-        return subjectService.importDouban(user, since);
+    public ResponseEntity<?> updateDouban(long user, LocalDate since) {
+        return subjectService.importDouban(user, since).toResponse();
     }
 
     @RequestMapping(value = "/imdb", method = RequestMethod.POST)
-    public BatchResult importImdb(MultipartFile file) {
+    public ResponseEntity<?> importImdb(MultipartFile file) {
         try {
             List<String> ids = new WatchlistReader().readMultipartFile(file);
-            return subjectService.importImdbIds(ids);
+            return subjectService.importImdbIds(ids).toResponse();
         } catch (IOException | IllegalArgumentException e) {
-            return new BatchResult(e);
+            return Result.fail(e).toResponse();
         }
     }
 
     @RequestMapping(value = "/play", method = RequestMethod.POST)
-    public Result play(long id) {
-        return subjectService.play(id);
+    public ResponseEntity<?> play(long id) {
+        return subjectService.play(id).toResponse();
     }
 
     @RequestMapping(value = "/update", method = RequestMethod.POST)
-    public Result updateById(SubjectDto subject) {
+    public ResponseEntity<?> updateById(SubjectDto subject) {
         subjectService.updateById(subject);
-        return Result.success();
+        return Result.success().toResponse();
     }
 
     @Autowired

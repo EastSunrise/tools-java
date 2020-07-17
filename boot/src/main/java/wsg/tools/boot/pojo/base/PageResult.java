@@ -2,11 +2,13 @@ package wsg.tools.boot.pojo.base;
 
 import lombok.Getter;
 import org.springframework.data.domain.Page;
-
-import java.util.List;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.http.ResponseEntity;
 
 /**
- * Result with pagination info.
+ * Return result with pagination info.
  *
  * @author Kingen
  * @since 2020/7/10
@@ -14,27 +16,32 @@ import java.util.List;
 @Getter
 public class PageResult<T extends BaseDto> extends Result {
 
-    private long total;
-    private int page;
-    private int size;
-    private List<T> records;
+    private Page<T> page;
 
-    public PageResult(Page<T> page) {
-        this.page = page.getNumber();
-        this.size = page.getSize();
-        this.total = page.getTotalElements();
-        this.records = page.getContent();
+    protected PageResult(Page<T> page) {
+        super();
+        this.page = page;
     }
 
-    public PageResult(String message) {
-        super(message);
+    /**
+     * Obtains a successful instance of {@link PageResult}
+     */
+    public static <T extends BaseDto> PageResult<T> of(Page<T> page) {
+        return new PageResult<>(page);
     }
 
-    public PageResult(String message, Object[] args) {
-        super(message, args);
+    @Override
+    public ResponseEntity<?> toResponse() {
+        put("page", new PagedModel.PageMetadata(page.getSize(), page.getNumber(), page.getTotalElements()));
+        put("data", page.getContent());
+        return super.toResponse();
     }
 
-    public PageResult(Exception e) {
-        super(e);
+    public ResponseEntity<?> toResponse(PagedResourcesAssembler<T> assembler) {
+        PagedModel<EntityModel<T>> pagedModel = assembler.toModel(page);
+        put("page", pagedModel.getMetadata());
+        put("links", pagedModel.getLinks());
+        put("data", pagedModel.getContent());
+        return super.toResponse();
     }
 }

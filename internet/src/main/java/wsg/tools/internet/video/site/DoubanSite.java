@@ -58,7 +58,8 @@ public class DoubanSite extends AbstractVideoSite {
      * Collect user movies data since startDate.
      */
     public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws HttpResponseException {
-        LinkedList<Subject> subjects = new LinkedList<>();
+        log.info("Collect movies of user {} since {}", userId, startDate);
+        List<Subject> subjects = new LinkedList<>();
         for (RecordEnum record : RecordEnum.values()) {
             int start = 0;
             while (true) {
@@ -78,6 +79,7 @@ public class DoubanSite extends AbstractVideoSite {
                 }
             }
         }
+        log.info("Collected {} movies", subjects.size());
         return subjects;
     }
 
