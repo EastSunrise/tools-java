@@ -14,13 +14,12 @@ import wsg.tools.internet.video.jackson.deserializer.YearExtDeserializer;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Object of a subject.
+ * Subject of a movie or series.
  *
  * @author Kingen
  * @since 2020/6/27
@@ -126,17 +125,6 @@ public class Subject {
     private Money boxOffice;
     private String production;
 
-    @Setter
-    @Getter
-    private static class Photo {
-        private String thumb;
-        private String image;
-        private String cover;
-        private String alt;
-        private Long id;
-        private String icon;
-    }
-
     /**
      * for trailer and bloop
      */
@@ -154,19 +142,7 @@ public class Subject {
 
     @Setter
     @Getter
-    private static class Review {
-        private Rating rating;
-        private String title;
-        private Long subjectId;
-        private User author;
-        private String summary;
-        private String alt;
-        private Long id;
-    }
-
-    @Setter
-    @Getter
-    private static class User {
+    static class User {
         private String uid;
         private String avatar;
         private String signature;
@@ -177,19 +153,7 @@ public class Subject {
 
     @Setter
     @Getter
-    private static class Comment {
-        private Rating rating;
-        private Integer usefulCount;
-        private User author;
-        private Long subjectId;
-        private String content;
-        private LocalDateTime createdAt;
-        private Long id;
-    }
-
-    @Setter
-    @Getter
-    private static class Rating {
+    static class Rating {
         private Integer max;
         private Double average;
         private Map<Integer, Integer> details;

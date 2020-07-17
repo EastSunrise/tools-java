@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Object of an image.
+ * An image.
  *
  * @author Kingen
  * @since 2020/6/30

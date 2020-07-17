@@ -15,9 +15,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.internet.video.entity.Celebrity;
-import wsg.tools.internet.video.entity.Subject;
+import wsg.tools.internet.video.entity.*;
 import wsg.tools.internet.video.enums.CatalogEnum;
+import wsg.tools.internet.video.enums.City;
 import wsg.tools.internet.video.enums.RecordEnum;
 
 import java.net.URI;
@@ -46,6 +46,7 @@ public class DoubanSite extends AbstractVideoSite {
 
     public static final LocalDate START_DATE = LocalDate.of(2005, 3, 6);
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
+    private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d)+\\)");
 
     private String apiKey;
 
@@ -55,7 +56,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Collect user movies data since startDate.
+     * Returns user collected subjects data since startDate.
      */
     public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws HttpResponseException {
         log.info("Collect movies of user {} since {}", userId, startDate);
@@ -84,7 +85,45 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Obtains movie subject through api, with id getDeserializer IMDb acquired by parsing the web page getDeserializer the subject.
+     * Returns user collected celebrities data.
+     */
+    public List<Celebrity> moviePeopleCelebrities(long userId) throws HttpResponseException {
+        log.info("Collect celebrities of user {}", userId);
+        List<Celebrity> celebrities = new LinkedList<>();
+        int start = 0;
+        while (true) {
+            PageResult<Celebrity> pageResult = parseCreatorsPage(userId, CatalogEnum.MOVIE, start);
+            celebrities.addAll(pageResult.data);
+            start += pageResult.count;
+            if (start >= pageResult.total) {
+                break;
+            }
+        }
+        log.info("Collected {} movies", celebrities.size());
+        return celebrities;
+    }
+
+    /**
+     * Returns user collected subjects data.
+     */
+    public List<Subject> moviePeopleSubjects(long userId, RecordEnum record) throws HttpResponseException {
+        log.info("Collected movies of {} from user {}", record.getPath(), userId);
+        List<Subject> subjects = new LinkedList<>();
+        int start = 0;
+        while (true) {
+            PageResult<Subject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
+            subjects.addAll(pageResult.data);
+            start += pageResult.count;
+            if (start >= pageResult.total) {
+                break;
+            }
+        }
+        log.info("Collected {} movies", subjects.size());
+        return subjects;
+    }
+
+    /**
+     * Obtains movie subject through api, with id of IMDb acquired by parsing the web page of the subject.
      * <p>
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
@@ -94,8 +133,28 @@ public class DoubanSite extends AbstractVideoSite {
         return subject;
     }
 
+    public List<Photo> apiMovieSubjectPhotos(long subjectId) throws HttpResponseException {
+        return getApiObjects("/v2/movie/subject/%d/photos", subjectId);
+    }
+
+    public List<Review> apiMovieSubjectReviews(long subjectId) throws HttpResponseException {
+        return getApiObjects("/v2/movie/subject/%d/reviews", subjectId);
+    }
+
+    public List<Comment> apiMovieSubjectComments(long subjectId) throws HttpResponseException {
+        return getApiObjects("/v2/movie/subject/%d/comments", subjectId);
+    }
+
     public Celebrity apiMovieCelebrity(long id) throws HttpResponseException {
         return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
+    }
+
+    public List<Photo> apiMovieCelebrityPhotos(long celebrityId) throws HttpResponseException {
+        return getApiObjects("/v2/movie/celebrity/%d/photos", celebrityId);
+    }
+
+    public List<Subject> apiMovieCelebrityWorks(long celebrityId) throws HttpResponseException {
+        return getApiObjects("/v2/movie/celebrity/%d/works", celebrityId);
     }
 
     public List<Subject> apiMovieTop250() throws HttpResponseException {
@@ -104,6 +163,18 @@ public class DoubanSite extends AbstractVideoSite {
 
     public List<Subject> apiMovieWeekly() throws HttpResponseException {
         return getApiObjects("/v2/movie/weekly");
+    }
+
+    public List<Subject> apiMovieNewMovies() throws HttpResponseException {
+        return getApiObjects("/v2/movie/new_movies");
+    }
+
+    public List<Subject> apiMovieComingSoon() throws HttpResponseException {
+        return getApiObjects("/v2/movie/coming_soon");
+    }
+
+    public List<Subject> apiMovieInTheaters(City city) throws HttpResponseException {
+        return getApiObjects("/v2/movie/in_theaters", Parameter.of("city", city.getNo()));
     }
 
     @Override
@@ -118,9 +189,9 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Parse pages getDeserializer subjects.
+     * Parse pages of subjects.
      * <p>
-     * This is supplement getDeserializer {@link #movieSubject(long)} (long)} to get IMDb identity getDeserializer a subject.
+     * This is supplement of {@link #movieSubject(long)} (long)} to get IMDb identity of a subject.
      * <p>
      * Same as {@link #movieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
      */
@@ -160,7 +231,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     /**
-     * Parse pages getDeserializer user collections to get user data.
+     * Parse pages of user collections to get user data.
      *
      * @param catalog movie/book/music/...
      * @param record  wish/do/collect
@@ -169,7 +240,7 @@ public class DoubanSite extends AbstractVideoSite {
     private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri(String.format("/people/%d/%s", userId, record.name().toLowerCase()), catalog.name().toLowerCase(),
+            uri = buildUri(String.format("/people/%d/%s", userId, record.getPath()), catalog.getPath(),
                     Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -196,6 +267,36 @@ public class DoubanSite extends AbstractVideoSite {
                 Integer.parseInt(parts[1]) - Integer.parseInt(parts[0]) + 1, Integer.parseInt(parts[2]), subjects);
     }
 
+    /**
+     * Parse pages of user collected creators.
+     *
+     * @param catalog movie/book/music/...
+     * @param start   start index
+     */
+    private PageResult<Celebrity> parseCreatorsPage(long userId, CatalogEnum catalog, int start) throws HttpResponseException {
+        URI uri;
+        try {
+            uri = buildUri(String.format("/people/%d/%s", userId, catalog.getCreator().getPath()), catalog.getPath(),
+                    Parameter.of("start", start)).build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        Document document = getDocument(uri, false);
+        List<Celebrity> celebrities = new LinkedList<>();
+        String itemClass = ".item";
+        for (Element div : document.select(itemClass)) {
+            Element a = div.selectFirst(".title").selectFirst(HTML_A);
+            Celebrity celebrity = new Celebrity();
+            String href = a.attr("href");
+            celebrity.setDbId(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
+            celebrities.add(celebrity);
+        }
+
+        Element title = document.selectFirst(HTML_TITLE);
+        Matcher matcher = AssertUtils.matches(CREATORS_PAGE_TITLE_REGEX, title.text().strip());
+        return new PageResult<>(start, celebrities.size(), Integer.parseInt(matcher.group(1)), celebrities);
+    }
+
     private <T> T getApiObject(String path, Class<T> clazz, Parameter... params) throws HttpResponseException {
         URIBuilder builder = super.buildUri(path, "api", params);
         builder.addParameter("apikey", apiKey);
@@ -206,11 +307,15 @@ public class DoubanSite extends AbstractVideoSite {
         }
     }
 
-    private <T> List<T> getApiObjects(String path) throws HttpResponseException {
+    private <T> List<T> getApiObjects(String path, Object... pathArgs) throws HttpResponseException {
+        return getApiObjects(path, null, pathArgs);
+    }
+
+    private <T> List<T> getApiObjects(String path, Parameter parameter, Object... pathArgs) throws HttpResponseException {
         int start = 0;
         List<T> list = new LinkedList<>();
         while (true) {
-            URIBuilder builder = super.buildUri(path, "api", Parameter.of("start", start));
+            URIBuilder builder = super.buildUri(String.format(path, pathArgs), "api", Parameter.of("start", start), parameter);
             builder.addParameter("apikey", apiKey);
             PageResult<T> pageResult;
             try {

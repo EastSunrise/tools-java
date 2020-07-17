@@ -35,9 +35,9 @@ public class BeanUtilExt {
     /**
      * Copy properties from an object to another object.
      * <p>
-     * Ignore a property if its value getDeserializer the destination object is not null;
-     * Ignore a property if its value getDeserializer the original object is null.
-     * It means that properties getDeserializer the destination object are more important.
+     * Ignore a property if its value of the destination object is not null;
+     * Ignore a property if its value of the original object is null.
+     * It means that properties of the destination object are more important.
      */
     public static void copyPropertiesExceptNull(final Object dest, final Object orig) {
         copyPropertiesExceptNull(dest, orig, false, true);
@@ -46,8 +46,8 @@ public class BeanUtilExt {
     /**
      * Copy properties from an object to another object.
      *
-     * @param replaced   whether replace the non-null values getDeserializer destination while copying
-     * @param ignoreNull whether ignore null-value properties getDeserializer the original object
+     * @param replaced   whether replace the non-null values of destination while copying
+     * @param ignoreNull whether ignore null-value properties of the original object
      */
     public static void copyPropertiesExceptNull(final Object dest, final Object orig, boolean replaced, boolean ignoreNull) {
         Objects.requireNonNull(dest);

@@ -2,6 +2,7 @@ package wsg.tools.boot.pojo.enums;
 
 import wsg.tools.common.jackson.intf.CodeSerializable;
 import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.internet.base.PathParameterized;
 
 /**
  * Subtype of the subject
@@ -9,7 +10,7 @@ import wsg.tools.common.jackson.intf.TitleSerializable;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum SubtypeEnum implements CodeSerializable<Integer>, TitleSerializable {
+public enum SubtypeEnum implements CodeSerializable<Integer>, TitleSerializable, PathParameterized {
     /**
      * Movie
      */
@@ -58,5 +59,13 @@ public enum SubtypeEnum implements CodeSerializable<Integer>, TitleSerializable 
     @Override
     public String getTitle() {
         return title;
+    }
+
+    @Override
+    public String getPath() {
+        if (MOVIE.equals(this)) {
+            return "Movies";
+        }
+        return "TV";
     }
 }

@@ -1,10 +1,11 @@
 package wsg.tools.internet.video.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Object of a celebrity.
+ * Celebrities of subjects.
  *
  * @author Kingen
  * @since 2020/6/30
@@ -16,5 +17,6 @@ public class Celebrity {
     private String nameEn;
     private String name;
     private String alt;
-    private Long id;
+    @JsonAlias("id")
+    private Long dbId;
 }

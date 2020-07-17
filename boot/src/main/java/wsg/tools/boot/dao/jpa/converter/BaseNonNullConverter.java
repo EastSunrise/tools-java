@@ -26,9 +26,9 @@ public abstract class BaseNonNullConverter<JavaType, DbType> implements Attribut
     }
 
     /**
-     * Deserialize data getDeserializer db to a Java object
+     * Deserialize data of db to a Java object
      *
-     * @param dbData data getDeserializer db, not null
+     * @param dbData data of db, not null
      * @return target object
      */
     protected abstract JavaType deserialize(DbType dbData);

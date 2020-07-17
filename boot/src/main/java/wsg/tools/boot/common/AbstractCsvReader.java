@@ -29,21 +29,21 @@ public abstract class AbstractCsvReader<T> {
     }
 
     /**
-     * Read list getDeserializer data from a multipart file.
+     * Read list of data from a multipart file.
      *
      * @param file target file, not null
-     * @return list getDeserializer data
+     * @return list of data
      */
     public List<T> readMultipartFile(MultipartFile file) throws IOException {
         return readMultipartFile(file, StandardCharsets.UTF_8);
     }
 
     /**
-     * Read list getDeserializer data from a multipart file with a specified charset.
+     * Read list of data from a multipart file with a specified charset.
      *
      * @param file    target file, not null
      * @param charset charset
-     * @return list getDeserializer data
+     * @return list of data
      */
     public List<T> readMultipartFile(MultipartFile file, Charset charset) throws IOException {
         Objects.requireNonNull(file);
@@ -62,7 +62,7 @@ public abstract class AbstractCsvReader<T> {
     /**
      * Obtains an object from the record
      *
-     * @param record a record getDeserializer a line
+     * @param record a record of a line
      * @return target object
      */
     protected abstract T readRecord(CSVRecord record);

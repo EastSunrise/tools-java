@@ -46,6 +46,8 @@ public abstract class BaseSite {
     protected static final String HTML_A = "a";
     protected static final String HTML_LI = "li";
     protected static final String HTML_SELECT = "select";
+    protected static final String HTML_H1 = "h1";
+    protected static final String HTML_TITLE = "title";
     private static final int TIME_OUT = 30000;
 
     @Getter
@@ -202,7 +204,9 @@ public abstract class BaseSite {
         URIBuilder uriBuilder = new URIBuilder().setScheme(scheme.toString()).setPath(path);
         if (params != null) {
             for (Pair<String, String> pair : params) {
-                uriBuilder.addParameter(pair.getKey(), pair.getValue());
+                if (pair != null) {
+                    uriBuilder.addParameter(pair.getKey(), pair.getValue());
+                }
             }
         }
         String host = domain;

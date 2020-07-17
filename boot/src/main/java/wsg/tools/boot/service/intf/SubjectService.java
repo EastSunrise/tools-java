@@ -33,22 +33,22 @@ public interface SubjectService extends BaseService<SubjectDto, SubjectEntity, L
      *
      * @param userId    user id
      * @param startDate since when
-     * @return count getDeserializer collected subjects
+     * @return count of collected subjects
      */
     Result importDouban(long userId, LocalDate startDate);
 
     /**
      * Import subjects from IMDb with ids.
      *
-     * @param ids ids getDeserializer IMDb
-     * @return count getDeserializer imported subjects
+     * @param ids ids of IMDb
+     * @return count of imported subjects
      */
     Result importImdbIds(List<String> ids);
 
     /**
      * Play specified subject
      *
-     * @param id id getDeserializer subject
+     * @param id id of subject
      * @return result
      */
     Result play(long id);
