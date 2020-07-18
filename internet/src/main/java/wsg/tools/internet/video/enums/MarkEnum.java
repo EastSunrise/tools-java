@@ -1,8 +1,8 @@
-package wsg.tools.boot.pojo.enums;
+package wsg.tools.internet.video.enums;
 
 import wsg.tools.common.jackson.intf.CodeSerializable;
 import wsg.tools.common.jackson.intf.TitleSerializable;
-import wsg.tools.internet.video.enums.RecordEnum;
+import wsg.tools.internet.base.PathParameterized;
 
 /**
  * Enum of marking type.
@@ -10,11 +10,10 @@ import wsg.tools.internet.video.enums.RecordEnum;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer> {
+public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer>, PathParameterized {
     /**
-     * Unmarked/wish/do/collect
+     * wish/do/collect
      */
-    UNMARKED(0, "未标记"),
     WISH(1, "想看"),
     DO(2, "在看"),
     COLLECT(3, "看过");
@@ -27,13 +26,6 @@ public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer> {
         this.title = title;
     }
 
-    public static MarkEnum of(RecordEnum record) {
-        if (record != null) {
-            return MarkEnum.valueOf(record.name());
-        }
-        return UNMARKED;
-    }
-
     @Override
     public String getTitle() {
         return title;
@@ -42,5 +34,10 @@ public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer> {
     @Override
     public Integer getCode() {
         return code;
+    }
+
+    @Override
+    public String getPath() {
+        return name().toLowerCase();
     }
 }

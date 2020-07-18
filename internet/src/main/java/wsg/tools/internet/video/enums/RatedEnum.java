@@ -26,7 +26,7 @@ public enum RatedEnum implements AkaSerializable<String> {
     R("R"),
     KT("KT"),
     PASSED("Passed"),
-    ;
+    X("X");
 
     private String text;
 

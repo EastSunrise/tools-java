@@ -19,10 +19,6 @@
             <groupId>wsg.tools</groupId>
             <artifactId>common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jcl</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>

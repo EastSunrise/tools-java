@@ -16,12 +16,9 @@ import wsg.tools.boot.pojo.dto.SubjectDto;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity_;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.MarkEnum;
-import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.util.SystemUtils;
-import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.site.DoubanSite;
 
 import javax.annotation.Nullable;
@@ -29,11 +26,8 @@ import javax.persistence.criteria.Predicate;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Implement of subject service.
@@ -49,6 +43,60 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
     private SubjectRepository subjectRepository;
 
     @Override
+    public Result importDouban(long userId, LocalDate since) {
+        if (since == null) {
+            since = subjectRepository.findMaxMarkDate();
+            if (since == null) {
+                since = DoubanSite.START_DATE;
+            }
+        }
+        log.info("Start to import douban subjects of {} since {}", userId, since);
+        final int[] count = {0};
+        try {
+            List<SubjectEntity> entities = videoConfig.collectUserMovies(userId, since);
+            entities.forEach(source -> {
+                SubjectEntity entity = getSubjectInfo(source.getDbId(), null);
+                if (entity != null) {
+                    BeanUtilExt.copyPropertiesExceptNull(entity, source);
+                } else {
+                    entity = source;
+                }
+                SubjectEntity finalEntity = entity;
+                if (subjectRepository.insertIgnore(entity, () -> subjectRepository.findByDbId(finalEntity.getDbId())) != null) {
+                    count[0]++;
+                }
+            });
+            Result result = Result.success();
+            result.put("total", entities.size());
+            result.put("inserted", count[0]);
+            result.put("exists", entities.size() - count[0]);
+            return result;
+        } catch (HttpResponseException e) {
+            log.error(e.getReasonPhrase());
+            return Result.fail(e);
+        }
+    }
+
+    @Override
+    public Result importImdbIds(List<String> ids) {
+        log.info("Start to import imdb watchlist.");
+        final int[] count = {0};
+        ids.forEach(id -> {
+            SubjectEntity entity = getSubjectInfo(null, id);
+            if (entity != null) {
+                if (subjectRepository.insertIgnore(entity, () -> subjectRepository.findByImdbId(entity.getImdbId())) != null) {
+                    count[0]++;
+                }
+            }
+        });
+        Result result = Result.success();
+        result.put("total", ids.size());
+        result.put("inserted", count[0]);
+        result.put("others", ids.size() - count[0]);
+        return result;
+    }
+
+    @Override
     public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
         Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
             Predicate predicate = getPredicate(querySubjectDto, root, builder);
@@ -58,32 +106,6 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             return predicate;
         };
         return PageResult.of(findAll(spec, pageable));
-    }
-
-    @Override
-    public Result importDouban(long userId, LocalDate startDate) {
-        if (startDate == null) {
-            startDate = subjectRepository.findMaxTagDate();
-            if (startDate == null) {
-                startDate = DoubanSite.START_DATE;
-            }
-        }
-        log.info("Start to import douban subjects of {} since {}", userId, startDate);
-        try {
-            return batchSaveOrUpdate(userSubjects(userId, startDate));
-        } catch (HttpResponseException e) {
-            log.error(e.getReasonPhrase());
-            return Result.fail(e);
-        }
-    }
-
-    @Override
-    public Result importImdbIds(List<String> ids) {
-        return batchSaveOrUpdate(ids.stream().map(id -> {
-            SubjectDto subject = new SubjectDto();
-            subject.setImdbId(id);
-            return subject;
-        }).collect(Collectors.toList()));
     }
 
     @Override
@@ -97,12 +119,7 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             return Result.fail("Not archived yet.");
         }
 
-        File file;
-        if (SubtypeEnum.MOVIE.equals(subject.getSubtype())) {
-            file = new File(subject.getLocation());
-        } else {
-            file = Objects.requireNonNull(new File(subject.getLocation()).listFiles())[0];
-        }
+        File file = null;
         try {
             SystemUtils.openFile(file);
         } catch (IOException e) {
@@ -112,70 +129,32 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
         return Result.success();
     }
 
-    private Result batchSaveOrUpdate(List<SubjectDto> subjects) {
-        final int[] count = {0};
-        subjects.forEach(source -> {
-            if (source == null) {
-                return;
-            }
-            SubjectDto subject = getSubjectInfo(source.getDbId(), source.getImdbId());
-            if (subject != null) {
-                BeanUtilExt.copyPropertiesExceptNull(source, subject);
-            }
-            updateOrInsert(source, () -> subjectRepository.findByDbIdAndImdbId(source.getDbId(), source.getImdbId()));
-            count[0]++;
-        });
-        log.info("Finish batch, total: {}, success: {}, fail: {}", subjects.size(), count[0], subjects.size() - count[0]);
-        return Result.batchResult(subjects.size(), count[0]);
-    }
-
-    private List<SubjectDto> userSubjects(long userId, LocalDate startDate) throws HttpResponseException {
-        return videoConfig.getDoubanSite().collectUserMovies(userId, startDate)
-                .stream().map(s -> {
-                    SubjectDto subject = BeanUtilExt.convert(s, SubjectDto.class);
-                    subject.setMark(MarkEnum.of(s.getRecord()));
-                    return subject;
-                }).collect(Collectors.toList());
-    }
-
     @Nullable
-    private SubjectDto getSubjectInfo(Long dbId, String imdbId) {
-        SubjectDto subjectDto = new SubjectDto();
+    private SubjectEntity getSubjectInfo(Long dbId, String imdbId) {
+        SubjectEntity subject = null;
         if (dbId != null) {
             try {
-                Subject movieSubject = videoConfig.getDoubanSite().movieSubject(dbId);
-                BeanUtilExt.copyPropertiesExceptNull(subjectDto, movieSubject);
-                if (movieSubject.getSubtype() != null) {
-                    subjectDto.setSubtype(SubtypeEnum.of(movieSubject.getSubtype()));
-                }
+                subject = videoConfig.getDouban(dbId);
             } catch (HttpResponseException e) {
                 log.error(e.getMessage());
             }
         }
-        if (subjectDto.getImdbId() != null) {
-            imdbId = subjectDto.getImdbId();
+        if (subject != null && subject.getImdbId() != null) {
+            imdbId = subject.getImdbId();
         }
         if (imdbId != null) {
             try {
-                Subject omSubject = videoConfig.getOmdbSite().getSubjectById(imdbId);
-                BeanUtilExt.copyPropertiesExceptNull(subjectDto, omSubject);
-                if (omSubject.getSubtype() != null) {
-                    subjectDto.setSubtype(SubtypeEnum.of(omSubject.getSubtype()));
-                }
-                if (omSubject.getRuntime() != null) {
-                    if (subjectDto.getDurations() == null) {
-                        subjectDto.setDurations(new LinkedList<>());
-                    }
-                    subjectDto.getDurations().add(omSubject.getRuntime());
+                SubjectEntity entity = videoConfig.getImdb(imdbId);
+                if (subject != null) {
+                    BeanUtilExt.copyPropertiesExceptNull(subject, entity);
+                } else {
+                    subject = entity;
                 }
             } catch (HttpResponseException e) {
                 log.error(e.getMessage());
             }
         }
-        if (subjectDto.getDbId() == null && subjectDto.getImdbId() == null) {
-            return null;
-        }
-        return subjectDto;
+        return subject;
     }
 
     @Autowired

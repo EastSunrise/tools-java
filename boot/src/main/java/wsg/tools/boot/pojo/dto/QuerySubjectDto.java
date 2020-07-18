@@ -4,8 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseQueryDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.MarkEnum;
-import wsg.tools.boot.pojo.enums.SubtypeEnum;
+import wsg.tools.boot.pojo.enums.TypeEnum;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 /**
  * Condition for querying subjects.
@@ -17,9 +17,9 @@ import wsg.tools.boot.pojo.enums.SubtypeEnum;
 @Setter
 public class QuerySubjectDto extends BaseQueryDto {
 
-    private MarkEnum status;
-    private SubtypeEnum subtype;
+    private MarkEnum mark;
     private ArchivedEnum archived;
+    private TypeEnum type;
     private Boolean nullDuration = false;
     private Boolean badSeason = false;
     private Boolean nullImdb = false;

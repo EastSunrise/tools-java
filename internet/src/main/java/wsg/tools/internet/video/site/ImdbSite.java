@@ -5,18 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
-import wsg.tools.internet.video.entity.Subject;
-import wsg.tools.internet.video.enums.SubtypeEnum;
+import wsg.tools.internet.video.entity.imdb.ImdbSubject;
+import wsg.tools.internet.video.enums.ImdbTypeEnum;
 
 import java.net.URISyntaxException;
-import java.time.LocalDate;
-import java.time.Year;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -38,14 +33,14 @@ public class ImdbSite extends AbstractVideoSite {
     /**
      * Get subject info by parsing the html page
      */
-    public Subject title(String tt) throws HttpResponseException {
+    public ImdbSubject title(String tt) throws HttpResponseException {
         Document document;
         try {
             document = getDocument(buildUri("/title/" + tt, null).build());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        Subject subject = new Subject();
+        ImdbSubject subject = new ImdbSubject();
         subject.setImdbId(tt);
 
         Element head = document.selectFirst("head");
@@ -56,28 +51,9 @@ public class ImdbSite extends AbstractVideoSite {
             throw new RuntimeException(e);
         }
 
-        SubtypeEnum type = EnumUtilExt.deserializeAka(root.get("@type").textValue(), SubtypeEnum.class);
-        subject.setSubtype(type);
-        String yearStr;
-        if (SubtypeEnum.MOVIE.equals(type)) {
-            Matcher matcher = AssertUtils.matches(MOVIE_TITLE_REGEX, head.selectFirst("title").text());
-            yearStr = matcher.group(3);
-        } else if (SubtypeEnum.TV_SERIES.equals(type) || SubtypeEnum.TV_EPISODE.equals(type)) {
-            Matcher matcher = AssertUtils.matches(TV_TITLE_REGEX, head.selectFirst("title").text());
-            yearStr = matcher.group(4);
-        } else if (SubtypeEnum.CREATIVE_WORK.equals(type)) {
-            Matcher matcher = AssertUtils.matches(VIDEO_TITLE_REGEX, head.selectFirst("title").text());
-            yearStr = matcher.group(3);
-        } else {
-            throw new RuntimeException("Unknown subtype " + type);
-        }
-        subject.setYear(Year.of(Integer.parseInt(yearStr)));
-        subject.setText(root.get("name").textValue());
+        ImdbTypeEnum type = EnumUtilExt.deserializeAka(root.get("@type").textValue(), ImdbTypeEnum.class);
+        subject.setType(type);
 
-        JsonNode datePublished = root.get("datePublished");
-        if (datePublished != null) {
-            subject.setReleases(List.of(LocalDate.parse(datePublished.textValue())));
-        }
         Map<String, Element> details = new HashMap<>(10);
         String detailsId = "#titleDetails", blockClass = ".txt-block";
         for (Element element : document.selectFirst(detailsId).select(blockClass)) {

@@ -4,9 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.MarkEnum;
-import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.internet.video.enums.Language;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -34,7 +33,6 @@ public class SubjectDto extends BaseDto {
     private LocalDate tagDate;
     private String originalTitle;
     private List<String> aka;
-    private SubtypeEnum subtype;
     private List<Language> languages;
     private List<Duration> durations;
     private Year year;

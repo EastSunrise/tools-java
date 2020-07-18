@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -14,11 +14,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.jackson.deserializer.EnumAkaDeserializers;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.internet.video.entity.*;
-import wsg.tools.internet.video.enums.CatalogEnum;
-import wsg.tools.internet.video.enums.City;
-import wsg.tools.internet.video.enums.RecordEnum;
+import wsg.tools.internet.video.entity.douban.*;
+import wsg.tools.internet.video.enums.*;
+import wsg.tools.internet.video.jackson.deserializer.CountryAkaDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.LanguageAkaDeserializer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -58,16 +59,16 @@ public class DoubanSite extends AbstractVideoSite {
     /**
      * Returns user collected subjects data since startDate.
      */
-    public List<Subject> collectUserMovies(long userId, LocalDate startDate) throws HttpResponseException {
+    public List<DoubanSubject> collectUserMovies(long userId, LocalDate startDate) throws HttpResponseException {
         log.info("Collect movies of user {} since {}", userId, startDate);
-        List<Subject> subjects = new LinkedList<>();
-        for (RecordEnum record : RecordEnum.values()) {
+        List<DoubanSubject> subjects = new LinkedList<>();
+        for (MarkEnum mark : MarkEnum.values()) {
             int start = 0;
             while (true) {
                 boolean done = false;
-                PageResult<Subject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
-                for (Subject subject : pageResult.data) {
-                    if (!subject.getTagDate().isBefore(startDate)) {
+                PageResult<DoubanSubject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, mark, start);
+                for (DoubanSubject subject : pageResult.data) {
+                    if (!subject.getMarkDate().isBefore(startDate)) {
                         subjects.add(subject);
                     } else {
                         done = true;
@@ -106,12 +107,12 @@ public class DoubanSite extends AbstractVideoSite {
     /**
      * Returns user collected subjects data.
      */
-    public List<Subject> moviePeopleSubjects(long userId, RecordEnum record) throws HttpResponseException {
-        log.info("Collected movies of {} from user {}", record.getPath(), userId);
-        List<Subject> subjects = new LinkedList<>();
+    public List<DoubanSubject> moviePeopleSubjects(long userId, MarkEnum mark) throws HttpResponseException {
+        log.info("Collected movies of {} from user {}", mark.getPath(), userId);
+        List<DoubanSubject> subjects = new LinkedList<>();
         int start = 0;
         while (true) {
-            PageResult<Subject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, record, start);
+            PageResult<DoubanSubject> pageResult = parseCollectionsPage(userId, CatalogEnum.MOVIE, mark, start);
             subjects.addAll(pageResult.data);
             start += pageResult.count;
             if (start >= pageResult.total) {
@@ -127,8 +128,8 @@ public class DoubanSite extends AbstractVideoSite {
      * <p>
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
-    public Subject movieSubject(long dbId) throws HttpResponseException {
-        Subject subject = getApiObject(String.format("/v2/movie/subject/%d", dbId), Subject.class);
+    public DoubanSubject movieSubject(long dbId) throws HttpResponseException {
+        DoubanSubject subject = getApiObject(String.format("/v2/movie/subject/%d", dbId), DoubanSubject.class);
         subject.setImdbId(parseSubjectPage(dbId).getImdbId());
         return subject;
     }
@@ -153,27 +154,27 @@ public class DoubanSite extends AbstractVideoSite {
         return getApiObjects("/v2/movie/celebrity/%d/photos", celebrityId);
     }
 
-    public List<Subject> apiMovieCelebrityWorks(long celebrityId) throws HttpResponseException {
+    public List<DoubanSubject> apiMovieCelebrityWorks(long celebrityId) throws HttpResponseException {
         return getApiObjects("/v2/movie/celebrity/%d/works", celebrityId);
     }
 
-    public List<Subject> apiMovieTop250() throws HttpResponseException {
+    public List<DoubanSubject> apiMovieTop250() throws HttpResponseException {
         return getApiObjects("/v2/movie/top250");
     }
 
-    public List<Subject> apiMovieWeekly() throws HttpResponseException {
+    public List<DoubanSubject> apiMovieWeekly() throws HttpResponseException {
         return getApiObjects("/v2/movie/weekly");
     }
 
-    public List<Subject> apiMovieNewMovies() throws HttpResponseException {
+    public List<DoubanSubject> apiMovieNewMovies() throws HttpResponseException {
         return getApiObjects("/v2/movie/new_movies");
     }
 
-    public List<Subject> apiMovieComingSoon() throws HttpResponseException {
+    public List<DoubanSubject> apiMovieComingSoon() throws HttpResponseException {
         return getApiObjects("/v2/movie/coming_soon");
     }
 
-    public List<Subject> apiMovieInTheaters(City city) throws HttpResponseException {
+    public List<DoubanSubject> apiMovieInTheaters(City city) throws HttpResponseException {
         return getApiObjects("/v2/movie/in_theaters", Parameter.of("city", city.getNo()));
     }
 
@@ -182,7 +183,11 @@ public class DoubanSite extends AbstractVideoSite {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
         objectMapper.registerModule(new SimpleModule()
-                .addDeserializer(LocalDate.class, LocalDateDeserializer.INSTANCE)
+                .addDeserializer(Language.class, LanguageAkaDeserializer.INSTANCE)
+                .addDeserializer(Country.class, CountryAkaDeserializer.INSTANCE)
+                .addDeserializer(GenreEnum.class, EnumAkaDeserializers.getStringDeserializer(GenreEnum.class))
+                .addDeserializer(SubtypeEnum.class, EnumAkaDeserializers.getStringDeserializer(SubtypeEnum.class))
+        ).registerModule(new JavaTimeModule()
                 .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
         );
         return objectMapper;
@@ -195,14 +200,14 @@ public class DoubanSite extends AbstractVideoSite {
      * <p>
      * Same as {@link #movieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
      */
-    private Subject parseSubjectPage(long dbId) throws HttpResponseException {
+    private DoubanSubject parseSubjectPage(long dbId) throws HttpResponseException {
         Document document;
         try {
             document = getDocument(buildUri("/subject/" + dbId, "movie").build());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        Subject subject = new Subject();
+        DoubanSubject subject = new DoubanSubject();
         subject.setDbId(dbId);
         Element wrapper = document.getElementById("wrapper");
 
@@ -234,30 +239,30 @@ public class DoubanSite extends AbstractVideoSite {
      * Parse pages of user collections to get user data.
      *
      * @param catalog movie/book/music/...
-     * @param record  wish/do/collect
+     * @param mark    wish/do/collect
      * @param start   start index
      */
-    private PageResult<Subject> parseCollectionsPage(long userId, CatalogEnum catalog, RecordEnum record, int start) throws HttpResponseException {
+    private PageResult<DoubanSubject> parseCollectionsPage(long userId, CatalogEnum catalog, MarkEnum mark, int start) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri(String.format("/people/%d/%s", userId, record.getPath()), catalog.getPath(),
+            uri = buildUri(String.format("/people/%d/%s", userId, mark.getPath()), catalog.getPath(),
                     Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
         Document document = getDocument(uri, false);
-        List<Subject> subjects = new LinkedList<>();
+        List<DoubanSubject> subjects = new LinkedList<>();
         String listClass = ".list-view";
         for (Element li : document.selectFirst(listClass).select(HTML_LI)) {
             Element div = li.selectFirst(".title");
             Element a = div.selectFirst(">a");
             List<String> titles = Arrays.stream(a.text().strip().split("/")).map(String::strip).collect(Collectors.toList());
-            Subject subject = new Subject();
+            DoubanSubject subject = new DoubanSubject();
             String href = a.attr("href");
             subject.setDbId(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
             subject.setTitle(titles.get(0));
-            subject.setTagDate(LocalDate.parse(div.nextElementSibling().text().strip()));
-            subject.setRecord(record);
+            subject.setMarkDate(LocalDate.parse(div.nextElementSibling().text().strip()));
+            subject.setMark(mark);
             subjects.add(subject);
         }
 

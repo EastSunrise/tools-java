@@ -27,6 +27,18 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
     E insert(E entity);
 
     /**
+     * Insert a new entity.
+     * <p>
+     * Ignore it if exists.
+     *
+     * @param entity   entity to insert
+     * @param supplier supplier to supply source entity
+     * @return entity inserted, null if exists
+     * @throws IllegalArgumentException if the entity exists.
+     */
+    E insertIgnore(E entity, @Nullable Supplier<Optional<E>> supplier);
+
+    /**
      * Update an entity by {@link ID}.
      *
      * @param entity entity to update

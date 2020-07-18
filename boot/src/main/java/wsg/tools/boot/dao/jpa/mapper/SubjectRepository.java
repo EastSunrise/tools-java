@@ -20,16 +20,22 @@ public interface SubjectRepository extends BaseRepository<SubjectEntity, Long> {
      *
      * @return max of tag date
      */
-    @Query("select max(tagDate) from SubjectEntity")
-    LocalDate findMaxTagDate();
+    @Query("select max(markDate) from SubjectEntity")
+    LocalDate findMaxMarkDate();
 
     /**
-     * Query by db id and imdb id.
+     * Query by db id.
      *
-     * @param dbId   db id
-     * @param imdbId IMDb id
+     * @param dbId db id
      * @return result
      */
-    @Query("from SubjectEntity where (dbId is null or dbId = ?1) and (imdbId is null or imdbId = ?2)")
-    Optional<SubjectEntity> findByDbIdAndImdbId(Long dbId, String imdbId);
+    Optional<SubjectEntity> findByDbId(Long dbId);
+
+    /**
+     * Query by imdb id.
+     *
+     * @param imdbId imdb id
+     * @return result
+     */
+    Optional<SubjectEntity> findByImdbId(String imdbId);
 }

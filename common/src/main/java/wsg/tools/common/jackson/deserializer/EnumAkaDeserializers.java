@@ -15,7 +15,11 @@ public class EnumAkaDeserializers {
         return new EnumAkaDeserializer<>(eClass, akaClass);
     }
 
-    public static class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaSerializable<Aka>> extends AbstractNonNullDeserializer<E, Aka> {
+    public static <E extends Enum<E> & AkaSerializable<String>> EnumAkaDeserializer<String, E> getStringDeserializer(Class<E> eClass) {
+        return getDeserializer(String.class, eClass);
+    }
+
+    protected static class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaSerializable<Aka>> extends AbstractNonNullDeserializer<E, Aka> {
 
         protected EnumAkaDeserializer(Class<E> javaType, Class<Aka> jsonType) {
             super(javaType, jsonType);

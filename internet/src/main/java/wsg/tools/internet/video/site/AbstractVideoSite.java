@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.video.jackson.VideoModule;
 
 /**
  * Abstract class for basis of video sites
@@ -22,6 +21,6 @@ public abstract class AbstractVideoSite extends BaseSite {
 
     @Override
     public ObjectMapper getObjectMapper() {
-        return super.getObjectMapper().registerModule(new VideoModule());
+        return super.getObjectMapper();
     }
 }

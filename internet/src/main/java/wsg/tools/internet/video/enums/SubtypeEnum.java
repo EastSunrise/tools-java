@@ -14,9 +14,7 @@ public enum SubtypeEnum implements AkaSerializable<String> {
      */
     MOVIE("movie"),
     TV("tv"),
-    TV_SERIES("series", "TVSeries"),
-    TV_EPISODE("episode", "TVEpisode"),
-    CREATIVE_WORK("CreativeWork");
+    ;
 
     private String[] aka;
 

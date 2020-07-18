@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.entity;
+package wsg.tools.internet.video.entity.douban;
 
 import lombok.Getter;
 import lombok.Setter;

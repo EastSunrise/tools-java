@@ -20,22 +20,13 @@ import java.util.List;
 public interface SubjectService extends BaseService<SubjectDto, SubjectEntity, Long> {
 
     /**
-     * Returns subjects matching the given condition
-     *
-     * @param querySubjectDto condition
-     * @param pageable        pagination
-     * @return page of subjects
-     */
-    PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable);
-
-    /**
      * Collect subjects under the user.
      *
-     * @param userId    user id
-     * @param startDate since when
+     * @param userId user id
+     * @param since  since when
      * @return count of collected subjects
      */
-    Result importDouban(long userId, LocalDate startDate);
+    Result importDouban(long userId, LocalDate since);
 
     /**
      * Import subjects from IMDb with ids.
@@ -44,6 +35,15 @@ public interface SubjectService extends BaseService<SubjectDto, SubjectEntity, L
      * @return count of imported subjects
      */
     Result importImdbIds(List<String> ids);
+
+    /**
+     * Returns subjects matching the given condition
+     *
+     * @param querySubjectDto condition
+     * @param pageable        pagination
+     * @return page of subjects
+     */
+    PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable);
 
     /**
      * Play specified subject

@@ -56,7 +56,16 @@ public abstract class AbstractCsvReader<T> {
         CSVFormat csvFormat = CSVFormat.DEFAULT.withHeader(headers).withFirstRecordAsHeader();
         CSVParser parse = CSVParser.parse(file.getInputStream(), charset, csvFormat);
         List<CSVRecord> records = parse.getRecords();
-        return records.stream().map(this::readRecord).collect(Collectors.toList());
+        return records.stream().map(this::readRecord).filter(this::remain).collect(Collectors.toList());
+    }
+
+    /**
+     * Filter elements.
+     * <p>
+     * Default to remain not-null elements.
+     */
+    protected boolean remain(T t) {
+        return t != null;
     }
 
     /**

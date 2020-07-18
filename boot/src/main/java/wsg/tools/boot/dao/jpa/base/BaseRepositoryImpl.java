@@ -44,6 +44,22 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     }
 
     @Override
+    public E insertIgnore(E entity, Supplier<Optional<E>> supplier) {
+        ID id = info.getId(entity);
+        Optional<E> one = Optional.empty();
+        if (id != null) {
+            one = findById(id);
+        } else if (supplier != null) {
+            one = supplier.get();
+        }
+        if (one.isEmpty() && info.isNew(entity)) {
+            manager.persist(entity);
+            return entity;
+        }
+        return null;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public E updateById(E entity) {
         if (info.isNew(entity)) {

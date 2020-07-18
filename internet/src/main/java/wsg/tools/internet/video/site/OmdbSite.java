@@ -4,15 +4,24 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import wsg.tools.common.jackson.deserializer.EnumAkaDeserializers;
 import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
+import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
 import wsg.tools.common.lang.Money;
 import wsg.tools.internet.video.entity.Subject;
-import wsg.tools.internet.video.enums.SearchTypeEnum;
+import wsg.tools.internet.video.entity.imdb.ImdbSubject;
+import wsg.tools.internet.video.enums.*;
+import wsg.tools.internet.video.jackson.deserializer.CountryAkaDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.LanguageAkaDeserializer;
+import wsg.tools.internet.video.jackson.handler.CommaSeparatedValueDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.handler.YearDeserializationProblemHandler;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +54,7 @@ public class OmdbSite extends AbstractVideoSite {
      *
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
-    public Subject getSubjectById(String id) throws HttpResponseException {
+    public ImdbSubject getSubjectById(String id) throws HttpResponseException {
         URI uri;
         try {
             uri = buildUri("/", null, Parameter.of("i", id), Parameter.of("plot", "full")).build();
@@ -56,8 +65,6 @@ public class OmdbSite extends AbstractVideoSite {
         if (!subject.response) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, subject.error);
         }
-        subject.setText(subject.getTitle());
-        subject.setTitle(null);
         return subject;
     }
 
@@ -97,9 +104,19 @@ public class OmdbSite extends AbstractVideoSite {
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
         objectMapper.registerModule(new SimpleModule()
-                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
+                .addDeserializer(Long.class, NumberDeserializersExt.LongDeserializer.INSTANCE)
+                .addDeserializer(Language.class, LanguageAkaDeserializer.INSTANCE)
+                .addDeserializer(Country.class, CountryAkaDeserializer.INSTANCE)
+                .addDeserializer(ImdbTypeEnum.class, EnumAkaDeserializers.getStringDeserializer(ImdbTypeEnum.class))
+                .addDeserializer(RatedEnum.class, EnumAkaDeserializers.getStringDeserializer(RatedEnum.class))
+                .addDeserializer(GenreEnum.class, EnumAkaDeserializers.getStringDeserializer(GenreEnum.class))
                 .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
+        ).registerModule(new JavaTimeModule()
+                .addDeserializer(LocalDate.class,
+                        new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
         );
+        objectMapper.addHandler(CommaSeparatedValueDeserializationProblemHandler.INSTANCE)
+                .addHandler(YearDeserializationProblemHandler.INSTANCE);
         return objectMapper;
     }
 
@@ -116,8 +133,9 @@ public class OmdbSite extends AbstractVideoSite {
     }
 
     @Setter
-    static class ResponseResult extends Subject {
-        boolean response;
+    @Getter
+    static class ResponseResult extends ImdbSubject {
+        Boolean response;
         String error;
     }
 }

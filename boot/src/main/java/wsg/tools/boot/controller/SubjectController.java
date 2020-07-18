@@ -14,9 +14,8 @@ import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.MarkEnum;
-import wsg.tools.boot.pojo.enums.SubtypeEnum;
 import wsg.tools.boot.service.intf.SubjectService;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -37,7 +36,6 @@ public class SubjectController extends AbstractController {
     @RequestMapping(value = "/subjects", method = RequestMethod.GET)
     public ResponseEntity<?> index(QuerySubjectDto querySubject, Pageable pageable, PagedResourcesAssembler<SubjectDto> assembler) {
         PageResult<SubjectDto> result = subjectService.list(querySubject, pageable);
-        result.put("subtypes", SubtypeEnum.values());
         result.put("archivedEnums", ArchivedEnum.values());
         result.put("marks", MarkEnum.values());
         return result.toResponse(assembler);

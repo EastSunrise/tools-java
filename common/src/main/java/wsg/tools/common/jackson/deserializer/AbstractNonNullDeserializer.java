@@ -3,6 +3,7 @@ package wsg.tools.common.jackson.deserializer;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.function.Function;
@@ -15,7 +16,9 @@ import java.util.function.Function;
  */
 public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends JsonDeserializer<JavaType> implements Function<JsonType, JavaType> {
 
+    @Getter
     protected Class<JavaType> javaType;
+    @Getter
     protected Class<JsonType> jsonType;
 
     protected AbstractNonNullDeserializer(Class<JavaType> javaType, Class<JsonType> jsonType) {
@@ -34,10 +37,6 @@ public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends Js
 
     @Override
     public Class<?> handledType() {
-        return javaType;
-    }
-
-    public Class<JavaType> getJavaType() {
         return javaType;
     }
 }

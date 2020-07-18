@@ -85,15 +85,15 @@ public class Result implements Serializable {
     }
 
     public Object put(String key, Object value) {
-        assert isSuccess();
+        assert success;
         return args.put(key, value);
     }
 
     public ResponseEntity<?> toResponse() {
-        if (isSuccess()) {
-            return new ResponseEntity<>(getArgs(), HttpStatus.OK);
+        if (success) {
+            return new ResponseEntity<>(args, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(message, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.entity;
+package wsg.tools.internet.video.entity.douban;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -12,10 +12,10 @@ import lombok.Setter;
 @Setter
 @Getter
 public class Review {
-    private Subject.Rating rating;
+    private Rating rating;
     private String title;
     private Long subjectId;
-    private Subject.User author;
+    private DoubanUser author;
     private String summary;
     private String alt;
     private Long id;
