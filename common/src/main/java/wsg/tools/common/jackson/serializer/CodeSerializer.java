@@ -1,6 +1,10 @@
 package wsg.tools.common.jackson.serializer;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import wsg.tools.common.jackson.intf.CodeSerializable;
+
+import java.io.IOException;
 
 /**
  * Serialize a object implementing {@link CodeSerializable<Code>} to a code.
@@ -19,7 +23,7 @@ public class CodeSerializer<Code, JavaType extends CodeSerializable<Code>> exten
     }
 
     @Override
-    public Code apply(JavaType javaType) {
-        return javaType.getCode();
+    protected void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeObject(value.getCode());
     }
 }

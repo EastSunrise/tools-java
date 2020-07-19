@@ -1,6 +1,10 @@
 package wsg.tools.common.jackson.serializer;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import wsg.tools.common.jackson.intf.TitleSerializable;
+
+import java.io.IOException;
 
 /**
  * Serialize a object implementing {@link TitleSerializable} to a title.
@@ -19,7 +23,7 @@ public class TitleSerializer<JavaType extends TitleSerializable> extends Abstrac
     }
 
     @Override
-    public String apply(JavaType javaType) {
-        return javaType.getTitle();
+    protected void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeString(value.getTitle());
     }
 }

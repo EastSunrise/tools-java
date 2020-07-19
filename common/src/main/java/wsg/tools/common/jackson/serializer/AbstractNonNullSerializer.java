@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
-import java.util.function.Function;
 
 /**
  * Base serializer to pre-handle null objects.
@@ -13,7 +12,7 @@ import java.util.function.Function;
  * @author Kingen
  * @since 2020/7/13
  */
-public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends JsonSerializer<JavaType> implements Function<JavaType, JsonType> {
+public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends JsonSerializer<JavaType> {
 
     protected Class<JavaType> javaType;
     protected Class<JsonType> jsonType;
@@ -28,8 +27,18 @@ public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends Json
         if (value == null) {
             gen.writeNull();
         }
-        gen.writeObject(apply(value));
+        serializeNonNull(value, gen, serializers);
     }
+
+    /**
+     * Serialize a non-null value
+     *
+     * @param value       value to serialize, not null
+     * @param gen         json generator
+     * @param serializers serializer provider
+     * @throws IOException io exception
+     */
+    protected abstract void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException;
 
     @Override
     public Class<JavaType> handledType() {

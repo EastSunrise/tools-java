@@ -48,7 +48,7 @@ public class CommonModule extends SimpleModule {
                 .addSerializer(CodeSerializer.getInstance(codeClass, eClass));
     }
 
-    public <JavaType extends TitleSerializable> CommonModule addTitleSerializer(Class<JavaType> javaType) {
+    public <JavaType extends TitleSerializable> CommonModule addEnumTitleSerializer(Class<JavaType> javaType) {
         return addSerializer(TitleSerializer.getInstance(javaType));
     }
 

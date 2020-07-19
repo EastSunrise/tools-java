@@ -1,6 +1,10 @@
 package wsg.tools.common.jackson.serializer;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import wsg.tools.common.jackson.intf.TextSerializable;
+
+import java.io.IOException;
 
 /**
  * Serialize a object implementing {@link TextSerializable} to a text.
@@ -19,7 +23,7 @@ public class TextSerializer<JavaType extends TextSerializable> extends AbstractN
     }
 
     @Override
-    public String apply(JavaType javaType) {
-        return javaType.getText();
+    protected void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeString(value.getText());
     }
 }
