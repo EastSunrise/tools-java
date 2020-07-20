@@ -106,6 +106,9 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             }
             return predicate;
         };
+        if (pageable == null) {
+            return PageResult.of(findAll(spec));
+        }
         return PageResult.of(findAll(spec, pageable));
     }
 

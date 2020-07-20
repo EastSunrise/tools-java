@@ -1,8 +1,8 @@
 package wsg.tools.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 
@@ -12,13 +12,17 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/13
  */
-public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends JsonSerializer<JavaType> {
+public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends StdSerializer<JavaType> {
 
-    protected Class<JavaType> javaType;
     protected Class<JsonType> jsonType;
 
     protected AbstractNonNullSerializer(Class<JavaType> javaType, Class<JsonType> jsonType) {
-        this.javaType = javaType;
+        super(javaType);
+        this.jsonType = jsonType;
+    }
+
+    protected AbstractNonNullSerializer(Class<?> javaType, Class<JsonType> jsonType, boolean dummy) {
+        super(javaType, dummy);
         this.jsonType = jsonType;
     }
 
@@ -26,6 +30,7 @@ public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends Json
     public void serialize(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if (value == null) {
             gen.writeNull();
+            return;
         }
         serializeNonNull(value, gen, serializers);
     }
@@ -39,9 +44,4 @@ public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends Json
      * @throws IOException io exception
      */
     protected abstract void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException;
-
-    @Override
-    public Class<JavaType> handledType() {
-        return javaType;
-    }
 }

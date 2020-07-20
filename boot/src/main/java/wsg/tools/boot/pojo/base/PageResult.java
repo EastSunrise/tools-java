@@ -2,10 +2,13 @@ package wsg.tools.boot.pojo.base;
 
 import lombok.Getter;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 
 /**
  * Return result with pagination info.
@@ -28,6 +31,13 @@ public class PageResult<T extends BaseDto> extends Result {
      */
     public static <T extends BaseDto> PageResult<T> of(Page<T> page) {
         return new PageResult<>(page);
+    }
+
+    /**
+     * Obtains a successful instance of {@link PageResult}
+     */
+    public static <T extends BaseDto> PageResult<T> of(List<T> list) {
+        return new PageResult<>(new PageImpl<>(list));
     }
 
     @Override

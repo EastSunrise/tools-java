@@ -17,7 +17,7 @@ public enum TypeEnum implements CodeSerializable<Integer>, TitleSerializable {
      */
     MOVIE(0, "电影"),
     SERIES(1, "剧集"),
-    SEASON(2, "季");
+    SEASON(2, "单季");
 
     private int code;
     private String title;

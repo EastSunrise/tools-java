@@ -20,8 +20,8 @@ import javax.persistence.Converter;
 public class CodeEnumJpaConverters {
 
     @Converter(autoApply = true)
-    public static class StatusEnumConverter extends CodeEnumConverter<MarkEnum> {
-        public StatusEnumConverter() {
+    public static class MarkEnumConverter extends CodeEnumConverter<MarkEnum> {
+        public MarkEnumConverter() {
             super(MarkEnum.class);
         }
     }
