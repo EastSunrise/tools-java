@@ -8,7 +8,7 @@ import org.apache.commons.csv.CSVRecord;
  * @author Kingen
  * @since 2020/7/10
  */
-public class WatchlistReader extends AbstractCsvReader<String> {
+public class WatchlistReader extends BaseCsvReader<String> {
 
     public WatchlistReader() {
         super(new String[]{

@@ -13,18 +13,18 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Abstract class to read CSV File.
+ * Base class to read CSV File.
  * <p>
  * Implement this class to read different csv file.
  *
  * @author Kingen
  * @since 2020/7/10
  */
-public abstract class AbstractCsvReader<T> {
+public abstract class BaseCsvReader<T> {
     private static final String CSV_CONTENT_TYPE = "text/csv";
     protected String[] headers;
 
-    public AbstractCsvReader(String[] headers) {
+    public BaseCsvReader(String[] headers) {
         this.headers = headers;
     }
 

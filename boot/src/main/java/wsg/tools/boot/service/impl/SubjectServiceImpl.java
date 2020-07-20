@@ -100,8 +100,9 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
     public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
         Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
             Predicate predicate = getPredicate(querySubjectDto, root, builder);
-            if (querySubjectDto.getNullDuration()) {
-                predicate = builder.and(predicate, root.get(SubjectEntity_.imdbId).isNull());
+            if (querySubjectDto.getIncomplete()) {
+                Predicate or = builder.or(root.get(SubjectEntity_.imdbId).isNull(), root.get(SubjectEntity_.dbId).isNull());
+                return builder.and(predicate, or);
             }
             return predicate;
         };

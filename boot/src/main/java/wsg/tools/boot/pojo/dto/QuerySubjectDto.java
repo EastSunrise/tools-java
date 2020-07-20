@@ -20,7 +20,5 @@ public class QuerySubjectDto extends BaseQueryDto {
     private MarkEnum mark;
     private ArchivedEnum archived;
     private TypeEnum type;
-    private Boolean nullDuration = false;
-    private Boolean badSeason = false;
-    private Boolean nullImdb = false;
+    private Boolean incomplete = false;
 }
