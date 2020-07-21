@@ -46,7 +46,7 @@ public class ContainerJsonJpaConverters {
 
     static class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
 
-        private static ObjectMapper objectMapper = new ObjectMapper()
+        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                 .registerModule(new JavaTimeModule()
                         .addSerializer(DurationSerializerExt.INSTANCE)
                 )
@@ -54,7 +54,7 @@ public class ContainerJsonJpaConverters {
                         .addCodeSerializer(String.class, Language.class)
                         .addDeserializer(Language.class, LanguageCodeDeserializer.INSTANCE)
                 );
-        private TypeReference<Container> type;
+        private final TypeReference<Container> type;
 
         public AbstractContainerJsonConverter(TypeReference<Container> type) {
             this.type = type;
@@ -63,7 +63,7 @@ public class ContainerJsonJpaConverters {
         @Override
         protected Container deserialize(String dbData) {
             try {
-                return objectMapper.readValue(dbData, type);
+                return OBJECT_MAPPER.readValue(dbData, type);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -72,7 +72,7 @@ public class ContainerJsonJpaConverters {
         @Override
         protected String serialize(Container attribute) {
             try {
-                return objectMapper.writeValueAsString(attribute);
+                return OBJECT_MAPPER.writeValueAsString(attribute);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

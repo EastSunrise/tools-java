@@ -15,6 +15,8 @@ import wsg.tools.boot.pojo.dto.SubjectDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.boot.pojo.enums.TypeEnum;
 import wsg.tools.boot.service.intf.SubjectService;
+import wsg.tools.common.excel.CellEditable;
+import wsg.tools.common.excel.HyperlinkCell;
 import wsg.tools.common.lang.MapBuilder;
 import wsg.tools.internet.video.enums.MarkEnum;
 
@@ -24,7 +26,6 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -81,22 +82,30 @@ public class SubjectController extends AbstractController {
     public void export(HttpServletResponse response, QuerySubjectDto querySubjectDto) {
         PageResult<SubjectDto> all = subjectService.list(querySubjectDto, null);
         try {
-            exportCsv(response, all.getPage().getContent(), "电影列表",
-                    MapBuilder.builder(new LinkedHashMap<String, Function<SubjectDto, ?>>())
+            exportXlsx(response, all.getPage().getContent(), "电影列表",
+                    MapBuilder.builder(new LinkedHashMap<String, CellEditable<SubjectDto, ?>>())
                             .put("ID", SubjectDto::getId)
-                            .put("豆瓣ID", SubjectDto::getDbId)
-                            .put("IMDb ID", SubjectDto::getImdbId)
-                            .put("豆瓣 Link", subjectDto -> {
-                                if (subjectDto.getDbId() != null) {
-                                    return String.format("https://movie.douban.com/subject/%d/", subjectDto.getDbId());
+                            .put("豆瓣ID", new HyperlinkCell<SubjectDto, Long>() {
+                                @Override
+                                public Long getValue(SubjectDto subjectDto) {
+                                    return subjectDto.getDbId();
                                 }
-                                return null;
+
+                                @Override
+                                public String getAddress(SubjectDto subjectDto) {
+                                    return subjectDto.getDbId() != null ? String.format("https://movie.douban.com/subject/%d/", subjectDto.getDbId()) : null;
+                                }
                             })
-                            .put("IMDb Link", subjectDto -> {
-                                if (subjectDto.getImdbId() != null) {
-                                    return String.format("https://imdb.com/title/%s/", subjectDto.getImdbId());
+                            .put("IMDb ID", new HyperlinkCell<SubjectDto, String>() {
+                                @Override
+                                public String getValue(SubjectDto subjectDto) {
+                                    return subjectDto.getImdbId();
                                 }
-                                return null;
+
+                                @Override
+                                public String getAddress(SubjectDto subjectDto) {
+                                    return subjectDto.getImdbId() != null ? String.format("https://imdb.com/title/%s/", subjectDto.getImdbId()) : null;
+                                }
                             })
                             .put("类型", SubjectDto::getType)
                             .put("名称", SubjectDto::getTitle)
