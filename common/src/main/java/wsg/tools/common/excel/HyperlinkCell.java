@@ -27,7 +27,9 @@ public abstract class HyperlinkCell<T, V> implements CellEditable<T, V> {
         cell.setCellStyle(getCellStyle(workbook));
     }
 
-    /* todo build once */
+    /**
+     * todo build once
+     */
     private CellStyle getCellStyle(Workbook workbook) {
         CellStyle cellStyle = workbook.createCellStyle();
         Font font = workbook.createFont();

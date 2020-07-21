@@ -2,7 +2,7 @@ package wsg.tools.boot.dao.jpa.converter;
 
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.boot.pojo.enums.TypeEnum;
-import wsg.tools.common.jackson.intf.CodeSerializable;
+import wsg.tools.common.jackson.intf.CodeSupplier;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.enums.MarkEnum;
 
@@ -11,8 +11,8 @@ import javax.persistence.Converter;
 /**
  * Converters for {@link Enum}.
  * <p>
- * All enums implement {@link CodeSerializable<Integer>}
- * and stored in form of code obtained by {@link CodeSerializable#getCode()}.
+ * All enums implement {@link CodeSupplier <Integer>}
+ * and stored in form of code obtained by {@link CodeSupplier#getCode()}.
  *
  * @author Kingen
  * @since 2020/7/13
@@ -40,9 +40,9 @@ public class CodeEnumJpaConverters {
         }
     }
 
-    static class CodeEnumConverter<E extends Enum<E> & CodeSerializable<Integer>> extends BaseNonNullConverter<E, Integer> {
+    static class CodeEnumConverter<E extends Enum<E> & CodeSupplier<Integer>> extends BaseNonNullConverter<E, Integer> {
 
-        protected Class<E> eClass;
+        protected final Class<E> eClass;
 
         CodeEnumConverter(Class<E> eClass) {
             this.eClass = eClass;

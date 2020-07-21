@@ -32,8 +32,8 @@ public class BaseServiceImpl<D extends BaseDto, E extends BaseEntity, ID> implem
 
     private BaseRepository<E, ID> repository;
 
-    private Class<D> dClass;
-    private Class<E> eClass;
+    private final Class<D> dClass;
+    private final Class<E> eClass;
 
     @SuppressWarnings("unchecked")
     public BaseServiceImpl() {

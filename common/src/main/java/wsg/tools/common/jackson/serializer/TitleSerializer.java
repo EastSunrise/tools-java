@@ -2,23 +2,23 @@ package wsg.tools.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 
 import java.io.IOException;
 
 /**
- * Serialize a object implementing {@link TitleSerializable} to a title.
+ * Serialize a object implementing {@link TitleSupplier} to a title.
  *
  * @author Kingen
  * @since 2020/7/13
  */
-public class TitleSerializer<JavaType extends TitleSerializable> extends AbstractNonNullSerializer<JavaType, String> {
+public class TitleSerializer<JavaType extends TitleSupplier> extends AbstractNonNullSerializer<JavaType, String> {
 
     protected TitleSerializer(Class<JavaType> javaType) {
         super(javaType, String.class);
     }
 
-    public static <T extends TitleSerializable> TitleSerializer<T> getInstance(Class<T> type) {
+    public static <T extends TitleSupplier> TitleSerializer<T> getInstance(Class<T> type) {
         return new TitleSerializer<>(type);
     }
 

@@ -1,7 +1,7 @@
 package wsg.tools.boot.pojo.enums;
 
-import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 
 /**
  * Archived status of the subject
@@ -9,7 +9,7 @@ import wsg.tools.common.jackson.intf.TitleSerializable;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum ArchivedEnum implements CodeSerializable<Integer>, TitleSerializable {
+public enum ArchivedEnum implements CodeSupplier<Integer>, TitleSupplier {
     /**
      * Archived status
      */
@@ -18,8 +18,8 @@ public enum ArchivedEnum implements CodeSerializable<Integer>, TitleSerializable
     PLAYABLE(2, "可播放"),
     DOWNLOADING(3, "下载中");
 
-    private int code;
-    private String title;
+    private final int code;
+    private final String title;
 
     ArchivedEnum(int code, String title) {
         this.code = code;

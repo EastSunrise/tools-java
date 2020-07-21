@@ -6,7 +6,8 @@ package wsg.tools.common.jackson.intf;
  * @author Kingen
  * @since 2020/6/19
  */
-public interface TextSerializable {
+@FunctionalInterface
+public interface TextSupplier {
 
     /**
      * Serialize to English text

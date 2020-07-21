@@ -13,7 +13,7 @@ import java.util.Objects;
 public class MapBuilder<K, V> {
 
     private static final int DEFAULT_CAPACITY = 4;
-    private Map<K, V> map;
+    private final Map<K, V> map;
 
     protected MapBuilder(int capacity, Map<K, V> map) {
         this.map = Objects.requireNonNullElseGet(map, () -> new HashMap<>(capacity));

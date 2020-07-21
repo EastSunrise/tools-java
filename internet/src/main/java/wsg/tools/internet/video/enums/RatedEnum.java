@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.AkaSerializable;
+import wsg.tools.common.jackson.intf.AkaPredicate;
 
 /**
  * Rate of movies on IMDb.
@@ -8,7 +8,7 @@ import wsg.tools.common.jackson.intf.AkaSerializable;
  * @author Kingen
  * @since 2020/6/18
  */
-public enum RatedEnum implements AkaSerializable<String> {
+public enum RatedEnum implements AkaPredicate<String> {
     /**
      * Levels of rate
      */
@@ -28,7 +28,7 @@ public enum RatedEnum implements AkaSerializable<String> {
     PASSED("Passed"),
     X("X");
 
-    private String text;
+    private final String text;
 
     RatedEnum(String text) {
         this.text = text;

@@ -14,15 +14,10 @@ import java.io.IOException;
  */
 public abstract class AbstractNonNullSerializer<JavaType, JsonType> extends StdSerializer<JavaType> {
 
-    protected Class<JsonType> jsonType;
+    protected final Class<JsonType> jsonType;
 
     protected AbstractNonNullSerializer(Class<JavaType> javaType, Class<JsonType> jsonType) {
         super(javaType);
-        this.jsonType = jsonType;
-    }
-
-    protected AbstractNonNullSerializer(Class<?> javaType, Class<JsonType> jsonType, boolean dummy) {
-        super(javaType, dummy);
         this.jsonType = jsonType;
     }
 

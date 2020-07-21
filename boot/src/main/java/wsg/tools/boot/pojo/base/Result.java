@@ -18,7 +18,7 @@ import java.util.Map;
 @Getter
 public class Result implements Serializable {
 
-    private boolean success;
+    private final boolean success;
     private String message;
     private Map<String, Object> args;
 

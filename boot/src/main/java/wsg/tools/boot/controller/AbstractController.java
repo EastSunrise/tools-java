@@ -30,7 +30,6 @@ public abstract class AbstractController {
 
     private static final String CSV_CONTENT_TYPE = "text/csv";
     private static final String XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final String XLS_CONTENT_TYPE = "application/vnd.ms-excel";
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
     private static final ExcelFactory FACTORY = ExcelFactory.getInstance();
 

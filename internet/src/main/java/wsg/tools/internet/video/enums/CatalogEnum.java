@@ -18,7 +18,7 @@ public enum CatalogEnum implements PathParameterized {
     BOOK(CreatorEnum.AUTHOR),
     MUSIC(CreatorEnum.MUSICIAN);
 
-    private CreatorEnum creator;
+    private final CreatorEnum creator;
 
     CatalogEnum(CreatorEnum creator) {
         this.creator = creator;
@@ -37,7 +37,7 @@ public enum CatalogEnum implements PathParameterized {
         AUTHOR("authors"),
         MUSICIAN("musicians");
 
-        private String plurality;
+        private final String plurality;
 
         CreatorEnum(String plurality) {
             this.plurality = plurality;

@@ -10,8 +10,6 @@ import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.enums.ImdbTypeEnum;
 
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -53,18 +51,6 @@ public class ImdbSite extends AbstractVideoSite {
 
         ImdbTypeEnum type = EnumUtilExt.deserializeAka(root.get("@type").textValue(), ImdbTypeEnum.class);
         subject.setType(type);
-
-        Map<String, Element> details = new HashMap<>(10);
-        String detailsId = "#titleDetails", blockClass = ".txt-block";
-        for (Element element : document.selectFirst(detailsId).select(blockClass)) {
-            Element h4 = element.selectFirst("h4");
-            if (h4 != null) {
-                details.put(h4.text(), element);
-            }
-        }
-        if (details.isEmpty()) {
-            return subject;
-        }
 
         return subject;
     }

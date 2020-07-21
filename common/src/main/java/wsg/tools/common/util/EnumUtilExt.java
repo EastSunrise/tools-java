@@ -1,9 +1,9 @@
 package wsg.tools.common.util;
 
-import wsg.tools.common.jackson.intf.AkaSerializable;
-import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.jackson.intf.TextSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.AkaPredicate;
+import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.jackson.intf.TextSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 
 import java.util.Arrays;
 
@@ -36,7 +36,7 @@ public class EnumUtilExt {
     /**
      * Get Enum from the name
      */
-    public static <A, T extends Enum<T> & AkaSerializable<A>> T deserializeAka(A object, Class<T> clazz) {
+    public static <A, T extends Enum<T> & AkaPredicate<A>> T deserializeAka(A object, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.alsoKnownAs(object),
                 "Unknown object %s for %s", object, clazz.getName());
@@ -45,7 +45,7 @@ public class EnumUtilExt {
     /**
      * Get Enum from the code
      */
-    public static <C, T extends Enum<T> & CodeSerializable<C>> T deserializeCode(C code, Class<T> clazz) {
+    public static <C, T extends Enum<T> & CodeSupplier<C>> T deserializeCode(C code, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.getCode().equals(code),
                 "Unknown code %d for %s", code, clazz.getName());
@@ -54,7 +54,7 @@ public class EnumUtilExt {
     /**
      * Get Enum from the text
      */
-    public static <T extends Enum<T> & TextSerializable> T deserializeText(String text, Class<T> clazz) {
+    public static <T extends Enum<T> & TextSupplier> T deserializeText(String text, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.getText().equals(text),
                 "Unknown text %s for %s", text, clazz.getName());
@@ -63,7 +63,7 @@ public class EnumUtilExt {
     /**
      * Get Enum from the title
      */
-    public static <T extends Enum<T> & TitleSerializable> T deserializeTitle(String title, Class<T> clazz) {
+    public static <T extends Enum<T> & TitleSupplier> T deserializeTitle(String title, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.getTitle().equals(title),
                 "Unknown title %s for %s", title, clazz.getName());

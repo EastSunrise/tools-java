@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 @Getter
 public class GenericResult<T extends BaseDto> extends Result {
 
-    private T data;
+    private final T data;
 
     protected GenericResult(T data) {
         super();

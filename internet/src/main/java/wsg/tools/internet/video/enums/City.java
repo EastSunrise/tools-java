@@ -24,7 +24,7 @@ public class City extends AbstractLocale<City> {
     }
 
     @Getter
-    private int no;
+    private final int no;
 
     protected City(int no, String code, String text, String title) {
         super(code, text, title, null);

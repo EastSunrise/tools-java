@@ -1,7 +1,7 @@
 package wsg.tools.common.lang;
 
 import lombok.Getter;
-import wsg.tools.common.jackson.intf.CodeSerializable;
+import wsg.tools.common.jackson.intf.CodeSupplier;
 
 /**
  * Class for money.
@@ -12,8 +12,8 @@ import wsg.tools.common.jackson.intf.CodeSerializable;
 @Getter
 public class Money {
 
-    private CurrencyEnum currency;
-    private Double value;
+    private final CurrencyEnum currency;
+    private final Double value;
 
     public Money(CurrencyEnum currency, Double value) {
         this.currency = currency;
@@ -29,14 +29,14 @@ public class Money {
     }
 
 
-    public enum CurrencyEnum implements CodeSerializable<String> {
+    public enum CurrencyEnum implements CodeSupplier<String> {
         /**
          * RMB
          */
         YUAN("￥"),
         DOLLAR("$");
 
-        private String sign;
+        private final String sign;
 
         CurrencyEnum(String sign) {
             this.sign = sign;

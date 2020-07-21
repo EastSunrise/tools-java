@@ -13,7 +13,6 @@ import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.DoubanSubject;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.site.DoubanSite;
-import wsg.tools.internet.video.site.ImdbSite;
 import wsg.tools.internet.video.site.OmdbSite;
 
 import java.time.LocalDate;
@@ -31,8 +30,6 @@ import java.util.stream.Collectors;
 @Configuration
 @PropertySource("classpath:config/private/video.properties")
 public class VideoConfig implements InitializingBean {
-
-    private ImdbSite imdbSite;
 
     @Value("${douban.api.key}")
     private String doubanApiKey;
@@ -86,6 +83,5 @@ public class VideoConfig implements InitializingBean {
     public void afterPropertiesSet() {
         doubanSite = new DoubanSite(doubanApiKey);
         omdbSite = new OmdbSite(omdbApiKey);
-        imdbSite = new ImdbSite();
     }
 }

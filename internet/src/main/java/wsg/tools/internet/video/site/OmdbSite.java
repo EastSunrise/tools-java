@@ -42,7 +42,7 @@ public class OmdbSite extends AbstractVideoSite {
 
     private static final int MAX_PAGE = 100;
 
-    private String apiKey;
+    private final String apiKey;
 
     public OmdbSite(String apiKey) {
         super("OMDb", "omdbapi.com");

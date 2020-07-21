@@ -6,7 +6,8 @@ package wsg.tools.common.jackson.intf;
  * @author Kingen
  * @since 2020/6/19
  */
-public interface AkaSerializable<Aka> {
+@FunctionalInterface
+public interface AkaPredicate<Aka> {
     /**
      * Also known as, similar to {@link #equals(Object)}
      *

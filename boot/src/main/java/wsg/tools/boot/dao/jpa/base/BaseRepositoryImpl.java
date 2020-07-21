@@ -22,8 +22,8 @@ import java.util.function.Supplier;
 @Transactional(readOnly = true)
 public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepository<E, ID> implements BaseRepository<E, ID> {
 
-    private JpaEntityInformation<E, ID> info;
-    private EntityManager manager;
+    private final JpaEntityInformation<E, ID> info;
+    private final EntityManager manager;
 
     public BaseRepositoryImpl(JpaEntityInformation<E, ID> info, EntityManager entityManager) {
         super(info, entityManager);
@@ -44,6 +44,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public E insertIgnore(E entity, Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> one = Optional.empty();

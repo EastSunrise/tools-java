@@ -1,7 +1,7 @@
 package wsg.tools.boot.pojo.enums;
 
-import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 import wsg.tools.internet.video.enums.ImdbTypeEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
 
@@ -11,7 +11,7 @@ import wsg.tools.internet.video.enums.SubtypeEnum;
  * @author Kingen
  * @since 2020/7/18
  */
-public enum TypeEnum implements CodeSerializable<Integer>, TitleSerializable {
+public enum TypeEnum implements CodeSupplier<Integer>, TitleSupplier {
     /**
      * Movie/Series/Season
      */
@@ -19,8 +19,8 @@ public enum TypeEnum implements CodeSerializable<Integer>, TitleSerializable {
     SERIES(1, "剧集"),
     SEASON(2, "单季");
 
-    private int code;
-    private String title;
+    private final int code;
+    private final String title;
 
     TypeEnum(int code, String title) {
         this.code = code;

@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.AkaSerializable;
+import wsg.tools.common.jackson.intf.AkaPredicate;
 
 /**
  * Subtype of subjects.
@@ -8,7 +8,7 @@ import wsg.tools.common.jackson.intf.AkaSerializable;
  * @author Kingen
  * @since 2020/6/17
  */
-public enum SubtypeEnum implements AkaSerializable<String> {
+public enum SubtypeEnum implements AkaPredicate<String> {
     /**
      * Movie
      */
@@ -16,7 +16,7 @@ public enum SubtypeEnum implements AkaSerializable<String> {
     TV("tv"),
     ;
 
-    private String[] aka;
+    private final String[] aka;
 
     SubtypeEnum(String... aka) {
         this.aka = aka;

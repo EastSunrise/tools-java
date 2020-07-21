@@ -49,7 +49,7 @@ public class DoubanSite extends AbstractVideoSite {
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d)+\\)");
 
-    private String apiKey;
+    private final String apiKey;
 
     public DoubanSite(String apiKey) {
         super("Douban", "douban.com", 1);
@@ -338,10 +338,10 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     private static class PageResult<T> {
-        int start;
-        int count;
-        int total;
-        List<T> data;
+        final int start;
+        final int count;
+        final int total;
+        final List<T> data;
 
         public PageResult(int start, int count, int total, List<T> data) {
             this.start = start;

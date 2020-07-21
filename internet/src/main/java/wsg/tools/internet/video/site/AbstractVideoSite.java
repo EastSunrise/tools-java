@@ -1,6 +1,5 @@
 package wsg.tools.internet.video.site;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import wsg.tools.internet.base.BaseSite;
 
 /**
@@ -17,10 +16,5 @@ public abstract class AbstractVideoSite extends BaseSite {
 
     public AbstractVideoSite(String name, String domain, double permitsPerSecond) {
         super(name, domain, permitsPerSecond);
-    }
-
-    @Override
-    public ObjectMapper getObjectMapper() {
-        return super.getObjectMapper();
     }
 }

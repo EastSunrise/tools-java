@@ -51,13 +51,13 @@ public abstract class BaseSite {
     private static final int TIME_OUT = 30000;
 
     @Getter
-    private String name;
-    private SchemeEnum scheme = SchemeEnum.HTTPS;
-    private String domain;
+    private final String name;
+    private final SchemeEnum scheme = SchemeEnum.HTTPS;
+    private final String domain;
 
     private ObjectMapper objectMapper;
     private CloseableHttpClient client;
-    private RateLimiter limiter;
+    private final RateLimiter limiter;
 
     public BaseSite(String name, String domain) {
         this(name, domain, 10D);

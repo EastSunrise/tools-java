@@ -21,7 +21,7 @@ import java.util.Objects;
 public class VideoManager {
 
     @Getter
-    private String cdn;
+    private final String cdn;
 
     public VideoManager(@Value("${cdn}") String cdn) {
         File file = new File(cdn);
@@ -33,6 +33,7 @@ public class VideoManager {
 
     /**
      * Returns location of the given subject.
+     * todo
      *
      * @return null if not exist
      */

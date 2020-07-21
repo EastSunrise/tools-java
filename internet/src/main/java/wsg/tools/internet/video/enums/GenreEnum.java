@@ -1,8 +1,8 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.AkaSerializable;
-import wsg.tools.common.jackson.intf.TextSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.AkaPredicate;
+import wsg.tools.common.jackson.intf.TextSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 
 /**
  * Enum for genres of subjects, with text as English display name and title as Chinese display name.
@@ -10,7 +10,7 @@ import wsg.tools.common.jackson.intf.TitleSerializable;
  * @author Kingen
  * @since 2020/6/17
  */
-public enum GenreEnum implements TitleSerializable, TextSerializable, AkaSerializable<String> {
+public enum GenreEnum implements TitleSupplier, TextSupplier, AkaPredicate<String> {
     /**
      * Kinds of genres
      */
@@ -49,8 +49,8 @@ public enum GenreEnum implements TitleSerializable, TextSerializable, AkaSeriali
     WESTERN("Western", "西部"),
     ;
 
-    private String text;
-    private String title;
+    private final String text;
+    private final String title;
 
     GenreEnum(String text, String title) {
         this.text = text;

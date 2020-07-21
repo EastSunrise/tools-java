@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
 /**
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer>, PathParameterized {
+public enum MarkEnum implements TitleSupplier, CodeSupplier<Integer>, PathParameterized {
     /**
      * wish/do/collect
      */
@@ -18,8 +18,8 @@ public enum MarkEnum implements TitleSerializable, CodeSerializable<Integer>, Pa
     DO(2, "在看"),
     COLLECT(3, "看过");
 
-    private int code;
-    private String title;
+    private final int code;
+    private final String title;
 
     MarkEnum(int code, String title) {
         this.code = code;

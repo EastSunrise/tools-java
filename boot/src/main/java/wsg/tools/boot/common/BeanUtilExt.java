@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class BeanUtilExt {
 
     private static final String PROPERTY_NAME_CLASS = "class";
-    private static Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> copiersMap = new ConcurrentHashMap<>();
+    private static final Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> COPIERS = new ConcurrentHashMap<>();
 
     public static <From, To> To convert(From from, Class<To> toClass) {
         if (from == null) {
@@ -96,7 +96,7 @@ public class BeanUtilExt {
      */
     private static List<PropertyCopier> getPropertyCopiers(Class<?> dest, Class<?> orig) {
         Pair<Class<?>, Class<?>> key = Pair.of(dest, orig);
-        List<PropertyCopier> copiers = copiersMap.get(key);
+        List<PropertyCopier> copiers = COPIERS.get(key);
         if (copiers == null) {
             copiers = new LinkedList<>();
             for (PropertyDescriptor origDesc : getDescriptorsExceptClass(orig, true, false)) {
@@ -108,7 +108,7 @@ public class BeanUtilExt {
                     }
                 }
             }
-            copiersMap.put(key, copiers);
+            COPIERS.put(key, copiers);
         }
         return copiers;
     }
@@ -122,11 +122,11 @@ public class BeanUtilExt {
     }
 
     static class PropertyCopier {
-        Method writeMethod;
-        Method readMethod;
-        Method readDestMethod;
-        Class<?> requiredType;
-        Class<?> provideType;
+        final Method writeMethod;
+        final Method readMethod;
+        final Method readDestMethod;
+        final Class<?> requiredType;
+        final Class<?> provideType;
 
         public PropertyCopier(Method writeMethod, Method readMethod, Method readDestMethod) {
             this.writeMethod = writeMethod;

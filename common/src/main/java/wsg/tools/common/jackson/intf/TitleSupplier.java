@@ -6,7 +6,8 @@ package wsg.tools.common.jackson.intf;
  * @author Kingen
  * @since 2020/6/17
  */
-public interface TitleSerializable {
+@FunctionalInterface
+public interface TitleSupplier {
     /**
      * Serialize to Chinese title
      *

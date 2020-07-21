@@ -1,10 +1,10 @@
 package wsg.tools.internet.video.enums;
 
 import org.apache.commons.lang3.ArrayUtils;
-import wsg.tools.common.jackson.intf.AkaSerializable;
-import wsg.tools.common.jackson.intf.CodeSerializable;
-import wsg.tools.common.jackson.intf.TextSerializable;
-import wsg.tools.common.jackson.intf.TitleSerializable;
+import wsg.tools.common.jackson.intf.AkaPredicate;
+import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.jackson.intf.TextSupplier;
+import wsg.tools.common.jackson.intf.TitleSupplier;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -16,12 +16,12 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/6/23
  */
-public abstract class AbstractLocale<T extends AbstractLocale<T>> implements CodeSerializable<String>, TextSerializable, TitleSerializable, AkaSerializable<String>, Serializable {
+public abstract class AbstractLocale<T extends AbstractLocale<T>> implements CodeSupplier<String>, TextSupplier, TitleSupplier, AkaPredicate<String>, Serializable {
 
-    protected String code;
-    protected String text;
-    protected String title;
-    protected String[] aka;
+    protected final String code;
+    protected final String text;
+    protected final String title;
+    protected final String[] aka;
 
     protected AbstractLocale(String code, String text, String title, String[] aka) {
         this.code = code;

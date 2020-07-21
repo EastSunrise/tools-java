@@ -19,7 +19,7 @@ import java.util.List;
 @Getter
 public class PageResult<T extends BaseDto> extends Result {
 
-    private Page<T> page;
+    private final Page<T> page;
 
     protected PageResult(Page<T> page) {
         super();

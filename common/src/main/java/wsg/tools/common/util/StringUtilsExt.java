@@ -12,15 +12,15 @@ import java.util.regex.Pattern;
  */
 public class StringUtilsExt {
 
-    private static final Pattern HAS_CHINESE_REGEX = Pattern.compile(".*[u4E00-u9FA5]+.*");
+    private static final Pattern CHINESE_REGEX = Pattern.compile("[u4E00-u9FA5]");
 
     /**
-     * Check if the string contain a Chinese character,
+     * Check if the string contain a Chinese character.
      */
     public static boolean hasChinese(String text) {
         if (StringUtils.isBlank(text)) {
             return false;
         }
-        return HAS_CHINESE_REGEX.matcher(text).matches();
+        return CHINESE_REGEX.matcher(text).find();
     }
 }
