@@ -8,15 +8,7 @@ package wsg.tools.internet.video.enums;
  */
 public enum SearchTypeEnum {
     /**
-     * movie
+     * movie/series/episode
      */
-    MOVIE,
-    /**
-     * series
-     */
-    SERIES,
-    /**
-     * episode
-     */
-    EPISODE
+    MOVIE, SERIES, EPISODE
 }

@@ -3,11 +3,12 @@ package wsg.tools.boot.dao.jpa.converter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import wsg.tools.boot.config.serializer.DurationSerializerExt;
-import wsg.tools.common.jackson.CommonModule;
-import wsg.tools.internet.video.enums.Language;
-import wsg.tools.internet.video.jackson.deserializer.LanguageCodeDeserializer;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.serializer.CodeSerializer;
+import wsg.tools.internet.video.enums.LanguageEnum;
 
 import javax.persistence.Converter;
 import java.time.Duration;
@@ -31,7 +32,7 @@ public class ContainerJsonJpaConverters {
     }
 
     @Converter(autoApply = true)
-    public static class LanguageListJsonConverter extends AbstractContainerJsonConverter<List<Language>> {
+    public static class LanguageListJsonConverter extends AbstractContainerJsonConverter<List<LanguageEnum>> {
         public LanguageListJsonConverter() {
             super(new TypeReference<>() {});
         }
@@ -47,17 +48,20 @@ public class ContainerJsonJpaConverters {
     static class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
 
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-                .registerModule(new JavaTimeModule()
-                        .addSerializer(DurationSerializerExt.INSTANCE)
-                )
-                .registerModule(new CommonModule()
-                        .addCodeSerializer(String.class, Language.class)
-                        .addDeserializer(Language.class, LanguageCodeDeserializer.INSTANCE)
+                .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+                .registerModule(new JavaTimeModule())
+                .registerModule(new SimpleModule()
+                        .addSerializer(CodeSerializer.getInstance(String.class, LanguageEnum.class))
+                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getCodeDeserializer(String.class, LanguageEnum.class))
                 );
         private final TypeReference<Container> type;
 
         public AbstractContainerJsonConverter(TypeReference<Container> type) {
             this.type = type;
+        }
+
+        public static void main(String[] args) throws JsonProcessingException {
+            System.out.println(OBJECT_MAPPER.writeValueAsString(Duration.ofMinutes(80)));
         }
 
         @Override

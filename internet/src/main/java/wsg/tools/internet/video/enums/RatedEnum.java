@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.enums;
 
+import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.jackson.intf.AkaPredicate;
 
 /**
@@ -10,35 +11,37 @@ import wsg.tools.common.jackson.intf.AkaPredicate;
  */
 public enum RatedEnum implements AkaPredicate<String> {
     /**
-     * Levels of rate
+     * Rate of movies
      */
-    NOT_RATED("Not Rated"),
-    RATED("Rated"),
-    G("G"),
-    TV_G("TV-G"),
-    PG("PG"),
-    TV_PG("TV-PG"),
-    TV_Y7("TV-Y7"),
+    NOT_RATED("Not Rated", "Unrated"),
+    RATED,
+    G,
+    PG,
     PG_13("PG-13"),
+    R,
+    NC_17("NC-17"),
+
+    /**
+     * Rate of TV
+     */
+    TV_Y("TV-Y"),
+    TV_Y7("TV-Y7"),
+    TV_Y7_FV("TV-Y7-FV"),
+    TV_G("TV-G"),
+    TV_PG("TV-PG"),
     TV_14("TV-14"),
     TV_MA("TV-MA"),
-    NC_17("NC-17"),
-    R("R"),
-    KT("KT"),
-    PASSED("Passed"),
-    X("X");
+    PASSED,
+    ;
 
-    private final String text;
+    private final String[] aka;
 
-    RatedEnum(String text) {
-        this.text = text;
+    RatedEnum(String... aka) {
+        this.aka = aka;
     }
 
     @Override
     public boolean alsoKnownAs(String other) {
-        if (NOT_RATED.equals(this)) {
-            return text.equalsIgnoreCase(other) || "UNRATED".equalsIgnoreCase(other);
-        }
-        return text.equalsIgnoreCase(other);
+        return name().equalsIgnoreCase(other) || ArrayUtils.contains(aka, other);
     }
 }

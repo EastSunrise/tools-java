@@ -1,7 +1,7 @@
-package wsg.tools.common.excel;
+package wsg.tools.common.excel.writer;
 
 /**
- * Get value from the given object.
+ * Get value to write to cell from the given object.
  *
  * @author Kingen
  * @since 2020/7/21

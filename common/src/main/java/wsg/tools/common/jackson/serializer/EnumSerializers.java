@@ -1,9 +1,8 @@
-package wsg.tools.boot.config.serializer;
+package wsg.tools.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import wsg.tools.common.jackson.intf.TitleSupplier;
-import wsg.tools.common.jackson.serializer.TitleSerializer;
 
 import java.io.IOException;
 
@@ -13,9 +12,9 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/19
  */
-public class EnumSerializers {
+public abstract class EnumSerializers {
 
-    public static <E extends Enum<E> & TitleSupplier> EnumTitleSerializer<E> enumTitleSerializer(Class<E> eClass) {
+    public static <E extends Enum<E> & TitleSupplier> EnumTitleSerializer<E> getTitleSerializer(Class<E> eClass) {
         return new EnumTitleSerializer<>(eClass);
     }
 

@@ -9,7 +9,6 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/29
  */
-@Getter
 public enum CatalogEnum implements PathParameterized {
     /**
      * movie/book/music
@@ -18,6 +17,7 @@ public enum CatalogEnum implements PathParameterized {
     BOOK(CreatorEnum.AUTHOR),
     MUSIC(CreatorEnum.MUSICIAN);
 
+    @Getter
     private final CreatorEnum creator;
 
     CatalogEnum(CreatorEnum creator) {

@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/28
  */
-public class NumberDeserializersExt {
+public abstract class NumberDeserializersExt {
 
     public static class LongDeserializer extends BaseNumberDeserializer<Long> {
 
@@ -26,16 +26,16 @@ public class NumberDeserializersExt {
         }
     }
 
-    public static abstract class BaseNumberDeserializer<T extends Number> extends AbstractNonNullDeserializer<T, String> {
+    public static abstract class BaseNumberDeserializer<T extends Number> extends AbstractNotBlankDeserializer<T> {
 
         private static final Pattern NUMBER_REGEX = Pattern.compile("\\d+(,\\d{3})*");
 
         protected BaseNumberDeserializer(Class<T> javaType) {
-            super(javaType, String.class);
+            super(javaType);
         }
 
         @Override
-        public T apply(String s) {
+        public T parseText(String s) {
             AssertUtils.matches(NUMBER_REGEX, s);
             return parseNumber(s.replace(",", ""));
         }

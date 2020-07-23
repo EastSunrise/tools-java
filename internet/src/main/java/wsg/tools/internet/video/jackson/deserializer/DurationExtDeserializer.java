@@ -29,7 +29,7 @@ public class DurationExtDeserializer extends AbstractNonNullDeserializer<Duratio
     }
 
     @Override
-    public Duration apply(String text) {
+    public Duration convert(String text) {
         if (text.startsWith(DURATION_START)) {
             return Duration.parse(text.replace(",", ""));
         }
@@ -40,7 +40,7 @@ public class DurationExtDeserializer extends AbstractNonNullDeserializer<Duratio
         }
         String min = matcher.group(4);
         if (matcher.group(MINUTE_GROUP) != null) {
-            min = min.replace(Constants.NUMBER_DELIMITER, "");
+            min = min.replace(Constants.COMMA_DELIMITER, "");
         }
         int minutes = Integer.parseInt(min);
         if (matcher.group(MINUTE_MAX_GROUP) != null) {

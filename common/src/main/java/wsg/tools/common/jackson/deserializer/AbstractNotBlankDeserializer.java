@@ -15,7 +15,7 @@ public abstract class AbstractNotBlankDeserializer<JavaType> extends AbstractNon
     }
 
     @Override
-    public JavaType apply(String s) {
+    public JavaType convert(String s) {
         if (StringUtils.isBlank(s)) {
             return null;
         }

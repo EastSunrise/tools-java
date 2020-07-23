@@ -14,12 +14,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.deserializer.EnumAkaDeserializers;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.douban.*;
 import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.deserializer.CountryAkaDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.LanguageAkaDeserializer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -174,7 +172,7 @@ public class DoubanSite extends AbstractVideoSite {
         return getApiObjects("/v2/movie/coming_soon");
     }
 
-    public List<DoubanSubject> apiMovieInTheaters(City city) throws HttpResponseException {
+    public List<DoubanSubject> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
         return getApiObjects("/v2/movie/in_theaters", Parameter.of("city", city.getNo()));
     }
 
@@ -183,10 +181,10 @@ public class DoubanSite extends AbstractVideoSite {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
         objectMapper.registerModule(new SimpleModule()
-                .addDeserializer(Language.class, LanguageAkaDeserializer.INSTANCE)
-                .addDeserializer(Country.class, CountryAkaDeserializer.INSTANCE)
-                .addDeserializer(GenreEnum.class, EnumAkaDeserializers.getStringDeserializer(GenreEnum.class))
-                .addDeserializer(SubtypeEnum.class, EnumAkaDeserializers.getStringDeserializer(SubtypeEnum.class))
+                .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
+                .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
+                .addDeserializer(GenreEnum.class, EnumDeserializers.getTitleDeserializer(GenreEnum.class))
+                .addDeserializer(SubtypeEnum.class, EnumDeserializers.getAkaDeserializer(String.class, SubtypeEnum.class))
         ).registerModule(new JavaTimeModule()
                 .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
         );

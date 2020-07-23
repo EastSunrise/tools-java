@@ -37,9 +37,9 @@ public class ImdbSubject extends Subject {
     private List<GenreEnum> genres;
     private String plot;
     @JsonAlias("Language")
-    private List<Language> languages;
+    private List<LanguageEnum> languages;
     @JsonAlias("Country")
-    private List<Country> countries;
+    private List<CountryEnum> countries;
     @JsonAlias("TotalSeasons")
     private Integer seasonsCount;
     @JsonAlias("Season")

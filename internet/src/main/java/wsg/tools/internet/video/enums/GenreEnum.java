@@ -1,6 +1,5 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.AkaPredicate;
 import wsg.tools.common.jackson.intf.TextSupplier;
 import wsg.tools.common.jackson.intf.TitleSupplier;
 
@@ -10,7 +9,7 @@ import wsg.tools.common.jackson.intf.TitleSupplier;
  * @author Kingen
  * @since 2020/6/17
  */
-public enum GenreEnum implements TitleSupplier, TextSupplier, AkaPredicate<String> {
+public enum GenreEnum implements TitleSupplier, TextSupplier {
     /**
      * Kinds of genres
      */
@@ -65,10 +64,5 @@ public enum GenreEnum implements TitleSupplier, TextSupplier, AkaPredicate<Strin
     @Override
     public String getText() {
         return text;
-    }
-
-    @Override
-    public boolean alsoKnownAs(String other) {
-        return text.equals(other) || title.equals(other);
     }
 }

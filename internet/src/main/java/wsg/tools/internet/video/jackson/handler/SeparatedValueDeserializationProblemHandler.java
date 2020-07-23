@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.jackson.handler;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -18,30 +17,29 @@ import java.util.List;
  * @author Kingen
  * @since 2020/7/18
  */
-public class CommaSeparatedValueDeserializationProblemHandler extends DeserializationProblemHandler {
+public class SeparatedValueDeserializationProblemHandler extends DeserializationProblemHandler {
 
-    public static final CommaSeparatedValueDeserializationProblemHandler INSTANCE = new CommaSeparatedValueDeserializationProblemHandler();
-    private static final String DELIMITER = ", ";
+    private final String delimiter;
 
-    protected CommaSeparatedValueDeserializationProblemHandler() {
+    protected SeparatedValueDeserializationProblemHandler(String delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    public static SeparatedValueDeserializationProblemHandler getInstance(String delimiter) {
+        return new SeparatedValueDeserializationProblemHandler(delimiter);
     }
 
     @Override
     public Object handleUnexpectedToken(DeserializationContext ctxt, JavaType targetType, JsonToken token, JsonParser parser, String failureMsg) throws IOException {
         if (JsonToken.VALUE_STRING.equals(token) && targetType.isCollectionLikeType()) {
-            String[] values = parser.getText().split(DELIMITER);
+            String[] values = parser.getText().split(delimiter);
             ObjectMapper mapper = (ObjectMapper) parser.getCodec();
             List<Object> list = new ArrayList<>();
             for (String value : values) {
-                list.add(readValue(mapper, targetType.getContentType(), value));
+                list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
             }
             return list;
         }
         return super.handleUnexpectedToken(ctxt, targetType, token, parser, failureMsg);
-    }
-
-    private Object readValue(ObjectMapper mapper, JavaType contentType, String value) throws JsonProcessingException {
-        final String json = "\"" + value.trim() + "\"";
-        return mapper.readValue(json, contentType);
     }
 }

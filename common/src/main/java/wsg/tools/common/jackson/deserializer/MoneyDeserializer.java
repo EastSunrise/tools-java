@@ -34,10 +34,10 @@ public class MoneyDeserializer extends AbstractNonNullDeserializer<Money, String
     }
 
     @Override
-    public Money apply(String text) {
+    public Money convert(String text) {
         Matcher matcher = AssertUtils.matches(MONEY_REGEX, text);
         Money.CurrencyEnum currency = EnumUtilExt.deserializeCode(matcher.group(1), Money.CurrencyEnum.class);
-        long value = Long.parseLong(matcher.group(2).replace(Constants.NUMBER_DELIMITER, ""));
+        long value = Long.parseLong(matcher.group(2).replace(Constants.COMMA_DELIMITER, ""));
         return new Money(currency, (double) value);
     }
 }

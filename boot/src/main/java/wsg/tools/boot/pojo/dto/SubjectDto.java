@@ -5,7 +5,7 @@ import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.boot.pojo.enums.TypeEnum;
-import wsg.tools.internet.video.enums.Language;
+import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.time.Duration;
@@ -36,7 +36,7 @@ public class SubjectDto extends BaseDto {
     private String originalTitle;
     private List<String> textAka;
     private List<String> titleAka;
-    private List<Language> languages;
+    private List<LanguageEnum> languages;
     private List<Duration> durations;
     private Year year;
     private ArchivedEnum archived;

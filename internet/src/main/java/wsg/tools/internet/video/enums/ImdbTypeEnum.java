@@ -10,7 +10,7 @@ import wsg.tools.common.jackson.intf.AkaPredicate;
  */
 public enum ImdbTypeEnum implements AkaPredicate<String> {
     /**
-     * series
+     * movie/series/episode
      */
     MOVIE, SERIES, EPISODE;
 

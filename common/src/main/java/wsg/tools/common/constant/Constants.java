@@ -13,8 +13,8 @@ import java.util.Locale;
  */
 public class Constants {
 
-    public static final String NUMBER_DELIMITER = ",";
-
+    public static final String COMMA_DELIMITER = ",";
+    public static final String SLASH_DELIMITER = "/";
     public static final String NULL_NA = "N/A";
 
     public static final int DEFAULT_MAP_CAPACITY = 16;

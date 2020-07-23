@@ -2,11 +2,9 @@ package wsg.tools.common.jackson.deserializer;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import lombok.Getter;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
-import java.util.function.Function;
 
 /**
  * Base deserializer to pre-handle null objects.
@@ -14,15 +12,12 @@ import java.util.function.Function;
  * @author Kingen
  * @since 2020/6/27
  */
-public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends JsonDeserializer<JavaType> implements Function<JsonType, JavaType> {
+public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends StdDeserializer<JavaType> {
 
-    @Getter
-    protected Class<JavaType> javaType;
-    @Getter
     protected Class<JsonType> jsonType;
 
     protected AbstractNonNullDeserializer(Class<JavaType> javaType, Class<JsonType> jsonType) {
-        this.javaType = javaType;
+        super(javaType);
         this.jsonType = jsonType;
     }
 
@@ -32,11 +27,19 @@ public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends Js
         if (jsonType == null) {
             return null;
         }
-        return apply(jsonType);
+        return convert(jsonType);
     }
 
-    @Override
-    public Class<?> handledType() {
-        return javaType;
+    /**
+     * Convert a json object to a java object of given type.
+     *
+     * @param jsonType the json object
+     * @return java object
+     */
+    public abstract JavaType convert(JsonType jsonType);
+
+    @SuppressWarnings("unchecked")
+    protected Class<JavaType> getJavaType() {
+        return (Class<JavaType>) handledType();
     }
 }

@@ -46,8 +46,8 @@ public class DoubanSubject extends Subject {
     @JsonAlias("pubdates")
     @JsonDeserialize(contentUsing = ReleaseDeserializer.class)
     private List<LocalDate> releases;
-    private List<Language> languages;
-    private List<Country> countries;
+    private List<LanguageEnum> languages;
+    private List<CountryEnum> countries;
     @JsonDeserialize(contentUsing = DurationExtDeserializer.class)
     private List<Duration> durations;
     private Integer episodesCount;

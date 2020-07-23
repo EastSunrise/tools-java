@@ -1,22 +1,20 @@
-package wsg.tools.common.excel;
+package wsg.tools.common.excel.writer;
 
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
-import wsg.tools.common.converter.ConvertFactory;
 
 import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
 
 /**
- * Cell with hyperlink.
+ * Write cell with hyperlink.
  *
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class HyperlinkCell<T, V> implements CellEditable<T, V> {
+public abstract class HyperlinkCellWriter<T, V> implements CellWriter<T, V> {
 
     @Override
-    public void setCell(Cell cell, T t, Workbook workbook, ConvertFactory<Object> factory) {
-        CellEditable.setCellValue(cell, factory.convertValue(getValue(t)));
+    public void setCellStyle(Cell cell, T t, Workbook workbook) {
         String address = getAddress(t);
         if (address == null) {
             return;

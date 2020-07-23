@@ -73,17 +73,6 @@ public class Result implements Serializable {
         return new Result(e);
     }
 
-    /**
-     * Return result of batch operation, including successful and error count.
-     */
-    public static Result batchResult(int total, int done) {
-        Result result = new Result();
-        result.put("total", total);
-        result.put("done", done);
-        result.put("error", total - done);
-        return result;
-    }
-
     public Object put(String key, Object value) {
         assert success;
         return args.put(key, value);
