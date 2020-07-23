@@ -11,10 +11,10 @@ import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class HyperlinkCellWriter<T, V> implements CellWriter<T, V> {
+public abstract class HyperlinkCellFromGetter<T, V> extends CellFromGetter<T, V> {
 
     @Override
-    public void setCellStyle(Cell cell, T t, Workbook workbook) {
+    public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {
         String address = getAddress(t);
         if (address == null) {
             return;

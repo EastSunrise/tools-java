@@ -1,5 +1,7 @@
 package wsg.tools.common.constant;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -24,4 +26,6 @@ public class Constants {
             DateTimeFormatter.ofPattern(STANDARD_DATE_TIME_PATTERN).withLocale(Locale.CHINESE).withZone(ZoneId.systemDefault());
     public static final DateTimeFormatter STANDARD_YEAR_FORMATTER = DateTimeFormatter.ofPattern("yyyy");
     public static final DateTimeFormatter NULL_FORMATTER = new DateTimeFormatterBuilder().toFormatter();
+
+    public static final Charset UTF_8 = StandardCharsets.UTF_8;
 }

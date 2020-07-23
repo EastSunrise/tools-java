@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.CodeSupplier;
-import wsg.tools.common.jackson.intf.TitleSupplier;
+import wsg.tools.common.function.CodeSupplier;
+import wsg.tools.common.function.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
 /**

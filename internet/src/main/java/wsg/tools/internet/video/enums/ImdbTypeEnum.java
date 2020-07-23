@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.AkaPredicate;
+import wsg.tools.common.function.AkaPredicate;
 
 /**
  * Types of subjects from IMDb.

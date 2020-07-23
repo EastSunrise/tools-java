@@ -6,13 +6,14 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import wsg.tools.boot.config.hanler.ExcelDeserializationProblemHandlers;
 import wsg.tools.boot.config.serializer.ContainerSerializers;
-import wsg.tools.boot.pojo.enums.TypeEnum;
+import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.ExcelFactory;
-import wsg.tools.common.excel.reader.CellReader;
-import wsg.tools.common.excel.writer.CellWriter;
-import wsg.tools.common.excel.writer.ValueSupplier;
+import wsg.tools.common.excel.reader.CellToSetter;
+import wsg.tools.common.excel.writer.CellFromGetter;
+import wsg.tools.common.function.CreatorSupplier;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -25,7 +26,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,42 +39,26 @@ import java.util.Objects;
  */
 public abstract class AbstractController {
 
-    private static final String CSV_CONTENT_TYPE = "text/csv";
-    private static final String XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final Charset UTF_8 = StandardCharsets.UTF_8;
     private static final ExcelFactory FACTORY = new ExcelFactory(new ObjectMapper()
             .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
             .registerModule(new SimpleModule()
-                    .addSerializer(TitleSerializer.getInstance(TypeEnum.class))
-                    .addDeserializer(TypeEnum.class, EnumDeserializers.getTitleDeserializer(TypeEnum.class))
+                    .addSerializer(TitleSerializer.getInstance(VideoTypeEnum.class))
+                    .addDeserializer(VideoTypeEnum.class, EnumDeserializers.getTitleDeserializer(VideoTypeEnum.class))
                     .addSerializer(TitleSerializer.getInstance(LanguageEnum.class))
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
                     .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(Constants.SLASH_DELIMITER))
             ).registerModule(new JavaTimeModule())
             .addHandler(SeparatedValueDeserializationProblemHandler.getInstance(Constants.SLASH_DELIMITER))
+            .addHandler(ExcelDeserializationProblemHandlers.FloatToYearDeserializationProblemHandler.INSTANCE)
     );
-
-    /**
-     * Read an imported .csv file encoded with utf-8.
-     */
-    protected List<Map<String, ?>> readCsv(MultipartFile file, Map<String, Class<?>> classes) throws IOException {
-        return readCsv(file, classes, UTF_8);
-    }
 
     /**
      * Read an imported .csv file.
      *
-     * @see ExcelFactory#readCsv(InputStream, Map, Charset)
+     * @see ExcelFactory#readCsv(InputStream, Map, CreatorSupplier, Charset)
      */
-    protected List<Map<String, ?>> readCsv(MultipartFile file, Map<String, Class<?>> classes, Charset charset) throws IOException {
-        Objects.requireNonNull(file);
-        if (!CSV_CONTENT_TYPE.equals(file.getContentType())) {
-            throw new IllegalArgumentException("Not a CSV file");
-        }
-        if (file.isEmpty()) {
-            return null;
-        }
-        return FACTORY.readCsv(file.getInputStream(), classes, charset);
+    protected <T> List<T> readCsv(MultipartFile file, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
+        return FACTORY.readCsv(getInputStream(file, ContentType.CSV), readers, creator, charset);
     }
 
     /**
@@ -83,36 +67,19 @@ public abstract class AbstractController {
      * @see ExcelFactory#writeCsv(Appendable, List, LinkedHashMap)
      */
     protected <T> void exportCsv(HttpServletResponse response, List<T> data, String filename,
-                                 LinkedHashMap<String, ValueSupplier<T, ?>> suppliers) throws IOException {
-        Objects.requireNonNull(data);
-        Objects.requireNonNull(suppliers);
-        if (StringUtils.isBlank(filename)) {
-            filename = "example";
-        } else {
-            filename = URLEncoder.encode(filename, UTF_8);
-        }
-        response.setContentType(CSV_CONTENT_TYPE);
-        response.setCharacterEncoding(UTF_8.name());
-        response.setHeader("Content-Disposition", "attachment;filename=" + filename + ".csv");
-        PrintWriter writer = new PrintWriter(response.getOutputStream(), true, UTF_8);
-        FACTORY.writeCsv(writer, data, suppliers);
+                                 LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+        PrintWriter writer = new PrintWriter(getOutputStream(response, filename, ContentType.CSV), true, Constants.UTF_8);
+        FACTORY.writeCsv(writer, data, writers);
         writer.close();
     }
 
     /**
      * Read an imported .xlsx file.
      *
-     * @see ExcelFactory#readXlsx(InputStream, Map)
+     * @see ExcelFactory#readXlsx(InputStream, Map, CreatorSupplier)
      */
-    protected List<Map<String, ?>> readXlsx(MultipartFile file, Map<String, CellReader<?>> readers) throws IOException {
-        Objects.requireNonNull(file);
-        if (!XLSX_CONTENT_TYPE.equals(file.getContentType())) {
-            throw new IllegalArgumentException("Not an .xlsx file");
-        }
-        if (file.isEmpty()) {
-            return null;
-        }
-        return FACTORY.readXlsx(file.getInputStream(), readers);
+    protected <T> List<T> readXlsx(MultipartFile file, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
+        return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers, creator);
     }
 
     /**
@@ -121,15 +88,46 @@ public abstract class AbstractController {
      * @see ExcelFactory#writeXlsx(OutputStream, List, LinkedHashMap)
      */
     protected <T> void exportXlsx(HttpServletResponse response, List<T> data, String filename,
-                                  LinkedHashMap<String, CellWriter<T, ?>> writers) throws IOException {
+                                  LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+        FACTORY.writeXlsx(getOutputStream(response, filename, ContentType.XLSX), data, writers);
+    }
+
+    private InputStream getInputStream(MultipartFile file, ContentType contentType) throws IOException {
+        Objects.requireNonNull(file);
+        if (!contentType.text.equals(file.getContentType())) {
+            throw new IllegalArgumentException("Not a file of " + contentType);
+        }
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("The file is empty");
+        }
+        return file.getInputStream();
+    }
+
+    private OutputStream getOutputStream(HttpServletResponse response, String filename, ContentType contentType) throws IOException {
         if (StringUtils.isBlank(filename)) {
             filename = "example";
         } else {
-            filename = URLEncoder.encode(filename, UTF_8);
+            filename = URLEncoder.encode(filename, Constants.UTF_8);
         }
-        response.setContentType(XLSX_CONTENT_TYPE);
-        response.setCharacterEncoding(UTF_8.name());
-        response.setHeader("Content-Disposition", "attachment;filename=" + filename + ".xlsx");
-        FACTORY.writeXlsx(response.getOutputStream(), data, writers);
+        response.setContentType(contentType.text);
+        response.setCharacterEncoding(Constants.UTF_8.name());
+        response.setHeader("Content-Disposition", "attachment;filename=" + filename + contentType.suffix);
+        return response.getOutputStream();
+    }
+
+    enum ContentType {
+        /**
+         * CSV/XLSX
+         */
+        CSV("text/csv", ".csv"),
+        XLSX("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx");
+
+        final String text;
+        final String suffix;
+
+        ContentType(String text, String suffix) {
+            this.text = text;
+            this.suffix = suffix;
+        }
     }
 }

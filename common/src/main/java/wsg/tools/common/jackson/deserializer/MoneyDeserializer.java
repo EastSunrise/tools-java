@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/28
  */
-public class MoneyDeserializer extends AbstractNonNullDeserializer<Money, String> {
+public class MoneyDeserializer extends AbstractNotBlankDeserializer<Money> {
 
     public static final MoneyDeserializer INSTANCE = new MoneyDeserializer();
 
@@ -30,11 +30,11 @@ public class MoneyDeserializer extends AbstractNonNullDeserializer<Money, String
     }
 
     protected MoneyDeserializer() {
-        super(Money.class, String.class);
+        super(Money.class);
     }
 
     @Override
-    public Money convert(String text) {
+    protected Money parseText(String text) {
         Matcher matcher = AssertUtils.matches(MONEY_REGEX, text);
         Money.CurrencyEnum currency = EnumUtilExt.deserializeCode(matcher.group(1), Money.CurrencyEnum.class);
         long value = Long.parseLong(matcher.group(2).replace(Constants.COMMA_DELIMITER, ""));

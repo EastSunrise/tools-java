@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public abstract class AbstractNonNullDeserializer<JavaType, JsonType> extends StdDeserializer<JavaType> {
 
-    protected Class<JsonType> jsonType;
+    protected final Class<JsonType> jsonType;
 
     protected AbstractNonNullDeserializer(Class<JavaType> javaType, Class<JsonType> jsonType) {
         super(javaType);

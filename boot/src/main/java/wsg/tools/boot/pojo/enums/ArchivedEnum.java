@@ -1,7 +1,7 @@
 package wsg.tools.boot.pojo.enums;
 
-import wsg.tools.common.jackson.intf.CodeSupplier;
-import wsg.tools.common.jackson.intf.TitleSupplier;
+import wsg.tools.common.function.CodeSupplier;
+import wsg.tools.common.function.TitleSupplier;
 
 /**
  * Archived status of the subject

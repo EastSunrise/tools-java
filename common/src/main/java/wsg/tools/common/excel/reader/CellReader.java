@@ -1,93 +1,69 @@
 package wsg.tools.common.excel.reader;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 
+import java.lang.reflect.Type;
+
 /**
  * Interface to read a cell.
  *
- * @param <JavaType> corresponding java type of the cell
+ * @param <V> corresponding java type of the cell
  * @author Kingen
  * @since 2020/7/22
  */
-public class CellReader<JavaType> {
+public class CellReader<V> {
 
-    public static final CellReader<String> STRING_CELL_READER = new CellReader<>(String.class);
-    private final Class<JavaType> targetClass;
-    private final TypeReference<JavaType> typeReference;
+    private final Type type;
 
-    protected CellReader(Class<JavaType> targetClass, TypeReference<JavaType> typeReference) {
-        this.targetClass = targetClass;
-        this.typeReference = typeReference;
+    public CellReader(Class<V> clazz) {
+        this.type = clazz;
     }
 
-    public CellReader(Class<JavaType> targetClass) {
-        this(targetClass, null);
+    public CellReader(TypeReference<V> typeReference) {
+        this.type = typeReference.getType();
     }
 
-    public CellReader(TypeReference<JavaType> typeReference) {
-        this(null, typeReference);
+    /**
+     * Read a cell of Excel.
+     */
+    public V readCell(Cell cell, ObjectMapper mapper) {
+        Object value = readValue(cell);
+        if (value == null) {
+            return null;
+        }
+
+        JavaType javaType = mapper.getTypeFactory().constructType(getType());
+        return mapper.convertValue(value, javaType);
+    }
+
+    /**
+     * Read a value of csv
+     */
+    public V readRecord(String value, ObjectMapper mapper) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+
+        JavaType javaType = mapper.getTypeFactory().constructType(getType());
+        return mapper.convertValue(value, javaType);
+    }
+
+    protected Type getType() {
+        return type;
     }
 
     /**
      * Read value of the given cell
      *
-     * @param cell   given cell
-     * @param mapper current {@link ObjectMapper}
+     * @param cell given cell, not null
      * @return value
      */
-    public JavaType readValue(Cell cell, ObjectMapper mapper) {
-        Object value = getCellValue(cell);
-        if (value == null) {
-            return null;
-        }
-
-        if (ClassUtils.isAssignable(value.getClass(), targetClass)) {
-            return targetClass.cast(value);
-        }
-
-        Class<?> middleType = getMiddleType();
-        Object middleValue;
-        if (middleType != null) {
-            if (ClassUtils.isAssignable(value.getClass(), middleType)) {
-                middleValue = middleType.cast(value);
-            } else {
-                middleValue = mapper.convertValue(value, middleType);
-            }
-        } else {
-            middleValue = value;
-        }
-
-        if (typeReference != null) {
-            return mapper.convertValue(middleValue, typeReference);
-        }
-
-        if (ClassUtils.isAssignable(middleValue.getClass(), targetClass)) {
-            return targetClass.cast(middleValue);
-        }
-        return mapper.convertValue(middleValue, targetClass);
-    }
-
-    /**
-     * Returns middle type between the java type and the cell type.
-     *
-     * @return middle type
-     */
-    protected Class<?> getMiddleType() {
-        return null;
-    }
-
-    /**
-     * Returns value of the given cell.
-     *
-     * @param cell given cell
-     * @return value
-     */
-    private Object getCellValue(Cell cell) {
+    private Object readValue(Cell cell) {
         CellType cellType = cell.getCellType();
         switch (cellType) {
             case BOOLEAN:

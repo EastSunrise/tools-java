@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.TypeEnum;
+import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
@@ -27,7 +27,7 @@ public class SubjectDto extends BaseDto {
     private Long id;
     private Long dbId;
     private String imdbId;
-    private TypeEnum type;
+    private VideoTypeEnum type;
 
     private String title;
     private String text;

@@ -10,8 +10,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.CellReader;
-import wsg.tools.common.excel.writer.CellWriter;
-import wsg.tools.common.excel.writer.ValueSupplier;
+import wsg.tools.common.excel.reader.CellToSetter;
+import wsg.tools.common.excel.writer.CellFromGetter;
+import wsg.tools.common.function.CreatorSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,52 +51,28 @@ public class ExcelFactory {
     }
 
     /**
-     * Read a csv input stream with {@link Charset#defaultCharset()} charset.
-     */
-    public List<Map<String, ?>> readCsv(final InputStream inputStream, Map<String, Class<?>> classes) throws IOException {
-        return readCsv(inputStream, classes, Charset.defaultCharset());
-    }
-
-    /**
      * Read data from csv input stream. Convert each cell from string to target type with Jackson.
      *
-     * @param classes header-class map, exact headers must be provided.
+     * @param readers header-reader map, exact headers must be provided.
      * @param charset given charset
      * @return list of header-value map
      */
-    public List<Map<String, ?>> readCsv(final InputStream inputStream, Map<String, Class<?>> classes, Charset charset) throws IOException {
+    public List<Map<String, ?>> readCsv(final InputStream inputStream, Map<String, CellReader<?>> readers, Charset charset) throws IOException {
         CSVFormat format = this.format;
-        if (MapUtils.isNotEmpty(classes)) {
-            format = format.withHeader(classes.keySet().toArray(new String[0])).withFirstRecordAsHeader();
+        if (MapUtils.isNotEmpty(readers)) {
+            format = format.withHeader(readers.keySet().toArray(new String[0])).withFirstRecordAsHeader();
         }
         CSVParser parse = CSVParser.parse(inputStream, charset, format);
         List<Map<String, ?>> list = new ArrayList<>();
         for (CSVRecord record : parse) {
             Map<String, Object> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-            for (Map.Entry<String, Class<?>> entry : classes.entrySet()) {
-                map.put(entry.getKey(), objectMapper.convertValue(record.get(entry.getKey()), entry.getValue()));
+            for (Map.Entry<String, CellReader<?>> entry : readers.entrySet()) {
+                CellReader<?> reader = entry.getValue();
+                map.put(entry.getKey(), reader.readRecord(record.get(entry.getKey()), objectMapper));
             }
             list.add(map);
         }
         return list;
-    }
-
-    /**
-     * Write csv data to stream.
-     *
-     * @param data      data to write to the csv file
-     * @param suppliers suppliers to handle each column
-     */
-    public <T> void writeCsv(final Appendable out, List<T> data, LinkedHashMap<String, ValueSupplier<T, ?>> suppliers) throws IOException {
-        CSVPrinter printer = format.print(out);
-        printer.printRecord(suppliers.keySet());
-        for (T t : data) {
-            for (ValueSupplier<T, ?> supplier : suppliers.values()) {
-                printer.print(objectMapper.convertValue(supplier.getValue(t), String.class));
-            }
-            printer.println();
-        }
-        printer.close(true);
     }
 
     /**
@@ -125,11 +102,92 @@ public class ExcelFactory {
                 if (cell == null) {
                     continue;
                 }
-                map.put(entry.getKey(), entry.getValue().readValue(cell, objectMapper));
+                map.put(entry.getKey(), entry.getValue().readCell(cell, objectMapper));
             }
             list.add(map);
         }
         return list;
+    }
+
+    /**
+     * Read data from csv input stream.
+     *
+     * @param readers header-reader map, exact headers must be provided.
+     * @param creator supply an instance of target object
+     * @param charset given charset
+     * @param <T>     target type
+     * @return list of objects of target type
+     */
+    public <T> List<T> readCsv(final InputStream inputStream, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
+        CSVFormat format = this.format;
+        if (MapUtils.isNotEmpty(readers)) {
+            format = format.withHeader(readers.keySet().toArray(new String[0])).withFirstRecordAsHeader();
+        }
+        CSVParser parse = CSVParser.parse(inputStream, charset, format);
+        List<T> list = new ArrayList<>();
+        for (CSVRecord record : parse) {
+            T t = creator.create();
+            for (Map.Entry<String, CellToSetter<T, ?>> entry : readers.entrySet()) {
+                CellToSetter<T, ?> reader = entry.getValue();
+                reader.readRecordToSet(record.get(entry.getKey()), objectMapper, t);
+            }
+            list.add(t);
+        }
+        return list;
+    }
+
+    /**
+     * Read data from excel input stream.
+     *
+     * @param readers header-reader map, exact headers must be provided.
+     * @param creator supply an instance of target object+
+     * @param <T>     target type
+     * @return list of objects of target type
+     */
+    public <T> List<T> readXlsx(final InputStream inputStream, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
+        Workbook workbook = WorkbookFactory.create(inputStream);
+        Iterator<Row> iterator = workbook.getSheetAt(0).iterator();
+        Map<String, Integer> headers = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        int column = 0;
+        for (Cell cell : iterator.next()) {
+            headers.put(cell.getStringCellValue(), column++);
+        }
+        List<T> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Row row = iterator.next();
+            T t = creator.create();
+            for (Map.Entry<String, CellToSetter<T, ?>> entry : readers.entrySet()) {
+                Integer index = headers.get(entry.getKey());
+                if (index == null) {
+                    continue;
+                }
+                Cell cell = row.getCell(index, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                if (cell == null) {
+                    continue;
+                }
+                entry.getValue().readCellToSet(cell, objectMapper, t);
+            }
+            list.add(t);
+        }
+        return list;
+    }
+
+    /**
+     * Write csv data to stream.
+     *
+     * @param data    data to write to the csv file
+     * @param writers writers to handle each column
+     */
+    public <T> void writeCsv(final Appendable out, List<T> data, LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+        CSVPrinter printer = format.print(out);
+        printer.printRecord(writers.keySet());
+        for (T t : data) {
+            for (CellFromGetter<T, ?> writer : writers.values()) {
+                writer.printFromGetter(printer, t, objectMapper);
+            }
+            printer.println();
+        }
+        printer.close(true);
     }
 
     /**
@@ -138,7 +196,7 @@ public class ExcelFactory {
      * @param data    data to write
      * @param writers writers to set cells by column
      */
-    public <T> void writeXlsx(OutputStream stream, List<T> data, LinkedHashMap<String, CellWriter<T, ?>> writers) throws IOException {
+    public <T> void writeXlsx(OutputStream stream, List<T> data, LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
         int i = 0;
@@ -151,13 +209,15 @@ public class ExcelFactory {
         for (T t : data) {
             row = sheet.createRow(i++);
             j = 0;
-            for (CellWriter<T, ?> writer : writers.values()) {
+            for (CellFromGetter<T, ?> writer : writers.values()) {
                 Cell cell = row.createCell(j++);
-                writer.setCellValue(cell, t, objectMapper);
-                writer.setCellStyle(cell, t, workbook);
+                writer.setCellFromGetter(cell, t, objectMapper);
+                writer.setCellStyleFromGetter(cell, t, workbook);
             }
         }
         workbook.write(stream);
         workbook.close();
     }
+
+
 }

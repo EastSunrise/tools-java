@@ -1,13 +1,13 @@
-package wsg.tools.common.excel.writer;
+package wsg.tools.common.function;
 
 /**
- * Get value to write to cell from the given object.
+ * Supply a getter for one property of the given type.
  *
  * @author Kingen
  * @since 2020/7/21
  */
 @FunctionalInterface
-public interface ValueSupplier<T, V> {
+public interface ValueGetter<T, V> {
 
     /**
      * Obtains value from the given object

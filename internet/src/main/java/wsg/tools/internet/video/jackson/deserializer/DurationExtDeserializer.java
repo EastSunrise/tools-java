@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.jackson.deserializer;
 
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.deserializer.AbstractNonNullDeserializer;
+import wsg.tools.common.jackson.deserializer.AbstractNotBlankDeserializer;
 import wsg.tools.common.util.AssertUtils;
 
 import java.time.Duration;
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/20
  */
-public class DurationExtDeserializer extends AbstractNonNullDeserializer<Duration, String> {
+public class DurationExtDeserializer extends AbstractNotBlankDeserializer<Duration> {
 
     public static final DurationExtDeserializer INSTANCE = new DurationExtDeserializer();
 
@@ -25,11 +25,11 @@ public class DurationExtDeserializer extends AbstractNonNullDeserializer<Duratio
     private static final String DURATION_START = "P";
 
     protected DurationExtDeserializer() {
-        super(Duration.class, String.class);
+        super(Duration.class);
     }
 
     @Override
-    public Duration convert(String text) {
+    protected Duration parseText(String text) {
         if (text.startsWith(DURATION_START)) {
             return Duration.parse(text.replace(",", ""));
         }

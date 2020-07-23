@@ -1,11 +1,13 @@
 package wsg.tools.common.excel.writer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
@@ -14,22 +16,20 @@ import java.util.Date;
 /**
  * Interface to write a cell.
  *
- * @param <T> type of the object representing the whole row.
  * @param <V> corresponding java type of the cell
  * @author Kingen
  * @since 2020/7/21
  */
-public interface CellWriter<T, V> extends ValueSupplier<T, V> {
+public abstract class CellWriter<V> {
 
     /**
      * Set value of the given cell.
      *
      * @param cell   given cell
-     * @param t      object representing current row
+     * @param value  object to write
      * @param mapper mapper to convert values
      */
-    default void setCellValue(Cell cell, T t, ObjectMapper mapper) {
-        V value = getValue(t);
+    public void setCellValue(Cell cell, V value, ObjectMapper mapper) {
         if (setCellValue(cell, value)) {
             return;
         }
@@ -54,10 +54,17 @@ public interface CellWriter<T, V> extends ValueSupplier<T, V> {
      * Set style of the given cell.
      *
      * @param cell     given cell
-     * @param t        given object
+     * @param v        value of the cell
      * @param workbook target workbook
      */
-    default void setCellStyle(Cell cell, T t, Workbook workbook) {
+    public void setCellStyle(Cell cell, V v, Workbook workbook) {
+    }
+
+    /**
+     * Print a value
+     */
+    public void print(CSVPrinter printer, V value, ObjectMapper mapper) throws IOException {
+        printer.print(mapper.convertValue(value, String.class));
     }
 
     /**
@@ -65,7 +72,7 @@ public interface CellWriter<T, V> extends ValueSupplier<T, V> {
      *
      * @return middle type
      */
-    default Class<?> getMiddleType() {
+    protected Class<?> getMiddleType() {
         return String.class;
     }
 

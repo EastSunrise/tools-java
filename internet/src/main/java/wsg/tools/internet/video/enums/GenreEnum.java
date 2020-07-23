@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.jackson.intf.TextSupplier;
-import wsg.tools.common.jackson.intf.TitleSupplier;
+import wsg.tools.common.function.TextSupplier;
+import wsg.tools.common.function.TitleSupplier;
 
 /**
  * Enum for genres of subjects, with text as English display name and title as Chinese display name.

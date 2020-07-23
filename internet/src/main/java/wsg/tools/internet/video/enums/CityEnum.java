@@ -1,9 +1,9 @@
 package wsg.tools.internet.video.enums;
 
 import lombok.Getter;
-import wsg.tools.common.jackson.intf.CodeSupplier;
-import wsg.tools.common.jackson.intf.TextSupplier;
-import wsg.tools.common.jackson.intf.TitleSupplier;
+import wsg.tools.common.function.CodeSupplier;
+import wsg.tools.common.function.TextSupplier;
+import wsg.tools.common.function.TitleSupplier;
 
 /**
  * Enum for cities.

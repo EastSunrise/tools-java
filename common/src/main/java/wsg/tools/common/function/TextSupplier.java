@@ -1,7 +1,7 @@
-package wsg.tools.common.jackson.intf;
+package wsg.tools.common.function;
 
 /**
- * Serialize to an English text, usually used to display.
+ * Supply an English text, usually used to display.
  *
  * @author Kingen
  * @since 2020/6/19

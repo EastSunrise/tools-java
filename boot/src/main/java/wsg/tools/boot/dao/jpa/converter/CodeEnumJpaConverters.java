@@ -1,8 +1,8 @@
 package wsg.tools.boot.dao.jpa.converter;
 
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.TypeEnum;
-import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.boot.pojo.enums.VideoTypeEnum;
+import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.enums.MarkEnum;
 
@@ -27,9 +27,9 @@ public class CodeEnumJpaConverters {
     }
 
     @Converter(autoApply = true)
-    public static class TypeEnumConverter extends CodeEnumConverter<TypeEnum> {
+    public static class TypeEnumConverter extends CodeEnumConverter<VideoTypeEnum> {
         public TypeEnumConverter() {
-            super(TypeEnum.class);
+            super(VideoTypeEnum.class);
         }
     }
 

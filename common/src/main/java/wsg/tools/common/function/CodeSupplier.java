@@ -1,7 +1,7 @@
-package wsg.tools.common.jackson.intf;
+package wsg.tools.common.function;
 
 /**
- * Serialize to a code, usually stored in the database.
+ * Supply a code, usually stored in the database.
  *
  * @author Kingen
  * @since 2020/6/17

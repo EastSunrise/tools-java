@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
 import org.apache.commons.lang3.ArrayUtils;
-import wsg.tools.common.jackson.intf.AkaPredicate;
+import wsg.tools.common.function.AkaPredicate;
 
 /**
  * Rate of movies on IMDb.

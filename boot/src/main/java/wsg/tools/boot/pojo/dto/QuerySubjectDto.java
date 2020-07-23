@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseQueryDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.TypeEnum;
+import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 /**
@@ -19,6 +19,6 @@ public class QuerySubjectDto extends BaseQueryDto {
 
     private MarkEnum mark;
     private ArchivedEnum archived;
-    private TypeEnum type;
+    private VideoTypeEnum type;
     private Boolean incomplete = false;
 }

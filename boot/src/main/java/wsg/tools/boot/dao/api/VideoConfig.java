@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
-import wsg.tools.boot.pojo.enums.TypeEnum;
+import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.DoubanSubject;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
@@ -43,7 +43,7 @@ public class VideoConfig implements InitializingBean {
         Objects.requireNonNull(imdbId);
         ImdbSubject imdbSubject = omdbSite.getSubjectById(imdbId);
         SubjectEntity subject = BeanUtilExt.convert(imdbSubject, SubjectEntity.class);
-        subject.setType(TypeEnum.of(imdbSubject.getType()));
+        subject.setType(VideoTypeEnum.of(imdbSubject.getType()));
         if (subject.getDurations() == null) {
             subject.setDurations(new ArrayList<>());
         }
@@ -54,7 +54,7 @@ public class VideoConfig implements InitializingBean {
     public SubjectEntity getDouban(long dbId) throws HttpResponseException {
         DoubanSubject doubanSubject = doubanSite.movieSubject(dbId);
         SubjectEntity subject = BeanUtilExt.convert(doubanSubject, SubjectEntity.class);
-        subject.setType(TypeEnum.of(doubanSubject.getSubtype()));
+        subject.setType(VideoTypeEnum.of(doubanSubject.getSubtype()));
         if (CollectionUtils.isNotEmpty(doubanSubject.getAka())) {
             List<String> textAka = new ArrayList<>(), titleAka = new ArrayList<>();
             for (String aka : doubanSubject.getAka()) {

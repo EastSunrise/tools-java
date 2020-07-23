@@ -1,7 +1,7 @@
 package wsg.tools.common.lang;
 
 import lombok.Getter;
-import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.function.CodeSupplier;
 
 /**
  * Class for money.

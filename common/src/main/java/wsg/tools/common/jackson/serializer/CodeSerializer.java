@@ -2,7 +2,7 @@ package wsg.tools.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import wsg.tools.common.jackson.intf.CodeSupplier;
+import wsg.tools.common.function.CodeSupplier;
 
 import java.io.IOException;
 

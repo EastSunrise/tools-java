@@ -1,7 +1,7 @@
-package wsg.tools.common.jackson.intf;
+package wsg.tools.common.function;
 
 /**
- * Indicate what the object is also known as
+ * Indicate what the object is also known as.
  *
  * @author Kingen
  * @since 2020/6/19

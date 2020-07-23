@@ -1,9 +1,9 @@
 package wsg.tools.common.util;
 
-import wsg.tools.common.jackson.intf.AkaPredicate;
-import wsg.tools.common.jackson.intf.CodeSupplier;
-import wsg.tools.common.jackson.intf.TextSupplier;
-import wsg.tools.common.jackson.intf.TitleSupplier;
+import wsg.tools.common.function.AkaPredicate;
+import wsg.tools.common.function.CodeSupplier;
+import wsg.tools.common.function.TextSupplier;
+import wsg.tools.common.function.TitleSupplier;
 
 import java.util.Arrays;
 
