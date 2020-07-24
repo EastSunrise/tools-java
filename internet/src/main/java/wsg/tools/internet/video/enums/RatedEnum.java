@@ -1,7 +1,8 @@
 package wsg.tools.internet.video.enums;
 
-import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.function.AkaPredicate;
+
+import java.util.Arrays;
 
 /**
  * Rate of movies on IMDb.
@@ -20,6 +21,7 @@ public enum RatedEnum implements AkaPredicate<String> {
     PG_13("PG-13"),
     R,
     NC_17("NC-17"),
+    M("X", "P"),
 
     /**
      * Rate of TV
@@ -42,6 +44,6 @@ public enum RatedEnum implements AkaPredicate<String> {
 
     @Override
     public boolean alsoKnownAs(String other) {
-        return name().equalsIgnoreCase(other) || ArrayUtils.contains(aka, other);
+        return name().equalsIgnoreCase(other) || Arrays.stream(aka).anyMatch(s -> s.equalsIgnoreCase(other));
     }
 }

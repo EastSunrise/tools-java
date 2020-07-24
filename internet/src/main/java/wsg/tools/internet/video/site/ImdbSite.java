@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.enums.ImdbTypeEnum;
@@ -36,7 +37,7 @@ public class ImdbSite extends AbstractVideoSite {
         try {
             document = getDocument(buildUri("/title/" + tt, null).build());
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         ImdbSubject subject = new ImdbSubject();
         subject.setImdbId(tt);
@@ -46,7 +47,7 @@ public class ImdbSite extends AbstractVideoSite {
         try {
             root = getObjectMapper().readTree(head.selectFirst("script[type=application/ld+json]").html());
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
 
         ImdbTypeEnum type = EnumUtilExt.deserializeAka(root.get("@type").textValue(), ImdbTypeEnum.class);

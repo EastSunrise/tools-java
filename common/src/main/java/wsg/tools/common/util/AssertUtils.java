@@ -1,5 +1,6 @@
 package wsg.tools.common.util;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,6 +13,14 @@ import java.util.stream.Stream;
  * @since 2020/6/22
  */
 public class AssertUtils {
+
+    /**
+     * Returns a {@link RuntimeException}.
+     */
+    public static RuntimeException runtimeException(Throwable e) {
+        Objects.requireNonNull(e);
+        return new RuntimeException(e.getMessage(), e);
+    }
 
     /**
      * Check if there is an element of the collection that match the given predicate.

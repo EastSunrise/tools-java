@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.CodeSerializer;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -69,7 +70,7 @@ public class ContainerJsonJpaConverters {
             try {
                 return OBJECT_MAPPER.readValue(dbData, type);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new AppException(e);
             }
         }
 
@@ -78,7 +79,7 @@ public class ContainerJsonJpaConverters {
             try {
                 return OBJECT_MAPPER.writeValueAsString(attribute);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new AppException(e);
             }
         }
     }

@@ -3,6 +3,7 @@ package wsg.tools.boot.common;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
+import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.common.constant.Constants;
 
 import java.beans.PropertyDescriptor;
@@ -64,7 +65,7 @@ public class BeanUtilExt {
                         copier.writeMethod.invoke(dest, origValue);
                     }
                 } catch (InvocationTargetException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                    throw new AppException(e);
                 }
             }
         }
@@ -81,7 +82,7 @@ public class BeanUtilExt {
             try {
                 value = descriptor.getReadMethod().invoke(o);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+                throw new AppException(e);
             }
             if (!ignoreNull || value != null) {
                 map.put(descriptor.getName(), value);

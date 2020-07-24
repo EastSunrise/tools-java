@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.boot.pojo.dto.SubjectDto;
 
 import java.io.File;
@@ -26,7 +27,7 @@ public class VideoManager {
     public VideoManager(@Value("${cdn}") String cdn) {
         File file = new File(cdn);
         if (!file.isDirectory()) {
-            throw new RuntimeException(new FileNotFoundException("Cdn doesn't exist."));
+            throw new AppException(new FileNotFoundException("Cdn doesn't exist."));
         }
         this.cdn = cdn;
     }

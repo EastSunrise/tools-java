@@ -23,6 +23,7 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.util.AssertUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,10 +55,9 @@ public abstract class BaseSite {
     private final String name;
     private final SchemeEnum scheme = SchemeEnum.HTTPS;
     private final String domain;
-
+    private final RateLimiter limiter;
     private ObjectMapper objectMapper;
     private CloseableHttpClient client;
-    private final RateLimiter limiter;
 
     public BaseSite(String name, String domain) {
         this(name, domain, 10D);
@@ -96,7 +96,7 @@ public abstract class BaseSite {
         try {
             return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
     }
 
@@ -107,7 +107,7 @@ public abstract class BaseSite {
         try {
             return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -127,7 +127,7 @@ public abstract class BaseSite {
             try {
                 content = FileUtils.readFileToString(file, UTF_8);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(e.getMessage(), e);
             }
             if (Constants.NULL_NA.equals(content)) {
                 throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not Found");
@@ -143,7 +143,7 @@ public abstract class BaseSite {
                 try {
                     FileUtils.write(file, Constants.NULL_NA, UTF_8);
                 } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                    throw AssertUtils.runtimeException(ex);
                 }
             }
             throw e;
@@ -151,7 +151,7 @@ public abstract class BaseSite {
         try {
             FileUtils.write(file, data, UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         return data;
     }
@@ -178,7 +178,7 @@ public abstract class BaseSite {
         } catch (HttpResponseException e) {
             throw e;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         } finally {
             httpGet.releaseConnection();
         }

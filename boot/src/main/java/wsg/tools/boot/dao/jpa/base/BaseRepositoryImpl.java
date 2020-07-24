@@ -36,7 +36,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E insert(E entity) {
-        if (info.isNew(entity)) {
+        if (getSource(entity, null).isEmpty()) {
             manager.persist(entity);
             return entity;
         }
@@ -46,14 +46,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E insertIgnore(E entity, Supplier<Optional<E>> supplier) {
-        ID id = info.getId(entity);
-        Optional<E> one = Optional.empty();
-        if (id != null) {
-            one = findById(id);
-        } else if (supplier != null) {
-            one = supplier.get();
-        }
-        if (one.isEmpty() && info.isNew(entity)) {
+        if (getSource(entity, supplier).isEmpty()) {
             manager.persist(entity);
             return entity;
         }
@@ -63,22 +56,27 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E updateById(E entity) {
-        if (info.isNew(entity)) {
+        Optional<E> optional = getSource(entity, null);
+        if (optional.isEmpty()) {
             throw new IllegalArgumentException("Can't update a new entity.");
         }
-        ID id = info.getId(entity);
-        if (id == null) {
-            throw new IllegalArgumentException("Can't update without an id.");
-        }
-        E source = findById(id).orElseThrow(() ->
-                new IllegalArgumentException("Can't update a not-existed entity."));
-        BeanUtilExt.copyPropertiesExceptNull(source, entity, true, true);
-        return manager.merge(source);
+        BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
+        return manager.merge(entity);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E updateOrInsert(E entity, Supplier<Optional<E>> supplier) {
+        Optional<E> optional = getSource(entity, supplier);
+        if (optional.isEmpty()) {
+            manager.persist(entity);
+            return entity;
+        }
+        BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
+        return manager.merge(entity);
+    }
+
+    private Optional<E> getSource(E entity, Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> one = Optional.empty();
         if (id != null) {
@@ -86,15 +84,6 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
         } else if (supplier != null) {
             one = supplier.get();
         }
-        if (one.isPresent()) {
-            E source = one.get();
-            BeanUtilExt.copyPropertiesExceptNull(source, entity, true, true);
-            return manager.merge(source);
-        }
-        if (info.isNew(entity)) {
-            manager.persist(entity);
-            return entity;
-        }
-        return manager.merge(entity);
+        return one;
     }
 }

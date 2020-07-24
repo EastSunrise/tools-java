@@ -97,6 +97,26 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
     }
 
     @Override
+    public Result batchUpdate(List<SubjectDto> subjects) {
+        log.info("Start to update list of subjects.");
+        final int[] count = {0};
+        subjects.forEach(subject -> {
+            SubjectEntity entity = getSubjectInfo(subject.getDbId(), subject.getImdbId());
+            if (subject.getId() != null && entity != null) {
+                entity.setId(subject.getId());
+                if (subjectRepository.updateById(entity) != null) {
+                    count[0]++;
+                }
+            }
+        });
+        Result result = Result.success();
+        result.put("total", subjects.size());
+        result.put("updated", count[0]);
+        result.put("others", subjects.size() - count[0]);
+        return result;
+    }
+
+    @Override
     public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
         Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
             Predicate predicate = getPredicate(querySubjectDto, root, builder);

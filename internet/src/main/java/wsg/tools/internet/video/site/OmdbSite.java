@@ -16,6 +16,7 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
 import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
 import wsg.tools.common.lang.Money;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.enums.*;
@@ -58,7 +59,7 @@ public class OmdbSite extends AbstractVideoSite {
         try {
             uri = buildUri("/", null, Parameter.of("i", id), Parameter.of("plot", "full")).build();
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         ResponseResult subject = getObject(uri, ResponseResult.class);
         if (!subject.response) {

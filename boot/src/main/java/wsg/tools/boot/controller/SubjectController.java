@@ -107,7 +107,7 @@ public class SubjectController extends AbstractController {
             List<SubjectDto> subjects = readCsv(file, readers, SubjectDto::new, Constants.UTF_8);
             return subjectService.importImdbIds(subjects.stream().map(SubjectDto::getImdbId).collect(Collectors.toList())).toResponse();
         } catch (IOException | IllegalArgumentException e) {
-            return Result.fail(e).toResponse();
+            return Result.response(e);
         }
     }
 
@@ -123,22 +123,23 @@ public class SubjectController extends AbstractController {
     }
 
     @RequestMapping(value = "/export")
-    public void export(HttpServletResponse response, QuerySubjectDto querySubjectDto) {
+    public ResponseEntity<?> export(HttpServletResponse response, QuerySubjectDto querySubjectDto) {
         PageResult<SubjectDto> all = subjectService.list(querySubjectDto, null);
         try {
             exportXlsx(response, all.getPage().getContent(), "电影列表", subjectTemplate.getWriters());
+            return Result.response();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return Result.response(e);
         }
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public void importEx(MultipartFile file) {
+    public ResponseEntity<?> importEx(MultipartFile file) {
         try {
             List<SubjectDto> subjects = readXlsx(file, subjectTemplate.getReaders(), SubjectDto::new);
-            System.out.println(subjects);
+            return subjectService.batchUpdate(subjects).toResponse();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return Result.response(e);
         }
     }
 

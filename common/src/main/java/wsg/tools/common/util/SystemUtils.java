@@ -25,8 +25,27 @@ public class SystemUtils {
             throw new FileNotFoundException(file.getPath());
         }
 
+        open(file.getAbsolutePath());
+    }
+
+    /**
+     * Open a url with local default browser.
+     *
+     * @param url  url string
+     * @param args optional args to format the url
+     */
+    public static void openUrl(String url, Object... args) throws IOException {
+        open(String.format(url, args));
+    }
+
+    /**
+     * Open the given target. Only useful for Windows.
+     *
+     * @param target a url or a path referring to a file
+     */
+    private static void open(String target) throws IOException {
         Runtime runtime = Runtime.getRuntime();
-        runtime.exec("rundll32 url.dll FileProtocolHandler " + file.getAbsolutePath());
+        runtime.exec("rundll32 url.dll FileProtocolHandler " + target);
     }
 
     /**

@@ -18,24 +18,6 @@ public class EnumUtilExt {
     /**
      * Get Enum from the name
      */
-    public static <T extends Enum<T>> T deserialize(String name, Class<T> clazz) {
-        T[] enums = clazz.getEnumConstants();
-        return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.name().equals(name),
-                "Unknown name %s for %s", name, clazz.getName());
-    }
-
-    /**
-     * Get Enum from the name
-     */
-    public static <T extends Enum<T>> T deserializeIgnoreCase(String name, Class<T> clazz) {
-        T[] enums = clazz.getEnumConstants();
-        return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.name().equalsIgnoreCase(name),
-                "Unknown name %s for %s", name, clazz.getName());
-    }
-
-    /**
-     * Get Enum from the name
-     */
     public static <A, T extends Enum<T> & AkaPredicate<A>> T deserializeAka(A object, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.alsoKnownAs(object),

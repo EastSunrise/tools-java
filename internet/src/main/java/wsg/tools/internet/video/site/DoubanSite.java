@@ -203,7 +203,7 @@ public class DoubanSite extends AbstractVideoSite {
         try {
             document = getDocument(buildUri("/subject/" + dbId, "movie").build());
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         DoubanSubject subject = new DoubanSubject();
         subject.setDbId(dbId);
@@ -246,7 +246,7 @@ public class DoubanSite extends AbstractVideoSite {
             uri = buildUri(String.format("/people/%d/%s", userId, mark.getPath()), catalog.getPath(),
                     Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         Document document = getDocument(uri, false);
         List<DoubanSubject> subjects = new LinkedList<>();
@@ -282,7 +282,7 @@ public class DoubanSite extends AbstractVideoSite {
             uri = buildUri(String.format("/people/%d/%s", userId, catalog.getCreator().getPath()), catalog.getPath(),
                     Parameter.of("start", start)).build();
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
         Document document = getDocument(uri, false);
         List<Celebrity> celebrities = new LinkedList<>();
@@ -306,7 +306,7 @@ public class DoubanSite extends AbstractVideoSite {
         try {
             return getObject(builder.build(), clazz);
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw AssertUtils.runtimeException(e);
         }
     }
 
@@ -324,7 +324,7 @@ public class DoubanSite extends AbstractVideoSite {
             try {
                 pageResult = getObject(builder.build(), new TypeReference<>() {});
             } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
+                throw AssertUtils.runtimeException(e);
             }
             list.addAll(pageResult.data);
             start += pageResult.count;

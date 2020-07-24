@@ -73,6 +73,27 @@ public class Result implements Serializable {
         return new Result(e);
     }
 
+    /**
+     * Obtain response of a successful result.
+     */
+    public static ResponseEntity<?> response() {
+        return success().toResponse();
+    }
+
+    /**
+     * Obtain response of a failed result.
+     */
+    public static ResponseEntity<?> response(String message, Object... formatArgs) {
+        return fail(message, formatArgs).toResponse();
+    }
+
+    /**
+     * Obtain response of a failed result from an {@link Exception}.
+     */
+    public static ResponseEntity<?> response(Exception e) {
+        return fail(e).toResponse();
+    }
+
     public Object put(String key, Object value) {
         assert success;
         return args.put(key, value);

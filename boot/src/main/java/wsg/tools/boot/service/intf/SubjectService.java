@@ -37,10 +37,18 @@ public interface SubjectService extends BaseService<SubjectDto, SubjectEntity, L
     Result importImdbIds(List<String> ids);
 
     /**
+     * Update subjects
+     *
+     * @param subjects list of subjects to update whose ids are required
+     * @return result
+     */
+    Result batchUpdate(List<SubjectDto> subjects);
+
+    /**
      * Returns subjects matching the given condition
      *
      * @param querySubjectDto condition
-     * @param pageable        pagination
+     * @param pageable        pagination, nullable
      * @return page of subjects
      */
     PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable);
