@@ -53,7 +53,8 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
         log.info("Start to import douban subjects of {} since {}", userId, since);
         final int[] count = {0};
         try {
-            List<SubjectEntity> entities = videoConfig.collectUserMovies(userId, since);
+            LocalDate finalSince = since;
+            List<SubjectEntity> entities = videoConfig.subjects(site -> site.collectUserMovies(userId, finalSince));
             entities.forEach(source -> {
                 SubjectEntity entity = getSubjectInfo(source.getDbId(), null);
                 if (entity != null) {
@@ -61,8 +62,8 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
                 } else {
                     entity = source;
                 }
-                SubjectEntity finalEntity = entity;
-                if (subjectRepository.insertIgnore(entity, () -> subjectRepository.findByDbId(finalEntity.getDbId())) != null) {
+                if (subjectRepository.findByDbId(entity.getDbId()).isEmpty()) {
+                    subjectRepository.insert(entity);
                     count[0]++;
                 }
             });
@@ -83,10 +84,9 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
         final int[] count = {0};
         ids.forEach(id -> {
             SubjectEntity entity = getSubjectInfo(null, id);
-            if (entity != null) {
-                if (subjectRepository.insertIgnore(entity, () -> subjectRepository.findByImdbId(entity.getImdbId())) != null) {
-                    count[0]++;
-                }
+            if (entity != null && subjectRepository.findByImdbId(entity.getImdbId()).isEmpty()) {
+                subjectRepository.insert(entity);
+                count[0]++;
             }
         });
         Result result = Result.success();
@@ -127,14 +127,14 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             return predicate;
         };
         if (pageable == null) {
-            return PageResult.of(findAll(spec));
+            return PageResult.of((findAll(spec)));
         }
-        return PageResult.of(findAll(spec, pageable));
+        return PageResult.of(subjectRepository.findAll(spec, pageable).map(this::convertEntity));
     }
 
     @Override
     public Result play(long id) {
-        Optional<SubjectDto> optional = findById(id);
+        Optional<SubjectDto> optional = subjectRepository.findById(id).map(this::convertEntity);
         if (optional.isEmpty()) {
             return Result.fail("Not exist does the subject %d", id);
         }

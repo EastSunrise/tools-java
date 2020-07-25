@@ -5,6 +5,8 @@ import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.lang.Nullable;
 import wsg.tools.boot.pojo.base.BaseEntity;
 
+import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -22,39 +24,38 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      *
      * @param entity entity to insert
      * @return entity inserted
-     * @throws IllegalArgumentException if the entity exists.
+     * @throws EntityExistsException if the entity exists.
      */
-    E insert(E entity);
-
-    /**
-     * Insert a new entity.
-     * <p>
-     * Ignore it if exists.
-     *
-     * @param entity   entity to insert
-     * @param supplier supplier to supply source entity
-     * @return entity inserted, null if exists
-     * @throws IllegalArgumentException if the entity exists.
-     */
-    E insertIgnore(E entity, @Nullable Supplier<Optional<E>> supplier);
+    E insert(E entity) throws EntityExistsException;
 
     /**
      * Update an entity by {@link ID}.
      *
      * @param entity entity to update
      * @return updated entity
+     * @throws IllegalArgumentException if the given entity doesn't contain id or not exist
      */
     E updateById(E entity);
 
     /**
-     * Update a entity by {@link ID}.
-     * If without {@link ID}, obtain source entity with {@link Supplier<Optional>}.
-     * Update the record if source entity supplied.
-     * Insert the record if not supplied.
+     * Update an entity by the given supplier.
+     *
+     * @param entity   entity to update
+     * @param supplier supply the source entity
+     * @return updated entity
+     * @throws EntityNotFoundException  if can't find an entity by the supplier or id of the given entity
+     * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
+     */
+    E updateBy(E entity, Supplier<Optional<E>> supplier) throws EntityNotFoundException, IllegalArgumentException;
+
+    /**
+     * Update the entity if found by the supplier or id of the given entity
+     * Insert the given entity if not found.
      *
      * @param entity   object to update or save
      * @param supplier supplier to supply source entity
-     * @return result
+     * @return updated entity with flag of inserting or updating
+     * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
      */
-    E updateOrInsert(E entity, @Nullable Supplier<Optional<E>> supplier);
+    InsertOrUpdate<E> updateOrInsert(E entity, @Nullable Supplier<Optional<E>> supplier) throws IllegalArgumentException;
 }

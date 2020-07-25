@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/16
  */
-public class ImdbSite extends AbstractVideoSite {
+public final class ImdbSite extends BaseVideoSite {
 
     private static final Pattern MOVIE_TITLE_REGEX = Pattern.compile("([^()]+) \\((TV Movie )?(\\d{4})\\) - IMDb");
     private static final Pattern TV_TITLE_REGEX = Pattern.compile("([^()]+) \\(TV ((Mini-)?Series|Episode) (\\d{4})(–(\\d{4}|\\s))?\\) - IMDb");

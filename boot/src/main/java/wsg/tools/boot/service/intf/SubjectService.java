@@ -5,8 +5,6 @@ import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
-import wsg.tools.boot.pojo.entity.SubjectEntity;
-import wsg.tools.boot.service.base.BaseService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,7 +15,7 @@ import java.util.List;
  * @author Kingen
  * @since 2020/6/22
  */
-public interface SubjectService extends BaseService<SubjectDto, SubjectEntity, Long> {
+public interface SubjectService {
 
     /**
      * Collect subjects under the user.

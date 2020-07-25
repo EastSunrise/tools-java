@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -28,7 +26,6 @@ import wsg.tools.common.util.AssertUtils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -200,21 +197,11 @@ public abstract class BaseSite {
      * <p>
      * It's overridable to apply customized rules.
      */
-    protected URIBuilder buildUri(String path, String lowDomain, Parameter... params) {
-        URIBuilder uriBuilder = new URIBuilder().setScheme(scheme.toString()).setPath(path);
-        if (params != null) {
-            for (Pair<String, String> pair : params) {
-                if (pair != null) {
-                    uriBuilder.addParameter(pair.getKey(), pair.getValue());
-                }
-            }
-        }
-        String host = domain;
-        if (StringUtils.isNotBlank(lowDomain)) {
-            host = lowDomain + "." + host;
-        }
-        uriBuilder.setHost(host);
-        return uriBuilder;
+    protected URIBuilder buildUri(String path, String lowDomain, Object... pathArgs) {
+        return new URIBuilder()
+                .setScheme(scheme.toString())
+                .setHost(StringUtils.isBlank(lowDomain) ? domain : lowDomain + "." + domain)
+                .setPath(String.format(path, pathArgs));
     }
 
     /**
@@ -227,18 +214,5 @@ public abstract class BaseSite {
             objectMapper = new ObjectMapper();
         }
         return objectMapper;
-    }
-
-    protected static class Parameter extends MutablePair<String, String> {
-
-        private Parameter(final String left, final String right) {
-            super(left, right);
-        }
-
-        public static Parameter of(final String left, final Object right) {
-            Objects.requireNonNull(left);
-            Objects.requireNonNull(right);
-            return new Parameter(left, right.toString());
-        }
     }
 }

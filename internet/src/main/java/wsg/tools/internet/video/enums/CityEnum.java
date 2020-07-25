@@ -4,6 +4,7 @@ import lombok.Getter;
 import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.function.TextSupplier;
 import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.internet.base.PathParameterized;
 
 /**
  * Enum for cities.
@@ -11,12 +12,13 @@ import wsg.tools.common.function.TitleSupplier;
  * @author Kingen
  * @since 2020/7/17
  */
-public enum CityEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier {
+public enum CityEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier, PathParameterized {
     /**
      * Cities
      */
-    BEIJING(1000, "PEK", "Beijing", "北京"),
-    SHANGHAI(2900, "SHA", "Shanghai", "上海"),
+    BEIJING(1101, "PEK", "Beijing", "北京"),
+    SHANGHAI(3101, "SHA", "Shanghai", "上海"),
+    NANJING(3201, "NKG", "Nanjing", "南京"),
     ;
 
     @Getter
@@ -45,5 +47,10 @@ public enum CityEnum implements CodeSupplier<String>, TextSupplier, TitleSupplie
     @Override
     public String getTitle() {
         return title;
+    }
+
+    @Override
+    public String getPath() {
+        return text.toLowerCase();
     }
 }

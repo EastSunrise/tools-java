@@ -12,10 +12,10 @@ import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.DoubanSubject;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
+import wsg.tools.internet.video.site.BaseVideoSite;
 import wsg.tools.internet.video.site.DoubanSite;
 import wsg.tools.internet.video.site.OmdbSite;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -74,14 +74,25 @@ public class VideoConfig implements InitializingBean {
         return subject;
     }
 
-    public List<SubjectEntity> collectUserMovies(long userId, LocalDate since) throws HttpResponseException {
-        return doubanSite.collectUserMovies(userId, since).stream().map(
-                s -> BeanUtilExt.convert(s, SubjectEntity.class)).collect(Collectors.toList());
+    public List<SubjectEntity> subjects(VideoFunction<DoubanSite, List<DoubanSubject>> function) throws HttpResponseException {
+        return function.apply(doubanSite).stream().map(s -> BeanUtilExt.convert(s, SubjectEntity.class)).collect(Collectors.toList());
     }
 
     @Override
     public void afterPropertiesSet() {
         doubanSite = new DoubanSite(doubanApiKey);
         omdbSite = new OmdbSite(omdbApiKey);
+    }
+
+    @FunctionalInterface
+    public interface VideoFunction<Site extends BaseVideoSite, R> {
+        /**
+         * Applies this function to the given site.
+         *
+         * @param site the given site
+         * @return the function result
+         * @throws HttpResponseException if not a 2xx HTTP response
+         */
+        R apply(Site site) throws HttpResponseException;
     }
 }

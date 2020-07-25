@@ -7,7 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.pojo.base.BaseEntity;
 
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.metamodel.SingularAttribute;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,30 +37,37 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public E insert(E entity) {
-        if (getSource(entity, null).isEmpty()) {
-            manager.persist(entity);
-            return entity;
-        }
-        throw new IllegalArgumentException("Can't insert an existed entity.");
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public E insertIgnore(E entity, Supplier<Optional<E>> supplier) {
-        if (getSource(entity, supplier).isEmpty()) {
-            manager.persist(entity);
-            return entity;
-        }
-        return null;
+    public E insert(E entity) throws EntityExistsException {
+        manager.persist(entity);
+        return entity;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E updateById(E entity) {
-        Optional<E> optional = getSource(entity, null);
+        ID id = info.getId(entity);
+        if (id == null) {
+            throw new IllegalArgumentException("Can't update an entity without id.");
+        }
+        Optional<E> optional = findById(id);
         if (optional.isEmpty()) {
-            throw new IllegalArgumentException("Can't update a new entity.");
+            throw new IllegalArgumentException("Can't update a entity which doesn't exist.");
+        }
+        BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
+        return manager.merge(entity);
+    }
+
+    @Override
+    public E updateBy(E entity, Supplier<Optional<E>> supplier) {
+        ID id = info.getId(entity);
+        Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
+        if (optional.isEmpty()) {
+            if (id == null || (optional = findById(id)).isEmpty()) {
+                throw new EntityNotFoundException("Can't find an entity to update.");
+            }
+        }
+        if (id != null && info.getId(optional.get()) != id) {
+            throw new IllegalArgumentException("Supplied entity differs from the given one.");
         }
         BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
         return manager.merge(entity);
@@ -66,24 +75,19 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public E updateOrInsert(E entity, Supplier<Optional<E>> supplier) {
-        Optional<E> optional = getSource(entity, supplier);
+    public InsertOrUpdate<E> updateOrInsert(E entity, Supplier<Optional<E>> supplier) {
+        ID id = info.getId(entity);
+        Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
         if (optional.isEmpty()) {
-            manager.persist(entity);
-            return entity;
+            if (id == null || (optional = findById(id)).isEmpty()) {
+                manager.persist(entity);
+                return InsertOrUpdate.insert(entity);
+            }
+        }
+        if (id != null && info.getId(optional.get()) != id) {
+            throw new IllegalArgumentException("Supplied entity differs from the given one.");
         }
         BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
-        return manager.merge(entity);
-    }
-
-    private Optional<E> getSource(E entity, Supplier<Optional<E>> supplier) {
-        ID id = info.getId(entity);
-        Optional<E> one = Optional.empty();
-        if (id != null) {
-            one = findById(id);
-        } else if (supplier != null) {
-            one = supplier.get();
-        }
-        return one;
+        return InsertOrUpdate.update(manager.merge(entity));
     }
 }

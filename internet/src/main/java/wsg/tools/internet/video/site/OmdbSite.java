@@ -38,7 +38,7 @@ import java.util.Locale;
  * @author Kingen
  * @since 2020/6/18
  */
-public class OmdbSite extends AbstractVideoSite {
+public final class OmdbSite extends BaseVideoSite {
 
     private static final int MAX_PAGE = 100;
 
@@ -57,7 +57,7 @@ public class OmdbSite extends AbstractVideoSite {
     public ImdbSubject getSubjectById(String id) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri("/", null, Parameter.of("i", id), Parameter.of("plot", "full")).build();
+            uri = buildUri("/", null).addParameter("i", id).addParameter("plot", "full").build();
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -83,7 +83,7 @@ public class OmdbSite extends AbstractVideoSite {
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
     public Subject searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws IOException, URISyntaxException {
-        URIBuilder builder = buildUri("/", null, Parameter.of("s", s));
+        URIBuilder builder = buildUri("/", null).addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
         }
@@ -126,10 +126,9 @@ public class OmdbSite extends AbstractVideoSite {
     }
 
     @Override
-    protected URIBuilder buildUri(String path, String lowDomain, Parameter... params) {
-        URIBuilder builder = super.buildUri(path, lowDomain, params);
-        builder.addParameter("apikey", apiKey);
-        return builder;
+    protected URIBuilder buildUri(String path, String lowDomain, Object... pathArgs) {
+        return super.buildUri(path, lowDomain, pathArgs)
+                .addParameter("apikey", apiKey);
     }
 
     @Setter

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
@@ -41,11 +42,12 @@ import java.util.stream.Collectors;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends AbstractVideoSite {
+public final class DoubanSite extends BaseVideoSite {
 
     public static final LocalDate START_DATE = LocalDate.of(2005, 3, 6);
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d)+\\)");
+    private static final int MAX_COUNT_ONCE = 100;
 
     private final String apiKey;
 
@@ -127,7 +129,7 @@ public class DoubanSite extends AbstractVideoSite {
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
     public DoubanSubject movieSubject(long dbId) throws HttpResponseException {
-        DoubanSubject subject = getApiObject(String.format("/v2/movie/subject/%d", dbId), DoubanSubject.class);
+        DoubanSubject subject = getApiObject(apiUrl("/v2/movie/subject/%d", dbId), DoubanSubject.class);
         subject.setImdbId(parseSubjectPage(dbId).getImdbId());
         return subject;
     }
@@ -145,7 +147,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     public Celebrity apiMovieCelebrity(long id) throws HttpResponseException {
-        return getApiObject(String.format("/v2/movie/celebrity/%d", id), Celebrity.class);
+        return getApiObject(apiUrl("/v2/movie/celebrity/%d", id), Celebrity.class);
     }
 
     public List<Photo> apiMovieCelebrityPhotos(long celebrityId) throws HttpResponseException {
@@ -173,7 +175,7 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     public List<DoubanSubject> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
-        return getApiObjects("/v2/movie/in_theaters", Parameter.of("city", city.getNo()));
+        return getApiObjects("/v2/movie/in_theaters", Map.of("city", city.getPath()));
     }
 
     @Override
@@ -201,7 +203,7 @@ public class DoubanSite extends AbstractVideoSite {
     private DoubanSubject parseSubjectPage(long dbId) throws HttpResponseException {
         Document document;
         try {
-            document = getDocument(buildUri("/subject/" + dbId, "movie").build());
+            document = getDocument(catalogUrl("/subject/%d", CatalogEnum.MOVIE, dbId).build());
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -243,8 +245,10 @@ public class DoubanSite extends AbstractVideoSite {
     private PageResult<DoubanSubject> parseCollectionsPage(long userId, CatalogEnum catalog, MarkEnum mark, int start) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri(String.format("/people/%d/%s", userId, mark.getPath()), catalog.getPath(),
-                    Parameter.of("sort", "time"), Parameter.of("start", start), Parameter.of("mode", "list")).build();
+            uri = catalogUrl("/people/%d/%s", catalog, userId, mark.getPath())
+                    .addParameter("sort", "time")
+                    .addParameter("start", String.valueOf(start))
+                    .addParameter("mode", "list").build();
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -279,8 +283,8 @@ public class DoubanSite extends AbstractVideoSite {
     private PageResult<Celebrity> parseCreatorsPage(long userId, CatalogEnum catalog, int start) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri(String.format("/people/%d/%s", userId, catalog.getCreator().getPath()), catalog.getPath(),
-                    Parameter.of("start", start)).build();
+            uri = catalogUrl("/people/%d/%s", catalog, userId, catalog.getCreator().getPath())
+                    .addParameter("start", String.valueOf(start)).build();
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -300,9 +304,7 @@ public class DoubanSite extends AbstractVideoSite {
         return new PageResult<>(start, celebrities.size(), Integer.parseInt(matcher.group(1)), celebrities);
     }
 
-    private <T> T getApiObject(String path, Class<T> clazz, Parameter... params) throws HttpResponseException {
-        URIBuilder builder = super.buildUri(path, "api", params);
-        builder.addParameter("apikey", apiKey);
+    private <T> T getApiObject(URIBuilder builder, Class<T> clazz) throws HttpResponseException {
         try {
             return getObject(builder.build(), clazz);
         } catch (URISyntaxException e) {
@@ -311,15 +313,19 @@ public class DoubanSite extends AbstractVideoSite {
     }
 
     private <T> List<T> getApiObjects(String path, Object... pathArgs) throws HttpResponseException {
-        return getApiObjects(path, null, pathArgs);
+        return this.getApiObjects(path, null, pathArgs);
     }
 
-    private <T> List<T> getApiObjects(String path, Parameter parameter, Object... pathArgs) throws HttpResponseException {
+    private <T> List<T> getApiObjects(String path, Map<String, String> params, Object... pathArgs) throws HttpResponseException {
         int start = 0;
         List<T> list = new LinkedList<>();
         while (true) {
-            URIBuilder builder = super.buildUri(String.format(path, pathArgs), "api", Parameter.of("start", start), parameter);
-            builder.addParameter("apikey", apiKey);
+            URIBuilder builder = apiUrl(path, pathArgs)
+                    .addParameter("start", String.valueOf(start))
+                    .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
+            if (MapUtils.isNotEmpty(params)) {
+                params.forEach(builder::addParameter);
+            }
             PageResult<T> pageResult;
             try {
                 pageResult = getObject(builder.build(), new TypeReference<>() {});
@@ -333,6 +339,14 @@ public class DoubanSite extends AbstractVideoSite {
             }
         }
         return list;
+    }
+
+    private URIBuilder apiUrl(String path, Object... pathArgs) {
+        return buildUri(path, "api", pathArgs).addParameter("apikey", apiKey);
+    }
+
+    private URIBuilder catalogUrl(String path, CatalogEnum catalog, Object... pathArgs) {
+        return buildUri(path, catalog.getPath(), pathArgs);
     }
 
     private static class PageResult<T> {
