@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.common.lang.Money;
-import wsg.tools.internet.video.entity.Subject;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
 
@@ -22,7 +21,7 @@ import java.util.List;
  */
 @Setter
 @Getter
-public class ImdbSubject extends Subject {
+public class ImdbSubject {
 
     private String imdbId;
     private ImdbTypeEnum type;

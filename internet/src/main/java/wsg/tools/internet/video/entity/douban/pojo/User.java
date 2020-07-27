@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.entity.douban;
+package wsg.tools.internet.video.entity.douban.pojo;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +11,7 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class DoubanUser {
+public class User {
     private String uid;
     private String avatar;
     private String signature;

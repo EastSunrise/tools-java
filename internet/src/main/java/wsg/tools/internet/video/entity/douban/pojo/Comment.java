@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.entity.douban;
+package wsg.tools.internet.video.entity.douban.pojo;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * Comments of subjects.
+ * Short comments of subjects.
  *
  * @author Kingen
  * @since 2020/7/17
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class Comment {
     private Rating rating;
     private Integer usefulCount;
-    private DoubanUser author;
+    private User author;
     private Long subjectId;
     private String content;
     private LocalDateTime createdAt;

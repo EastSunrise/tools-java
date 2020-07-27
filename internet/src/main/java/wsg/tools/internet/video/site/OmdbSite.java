@@ -17,7 +17,7 @@ import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
 import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
 import wsg.tools.common.lang.Money;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.internet.video.entity.Subject;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.handler.SeparatedValueDeserializationProblemHandler;
@@ -38,7 +38,7 @@ import java.util.Locale;
  * @author Kingen
  * @since 2020/6/18
  */
-public final class OmdbSite extends BaseVideoSite {
+public final class OmdbSite extends BaseSite {
 
     private static final int MAX_PAGE = 100;
 
@@ -57,7 +57,7 @@ public final class OmdbSite extends BaseVideoSite {
     public ImdbSubject getSubjectById(String id) throws HttpResponseException {
         URI uri;
         try {
-            uri = buildUri("/", null).addParameter("i", id).addParameter("plot", "full").build();
+            uri = buildUri().addParameter("i", id).addParameter("plot", "full").build();
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -71,7 +71,7 @@ public final class OmdbSite extends BaseVideoSite {
     /**
      * Search subject fast.
      */
-    public Subject searchSubject(String s) throws IOException, URISyntaxException {
+    public ImdbSubject searchSubject(String s) throws IOException, URISyntaxException {
         return searchSubject(s, null, null, 1);
     }
 
@@ -82,8 +82,8 @@ public final class OmdbSite extends BaseVideoSite {
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public Subject searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws IOException, URISyntaxException {
-        URIBuilder builder = buildUri("/", null).addParameter("s", s);
+    public ImdbSubject searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws IOException, URISyntaxException {
+        URIBuilder builder = buildUri().addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
         }
@@ -95,7 +95,7 @@ public final class OmdbSite extends BaseVideoSite {
         } else {
             builder.addParameter("page", String.valueOf(page));
         }
-        return getObject(builder.build(), Subject.class);
+        return getObject(builder.build(), ImdbSubject.class);
     }
 
     @Override
@@ -125,9 +125,8 @@ public final class OmdbSite extends BaseVideoSite {
         return super.getContent(uri).replace("\"N/A\"", "null");
     }
 
-    @Override
-    protected URIBuilder buildUri(String path, String lowDomain, Object... pathArgs) {
-        return super.buildUri(path, lowDomain, pathArgs)
+    protected URIBuilder buildUri(Object... pathArgs) {
+        return super.buildPath("/", pathArgs)
                 .addParameter("apikey", apiKey);
     }
 

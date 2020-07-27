@@ -7,7 +7,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -47,21 +46,27 @@ public abstract class BaseSite {
     protected static final String HTML_H1 = "h1";
     protected static final String HTML_TITLE = "title";
     private static final int TIME_OUT = 30000;
+    private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
 
     @Getter
-    private final String name;
-    private final SchemeEnum scheme = SchemeEnum.HTTPS;
-    private final String domain;
+    protected final String name;
+    protected final SchemeEnum scheme;
+    protected final String domain;
     private final RateLimiter limiter;
     private ObjectMapper objectMapper;
     private CloseableHttpClient client;
 
     public BaseSite(String name, String domain) {
-        this(name, domain, 10D);
+        this(name, SchemeEnum.HTTPS, domain, 10D);
     }
 
     public BaseSite(String name, String domain, double permitsPerSecond) {
+        this(name, SchemeEnum.HTTPS, domain, permitsPerSecond);
+    }
+
+    public BaseSite(String name, SchemeEnum scheme, String domain, double permitsPerSecond) {
         this.name = name;
+        this.scheme = scheme;
         this.domain = domain;
         this.limiter = RateLimiter.create(permitsPerSecond);
     }
@@ -90,8 +95,26 @@ public abstract class BaseSite {
      * Return the content of response with a Java object.
      */
     protected <T> T getObject(URI uri, Class<T> clazz) throws HttpResponseException {
+        return getObject(uri, clazz, true);
+    }
+
+    /**
+     * Return the content of response with a generic Java object.
+     */
+    protected <T> T getObject(URI uri, TypeReference<T> type) throws HttpResponseException {
+        return getObject(uri, type, true);
+    }
+
+    /**
+     * Return the content of response with a Java object.
+     */
+    protected <T> T getObject(URI uri, Class<T> clazz, boolean cached) throws HttpResponseException {
         try {
-            return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+            if (cached) {
+                return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+            } else {
+                return getObjectMapper().readValue(getContent(uri), clazz);
+            }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -100,11 +123,15 @@ public abstract class BaseSite {
     /**
      * Return the content of response with a generic Java object.
      */
-    protected <T> T getObject(URI uri, TypeReference<T> type) throws HttpResponseException {
+    protected <T> T getObject(URI uri, TypeReference<T> type, boolean cached) throws HttpResponseException {
         try {
-            return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
+            if (cached) {
+                return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
+            } else {
+                return getObjectMapper().readValue(getContent(uri), type);
+            }
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw AssertUtils.runtimeException(e);
         }
     }
 
@@ -193,14 +220,14 @@ public abstract class BaseSite {
     }
 
     /**
-     * Build URI of request.
+     * Build base path of request uri, including scheme, host(domain by default), and path.
      * <p>
-     * It's overridable to apply customized rules.
+     * It's overridable to add customized parameters.
      */
-    protected URIBuilder buildUri(String path, String lowDomain, Object... pathArgs) {
+    protected URIBuilder buildPath(String path, Object... pathArgs) {
         return new URIBuilder()
                 .setScheme(scheme.toString())
-                .setHost(StringUtils.isBlank(lowDomain) ? domain : lowDomain + "." + domain)
+                .setHost(domain)
                 .setPath(String.format(path, pathArgs));
     }
 

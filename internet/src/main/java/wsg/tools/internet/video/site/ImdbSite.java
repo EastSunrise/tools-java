@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.imdb.ImdbSubject;
 import wsg.tools.internet.video.enums.ImdbTypeEnum;
 
@@ -19,7 +20,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/16
  */
-public final class ImdbSite extends BaseVideoSite {
+public final class ImdbSite extends BaseSite {
 
     private static final Pattern MOVIE_TITLE_REGEX = Pattern.compile("([^()]+) \\((TV Movie )?(\\d{4})\\) - IMDb");
     private static final Pattern TV_TITLE_REGEX = Pattern.compile("([^()]+) \\(TV ((Mini-)?Series|Episode) (\\d{4})(–(\\d{4}|\\s))?\\) - IMDb");
@@ -35,7 +36,7 @@ public final class ImdbSite extends BaseVideoSite {
     public ImdbSubject title(String tt) throws HttpResponseException {
         Document document;
         try {
-            document = getDocument(buildUri("/title/" + tt, null).build());
+            document = getDocument(buildPath("/title/%s", tt).build());
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
