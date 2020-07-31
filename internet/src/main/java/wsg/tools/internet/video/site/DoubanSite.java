@@ -99,11 +99,11 @@ public final class DoubanSite extends BaseSite {
      * @param mark    wish/do/collect
      * @return map of (id, mark date)
      */
-    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate startDate, CatalogEnum catalog, MarkEnum mark) throws HttpResponseException {
-        if (startDate == null) {
-            startDate = DOUBAN_START_DATE;
+    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws HttpResponseException {
+        if (since == null) {
+            since = DOUBAN_START_DATE;
         }
-        log.info("Collect movies of user {} since {}", userId, startDate);
+        log.info("Collect movies of user {} since {}", userId, since);
         Map<Long, LocalDate> map = new HashMap<>();
         int start = 0;
         while (true) {
@@ -124,7 +124,7 @@ public final class DoubanSite extends BaseSite {
                 String href = div.selectFirst(HTML_A).attr("href");
                 long id = Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/"));
                 LocalDate markDate = LocalDate.parse(div.nextElementSibling().text().strip());
-                if (!markDate.isBefore(startDate)) {
+                if (!markDate.isBefore(since)) {
                     map.put(id, markDate);
                     start++;
                 } else {
@@ -224,14 +224,10 @@ public final class DoubanSite extends BaseSite {
     }
 
     /**
-     * todo current date
+     * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
         return getApiObject(buildApiPath("/v2/movie/weekly"), RankedResult.class, false);
-    }
-
-    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
-        return getApiChart(buildApiPath("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
@@ -243,6 +239,10 @@ public final class DoubanSite extends BaseSite {
      */
     public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws HttpResponseException {
         return getApiChart(buildApiPath("/v2/movie/new_movies"));
+    }
+
+    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
+        return getApiChart(buildApiPath("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {

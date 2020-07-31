@@ -38,16 +38,19 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E insert(E entity) throws EntityExistsException {
-        manager.persist(entity);
-        return entity;
+        if (info.isNew(entity)) {
+            manager.persist(entity);
+            return entity;
+        }
+        throw new EntityExistsException("The entity already exists.");
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public E updateById(E entity) {
         ID id = info.getId(entity);
-        if (id == null) {
-            throw new IllegalArgumentException("Can't update an entity without id.");
+        if (info.isNew(entity) || id == null) {
+            throw new EntityNotFoundException("The entity doesn't exist.");
         }
         Optional<E> optional = findById(id);
         if (optional.isEmpty()) {

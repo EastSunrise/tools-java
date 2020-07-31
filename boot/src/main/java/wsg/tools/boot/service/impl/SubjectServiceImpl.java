@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.pojo.base.PageResult;
@@ -21,7 +20,6 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.util.SystemUtils;
 import wsg.tools.internet.video.site.DoubanSite;
 
-import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +35,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
-public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntity, Long> implements SubjectService {
+public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
     private VideoConfig videoConfig;
     private SubjectRepository subjectRepository;
@@ -47,30 +45,23 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
         if (since == null) {
             since = subjectRepository.findMaxMarkDate();
             if (since == null) {
-                since = DoubanSite.START_DATE;
+                since = DoubanSite.DOUBAN_START_DATE;
             }
         }
         log.info("Start to import douban subjects of {} since {}", userId, since);
-        final int[] count = {0};
+        int count = 0;
         try {
-            LocalDate finalSince = since;
-            List<SubjectEntity> entities = videoConfig.subjects(site -> site.collectUserMovies(userId, finalSince));
-            entities.forEach(source -> {
-                SubjectEntity entity = getSubjectInfo(source.getDbId(), null);
-                if (entity != null) {
-                    BeanUtilExt.copyPropertiesExceptNull(entity, source);
-                } else {
-                    entity = source;
-                }
+            List<SubjectEntity> entities = videoConfig.collectUserSubjects(userId, since);
+            for (SubjectEntity entity : entities) {
                 if (subjectRepository.findByDbId(entity.getDbId()).isEmpty()) {
                     subjectRepository.insert(entity);
-                    count[0]++;
+                    count++;
                 }
-            });
+            }
             Result result = Result.success();
             result.put("total", entities.size());
-            result.put("inserted", count[0]);
-            result.put("exists", entities.size() - count[0]);
+            result.put("inserted", count);
+            result.put("exists", entities.size() - count);
             return result;
         } catch (HttpResponseException e) {
             log.error(e.getReasonPhrase());
@@ -81,45 +72,50 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
     @Override
     public Result importImdbIds(List<String> ids) {
         log.info("Start to import imdb watchlist.");
-        final int[] count = {0};
-        ids.forEach(id -> {
-            SubjectEntity entity = getSubjectInfo(null, id);
+        int count = 0;
+        for (String id : ids) {
+            SubjectEntity entity = null;
+            try {
+                entity = videoConfig.getImdbSubject(id);
+            } catch (HttpResponseException e) {
+                log.error(e.getMessage());
+            }
             if (entity != null && subjectRepository.findByImdbId(entity.getImdbId()).isEmpty()) {
                 subjectRepository.insert(entity);
-                count[0]++;
+                count++;
             }
-        });
+        }
         Result result = Result.success();
         result.put("total", ids.size());
-        result.put("inserted", count[0]);
-        result.put("others", ids.size() - count[0]);
+        result.put("inserted", count);
+        result.put("others", ids.size() - count);
         return result;
     }
 
     @Override
     public Result batchUpdate(List<SubjectDto> subjects) {
         log.info("Start to update list of subjects.");
-        final int[] count = {0};
-        subjects.forEach(subject -> {
-            SubjectEntity entity = getSubjectInfo(subject.getDbId(), subject.getImdbId());
+        int count = 0;
+        for (SubjectDto subject : subjects) {
+            SubjectEntity entity = videoConfig.getSubjectEntity(subject.getDbId(), subject.getImdbId());
             if (subject.getId() != null && entity != null) {
                 entity.setId(subject.getId());
                 if (subjectRepository.updateById(entity) != null) {
-                    count[0]++;
+                    count++;
                 }
             }
-        });
+        }
         Result result = Result.success();
         result.put("total", subjects.size());
-        result.put("updated", count[0]);
-        result.put("others", subjects.size() - count[0]);
+        result.put("updated", count);
+        result.put("others", subjects.size() - count);
         return result;
     }
 
     @Override
     public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
         Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
-            Predicate predicate = getPredicate(querySubjectDto, root, builder);
+            Predicate predicate = getPredicate(querySubjectDto, root, builder, SubjectEntity.class);
             if (querySubjectDto.getIncomplete()) {
                 Predicate or = builder.or(root.get(SubjectEntity_.imdbId).isNull(), root.get(SubjectEntity_.dbId).isNull());
                 return builder.and(predicate, or);
@@ -127,14 +123,14 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             return predicate;
         };
         if (pageable == null) {
-            return PageResult.of((findAll(spec)));
+            return PageResult.of(convertEntities(subjectRepository.findAll(spec), SubjectDto.class));
         }
-        return PageResult.of(subjectRepository.findAll(spec, pageable).map(this::convertEntity));
+        return PageResult.of(subjectRepository.findAll(spec, pageable).map(entity -> convertEntity(entity, SubjectDto.class)));
     }
 
     @Override
     public Result play(long id) {
-        Optional<SubjectDto> optional = subjectRepository.findById(id).map(this::convertEntity);
+        Optional<SubjectDto> optional = subjectRepository.findById(id).map(entity -> convertEntity(entity, SubjectDto.class));
         if (optional.isEmpty()) {
             return Result.fail("Not exist does the subject %d", id);
         }
@@ -152,34 +148,6 @@ public class SubjectServiceImpl extends BaseServiceImpl<SubjectDto, SubjectEntit
             return Result.fail(e);
         }
         return Result.success();
-    }
-
-    @Nullable
-    private SubjectEntity getSubjectInfo(Long dbId, String imdbId) {
-        SubjectEntity subject = null;
-        if (dbId != null) {
-            try {
-                subject = videoConfig.getDouban(dbId);
-            } catch (HttpResponseException e) {
-                log.error(e.getMessage());
-            }
-        }
-        if (subject != null && subject.getImdbId() != null) {
-            imdbId = subject.getImdbId();
-        }
-        if (imdbId != null) {
-            try {
-                SubjectEntity entity = videoConfig.getImdb(imdbId);
-                if (subject != null) {
-                    BeanUtilExt.copyPropertiesExceptNull(subject, entity);
-                } else {
-                    subject = entity;
-                }
-            } catch (HttpResponseException e) {
-                log.error(e.getMessage());
-            }
-        }
-        return subject;
     }
 
     @Autowired
