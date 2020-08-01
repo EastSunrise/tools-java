@@ -16,7 +16,7 @@ public enum RatedEnum implements AkaPredicate<String> {
      */
     NOT_RATED("Not Rated", "Unrated"),
     RATED,
-    G,
+    G("Approved"),
     PG,
     PG_13("PG-13"),
     R,

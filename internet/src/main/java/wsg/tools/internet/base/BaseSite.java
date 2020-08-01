@@ -236,7 +236,7 @@ public abstract class BaseSite {
      * <p>
      * Override it to customize Jackson if necessary.
      */
-    public ObjectMapper getObjectMapper() {
+    protected ObjectMapper getObjectMapper() {
         if (objectMapper == null) {
             objectMapper = new ObjectMapper();
         }

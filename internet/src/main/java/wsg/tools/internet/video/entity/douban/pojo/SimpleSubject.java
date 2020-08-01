@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.entity.douban.pojo;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,12 +34,12 @@ public class SimpleSubject {
     @JsonDeserialize(contentUsing = DurationExtDeserializer.class)
     private List<Duration> durations;
 
-    @JsonAlias(value = "images")
+    @JsonProperty(value = "images")
     private Image image;
     private Rating rating;
-    @JsonAlias("mainland_pubdate")
+    @JsonProperty("mainland_pubdate")
     private LocalDate mainlandRelease;
-    @JsonAlias("pubdates")
+    @JsonProperty("pubdates")
     @JsonDeserialize(contentUsing = ReleaseDeserializer.class)
     private List<LocalDate> releases;
     private Integer collectCount;

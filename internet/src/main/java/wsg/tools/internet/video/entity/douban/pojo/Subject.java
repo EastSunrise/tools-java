@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.entity.douban.pojo;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.enums.CountryEnum;
@@ -22,7 +22,7 @@ import java.util.List;
 public class Subject extends SimpleSubject {
 
     private List<String> aka;
-    @JsonAlias({"pubdate"})
+    @JsonProperty("pubdate")
     private LocalDate release;
 
     private List<LanguageEnum> languages;

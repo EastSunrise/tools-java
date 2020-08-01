@@ -23,12 +23,12 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     TW("Taiwan", "台湾", new String[]{"中国台湾"}),
     DE("Germany", "德国", new String[]{"西德", "West Germany"}),
     CZ("Czechia", "捷克", new String[]{"Czech Republic"}),
+    AE("United Arab Emirates", "阿拉伯联合酋长国", new String[]{"阿联酋"}),
 
     /**
      * Other ISO countries
      */
     AD("Andorra", "安道尔"),
-    AE("United Arab Emirates", "阿拉伯联合酋长国"),
     AF("Afghanistan", "阿富汗"),
     AG("Antigua & Barbuda", "安提瓜和巴布达"),
     AI("Anguilla", "安圭拉"),

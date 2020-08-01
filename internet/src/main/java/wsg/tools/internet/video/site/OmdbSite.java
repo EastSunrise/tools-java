@@ -99,7 +99,7 @@ public final class OmdbSite extends BaseSite {
     }
 
     @Override
-    public ObjectMapper getObjectMapper() {
+    protected ObjectMapper getObjectMapper() {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);

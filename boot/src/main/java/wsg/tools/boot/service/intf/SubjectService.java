@@ -50,12 +50,4 @@ public interface SubjectService {
      * @return page of subjects
      */
     PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable);
-
-    /**
-     * Play specified subject
-     *
-     * @param id id of subject
-     * @return result
-     */
-    Result play(long id);
 }

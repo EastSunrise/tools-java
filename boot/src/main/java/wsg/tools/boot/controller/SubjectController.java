@@ -111,11 +111,6 @@ public class SubjectController extends AbstractController {
         }
     }
 
-    @RequestMapping(value = "/play", method = RequestMethod.POST)
-    public ResponseEntity<?> play(long id) {
-        return subjectService.play(id).toResponse();
-    }
-
     @RequestMapping(value = "/export")
     public ResponseEntity<?> export(HttpServletResponse response, QuerySubjectDto querySubjectDto) {
         PageResult<SubjectDto> all = subjectService.list(querySubjectDto, null);

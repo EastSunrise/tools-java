@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.entity.imdb;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,33 +25,33 @@ public class ImdbSubject {
 
     private String imdbId;
     private ImdbTypeEnum type;
-    @JsonAlias("title")
+    @JsonProperty("title")
     private String text;
     private Year year;
     private RatedEnum rated;
     private LocalDate released;
     @JsonDeserialize(using = DurationExtDeserializer.class)
     private Duration runtime;
-    @JsonAlias("Genre")
+    @JsonProperty("Genre")
     private List<GenreEnum> genres;
     private String plot;
-    @JsonAlias("Language")
+    @JsonProperty("Language")
     private List<LanguageEnum> languages;
-    @JsonAlias("Country")
+    @JsonProperty("Country")
     private List<CountryEnum> countries;
-    @JsonAlias("TotalSeasons")
+    @JsonProperty("TotalSeasons")
     private Integer seasonsCount;
-    @JsonAlias("Season")
+    @JsonProperty("Season")
     private Integer currentSeason;
-    @JsonAlias("Episode")
+    @JsonProperty("Episode")
     private Integer currentEpisode;
     private String seriesId;
 
-    @JsonAlias("Director")
+    @JsonProperty("Director")
     private List<String> directors;
-    @JsonAlias("Writer")
+    @JsonProperty("Writer")
     private List<String> writers;
-    @JsonAlias("Actor")
+    @JsonProperty("Actors")
     private List<String> actors;
     private String awards;
     private String poster;

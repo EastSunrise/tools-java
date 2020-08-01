@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 public final class DoubanSite extends BaseSite {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
+    private static final Pattern MOVIE_SUBJECT_ALT_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d+)/");
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
@@ -62,8 +63,16 @@ public final class DoubanSite extends BaseSite {
         this.apiKey = apiKey;
     }
 
+    /**
+     * Obtains id by parsing alt.
+     */
+    public static long parseAlt(String alt) {
+        Matcher matcher = AssertUtils.matches(MOVIE_SUBJECT_ALT_REGEX, alt);
+        return Long.parseLong(matcher.group(1));
+    }
+
     @Override
-    public ObjectMapper getObjectMapper() {
+    protected ObjectMapper getObjectMapper() {
         ObjectMapper objectMapper = super.getObjectMapper();
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
         objectMapper.registerModule(new SimpleModule()
@@ -82,17 +91,6 @@ public final class DoubanSite extends BaseSite {
     }
 
     /**
-     * Obtains movie subject through api, with id of IMDb acquired by parsing the web page of the subject.
-     * <p>
-     * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
-     *
-     * @return pair of (subject, IMDb id)
-     */
-    public Pair<Subject, String> movieSubject(long subjectId) throws HttpResponseException {
-        return Pair.of(apiMovieSubject(subjectId), parseSubjectPage(subjectId));
-    }
-
-    /**
      * Returns marked subjects of the given user since the given start date.
      *
      * @param catalog movie/book/music/...
@@ -104,7 +102,7 @@ public final class DoubanSite extends BaseSite {
             since = DOUBAN_START_DATE;
         }
         log.info("Collect movies of user {} since {}", userId, since);
-        Map<Long, LocalDate> map = new HashMap<>();
+        Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
             URI uri;
@@ -179,15 +177,13 @@ public final class DoubanSite extends BaseSite {
     }
 
     /**
-     * Parse pages of subjects.
-     * <p>
-     * This is supplement of {@link #movieSubject(long)} (long)} to get IMDb identity of a subject.
+     * Parse the page of a subject to get its IMDb id.
      * <p>
      * Same as {@link #apiMovieSubject(long)} (long)}, this method can't obtain x-rated subject probably.
      *
      * @return IMDb id
      */
-    private String parseSubjectPage(long subjectId) throws HttpResponseException {
+    public String getImdbId(long subjectId) throws HttpResponseException {
         Document document;
         try {
             document = getDocument(buildCatalogPath("/subject/%d", CatalogEnum.MOVIE, subjectId).build());
@@ -217,6 +213,10 @@ public final class DoubanSite extends BaseSite {
      */
     public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
         return getApiObject(buildApiPath("/v2/movie/subject/%d", subjectId), Subject.class);
+    }
+
+    public SubjectInfo apiMovieImdb(String imdbId) throws HttpResponseException {
+        return getApiObject(buildApiPath("/v2/movie/imdb/%s", imdbId), SubjectInfo.class);
     }
 
     public Celebrity apiMovieCelebrity(long celebrityId) throws HttpResponseException {

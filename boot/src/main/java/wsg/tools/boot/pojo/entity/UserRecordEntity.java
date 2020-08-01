@@ -4,32 +4,30 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UpdateTimestamp;
 import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Entity for movie chart.
+ * Entity of marking relationship between users and subjects.
  *
  * @author Kingen
- * @since 2020/7/27
+ * @since 2020/8/1
  */
-@Getter
 @Setter
+@Getter
 @Entity
-@Table(name = "video_chart")
-public class ChartEntity extends BaseEntity {
-
+@Table(name = "user_mark")
+public class UserRecordEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long userId;
     private Long subjectId;
-    private String title;
-    private Integer rank;
-    private Integer delta;
-    private LocalDate updateDate;
+    private MarkEnum mark;
+    private LocalDate markDate;
     @UpdateTimestamp
     private LocalDateTime gmtModified;
-    private Integer deleted;
 }

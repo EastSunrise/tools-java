@@ -8,24 +8,24 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
+import wsg.tools.boot.dao.jpa.mapper.UserRecordRepository;
 import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity_;
-import wsg.tools.boot.pojo.enums.ArchivedEnum;
+import wsg.tools.boot.pojo.entity.UserRecordEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
-import wsg.tools.common.util.SystemUtils;
+import wsg.tools.internet.video.enums.CatalogEnum;
+import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
 
 import javax.persistence.criteria.Predicate;
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 /**
  * Implement of subject service.
@@ -39,56 +39,78 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     private VideoConfig videoConfig;
     private SubjectRepository subjectRepository;
+    private UserRecordRepository userRecordRepository;
 
     @Override
     public Result importDouban(long userId, LocalDate since) {
         if (since == null) {
-            since = subjectRepository.findMaxMarkDate();
+            since = userRecordRepository.findMaxMarkDate();
             if (since == null) {
                 since = DoubanSite.DOUBAN_START_DATE;
             }
         }
         log.info("Start to import douban subjects of {} since {}", userId, since);
-        int count = 0;
-        try {
-            List<SubjectEntity> entities = videoConfig.collectUserSubjects(userId, since);
-            for (SubjectEntity entity : entities) {
-                if (subjectRepository.findByDbId(entity.getDbId()).isEmpty()) {
-                    subjectRepository.insert(entity);
-                    count++;
-                }
+        int added = 0, exists = 0, notFound = 0;
+        for (MarkEnum mark : MarkEnum.values()) {
+            Map<Long, LocalDate> map;
+            try {
+                map = videoConfig.doubanSite().collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark);
+            } catch (HttpResponseException e) {
+                log.error(e.getMessage());
+                continue;
             }
-            Result result = Result.success();
-            result.put("total", entities.size());
-            result.put("inserted", count);
-            result.put("exists", entities.size() - count);
-            return result;
-        } catch (HttpResponseException e) {
-            log.error(e.getReasonPhrase());
-            return Result.fail(e);
+            for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
+                if (subjectRepository.findByDbId(entry.getKey()).isEmpty()) {
+                    SubjectEntity entity = videoConfig.getSubjectEntity(entry.getKey(), null);
+                    if (entity != null) {
+                        subjectRepository.insert(entity);
+                        added++;
+                        continue;
+                    }
+                    notFound++;
+                    continue;
+                }
+                exists++;
+
+                UserRecordEntity entity = new UserRecordEntity();
+                entity.setMark(mark);
+                entity.setMarkDate(entry.getValue());
+                entity.setSubjectId(entry.getKey());
+                entity.setUserId(userId);
+                userRecordRepository.updateOrInsert(entity,
+                        () -> userRecordRepository.findBySubjectIdAndUserId(entry.getKey(), userId));
+            }
         }
+        Result result = Result.success();
+        result.put("added", added);
+        result.put("exists", exists);
+        result.put("not found", notFound);
+        result.put("total", added + exists + notFound);
+        return result;
     }
 
     @Override
     public Result importImdbIds(List<String> ids) {
         log.info("Start to import imdb watchlist.");
-        int count = 0;
+        int added = 0, exists = 0, notFound = 0;
         for (String id : ids) {
-            SubjectEntity entity = null;
-            try {
-                entity = videoConfig.getImdbSubject(id);
-            } catch (HttpResponseException e) {
-                log.error(e.getMessage());
+            if (subjectRepository.findByImdbId(id).isEmpty()) {
+                SubjectEntity entity = videoConfig.getSubjectEntity(null, id);
+                if (entity != null) {
+                    subjectRepository.insert(entity);
+                    added++;
+                    continue;
+                }
+                notFound++;
+                continue;
             }
-            if (entity != null && subjectRepository.findByImdbId(entity.getImdbId()).isEmpty()) {
-                subjectRepository.insert(entity);
-                count++;
-            }
+            exists++;
         }
         Result result = Result.success();
+        result.put("added", added);
+        result.put("exists", exists);
+        result.put("not found", notFound);
         result.put("total", ids.size());
-        result.put("inserted", count);
-        result.put("others", ids.size() - count);
         return result;
     }
 
@@ -128,26 +150,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return PageResult.of(subjectRepository.findAll(spec, pageable).map(entity -> convertEntity(entity, SubjectDto.class)));
     }
 
-    @Override
-    public Result play(long id) {
-        Optional<SubjectDto> optional = subjectRepository.findById(id).map(entity -> convertEntity(entity, SubjectDto.class));
-        if (optional.isEmpty()) {
-            return Result.fail("Not exist does the subject %d", id);
-        }
-        SubjectDto subject = optional.get();
-        if (!ArchivedEnum.PLAYABLE.equals(subject.getArchived())) {
-            return Result.fail("Not archived yet.");
-        }
-
-        // todo play
-        File file = null;
-        try {
-            SystemUtils.openFile(file);
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            return Result.fail(e);
-        }
-        return Result.success();
+    @Autowired
+    public void setUserRecordRepository(UserRecordRepository userRecordRepository) {
+        this.userRecordRepository = userRecordRepository;
     }
 
     @Autowired

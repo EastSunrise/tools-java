@@ -46,7 +46,7 @@ public enum GenreEnum implements TitleSupplier, TextSupplier {
     THRILLER("Thriller", "惊悚"),
     WAR("War", "战争"),
     WESTERN("Western", "西部"),
-    ;
+    NEWS("News", "资讯");
 
     private final String text;
     private final String title;

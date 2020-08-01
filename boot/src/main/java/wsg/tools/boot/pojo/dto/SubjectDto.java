@@ -6,10 +6,8 @@ import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
@@ -31,8 +29,6 @@ public class SubjectDto extends BaseDto {
 
     private String title;
     private String text;
-    private MarkEnum mark;
-    private LocalDate markDate;
     private String originalTitle;
     private List<String> textAka;
     private List<String> titleAka;

@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.entity.douban.pojo;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +18,7 @@ public class Rating {
     private Integer max;
     private Double average;
     private Map<Integer, Integer> details;
+    @JsonAlias("numRaters")
     private Integer stars;
     private Integer min;
     private Integer value;

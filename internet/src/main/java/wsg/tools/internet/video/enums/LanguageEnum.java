@@ -6,6 +6,8 @@ import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.function.TextSupplier;
 import wsg.tools.common.function.TitleSupplier;
 
+import java.util.Locale;
+
 /**
  * Enum for languages.
  *
@@ -18,11 +20,12 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
      */
     ZH("Chinese", "中文", new String[]{"汉语普通话", "普通话", "Mandarin",
             "粤语", "Cantonese", "湖南方言", "云南方言", "安徽方言", "陕西方言", "河南方言", "甘肃方言", "贵州方言",
-            "北京话", "Shanghainese", "上海话", "南京话", "西安话", "重庆话", "唐山话", "温州话", "武汉话",
-            "Shanxi", "陕西话", "福建话", "四川话", "山西话", "贵州话", "Min Nan", "Hokkien", "闽南语", "贵州独山话"}),
+            "北京话", "Shanghainese", "上海话", "南京话", "西安话", "重庆话", "唐山话", "温州话", "武汉话", "Hakka", "客家话",
+            "Shanxi", "陕西话", "福建话", "湖南话", "四川话", "山西话", "贵州话", "Min Nan", "Hokkien", "闽南语", "贵州独山话"}),
     EN("English", "英语", new String[]{"Old English", "古英语", "古代英语"}),
     KO("Korean", "韩语", new String[]{"釜山方言"}),
     HI("Hindi", "印地语", new String[]{"北印度语"}),
+    IT("Italian", "意大利语", new String[]{"Sicilian", "西西里语"}),
     EL("Greek", "希腊语", new String[]{"Greek, Ancient (to 1453)", "Ancient (to 1453)", "古希腊语"}),
     IN("Indonesian", "印度尼西亚文", new String[]{"印度尼西亚语", "印尼语"}),
     GD("Scottish Gaelic", "苏格兰盖尔语", new String[]{"Scots"}),
@@ -32,6 +35,11 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     EU("Basque", "巴斯克语"),
     FIL("Filipino", "菲律宾语"),
     HAW("Hawaiian", "夏威夷语"),
+    GSW("Swiss German", "瑞士德语"),
+    AF("Afrikaans", "南非荷兰语", new String[]{"南非语"}),
+    JI("Yiddish", "依地文", new String[]{"意第绪语"}),
+    KW("Cornish", "康沃尔语", new String[]{"科尼什语"}),
+    NDS("Low German", "低地德语", new String[]{"Mende", "门德语"}),
 
     /**
      * Manual languages, three-letter abbreviation as code
@@ -41,6 +49,7 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     SIL("Sign Languages", "手语"),
     ASL("American Sign Language", "美国手语"),
     KSL("Korean Sign Language", "韩国手语"),
+    BSL("British Sign Language", "英国手语"),
     DOT("Dothraki", "多斯拉克语"),
     KLI("Klingon", "克林贡语"),
     CRE("Creole", "克里奥尔语"),
@@ -54,7 +63,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     AA("Afar", "阿法尔语"),
     AB("Abkhazian", "阿布哈西亚语"),
     AE("Avestan", "阿维斯塔语"),
-    AF("Afrikaans", "南非荷兰语"),
     AK("Akan", "阿肯语"),
     AM("Amharic", "阿姆哈拉语"),
     AN("Aragonese", "阿拉贡语"),
@@ -116,10 +124,8 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     IK("Inupiaq", "伊努皮克语"),
     IO("Ido", "伊多语"),
     IS("Icelandic", "冰岛语"),
-    IT("Italian", "意大利语"),
     IU("Inuktitut", "因纽特语"),
     JA("Japanese", "日语"),
-    JI("Yiddish", "依地文"),
     JV("Javanese", "爪哇语"),
     KA("Georgian", "格鲁吉亚语"),
     KG("Kongo", "刚果语"),
@@ -132,7 +138,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     KS("Kashmiri", "克什米尔语"),
     KU("Kurdish", "库尔德语"),
     KV("Komi", "科米语"),
-    KW("Cornish", "康沃尔语"),
     KY("Kyrgyz", "柯尔克孜语"),
     LA("Latin", "拉丁语"),
     LB("Luxembourgish", "卢森堡语"),
@@ -239,6 +244,17 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
         this.text = text;
         this.title = title;
         this.aka = aka;
+    }
+
+    public static void main(String[] args) {
+        for (Locale locale : Locale.getAvailableLocales()) {
+            System.out.print(locale.getCountry());
+            System.out.print(locale.getDisplayCountry());
+            System.out.print(locale.getDisplayCountry(Locale.ENGLISH));
+            System.out.print(locale.getLanguage());
+            System.out.print(locale.getDisplayLanguage());
+            System.out.println(locale.getDisplayLanguage(Locale.ENGLISH));
+        }
     }
 
     @Override
