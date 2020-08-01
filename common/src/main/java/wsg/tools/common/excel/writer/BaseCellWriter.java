@@ -20,7 +20,7 @@ import java.util.Date;
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class CellWriter<V> {
+public abstract class BaseCellWriter<V> {
 
     /**
      * Set value of the given cell.

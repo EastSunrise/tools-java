@@ -11,7 +11,7 @@ import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class HyperlinkCellFromGetter<T, V> extends CellFromGetter<T, V> {
+public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGetter<T, V> {
 
     @Override
     public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {

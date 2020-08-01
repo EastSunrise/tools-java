@@ -16,7 +16,7 @@ import java.time.Year;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class ExcelDeserializationProblemHandlers {
+public final class ExcelDeserializationProblemHandlers {
 
     public static class FloatToYearDeserializationProblemHandler extends DeserializationProblemHandler {
 

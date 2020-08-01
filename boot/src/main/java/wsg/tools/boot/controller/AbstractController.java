@@ -11,8 +11,8 @@ import wsg.tools.boot.config.serializer.ContainerSerializers;
 import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.ExcelFactory;
-import wsg.tools.common.excel.reader.CellToSetter;
-import wsg.tools.common.excel.writer.CellFromGetter;
+import wsg.tools.common.excel.reader.BaseCellToSetter;
+import wsg.tools.common.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.function.CreatorSupplier;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
@@ -57,7 +57,7 @@ public abstract class AbstractController {
      *
      * @see ExcelFactory#readCsv(InputStream, Map, CreatorSupplier, Charset)
      */
-    protected <T> List<T> readCsv(MultipartFile file, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
+    protected <T> List<T> readCsv(MultipartFile file, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
         return FACTORY.readCsv(getInputStream(file, ContentType.CSV), readers, creator, charset);
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractController {
      * @see ExcelFactory#writeCsv(Appendable, List, LinkedHashMap)
      */
     protected <T> void exportCsv(HttpServletResponse response, List<T> data, String filename,
-                                 LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+                                 LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         PrintWriter writer = new PrintWriter(getOutputStream(response, filename, ContentType.CSV), true, Constants.UTF_8);
         FACTORY.writeCsv(writer, data, writers);
         writer.close();
@@ -78,7 +78,7 @@ public abstract class AbstractController {
      *
      * @see ExcelFactory#readXlsx(InputStream, Map, CreatorSupplier)
      */
-    protected <T> List<T> readXlsx(MultipartFile file, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
+    protected <T> List<T> readXlsx(MultipartFile file, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
         return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers, creator);
     }
 
@@ -88,7 +88,7 @@ public abstract class AbstractController {
      * @see ExcelFactory#writeXlsx(OutputStream, List, LinkedHashMap)
      */
     protected <T> void exportXlsx(HttpServletResponse response, List<T> data, String filename,
-                                  LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+                                  LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         FACTORY.writeXlsx(getOutputStream(response, filename, ContentType.XLSX), data, writers);
     }
 

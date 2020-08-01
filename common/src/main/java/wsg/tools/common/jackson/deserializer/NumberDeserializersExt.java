@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/6/28
  */
-public abstract class NumberDeserializersExt {
+public final class NumberDeserializersExt {
 
     public static class LongDeserializer extends BaseNumberDeserializer<Long> {
 

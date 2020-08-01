@@ -9,9 +9,9 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.reader.CellReader;
-import wsg.tools.common.excel.reader.CellToSetter;
-import wsg.tools.common.excel.writer.CellFromGetter;
+import wsg.tools.common.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.function.CreatorSupplier;
 
 import java.io.IOException;
@@ -118,7 +118,7 @@ public class ExcelFactory {
      * @param <T>     target type
      * @return list of objects of target type
      */
-    public <T> List<T> readCsv(final InputStream inputStream, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
+    public <T> List<T> readCsv(final InputStream inputStream, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator, Charset charset) throws IOException {
         CSVFormat format = this.format;
         if (MapUtils.isNotEmpty(readers)) {
             format = format.withHeader(readers.keySet().toArray(new String[0])).withFirstRecordAsHeader();
@@ -127,8 +127,8 @@ public class ExcelFactory {
         List<T> list = new ArrayList<>();
         for (CSVRecord record : parse) {
             T t = creator.create();
-            for (Map.Entry<String, CellToSetter<T, ?>> entry : readers.entrySet()) {
-                CellToSetter<T, ?> reader = entry.getValue();
+            for (Map.Entry<String, BaseCellToSetter<T, ?>> entry : readers.entrySet()) {
+                BaseCellToSetter<T, ?> reader = entry.getValue();
                 reader.readRecordToSet(record.get(entry.getKey()), objectMapper, t);
             }
             list.add(t);
@@ -144,7 +144,7 @@ public class ExcelFactory {
      * @param <T>     target type
      * @return list of objects of target type
      */
-    public <T> List<T> readXlsx(final InputStream inputStream, Map<String, CellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
+    public <T> List<T> readXlsx(final InputStream inputStream, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
         Workbook workbook = WorkbookFactory.create(inputStream);
         Iterator<Row> iterator = workbook.getSheetAt(0).iterator();
         Map<String, Integer> headers = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
@@ -156,7 +156,7 @@ public class ExcelFactory {
         while (iterator.hasNext()) {
             Row row = iterator.next();
             T t = creator.create();
-            for (Map.Entry<String, CellToSetter<T, ?>> entry : readers.entrySet()) {
+            for (Map.Entry<String, BaseCellToSetter<T, ?>> entry : readers.entrySet()) {
                 Integer index = headers.get(entry.getKey());
                 if (index == null) {
                     continue;
@@ -178,11 +178,11 @@ public class ExcelFactory {
      * @param data    data to write to the csv file
      * @param writers writers to handle each column
      */
-    public <T> void writeCsv(final Appendable out, List<T> data, LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+    public <T> void writeCsv(final Appendable out, List<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         CSVPrinter printer = format.print(out);
         printer.printRecord(writers.keySet());
         for (T t : data) {
-            for (CellFromGetter<T, ?> writer : writers.values()) {
+            for (BaseCellFromGetter<T, ?> writer : writers.values()) {
                 writer.printFromGetter(printer, t, objectMapper);
             }
             printer.println();
@@ -196,7 +196,7 @@ public class ExcelFactory {
      * @param data    data to write
      * @param writers writers to set cells by column
      */
-    public <T> void writeXlsx(OutputStream stream, List<T> data, LinkedHashMap<String, CellFromGetter<T, ?>> writers) throws IOException {
+    public <T> void writeXlsx(OutputStream stream, List<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
         int i = 0;
@@ -209,7 +209,7 @@ public class ExcelFactory {
         for (T t : data) {
             row = sheet.createRow(i++);
             j = 0;
-            for (CellFromGetter<T, ?> writer : writers.values()) {
+            for (BaseCellFromGetter<T, ?> writer : writers.values()) {
                 Cell cell = row.createCell(j++);
                 writer.setCellFromGetter(cell, t, objectMapper);
                 writer.setCellStyleFromGetter(cell, t, workbook);
@@ -218,6 +218,4 @@ public class ExcelFactory {
         workbook.write(stream);
         workbook.close();
     }
-
-
 }

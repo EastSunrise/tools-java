@@ -1,11 +1,12 @@
-package wsg.tools.boot.dao.api;
+package wsg.tools.boot.service.impl;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.service.base.BaseServiceImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,9 +18,9 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/7/17
  */
-@Component
+@Service
 @PropertySource("classpath:config/private/video.properties")
-public class VideoManager {
+public class VideoManager extends BaseServiceImpl {
 
     @Getter
     private final String cdn;

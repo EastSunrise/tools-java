@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  * @author Kingen
  * @since 2020/7/22
  */
-public abstract class ContainerSerializers {
+public final class ContainerSerializers {
 
     public static class CollectionToStringSerializer extends AbstractNonNullSerializer<Collection<?>, String> {
 

@@ -12,7 +12,7 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/19
  */
-public abstract class EnumSerializers {
+public final class EnumSerializers {
 
     public static <E extends Enum<E> & TitleSupplier> EnumTitleSerializer<E> getTitleSerializer(Class<E> eClass) {
         return new EnumTitleSerializer<>(eClass);

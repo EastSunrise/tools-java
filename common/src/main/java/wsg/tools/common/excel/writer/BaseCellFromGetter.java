@@ -16,7 +16,7 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class CellFromGetter<T, V> extends CellWriter<V> implements ValueGetter<T, V> {
+public abstract class BaseCellFromGetter<T, V> extends BaseCellWriter<V> implements ValueGetter<T, V> {
 
     /**
      * Set the given cell with value got from implemented getter.

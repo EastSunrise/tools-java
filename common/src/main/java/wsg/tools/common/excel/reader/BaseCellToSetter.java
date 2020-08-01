@@ -13,13 +13,13 @@ import wsg.tools.common.function.ValueSetter;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class CellToSetter<T, V> extends CellReader<V> implements ValueSetter<T, V> {
+public abstract class BaseCellToSetter<T, V> extends CellReader<V> implements ValueSetter<T, V> {
 
-    public CellToSetter(Class<V> clazz) {
+    public BaseCellToSetter(Class<V> clazz) {
         super(clazz);
     }
 
-    public CellToSetter(TypeReference<V> typeReference) {
+    public BaseCellToSetter(TypeReference<V> typeReference) {
         super(typeReference);
     }
 

@@ -6,7 +6,7 @@ package wsg.tools.common.excel.writer;
  * @author Kingen
  * @since 2020/7/23
  */
-public abstract class NumericCellFromGetter<T, V> extends CellFromGetter<T, V> {
+public abstract class BaseNumericCellFromGetter<T, V> extends BaseCellFromGetter<T, V> {
 
     @Override
     protected Class<?> getMiddleType() {

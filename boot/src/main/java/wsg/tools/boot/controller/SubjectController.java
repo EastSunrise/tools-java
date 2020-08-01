@@ -18,9 +18,9 @@ import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.ExcelTemplate;
-import wsg.tools.common.excel.reader.CellToSetter;
-import wsg.tools.common.excel.writer.HyperlinkCellFromGetter;
-import wsg.tools.common.excel.writer.NumericCellFromGetter;
+import wsg.tools.common.excel.reader.BaseCellToSetter;
+import wsg.tools.common.excel.writer.BaseHyperlinkCellFromGetter;
+import wsg.tools.common.excel.writer.BaseNumericCellFromGetter;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.servlet.http.HttpServletResponse;
@@ -43,7 +43,7 @@ public class SubjectController extends AbstractController {
 
     private final ExcelTemplate<SubjectDto> subjectTemplate = ExcelTemplate.<SubjectDto>builder()
             .put("ID", SubjectDto::getId, SubjectDto::setId, Long.class)
-            .putWriter("豆瓣ID", new HyperlinkCellFromGetter<SubjectDto, Long>() {
+            .putWriter("豆瓣ID", new BaseHyperlinkCellFromGetter<SubjectDto, Long>() {
                 @Override
                 public Long getValue(SubjectDto subjectDto) {
                     return subjectDto.getDbId();
@@ -54,7 +54,7 @@ public class SubjectController extends AbstractController {
                     return subjectDto.getDbId() != null ? String.format("https://movie.douban.com/subject/%d/", subjectDto.getDbId()) : null;
                 }
             }).putSetter("豆瓣ID", SubjectDto::setDbId, Long.class)
-            .putWriter("IMDb ID", new HyperlinkCellFromGetter<SubjectDto, String>() {
+            .putWriter("IMDb ID", new BaseHyperlinkCellFromGetter<SubjectDto, String>() {
                 @Override
                 public String getValue(SubjectDto subjectDto) {
                     return subjectDto.getImdbId();
@@ -71,7 +71,7 @@ public class SubjectController extends AbstractController {
             .put("原名", SubjectDto::getOriginalTitle, SubjectDto::setOriginalTitle, String.class)
             .put("别名", SubjectDto::getTitleAka, SubjectDto::setTitleAka, new TypeReference<>() {})
             .put("外文别名", SubjectDto::getTextAka, SubjectDto::setTextAka, new TypeReference<>() {})
-            .putWriter("年份", new NumericCellFromGetter<SubjectDto, Year>() {
+            .putWriter("年份", new BaseNumericCellFromGetter<SubjectDto, Year>() {
                 @Override
                 public Year getValue(SubjectDto subjectDto) {
                     return subjectDto.getYear();
@@ -102,7 +102,7 @@ public class SubjectController extends AbstractController {
     @RequestMapping(value = "/imdb", method = RequestMethod.POST)
     public ResponseEntity<?> importImdb(MultipartFile file) {
         try {
-            LinkedHashMap<String, CellToSetter<SubjectDto, ?>> readers = ExcelTemplate.<SubjectDto>builder()
+            LinkedHashMap<String, BaseCellToSetter<SubjectDto, ?>> readers = ExcelTemplate.<SubjectDto>builder()
                     .putSetter("Const", SubjectDto::setImdbId, String.class).getReaders();
             List<SubjectDto> subjects = readCsv(file, readers, SubjectDto::new, Constants.UTF_8);
             return subjectService.importImdbIds(subjects.stream().map(SubjectDto::getImdbId).collect(Collectors.toList())).toResponse();

@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * @author Kingen
  * @since 2020/6/22
  */
-public abstract class AssertUtils {
+public final class AssertUtils {
 
     /**
      * Returns a {@link RuntimeException}.
