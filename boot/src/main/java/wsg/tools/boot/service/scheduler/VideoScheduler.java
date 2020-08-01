@@ -11,6 +11,7 @@ import wsg.tools.boot.dao.api.VideoConfig;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
+import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.RankedResult;
 import wsg.tools.internet.video.entity.douban.pojo.SimpleSubject;
 import wsg.tools.internet.video.enums.CityEnum;
@@ -55,9 +56,20 @@ public class VideoScheduler extends BaseServiceImpl {
     }
 
     /**
-     * Scheduler to update movies in theaters at 06:00 every day.
+     * Scheduler to update us box movies at 06:00 every Saturday.
      */
-    @Scheduled(cron = "0 0 6 * * *")
+    @Scheduled(cron = "0 0 6 ? * 6")
+    public void movieUsBox() throws HttpResponseException {
+        log.info("Start to update us box movies.");
+        batchInsertDoubanIgnore(config.doubanSite().apiMovieUsBox().getSubjects().stream()
+                .map(BoxResult.BoxSubject::getSubject).collect(Collectors.toList()));
+        log.info("Finish to update us box movies.");
+    }
+
+    /**
+     * Scheduler to update movies in theaters at 09:00 every day.
+     */
+    @Scheduled(cron = "0 0 9 * * *")
     public void movieInTheatre() throws HttpResponseException {
         log.info("Start to update movies in theaters.");
         batchInsertDoubanIgnore(config.doubanSite().apiMovieInTheaters(CityEnum.BEIJING).getRight());
@@ -65,9 +77,19 @@ public class VideoScheduler extends BaseServiceImpl {
     }
 
     /**
-     * Scheduler to update new movies at 12:00 every day.
+     * Scheduler to update movies coming soon at 12:00 every day.
      */
     @Scheduled(cron = "0 0 12 * * *")
+    public void movieComingSoon() throws HttpResponseException {
+        log.info("Start to update movies coming soon.");
+        batchInsertDoubanIgnore(config.doubanSite().apiMovieComingSoon().getRight());
+        log.info("Finish to update movies coming soon.");
+    }
+
+    /**
+     * Scheduler to update new movies at 15:00 every day.
+     */
+    @Scheduled(cron = "0 0 15 * * *")
     public void newMovies() throws HttpResponseException {
         log.info("Start to update new movies.");
         batchInsertDoubanIgnore(config.doubanSite().apiMovieNewMovies().getRight());

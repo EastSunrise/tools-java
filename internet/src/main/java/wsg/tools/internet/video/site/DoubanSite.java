@@ -18,6 +18,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
 import wsg.tools.internet.video.entity.douban.container.ContentResult;
 import wsg.tools.internet.video.entity.douban.container.RankedResult;
@@ -101,7 +102,7 @@ public final class DoubanSite extends BaseSite {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
-        log.info("Collect movies of user {} since {}", userId, since);
+        log.info("Collect {} of user {} since {}", catalog, userId, since);
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
@@ -137,7 +138,7 @@ public final class DoubanSite extends BaseSite {
                 break;
             }
         }
-        log.info("Collected {} movies", map.size());
+        log.info("Collected {} {}", map.size(), catalog);
         return map;
     }
 
@@ -147,7 +148,7 @@ public final class DoubanSite extends BaseSite {
      * @param catalog movie/book/music/...
      */
     public List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws HttpResponseException {
-        log.info("Collect celebrities of user {}", userId);
+        log.info("Collect {} of user {}", catalog.getCreator().getPath(), userId);
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
@@ -172,7 +173,7 @@ public final class DoubanSite extends BaseSite {
                 break;
             }
         }
-        log.info("Collected {} movies", ids.size());
+        log.info("Collected {} {}", ids.size(), catalog.getCreator().getPath());
         return ids;
     }
 
@@ -228,6 +229,13 @@ public final class DoubanSite extends BaseSite {
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
         return getApiObject(buildApiPath("/v2/movie/weekly"), RankedResult.class, false);
+    }
+
+    /**
+     * It's updated every Friday.
+     */
+    public BoxResult apiMovieUsBox() throws HttpResponseException {
+        return getApiObject(buildApiPath("/v2/movie/us_box"), BoxResult.class, true);
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
