@@ -20,7 +20,7 @@ public class SystemUtils {
      * Open a file with local default application.
      */
     public static void openFile(File file) throws IOException {
-        Objects.requireNonNull(file);
+        Objects.requireNonNull(file, "Can't open a null file.");
         if (!file.exists()) {
             throw new FileNotFoundException(file.getPath());
         }

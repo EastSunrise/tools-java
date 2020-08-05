@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
 import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
@@ -115,7 +115,7 @@ public final class OmdbSite extends BaseSite {
                 .addDeserializer(LocalDate.class,
                         new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
         );
-        objectMapper.addHandler(SeparatedValueDeserializationProblemHandler.getInstance(Constants.COMMA_DELIMITER))
+        objectMapper.addHandler(SeparatedValueDeserializationProblemHandler.getInstance(SignConstants.COMMA))
                 .addHandler(YearDeserializationProblemHandler.INSTANCE);
         return objectMapper;
     }

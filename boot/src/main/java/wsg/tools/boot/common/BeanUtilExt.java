@@ -51,8 +51,8 @@ public class BeanUtilExt {
      * @param ignoreNull whether ignore null-value properties of the original object
      */
     public static void copyPropertiesExceptNull(final Object dest, final Object orig, boolean replaced, boolean ignoreNull) {
-        Objects.requireNonNull(dest);
-        Objects.requireNonNull(orig);
+        Objects.requireNonNull(dest, "Can't copy properties to a null object.");
+        Objects.requireNonNull(orig, "Can't copy properties from a null object.");
         List<PropertyCopier> copiers = getPropertyCopiers(dest.getClass(), orig.getClass());
         for (PropertyCopier copier : copiers) {
             if (ClassUtils.isAssignable(copier.requiredType, copier.provideType)) {
@@ -75,7 +75,7 @@ public class BeanUtilExt {
      * Get all properties and values of the given type.
      */
     public static Map<String, Object> convertToMap(Object o, boolean ignoreNull) {
-        Objects.requireNonNull(o);
+        Objects.requireNonNull(o, "Can't convert a null object to map.");
         Map<String, Object> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (PropertyDescriptor descriptor : getDescriptorsExceptClass(o.getClass(), true, false)) {
             Object value;

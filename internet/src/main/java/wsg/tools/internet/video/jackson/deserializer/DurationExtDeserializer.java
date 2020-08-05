@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.jackson.deserializer;
 
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.jackson.deserializer.AbstractNotBlankDeserializer;
 import wsg.tools.common.util.AssertUtils;
 
@@ -40,7 +40,7 @@ public class DurationExtDeserializer extends AbstractNotBlankDeserializer<Durati
         }
         String min = matcher.group(4);
         if (matcher.group(MINUTE_GROUP) != null) {
-            min = min.replace(Constants.COMMA_DELIMITER, "");
+            min = min.replace(SignConstants.COMMA, "");
         }
         int minutes = Integer.parseInt(min);
         if (matcher.group(MINUTE_MAX_GROUP) != null) {

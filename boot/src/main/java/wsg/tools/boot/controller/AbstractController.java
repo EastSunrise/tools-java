@@ -10,6 +10,7 @@ import wsg.tools.boot.config.hanler.ExcelDeserializationProblemHandlers;
 import wsg.tools.boot.config.serializer.ContainerSerializers;
 import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.excel.ExcelFactory;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
@@ -46,9 +47,9 @@ public abstract class AbstractController {
                     .addDeserializer(VideoTypeEnum.class, EnumDeserializers.getTitleDeserializer(VideoTypeEnum.class))
                     .addSerializer(TitleSerializer.getInstance(LanguageEnum.class))
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
-                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(Constants.SLASH_DELIMITER))
+                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignConstants.SLASH))
             ).registerModule(new JavaTimeModule())
-            .addHandler(SeparatedValueDeserializationProblemHandler.getInstance(Constants.SLASH_DELIMITER))
+            .addHandler(SeparatedValueDeserializationProblemHandler.getInstance(SignConstants.SLASH))
             .addHandler(ExcelDeserializationProblemHandlers.FloatToYearDeserializationProblemHandler.INSTANCE)
     );
 
@@ -93,7 +94,7 @@ public abstract class AbstractController {
     }
 
     private InputStream getInputStream(MultipartFile file, ContentType contentType) throws IOException {
-        Objects.requireNonNull(file);
+        Objects.requireNonNull(file, "Can't get stream from a null multipart file.");
         if (!contentType.text.equals(file.getContentType())) {
             throw new IllegalArgumentException("Not a file of " + contentType);
         }

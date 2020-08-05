@@ -24,8 +24,10 @@ import wsg.tools.internet.video.site.DoubanSite;
 
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implement of subject service.
@@ -50,7 +52,8 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             }
         }
         log.info("Start to import douban subjects of {} since {}", userId, since);
-        int added = 0, exists = 0, notFound = 0;
+        List<Long> notFounds = new ArrayList<>();
+        int added = 0, exists = 0;
         for (MarkEnum mark : MarkEnum.values()) {
             Map<Long, LocalDate> map;
             try {
@@ -60,56 +63,65 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 continue;
             }
             for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
-                if (subjectRepository.findByDbId(entry.getKey()).isEmpty()) {
+                Long id = null;
+                Optional<SubjectEntity> optional = subjectRepository.findByDbId(entry.getKey());
+                if (optional.isEmpty()) {
                     SubjectEntity entity = videoConfig.getSubjectEntity(entry.getKey(), null);
                     if (entity != null) {
-                        subjectRepository.insert(entity);
+                        id = subjectRepository.insert(entity).getId();
                         added++;
-                        continue;
+                    } else {
+                        notFounds.add(entry.getKey());
                     }
-                    notFound++;
-                    continue;
+                } else {
+                    id = optional.get().getId();
+                    exists++;
                 }
-                exists++;
-
-                UserRecordEntity entity = new UserRecordEntity();
-                entity.setMark(mark);
-                entity.setMarkDate(entry.getValue());
-                entity.setSubjectId(entry.getKey());
-                entity.setUserId(userId);
-                userRecordRepository.updateOrInsert(entity,
-                        () -> userRecordRepository.findBySubjectIdAndUserId(entry.getKey(), userId));
+                if (id != null) {
+                    UserRecordEntity entity = new UserRecordEntity();
+                    entity.setMark(mark);
+                    entity.setMarkDate(entry.getValue());
+                    entity.setSubjectId(id);
+                    entity.setUserId(userId);
+                    userRecordRepository.updateOrInsert(entity,
+                            () -> userRecordRepository.findBySubjectIdAndUserId(entry.getKey(), userId));
+                }
             }
         }
         Result result = Result.success();
         result.put("added", added);
         result.put("exists", exists);
-        result.put("not found", notFound);
-        result.put("total", added + exists + notFound);
+        if (!notFounds.isEmpty()) {
+            result.put("not found", notFounds);
+        }
+        result.put("total", added + exists + notFounds.size());
         return result;
     }
 
     @Override
     public Result importImdbIds(List<String> ids) {
         log.info("Start to import imdb watchlist.");
-        int added = 0, exists = 0, notFound = 0;
+        int added = 0, exists = 0;
+        List<String> notFounds = new ArrayList<>();
         for (String id : ids) {
             if (subjectRepository.findByImdbId(id).isEmpty()) {
                 SubjectEntity entity = videoConfig.getSubjectEntity(null, id);
                 if (entity != null) {
                     subjectRepository.insert(entity);
                     added++;
-                    continue;
+                } else {
+                    notFounds.add(id);
                 }
-                notFound++;
-                continue;
+            } else {
+                exists++;
             }
-            exists++;
         }
         Result result = Result.success();
         result.put("added", added);
         result.put("exists", exists);
-        result.put("not found", notFound);
+        if (!notFounds.isEmpty()) {
+            result.put("not found", notFounds);
+        }
         result.put("total", ids.size());
         return result;
     }

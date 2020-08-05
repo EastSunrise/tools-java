@@ -32,12 +32,12 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
         this.info = info;
         this.manager = entityManager;
         SingularAttribute<? super E, ?> idAttribute = info.getIdAttribute();
-        Objects.requireNonNull(idAttribute);
+        Objects.requireNonNull(idAttribute, "Can't find an id attribute of entity " + info.getEntityName());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public E insert(E entity) throws EntityExistsException {
+    public <S extends E> S insert(S entity) throws EntityExistsException {
         if (info.isNew(entity)) {
             manager.persist(entity);
             return entity;
@@ -47,7 +47,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public E updateById(E entity) {
+    public <S extends E> S updateById(S entity) {
         ID id = info.getId(entity);
         if (info.isNew(entity) || id == null) {
             throw new EntityNotFoundException("The entity doesn't exist.");
@@ -61,7 +61,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     }
 
     @Override
-    public E updateBy(E entity, Supplier<Optional<E>> supplier) {
+    public <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
         if (optional.isEmpty()) {
@@ -78,7 +78,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public InsertOrUpdate<E> updateOrInsert(E entity, Supplier<Optional<E>> supplier) {
+    public <S extends E> InsertOrUpdate<S> updateOrInsert(S entity, Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
         if (optional.isEmpty()) {

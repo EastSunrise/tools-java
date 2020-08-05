@@ -18,7 +18,7 @@ public final class AssertUtils {
      * Returns a {@link RuntimeException}.
      */
     public static RuntimeException runtimeException(Throwable e) {
-        Objects.requireNonNull(e);
+        Objects.requireNonNull(e, "Can't construct a RuntimeException from a null exception.");
         return new RuntimeException(e.getMessage(), e);
     }
 

@@ -26,7 +26,7 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @return entity inserted
      * @throws EntityExistsException if the entity exists.
      */
-    E insert(E entity) throws EntityExistsException;
+    <S extends E> S insert(S entity) throws EntityExistsException;
 
     /**
      * Update an entity by {@link ID}.
@@ -35,7 +35,7 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @return updated entity
      * @throws IllegalArgumentException if the given entity doesn't contain id or not exist
      */
-    E updateById(E entity);
+    <S extends E> S updateById(S entity);
 
     /**
      * Update an entity by the given supplier.
@@ -46,7 +46,7 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @throws EntityNotFoundException  if can't find an entity by the supplier or id of the given entity
      * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
      */
-    E updateBy(E entity, Supplier<Optional<E>> supplier) throws EntityNotFoundException, IllegalArgumentException;
+    <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier) throws EntityNotFoundException, IllegalArgumentException;
 
     /**
      * Update the entity if found by the supplier or id of the given entity
@@ -57,5 +57,5 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @return updated entity with flag of inserting or updating
      * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
      */
-    InsertOrUpdate<E> updateOrInsert(E entity, @Nullable Supplier<Optional<E>> supplier) throws IllegalArgumentException;
+    <S extends E> InsertOrUpdate<S> updateOrInsert(S entity, @Nullable Supplier<Optional<E>> supplier) throws IllegalArgumentException;
 }

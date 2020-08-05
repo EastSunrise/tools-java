@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import wsg.tools.boot.common.BeanUtilExt;
+import wsg.tools.boot.pojo.entity.MovieEntity;
+import wsg.tools.boot.pojo.entity.SeasonEntity;
+import wsg.tools.boot.pojo.entity.SeriesEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
-import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.pojo.Subject;
 import wsg.tools.internet.video.entity.douban.pojo.SubjectInfo;
@@ -61,47 +63,88 @@ public class VideoConfig implements InitializingBean {
             }
         }
 
-        SubjectEntity entity = new SubjectEntity();
-        if (dbId != null) {
-            try {
-                Subject subject = doubanSite.apiMovieSubject(dbId);
-                BeanUtilExt.copyPropertiesExceptNull(entity, subject, true, true);
-                entity.setId(null);
-                entity.setDbId(subject.getId());
-                entity.setType(VideoTypeEnum.of(subject.getSubtype()));
-                if (CollectionUtils.isNotEmpty(subject.getAka())) {
-                    List<String> textAka = new ArrayList<>(), titleAka = new ArrayList<>();
-                    for (String aka : subject.getAka()) {
-                        if (StringUtilsExt.hasChinese(aka)) {
-                            titleAka.add(aka);
-                        } else {
-                            textAka.add(aka);
-                        }
-                    }
-                    if (CollectionUtils.isNotEmpty(textAka)) {
-                        entity.setTextAka(textAka);
-                    }
-                    if (CollectionUtils.isNotEmpty(titleAka)) {
-                        entity.setTitleAka(titleAka);
-                    }
+        SubjectEntity doubanSubject = getDoubanSubject(dbId);
+        SubjectEntity imdbSubject = getImdbSubject(imdbId);
+        if (doubanSubject == null) {
+            return imdbSubject;
+        }
+        if (imdbSubject == null) {
+            return doubanSubject;
+        }
+        BeanUtilExt.copyPropertiesExceptNull(doubanSubject, imdbSubject, false, true);
+        return doubanSubject;
+    }
+
+    private SubjectEntity getDoubanSubject(Long dbId) {
+        if (dbId == null) {
+            return null;
+        }
+        Subject subject;
+        try {
+            subject = doubanSite.apiMovieSubject(dbId);
+        } catch (HttpResponseException e) {
+            return null;
+        }
+        SubjectEntity entity;
+        switch (subject.getSubtype()) {
+            case MOVIE:
+                entity = BeanUtilExt.convert(subject, MovieEntity.class);
+                break;
+            case TV:
+                entity = BeanUtilExt.convert(subject, SeasonEntity.class);
+                break;
+            default:
+                throw new IllegalArgumentException("Subtype is null.");
+        }
+        entity.setId(null);
+        entity.setDbId(subject.getId());
+        if (CollectionUtils.isNotEmpty(subject.getAka())) {
+            List<String> textAka = new ArrayList<>(), titleAka = new ArrayList<>();
+            for (String aka : subject.getAka()) {
+                if (StringUtilsExt.hasChinese(aka)) {
+                    titleAka.add(aka);
+                } else {
+                    textAka.add(aka);
                 }
-            } catch (HttpResponseException e) {
-                log.error(e.getMessage());
+            }
+            if (CollectionUtils.isNotEmpty(textAka)) {
+                entity.setTextAka(textAka);
+            }
+            if (CollectionUtils.isNotEmpty(titleAka)) {
+                entity.setTitleAka(titleAka);
             }
         }
-        if (imdbId != null) {
-            try {
-                ImdbSubject subject = omdbSite.getSubjectById(imdbId);
-                BeanUtilExt.copyPropertiesExceptNull(entity, subject, true, true);
-                entity.setType(VideoTypeEnum.of(subject.getType()));
-                if (entity.getDurations() == null) {
-                    entity.setDurations(new ArrayList<>());
-                }
-                entity.getDurations().add(subject.getRuntime());
-            } catch (HttpResponseException e) {
-                log.error(e.getMessage());
-            }
+        return entity;
+    }
+
+    private SubjectEntity getImdbSubject(String imdbId) {
+        if (StringUtils.isBlank(imdbId)) {
+            return null;
         }
+        ImdbSubject subject;
+        try {
+            subject = omdbSite.getSubjectById(imdbId);
+        } catch (HttpResponseException e) {
+            return null;
+        }
+        SubjectEntity entity;
+        switch (subject.getType()) {
+            case MOVIE:
+                entity = BeanUtilExt.convert(subject, MovieEntity.class);
+                break;
+            case SERIES:
+                entity = BeanUtilExt.convert(subject, SeriesEntity.class);
+                break;
+            case EPISODE:
+                entity = BeanUtilExt.convert(subject, SeasonEntity.class);
+                break;
+            default:
+                throw new IllegalArgumentException("IMDb type is null.");
+        }
+        if (entity.getDurations() == null) {
+            entity.setDurations(new ArrayList<>());
+        }
+        entity.getDurations().add(subject.getRuntime());
         return entity;
     }
 

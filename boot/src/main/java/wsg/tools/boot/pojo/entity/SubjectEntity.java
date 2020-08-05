@@ -6,7 +6,6 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 import wsg.tools.boot.pojo.base.BaseEntity;
-import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
 import javax.persistence.*;
@@ -27,13 +26,14 @@ import java.util.List;
 @DynamicInsert
 @DynamicUpdate
 @Table(name = "video_subject")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.INTEGER)
 public class SubjectEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long dbId;
     private String imdbId;
-    private VideoTypeEnum type;
 
     private String title;
     private String text;
@@ -45,11 +45,4 @@ public class SubjectEntity extends BaseEntity {
     private Year year;
     @UpdateTimestamp
     private LocalDateTime gmtModified;
-
-    private Integer seasonsCount;
-
-    private Integer currentSeason;
-    private Integer episodesCount;
-    private Long seriesId;
-
 }

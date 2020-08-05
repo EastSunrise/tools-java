@@ -10,4 +10,8 @@ public class AppException extends RuntimeException {
     public AppException(Throwable e) {
         super(e.getMessage(), e);
     }
+
+    public AppException(String message) {
+        super(message);
+    }
 }

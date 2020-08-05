@@ -1,6 +1,6 @@
 package wsg.tools.common.jackson.deserializer;
 
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.lang.Money;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
@@ -37,7 +37,7 @@ public class MoneyDeserializer extends AbstractNotBlankDeserializer<Money> {
     protected Money parseText(String text) {
         Matcher matcher = AssertUtils.matches(MONEY_REGEX, text);
         Money.CurrencyEnum currency = EnumUtilExt.deserializeCode(matcher.group(1), Money.CurrencyEnum.class);
-        long value = Long.parseLong(matcher.group(2).replace(Constants.COMMA_DELIMITER, ""));
+        long value = Long.parseLong(matcher.group(2).replace(SignConstants.COMMA, ""));
         return new Money(currency, (double) value);
     }
 }
