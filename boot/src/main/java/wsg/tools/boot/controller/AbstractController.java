@@ -13,6 +13,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.excel.ExcelFactory;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
+import wsg.tools.common.excel.reader.CellReader;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.function.CreatorSupplier;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
@@ -24,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
@@ -63,24 +63,21 @@ public abstract class AbstractController {
     }
 
     /**
-     * Export a .csv file.
-     *
-     * @see ExcelFactory#writeCsv(Appendable, List, LinkedHashMap)
-     */
-    protected <T> void exportCsv(HttpServletResponse response, List<T> data, String filename,
-                                 LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
-        PrintWriter writer = new PrintWriter(getOutputStream(response, filename, ContentType.CSV), true, Constants.UTF_8);
-        FACTORY.writeCsv(writer, data, writers);
-        writer.close();
-    }
-
-    /**
      * Read an imported .xlsx file.
      *
      * @see ExcelFactory#readXlsx(InputStream, Map, CreatorSupplier)
      */
     protected <T> List<T> readXlsx(MultipartFile file, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
         return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers, creator);
+    }
+
+    /**
+     * Read an imported .xlsx file.
+     *
+     * @see ExcelFactory#readXlsx(InputStream, Map)
+     */
+    protected <T> List<Map<String, ?>> readXlsx(MultipartFile file, Map<String, CellReader<?>> readers) throws IOException {
+        return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers);
     }
 
     /**

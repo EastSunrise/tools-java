@@ -1,5 +1,6 @@
 package wsg.tools.boot.service.intf;
 
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.data.domain.Pageable;
 import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
@@ -34,6 +35,14 @@ public interface SubjectService {
      * @return count of imported subjects
      */
     ImportResult importImdbIds(List<String> ids);
+
+    /**
+     * Import subject with doubanId-IMDbId pairs
+     *
+     * @param pairs pairs of doubanId-IMDbId
+     * @return result
+     */
+    ImportResult importManually(List<MutablePair<Long, String>> pairs);
 
     /**
      * Import top 250.

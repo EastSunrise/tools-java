@@ -31,11 +31,11 @@ public class SystemUtils {
     /**
      * Open a url with local default browser.
      *
-     * @param url  url string
-     * @param args optional args to format the url
+     * @param url     url string
+     * @param urlArgs optional args to format the url
      */
-    public static void openUrl(String url, Object... args) throws IOException {
-        open(String.format(url, args));
+    public static void openUrl(String url, Object... urlArgs) throws IOException {
+        open(String.format(url, urlArgs));
     }
 
     /**

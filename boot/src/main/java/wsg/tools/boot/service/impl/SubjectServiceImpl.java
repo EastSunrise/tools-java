@@ -1,6 +1,7 @@
 package wsg.tools.boot.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -118,6 +119,49 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 exists++;
             }
         }
+        insertNotFound(notFounds);
+        return new ImportResult(added, exists, notFounds);
+    }
+
+    @Override
+    public ImportResult importManually(List<MutablePair<Long, String>> pairs) {
+        log.info("Start to import subjects manually.");
+        int added = 0, exists = 0;
+        List<Object> notFounds = new ArrayList<>(), all = new ArrayList<>();
+        for (MutablePair<Long, String> pair : pairs) {
+            Optional<SubjectEntity> optional = Optional.empty();
+            if (pair.left != null) {
+                all.add(pair.left);
+                optional = subjectRepository.findByDbId(pair.left);
+            }
+            if (pair.right != null) {
+                all.add(pair.right);
+                if (optional.isEmpty()) {
+                    optional = subjectRepository.findByImdbId(pair.right);
+                }
+            }
+            if (optional.isEmpty()) {
+                SubjectEntity entity = config.getSubjectEntity(pair.left, pair.right);
+                if (entity != null) {
+                    subjectRepository.insert(entity);
+                    added++;
+                } else {
+                    if (pair.left != null) {
+                        notFounds.add(pair.left);
+                    }
+                    if (pair.right != null) {
+                        notFounds.add(pair.right);
+                    }
+                }
+            } else {
+                exists++;
+            }
+        }
+        notFoundRepository.deleteInBatch(all.stream().map(o -> {
+            NotFoundEntity entity = new NotFoundEntity();
+            entity.setId(String.valueOf(o));
+            return entity;
+        }).collect(Collectors.toList()));
         insertNotFound(notFounds);
         return new ImportResult(added, exists, notFounds);
     }
