@@ -3,15 +3,12 @@ package wsg.tools.boot.service.base;
 import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
 import wsg.tools.boot.common.BeanUtilExt;
-import wsg.tools.boot.pojo.base.BaseDto;
 import wsg.tools.boot.pojo.base.BaseEntity;
 import wsg.tools.boot.pojo.base.BaseQueryDto;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation for service, including common and customized CRUD operations.
@@ -27,17 +24,5 @@ public class BaseServiceImpl {
 
     protected <Q extends BaseQueryDto, E extends BaseEntity> Predicate getPredicate(Q q, Root<E> root, CriteriaBuilder builder, Class<E> eClass) {
         return QueryByExamplePredicateBuilder.getPredicate(root, builder, convertQuery(q, eClass));
-    }
-
-    protected <D extends BaseDto, E extends BaseEntity> D convertEntity(E e, Class<D> dClass) {
-        return BeanUtilExt.convert(e, dClass);
-    }
-
-    protected <D extends BaseDto, E extends BaseEntity> E convertDto(D d, Class<E> eClass) {
-        return BeanUtilExt.convert(d, eClass);
-    }
-
-    protected <D extends BaseDto, E extends BaseEntity> List<D> convertEntities(List<E> es, Class<D> dClass) {
-        return es.stream().map(e -> convertEntity(e, dClass)).collect(Collectors.toList());
     }
 }

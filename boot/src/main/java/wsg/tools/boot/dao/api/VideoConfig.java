@@ -51,7 +51,7 @@ public class VideoConfig implements InitializingBean {
         if (dbId == null) {
             try {
                 SubjectInfo info = doubanSite.apiMovieImdb(imdbId);
-                dbId = DoubanSite.parseAlt(info.getAlt());
+                dbId = DoubanSite.parseAlt(info.getApiAlt());
             } catch (HttpResponseException e) {
                 log.error(e.getMessage());
             }
@@ -65,14 +65,19 @@ public class VideoConfig implements InitializingBean {
 
         SubjectEntity doubanSubject = getDoubanSubject(dbId);
         SubjectEntity imdbSubject = getImdbSubject(imdbId);
+        if (doubanSubject == null && imdbSubject == null) {
+            return null;
+        }
         if (doubanSubject == null) {
+            imdbSubject.setDbId(dbId);
             return imdbSubject;
         }
         if (imdbSubject == null) {
+            doubanSubject.setImdbId(imdbId);
             return doubanSubject;
         }
-        BeanUtilExt.copyPropertiesExceptNull(doubanSubject, imdbSubject, false, true);
-        return doubanSubject;
+        BeanUtilExt.copyPropertiesExceptNull(imdbSubject, doubanSubject, false, true);
+        return imdbSubject;
     }
 
     private SubjectEntity getDoubanSubject(Long dbId) {

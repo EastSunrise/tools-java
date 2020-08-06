@@ -1,6 +1,6 @@
 package wsg.tools.boot.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
@@ -19,14 +19,12 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.ExcelTemplate;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
-import wsg.tools.common.excel.writer.BaseHyperlinkCellFromGetter;
-import wsg.tools.common.excel.writer.BaseNumericCellFromGetter;
+import wsg.tools.common.excel.writer.BaseCellFromGetter;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,56 +35,15 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/6/22
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/video")
 public class SubjectController extends AbstractController {
 
-    private final ExcelTemplate<SubjectDto> subjectTemplate = ExcelTemplate.<SubjectDto>builder()
-            .put("ID", SubjectDto::getId, SubjectDto::setId, Long.class)
-            .putWriter("豆瓣ID", new BaseHyperlinkCellFromGetter<SubjectDto, Long>() {
-                @Override
-                public Long getValue(SubjectDto subjectDto) {
-                    return subjectDto.getDbId();
-                }
-
-                @Override
-                public String getAddress(SubjectDto subjectDto) {
-                    return subjectDto.getDbId() != null ? String.format("https://movie.douban.com/subject/%d/", subjectDto.getDbId()) : null;
-                }
-            }).putSetter("豆瓣ID", SubjectDto::setDbId, Long.class)
-            .putWriter("IMDb ID", new BaseHyperlinkCellFromGetter<SubjectDto, String>() {
-                @Override
-                public String getValue(SubjectDto subjectDto) {
-                    return subjectDto.getImdbId();
-                }
-
-                @Override
-                public String getAddress(SubjectDto subjectDto) {
-                    return subjectDto.getImdbId() != null ? String.format("https://imdb.com/title/%s/", subjectDto.getImdbId()) : null;
-                }
-            }).putSetter("IMDb ID", SubjectDto::setImdbId, String.class)
-            .put("类型", SubjectDto::getType, SubjectDto::setType, VideoTypeEnum.class)
-            .put("名称", SubjectDto::getTitle, SubjectDto::setTitle, String.class)
-            .put("英文名", SubjectDto::getText, SubjectDto::setText, String.class)
-            .put("原名", SubjectDto::getOriginalTitle, SubjectDto::setOriginalTitle, String.class)
-            .put("别名", SubjectDto::getTitleAka, SubjectDto::setTitleAka, new TypeReference<>() {})
-            .put("外文别名", SubjectDto::getTextAka, SubjectDto::setTextAka, new TypeReference<>() {})
-            .putWriter("年份", new BaseNumericCellFromGetter<SubjectDto, Year>() {
-                @Override
-                public Year getValue(SubjectDto subjectDto) {
-                    return subjectDto.getYear();
-                }
-            }).putSetter("年份", SubjectDto::setYear, Year.class)
-            .put("时长", SubjectDto::getDurations, SubjectDto::setDurations, new TypeReference<>() {})
-            .put("语言", SubjectDto::getLanguages, SubjectDto::setLanguages, new TypeReference<>() {})
-            .put("集数", SubjectDto::getEpisodesCount, SubjectDto::setEpisodesCount, Integer.class)
-            .put("季数", SubjectDto::getSeasonsCount, SubjectDto::setSeasonsCount, Integer.class)
-            .put("当前季", SubjectDto::getCurrentSeason, SubjectDto::setCurrentSeason, Integer.class)
-            .put("剧集 ID", SubjectDto::getSeriesId, SubjectDto::setSeriesId, Long.class);
     private SubjectService subjectService;
 
     @RequestMapping(value = "/subjects", method = RequestMethod.GET)
-    public ResponseEntity<?> index(QuerySubjectDto querySubject, Pageable pageable, PagedResourcesAssembler<SubjectDto> assembler) {
+    public ResponseEntity<?> subjects(QuerySubjectDto querySubject, Pageable pageable, PagedResourcesAssembler<SubjectDto> assembler) {
         PageResult<SubjectDto> result = subjectService.list(querySubject, pageable);
         result.put("archives", ArchivedEnum.values());
         result.put("marks", MarkEnum.values());
@@ -111,24 +68,14 @@ public class SubjectController extends AbstractController {
         }
     }
 
-    @RequestMapping(value = "/export")
-    public ResponseEntity<?> export(HttpServletResponse response, QuerySubjectDto querySubjectDto) {
-        PageResult<SubjectDto> all = subjectService.list(querySubjectDto, null);
+    @RequestMapping(value = "/not", method = RequestMethod.GET)
+    public void notFound(HttpServletResponse response) {
+        LinkedHashMap<String, BaseCellFromGetter<Object, ?>> writers = ExcelTemplate.builder()
+                .putGetter("ID", o -> o).getWriters();
         try {
-            exportXlsx(response, all.getPage().getContent(), "电影列表", subjectTemplate.getWriters());
-            return Result.response();
+            exportXlsx(response, subjectService.notFounds(), "Not Found", writers);
         } catch (IOException e) {
-            return Result.response(e);
-        }
-    }
-
-    @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public ResponseEntity<?> importEx(MultipartFile file) {
-        try {
-            List<SubjectDto> subjects = readXlsx(file, subjectTemplate.getReaders(), SubjectDto::new);
-            return subjectService.batchUpdate(subjects).toResponse();
-        } catch (IOException e) {
-            return Result.response(e);
+            log.error(e.getMessage());
         }
     }
 

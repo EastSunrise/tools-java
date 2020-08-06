@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 public final class DoubanSite extends BaseSite {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
-    private static final Pattern MOVIE_SUBJECT_ALT_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d+)/");
+    private static final Pattern MOVIE_API_ALT_REGEX = Pattern.compile("https://api.douban.com/movie/(\\d+)/?");
     private static final Pattern IMDB_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d{7,})");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
@@ -67,9 +67,8 @@ public final class DoubanSite extends BaseSite {
     /**
      * Obtains id by parsing alt.
      */
-    public static long parseAlt(String alt) {
-        Matcher matcher = AssertUtils.matches(MOVIE_SUBJECT_ALT_REGEX, alt);
-        return Long.parseLong(matcher.group(1));
+    public static long parseAlt(String apiAlt) {
+        return Long.parseLong(AssertUtils.matches(MOVIE_API_ALT_REGEX, apiAlt).group(1));
     }
 
     @Override

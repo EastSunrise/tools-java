@@ -38,11 +38,8 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
     @Override
     @Transactional(rollbackFor = Exception.class)
     public <S extends E> S insert(S entity) throws EntityExistsException {
-        if (info.isNew(entity)) {
-            manager.persist(entity);
-            return entity;
-        }
-        throw new EntityExistsException("The entity already exists.");
+        manager.persist(entity);
+        return entity;
     }
 
     @Override

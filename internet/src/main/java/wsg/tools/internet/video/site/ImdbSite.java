@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
  */
 public final class ImdbSite extends BaseSite {
 
+    public static final String IMDB_TITLE_PREFIX = "tt";
     private static final Pattern MOVIE_TITLE_REGEX = Pattern.compile("([^()]+) \\((TV Movie )?(\\d{4})\\) - IMDb");
     private static final Pattern TV_TITLE_REGEX = Pattern.compile("([^()]+) \\(TV ((Mini-)?Series|Episode) (\\d{4})(–(\\d{4}|\\s))?\\) - IMDb");
     private static final Pattern VIDEO_TITLE_REGEX = Pattern.compile("([^()]+) \\((Video )?(\\d{4})\\) - IMDb");

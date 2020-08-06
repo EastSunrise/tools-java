@@ -6,28 +6,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.dao.api.VideoConfig;
+import wsg.tools.boot.dao.jpa.mapper.NotFoundRepository;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.dao.jpa.mapper.UserRecordRepository;
 import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.dto.QuerySubjectDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.pojo.entity.NotFoundEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity_;
 import wsg.tools.boot.pojo.entity.UserRecordEntity;
+import wsg.tools.boot.pojo.result.ImportResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
+import wsg.tools.internet.video.entity.douban.container.BoxResult;
+import wsg.tools.internet.video.entity.douban.container.RankedResult;
+import wsg.tools.internet.video.entity.douban.pojo.SimpleSubject;
 import wsg.tools.internet.video.enums.CatalogEnum;
+import wsg.tools.internet.video.enums.CityEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
+import wsg.tools.internet.video.site.ImdbSite;
 
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implement of subject service.
@@ -39,12 +46,13 @@ import java.util.Optional;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
-    private VideoConfig videoConfig;
+    private VideoConfig config;
     private SubjectRepository subjectRepository;
     private UserRecordRepository userRecordRepository;
+    private NotFoundRepository notFoundRepository;
 
     @Override
-    public Result importDouban(long userId, LocalDate since) {
+    public ImportResult importDouban(long userId, LocalDate since) {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate();
             if (since == null) {
@@ -57,7 +65,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         for (MarkEnum mark : MarkEnum.values()) {
             Map<Long, LocalDate> map;
             try {
-                map = videoConfig.doubanSite().collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark);
+                map = config.doubanSite().collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark);
             } catch (HttpResponseException e) {
                 log.error(e.getMessage());
                 continue;
@@ -66,7 +74,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 Long id = null;
                 Optional<SubjectEntity> optional = subjectRepository.findByDbId(entry.getKey());
                 if (optional.isEmpty()) {
-                    SubjectEntity entity = videoConfig.getSubjectEntity(entry.getKey(), null);
+                    SubjectEntity entity = config.getSubjectEntity(entry.getKey(), null);
                     if (entity != null) {
                         id = subjectRepository.insert(entity).getId();
                         added++;
@@ -83,29 +91,23 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                     entity.setMarkDate(entry.getValue());
                     entity.setSubjectId(id);
                     entity.setUserId(userId);
-                    userRecordRepository.updateOrInsert(entity,
-                            () -> userRecordRepository.findBySubjectIdAndUserId(entry.getKey(), userId));
+                    Long finalId = id;
+                    userRecordRepository.updateOrInsert(entity, () -> userRecordRepository.findBySubjectIdAndUserId(finalId, userId));
                 }
             }
         }
-        Result result = Result.success();
-        result.put("added", added);
-        result.put("exists", exists);
-        if (!notFounds.isEmpty()) {
-            result.put("not found", notFounds);
-        }
-        result.put("total", added + exists + notFounds.size());
-        return result;
+        insertNotFound(notFounds);
+        return new ImportResult(added, exists, notFounds);
     }
 
     @Override
-    public Result importImdbIds(List<String> ids) {
+    public ImportResult importImdbIds(List<String> ids) {
         log.info("Start to import imdb watchlist.");
         int added = 0, exists = 0;
         List<String> notFounds = new ArrayList<>();
         for (String id : ids) {
             if (subjectRepository.findByImdbId(id).isEmpty()) {
-                SubjectEntity entity = videoConfig.getSubjectEntity(null, id);
+                SubjectEntity entity = config.getSubjectEntity(null, id);
                 if (entity != null) {
                     subjectRepository.insert(entity);
                     added++;
@@ -116,14 +118,102 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 exists++;
             }
         }
-        Result result = Result.success();
-        result.put("added", added);
-        result.put("exists", exists);
-        if (!notFounds.isEmpty()) {
-            result.put("not found", notFounds);
+        insertNotFound(notFounds);
+        return new ImportResult(added, exists, notFounds);
+    }
+
+    @Override
+    public ImportResult top250() {
+        log.info("Start to update top 250.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieTop250().getRight());
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
         }
-        result.put("total", ids.size());
-        return result;
+    }
+
+    @Override
+    public ImportResult movieWeekly() {
+        log.info("Start to update weekly movies.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieWeekly().getSubjects().stream()
+                    .map(RankedResult.RankedSubject::getSubject).collect(Collectors.toList()));
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
+        }
+    }
+
+    @Override
+    public ImportResult movieUsBox() {
+        log.info("Start to update us box movies.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieUsBox().getSubjects().stream()
+                    .map(BoxResult.BoxSubject::getSubject).collect(Collectors.toList()));
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
+        }
+    }
+
+    @Override
+    public ImportResult movieInTheatre() {
+        log.info("Start to update movies in theaters.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieInTheaters(CityEnum.BEIJING).getRight());
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
+        }
+    }
+
+    @Override
+    public ImportResult movieComingSoon() {
+        log.info("Start to update movies coming soon.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieComingSoon().getRight());
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
+        }
+    }
+
+    @Override
+    public ImportResult newMovies() {
+        log.info("Start to update new movies.");
+        try {
+            return batchInsertDoubanIgnore(config.doubanSite().apiMovieNewMovies().getRight());
+        } catch (HttpResponseException e) {
+            return new ImportResult(e);
+        }
+    }
+
+    private ImportResult batchInsertDoubanIgnore(List<SimpleSubject> subjects) {
+        int added = 0, exists = 0;
+        List<Long> notFounds = new ArrayList<>();
+        for (SimpleSubject subject : subjects) {
+            if (subjectRepository.findByDbId(subject.getId()).isEmpty()) {
+                SubjectEntity entity = config.getSubjectEntity(subject.getId(), null);
+                if (entity != null) {
+                    subjectRepository.insert(entity);
+                    added++;
+                } else {
+                    notFounds.add(subject.getId());
+                }
+            } else {
+                exists++;
+            }
+        }
+        insertNotFound(notFounds);
+        return new ImportResult(added, exists, notFounds);
+    }
+
+    private void insertNotFound(List<?> notFounds) {
+        List<NotFoundEntity> all = notFoundRepository.findAll();
+        Set<String> set = all.stream().map(NotFoundEntity::getId).collect(Collectors.toSet());
+        notFounds.forEach(id -> {
+            if (!set.contains(String.valueOf(id))) {
+                NotFoundEntity entity = new NotFoundEntity();
+                entity.setId(String.valueOf(id));
+                notFoundRepository.insert(entity);
+            }
+        });
     }
 
     @Override
@@ -131,7 +221,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         log.info("Start to update list of subjects.");
         int count = 0;
         for (SubjectDto subject : subjects) {
-            SubjectEntity entity = videoConfig.getSubjectEntity(subject.getDbId(), subject.getImdbId());
+            SubjectEntity entity = config.getSubjectEntity(subject.getDbId(), subject.getImdbId());
             if (subject.getId() != null && entity != null) {
                 entity.setId(subject.getId());
                 if (subjectRepository.updateById(entity) != null) {
@@ -157,9 +247,23 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return predicate;
         };
         if (pageable == null) {
-            return PageResult.of(convertEntities(subjectRepository.findAll(spec), SubjectDto.class));
+            return PageResult.of(subjectRepository.findAll(spec).stream()
+                    .map(entity -> BeanUtilExt.convert(entity, SubjectDto.class)).collect(Collectors.toList()));
         }
-        return PageResult.of(subjectRepository.findAll(spec, pageable).map(entity -> convertEntity(entity, SubjectDto.class)));
+        return PageResult.of(subjectRepository.findAll(spec, pageable).map(entity -> BeanUtilExt.convert(entity, SubjectDto.class)));
+    }
+
+    @Override
+    public List<Object> notFounds() {
+        return notFoundRepository.findAll().stream().map(entity -> {
+            String id = entity.getId();
+            return id.startsWith(ImdbSite.IMDB_TITLE_PREFIX) ? id : Long.valueOf(id);
+        }).collect(Collectors.toList());
+    }
+
+    @Autowired
+    public void setNotFoundRepository(NotFoundRepository notFoundRepository) {
+        this.notFoundRepository = notFoundRepository;
     }
 
     @Autowired
@@ -173,7 +277,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Autowired
-    public void setVideoConfig(VideoConfig videoConfig) {
-        this.videoConfig = videoConfig;
+    public void setConfig(VideoConfig config) {
+        this.config = config;
     }
 }

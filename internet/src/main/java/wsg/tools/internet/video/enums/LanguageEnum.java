@@ -40,7 +40,8 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     JI("Yiddish", "依地文", new String[]{"意第绪语"}),
     KW("Cornish", "康沃尔语", new String[]{"科尼什语"}),
     NDS("Low German", "低地德语", new String[]{"Mende", "门德语"}),
-
+    FA("Persian", "波斯语", new String[]{"Dari"}),
+    FUR("Friulian", "弗留利语", new String[]{"Fur"}),
     /**
      * Manual languages, three-letter abbreviation as code
      */
@@ -98,7 +99,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     EO("Esperanto", "世界语"),
     ES("Spanish", "西班牙语"),
     ET("Estonian", "爱沙尼亚语"),
-    FA("Persian", "波斯语"),
     FF("Fulah", "富拉语"),
     FI("Finnish", "芬兰语"),
     FJ("Fijian", "斐济语"),

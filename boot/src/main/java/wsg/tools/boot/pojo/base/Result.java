@@ -18,9 +18,9 @@ import java.util.Map;
 @Getter
 public class Result implements Serializable {
 
-    private final boolean success;
+    protected final boolean success;
+    protected Map<String, Object> args;
     private String message;
-    private Map<String, Object> args;
 
     /**
      * Instantiate a successful result.
@@ -94,9 +94,10 @@ public class Result implements Serializable {
         return fail(e).toResponse();
     }
 
-    public Object put(String key, Object value) {
+    public Result put(String key, Object value) {
         assert success;
-        return args.put(key, value);
+        args.put(key, value);
+        return this;
     }
 
     public ResponseEntity<?> toResponse() {
