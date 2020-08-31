@@ -16,6 +16,7 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     /**
      * Extended ISO countries.
      */
+    WW("World", "世界", new String[]{"World-wide"}),
     CN("China", "中国", new String[]{"中国大陆"}),
     US("United States", "美国", new String[]{"USA"}),
     GB("United Kingdom", "英国", new String[]{"UK"}),
@@ -24,6 +25,8 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     DE("Germany", "德国", new String[]{"西德", "West Germany"}),
     CZ("Czechia", "捷克", new String[]{"Czech Republic"}),
     AE("United Arab Emirates", "阿拉伯联合酋长国", new String[]{"阿联酋"}),
+    CSX("Czechoslovakia", "捷克斯洛伐克"),
+    USSR("Soviet Union", "苏联"),
 
     /**
      * Other ISO countries

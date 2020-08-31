@@ -15,11 +15,12 @@ import java.util.Map;
 @Setter
 @Getter
 public class Rating {
-    private Integer max;
+
+    private Double max;
     private Double average;
     private Map<Integer, Integer> details;
     @JsonAlias("numRaters")
     private Integer stars;
-    private Integer min;
-    private Integer value;
+    private Double min;
+    private Double value;
 }

@@ -43,8 +43,10 @@ public abstract class BaseSite {
     protected static final String HTML_A = "a";
     protected static final String HTML_LI = "li";
     protected static final String HTML_SELECT = "select";
+    protected static final String HTML_STRONG = "strong";
     protected static final String HTML_H1 = "h1";
     protected static final String HTML_TITLE = "title";
+    protected static final String HTML_HREF = "href";
     private static final int TIME_OUT = 30000;
     private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
 
@@ -53,7 +55,7 @@ public abstract class BaseSite {
     protected final SchemeEnum scheme;
     protected final String domain;
     private final RateLimiter limiter;
-    private ObjectMapper objectMapper;
+    protected ObjectMapper objectMapper;
     private CloseableHttpClient client;
 
     public BaseSite(String name, String domain) {
@@ -69,6 +71,7 @@ public abstract class BaseSite {
         this.scheme = scheme;
         this.domain = domain;
         this.limiter = RateLimiter.create(permitsPerSecond);
+        this.setObjectMapper();
     }
 
     /**
@@ -111,9 +114,9 @@ public abstract class BaseSite {
     protected <T> T getObject(URI uri, Class<T> clazz, boolean cached) throws HttpResponseException {
         try {
             if (cached) {
-                return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
+                return objectMapper.readValue(getCachedContent(uri, ContentTypeEnum.JSON), clazz);
             } else {
-                return getObjectMapper().readValue(getContent(uri), clazz);
+                return objectMapper.readValue(getContent(uri), clazz);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -126,9 +129,9 @@ public abstract class BaseSite {
     protected <T> T getObject(URI uri, TypeReference<T> type, boolean cached) throws HttpResponseException {
         try {
             if (cached) {
-                return getObjectMapper().readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
+                return objectMapper.readValue(getCachedContent(uri, ContentTypeEnum.JSON), type);
             } else {
-                return getObjectMapper().readValue(getContent(uri), type);
+                return objectMapper.readValue(getContent(uri), type);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -236,10 +239,7 @@ public abstract class BaseSite {
      * <p>
      * Override it to customize Jackson if necessary.
      */
-    protected ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-        }
-        return objectMapper;
+    protected void setObjectMapper() {
+        objectMapper = new ObjectMapper();
     }
 }

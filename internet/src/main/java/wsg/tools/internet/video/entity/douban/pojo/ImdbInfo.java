@@ -23,7 +23,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class SubjectInfo {
+public class ImdbInfo {
     @JsonProperty("id")
     private String apiAlt;
     private String title;

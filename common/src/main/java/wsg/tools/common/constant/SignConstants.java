@@ -10,4 +10,5 @@ public class SignConstants {
     public static final String COMMA = ",";
     public static final String SLASH = "/";
     public static final String UNDERLINE = "_";
+    public static final String LEFT_PARENTHESIS = "(";
 }

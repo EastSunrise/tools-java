@@ -15,8 +15,6 @@ import java.util.regex.Pattern;
  */
 public class ReleaseDeserializer extends AbstractNotBlankDeserializer<LocalDate> {
 
-    public static final ReleaseDeserializer INSTANCE = new ReleaseDeserializer();
-
     private static final Pattern RELEASE_REGEX = Pattern.compile("((\\d{4})(-(\\d{2})(-(\\d{2}))?)?)(\\(([^()]+)\\))?");
 
     protected ReleaseDeserializer() {

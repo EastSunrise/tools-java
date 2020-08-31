@@ -178,7 +178,7 @@ public class ExcelFactory {
      * @param data    data to write to the csv file
      * @param writers writers to handle each column
      */
-    public <T> void writeCsv(final Appendable out, List<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
+    public <T> void writeCsv(final Appendable out, Iterable<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         CSVPrinter printer = format.print(out);
         printer.printRecord(writers.keySet());
         for (T t : data) {
@@ -196,7 +196,7 @@ public class ExcelFactory {
      * @param data    data to write
      * @param writers writers to set cells by column
      */
-    public <T> void writeXlsx(OutputStream stream, List<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
+    public <T> void writeXlsx(OutputStream stream, Iterable<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
         int i = 0;
