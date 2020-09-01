@@ -18,12 +18,12 @@ import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
-import wsg.tools.internet.video.jackson.deserializer.YearDeserializerExt;
+import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.handler.ReleaseDeserializationProblemHandler;
 import wsg.tools.internet.video.jackson.handler.SingletonListDeserializationProblemHandler;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Year;
 
 /**
  * <a href="https://ptgen.rhilip.workers.dev/">PT Gen</a>
@@ -32,6 +32,8 @@ import java.time.Year;
  * @since 2020/8/29
  */
 public class PtGenSite extends BaseSite {
+
+    private static final String NOT_FOUND_MSG = "The corresponding resource does not exist.";
 
     public PtGenSite() {
         super("PT Gen", "rhilip.info");
@@ -49,10 +51,11 @@ public class PtGenSite extends BaseSite {
                         .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
                         .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
                 )
-                .registerModule(new JavaTimeModule()
-                        .addDeserializer(Year.class, YearDeserializerExt.INSTANCE)
-                )
-                .addHandler(SingletonListDeserializationProblemHandler.INSTANCE);
+                .registerModule(new JavaTimeModule())
+                .addHandler(SingletonListDeserializationProblemHandler.INSTANCE)
+                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
+                .addHandler(ReleaseDeserializationProblemHandler.INSTANCE)
+        ;
     }
 
     public GenDoubanSubject doubanSubject(long dbId) throws HttpResponseException {
@@ -80,8 +83,11 @@ public class PtGenSite extends BaseSite {
                     .addParameter("sid", sid)
                     .build();
             T subject = getObject(uri, clazz);
-            if (subject.isSuccess()) {
+            if (subject.getSuccess()) {
                 return subject;
+            }
+            if (NOT_FOUND_MSG.equals(subject.getError())) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND_MSG);
             }
             throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, subject.getError());
         } catch (URISyntaxException e) {

@@ -1,9 +1,12 @@
 package wsg.tools.internet.video.site;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
@@ -11,6 +14,11 @@ import wsg.tools.internet.video.entity.douban.container.ContentResult;
 import wsg.tools.internet.video.entity.douban.container.RankedResult;
 import wsg.tools.internet.video.entity.douban.pojo.*;
 import wsg.tools.internet.video.enums.CityEnum;
+import wsg.tools.internet.video.enums.CountryEnum;
+import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.enums.SubtypeEnum;
+import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.handler.ReleaseDeserializationProblemHandler;
 
 import java.net.URISyntaxException;
 import java.util.LinkedList;
@@ -29,6 +37,20 @@ public class ApiDoubanSite extends DoubanSite {
     public ApiDoubanSite(String apiKey) {
         super();
         this.apiKey = apiKey;
+    }
+
+    @Override
+    protected void setObjectMapper() {
+        super.setObjectMapper();
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+                .registerModule(new SimpleModule()
+                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
+                        .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
+                        .addDeserializer(SubtypeEnum.class, EnumDeserializers.getAkaDeserializer(String.class, SubtypeEnum.class))
+                )
+                .addHandler(ReleaseDeserializationProblemHandler.INSTANCE)
+                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
+        ;
     }
 
     /**

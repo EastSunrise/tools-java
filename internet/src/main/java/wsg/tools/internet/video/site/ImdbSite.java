@@ -44,7 +44,8 @@ public final class ImdbSite extends BaseSite {
                 .addDeserializer(RatedEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatedEnum.class))
                 .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
         ).registerModule(new JavaTimeModule())
-                .addHandler(SingletonListDeserializationProblemHandler.INSTANCE);
+                .addHandler(SingletonListDeserializationProblemHandler.INSTANCE)
+        ;
     }
 
     /**

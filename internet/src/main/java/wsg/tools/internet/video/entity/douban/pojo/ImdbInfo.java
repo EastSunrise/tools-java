@@ -1,14 +1,11 @@
 package wsg.tools.internet.video.entity.douban.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
-import wsg.tools.internet.video.jackson.deserializer.ReleaseDeserializer;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -47,12 +44,10 @@ public class ImdbInfo {
         @JsonProperty("language")
         private List<LanguageEnum> languages;
         @JsonProperty("movie_duration")
-        @JsonDeserialize(contentUsing = DurationExtDeserializer.class)
         private List<Duration> durations;
         @JsonProperty("movie_type")
         private List<GenreEnum> genres;
         @JsonProperty("pubdate")
-        @JsonDeserialize(contentUsing = ReleaseDeserializer.class)
         private List<LocalDate> releases;
         @JsonProperty("cast")
         private List<String> casts;

@@ -23,15 +23,15 @@ public class SingletonListDeserializationProblemHandler extends DeserializationP
     protected SingletonListDeserializationProblemHandler() { }
 
     @Override
-    public Object handleUnexpectedToken(DeserializationContext ctxt, JavaType targetType, JsonToken token, JsonParser parser, String failureMsg) throws IOException {
+    public Object handleUnexpectedToken(DeserializationContext context, JavaType targetType, JsonToken token, JsonParser parser, String failureMsg) throws IOException {
         if (targetType.isCollectionLikeType()) {
-            if (JsonToken.START_OBJECT.equals(token) || JsonToken.VALUE_STRING.equals(token)) {
+            if (JsonToken.START_OBJECT.equals(token) || parser.hasToken(JsonToken.VALUE_STRING)) {
                 Object single = parser.readValueAs(targetType.getContentType().getRawClass());
                 List<Object> list = new ArrayList<>();
                 list.add(single);
                 return list;
             }
         }
-        return super.handleUnexpectedToken(ctxt, targetType, token, parser, failureMsg);
+        return super.handleUnexpectedToken(context, targetType, token, parser, failureMsg);
     }
 }

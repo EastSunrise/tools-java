@@ -19,8 +19,8 @@ public abstract class BaseGenResponse {
     private String site;
     private Instant generateAt;
 
-    private boolean success;
-    private float cost;
+    private Boolean success;
+    private Float cost;
     private String error;
     private String img;
     private String format;

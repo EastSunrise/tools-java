@@ -10,7 +10,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
-import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
 import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
@@ -20,7 +19,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ContentTypeEnum;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
 import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.handler.SeparatedValueDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
 import wsg.tools.internet.video.jackson.handler.YearDeserializationProblemHandler;
 
 import java.net.URI;
@@ -96,18 +95,13 @@ public final class OmdbSite extends BaseSite {
             throw AssertUtils.runtimeException(e);
         }
         String json = getCachedContent(uri, ContentTypeEnum.JSON);
-        BaseOmdbTitle title;
         try {
-            title = objectMapper.readValue(json, BaseOmdbTitle.class);
+            return objectMapper.readValue(json, BaseOmdbTitle.class);
         } catch (InvalidTypeIdException e) {
             throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
-        if (!title.getResponse()) {
-            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, title.getError());
-        }
-        return title;
     }
 
     @Override
@@ -122,11 +116,13 @@ public final class OmdbSite extends BaseSite {
                         .addDeserializer(RatedEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatedEnum.class))
                         .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
                         .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
-                ).registerModule(new JavaTimeModule()
-                .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH))
-                ))
-                .addHandler(SeparatedValueDeserializationProblemHandler.getInstance(SignConstants.COMMA))
-                .addHandler(YearDeserializationProblemHandler.INSTANCE);
+                )
+                .registerModule(new JavaTimeModule()
+                        .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
+                )
+                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
+                .addHandler(YearDeserializationProblemHandler.INSTANCE)
+        ;
     }
 
     @Override

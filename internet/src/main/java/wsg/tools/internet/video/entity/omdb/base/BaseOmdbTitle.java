@@ -3,9 +3,9 @@ package wsg.tools.internet.video.entity.omdb.base;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
 import wsg.tools.internet.video.entity.omdb.object.OmdbMovie;
 import wsg.tools.internet.video.entity.omdb.object.OmdbSeries;
@@ -13,7 +13,7 @@ import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
-import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
+import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -43,20 +43,25 @@ public abstract class BaseOmdbTitle extends BaseOmdbResponse {
     @JsonProperty("released")
     private LocalDate release;
     @JsonProperty("runtime")
-    @JsonDeserialize(using = DurationExtDeserializer.class)
     private Duration duration;
     @JsonProperty("Genre")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<GenreEnum> genres;
     @JsonProperty("Director")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<String> directors;
     @JsonProperty("Writer")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<String> writers;
     @JsonProperty("Actors")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<String> actors;
     private String plot;
     @JsonProperty("Language")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<LanguageEnum> languages;
     @JsonProperty("Country")
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<CountryEnum> countries;
     private String awards;
     @JsonProperty("poster")

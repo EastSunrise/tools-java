@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.entity.gen.base;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -17,14 +17,16 @@ import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
+import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 import wsg.tools.internet.video.jackson.deserializer.CountryDeserializerExt;
-import wsg.tools.internet.video.jackson.deserializer.DurationExtDeserializer;
+import wsg.tools.internet.video.jackson.deserializer.MultiFormatLocalDateDeserializer;
 import wsg.tools.internet.video.jackson.deserializer.ReleaseExtDeserializer;
 import wsg.tools.internet.video.jackson.extra.PropertyNamingStrategies;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
+import java.time.temporal.Temporal;
 import java.util.List;
 
 /**
@@ -57,7 +59,6 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
     @JsonProperty("details")
     private Detail detail;
     private List<GenPerson> directors;
-    @JsonDeserialize(using = DurationExtDeserializer.class)
     private Duration duration;
     @JsonProperty("genre")
     private List<GenreEnum> genres;
@@ -84,19 +85,25 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
 
     @Getter
     @Setter
+    @JsonIgnoreProperties({"Opening Weekend USA"})
     @JsonNaming(PropertyNamingStrategies.UpperSpaceStrategy.class)
     public static class Detail {
+        private static final String SEPARATOR = "|";
 
-        private LanguageEnum language;
-        private CountryEnum country;
+        @JsonProperty("Language")
+        @JoinedValue(separator = SEPARATOR)
+        private List<LanguageEnum> languages;
+        @JsonProperty("Country")
+        @JoinedValue(separator = SEPARATOR)
+        private List<CountryEnum> countries;
 
         @JsonProperty("Runtime")
-        @JsonDeserialize(using = DurationExtDeserializer.class)
-        private Duration duration;
+        private List<Duration> durations;
         private String officialSites;
 
         private String productionCo;
-        private String color;
+        @JoinedValue(separator = SEPARATOR)
+        private List<String> color;
         private String soundMix;
 
         private String filmingLocations;
@@ -109,8 +116,11 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
         @JsonProperty("Release Date")
         private LocalDate release;
 
+        private Money budget;
         @JsonProperty("Cumulative Worldwide Gross")
         private Money boxOffice;
+        @JsonProperty("Gross USA")
+        private Money gross;
     }
 
     @Getter
@@ -118,7 +128,7 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
     private static class ReleaseItem {
         private CountryEnum country;
         @JsonProperty("date")
-        @JsonFormat(pattern = "d MMMM yyyy", locale = "en")
-        private LocalDate release;
+        @JsonDeserialize(using = MultiFormatLocalDateDeserializer.class)
+        private Temporal release;
     }
 }

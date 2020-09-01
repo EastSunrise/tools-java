@@ -25,7 +25,7 @@ public class MoneyDeserializer extends AbstractNotBlankDeserializer<Money> {
         StringBuilder builder = new StringBuilder();
         builder.append("([");
         Arrays.stream(Money.CurrencyEnum.values()).forEach(e -> builder.append(e.getCode()));
-        builder.append("])(\\d+(,\\d{3})*)");
+        builder.append("])(\\d+(,\\d{3})*)(\\s\\([^()]+\\))*");
         MONEY_REGEX = Pattern.compile(builder.toString());
     }
 

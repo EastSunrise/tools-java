@@ -3,14 +3,14 @@ package wsg.tools.internet.video.entity.imdb.base;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.common.constant.SignConstants;
 import wsg.tools.internet.video.entity.imdb.extra.AggregateRating;
 import wsg.tools.internet.video.entity.imdb.object.*;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
-import wsg.tools.internet.video.jackson.deserializer.String2ListDeserializer;
+import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -39,7 +39,7 @@ public abstract class BaseImdbTitle {
     private List<GenreEnum> genres;
     @JsonProperty("datePublished")
     private LocalDate release;
-    @JsonDeserialize(using = String2ListDeserializer.class)
+    @JoinedValue(separator = SignConstants.COMMA)
     private List<String> keywords;
     @JsonProperty("image")
     private String posterUrl;

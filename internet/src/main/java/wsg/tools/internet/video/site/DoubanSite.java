@@ -3,6 +3,7 @@ package wsg.tools.internet.video.site;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
@@ -21,6 +22,7 @@ import wsg.tools.internet.video.enums.MarkEnum;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,7 +64,9 @@ public class DoubanSite extends BaseSite {
         super.setObjectMapper();
         objectMapper.registerModule(new SimpleModule()
                 .addDeserializer(GenreEnum.class, EnumDeserializers.getTitleDeserializer(GenreEnum.class))
-        ).registerModule(new JavaTimeModule());
+        ).registerModule(new JavaTimeModule()
+                .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
+        );
     }
 
     /**

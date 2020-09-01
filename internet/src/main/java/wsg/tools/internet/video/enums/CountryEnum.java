@@ -27,6 +27,7 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     AE("United Arab Emirates", "阿拉伯联合酋长国", new String[]{"阿联酋"}),
     CSX("Czechoslovakia", "捷克斯洛伐克"),
     USSR("Soviet Union", "苏联"),
+    MK("Macedonia", "马其顿", new String[]{"Republic of North Macedonia"}),
 
     /**
      * Other ISO countries
@@ -168,7 +169,6 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     MF("St. Martin", "法属圣马丁"),
     MG("Madagascar", "马达加斯加"),
     MH("Marshall Islands", "马绍尔群岛"),
-    MK("Macedonia", "马其顿"),
     ML("Mali", "马里"),
     MM("Myanmar (Burma)", "缅甸"),
     MN("Mongolia", "蒙古"),

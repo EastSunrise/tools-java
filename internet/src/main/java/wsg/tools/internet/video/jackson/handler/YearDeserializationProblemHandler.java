@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Handle irregular string of {@link Year}.
+ * Handle irregular string when deserializing {@link Year}.
  *
  * @author Kingen
  * @since 2020/7/18
@@ -25,7 +25,7 @@ public class YearDeserializationProblemHandler extends DeserializationProblemHan
     }
 
     @Override
-    public Object handleWeirdStringValue(DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg) throws IOException {
+    public Object handleWeirdStringValue(DeserializationContext context, Class<?> targetType, String valueToConvert, String failureMsg) throws IOException {
         if (StringUtils.isBlank(valueToConvert)) {
             return null;
         }
@@ -33,6 +33,6 @@ public class YearDeserializationProblemHandler extends DeserializationProblemHan
             Matcher matcher = AssertUtils.matches(YEAR_REGEX, valueToConvert);
             return Year.of(Integer.parseInt(matcher.group(1)));
         }
-        return super.handleWeirdStringValue(ctxt, targetType, valueToConvert, failureMsg);
+        return super.handleWeirdStringValue(context, targetType, valueToConvert, failureMsg);
     }
 }
