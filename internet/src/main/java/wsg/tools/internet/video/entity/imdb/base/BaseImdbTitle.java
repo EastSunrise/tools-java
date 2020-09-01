@@ -28,6 +28,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = ImdbSeries.class, name = "TVSeries"),
         @JsonSubTypes.Type(value = ImdbEpisode.class, name = "TVEpisode"),
         @JsonSubTypes.Type(value = ImdbMovie.class, name = "Movie"),
+        @JsonSubTypes.Type(value = ImdbCreativeWork.class, name = "CreativeWork"),
 })
 public abstract class BaseImdbTitle {
 
@@ -61,6 +62,7 @@ public abstract class BaseImdbTitle {
     @JsonProperty("contentRating")
     private RatedEnum rated;
     private AggregateRating aggregateRating;
+    private ImdbVideoObject trailer;
 
     @JsonProperty("@context")
     private String context;

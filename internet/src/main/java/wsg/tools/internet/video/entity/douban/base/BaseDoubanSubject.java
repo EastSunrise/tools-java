@@ -31,6 +31,11 @@ import java.util.List;
 public abstract class BaseDoubanSubject {
 
     /**
+     * Extra info
+     */
+    private String imdbId;
+
+    /**
      * Combined with title and original title.
      */
     private String name;

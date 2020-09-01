@@ -1,9 +1,8 @@
 package wsg.tools.internet.video.entity.imdb.object;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
 /**
  * IMDb creative works.
@@ -13,9 +12,5 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonTypeName("CreativeWork")
-public class ImdbCreativeWork {
-
-    private String url;
+public class ImdbCreativeWork extends BaseImdbTitle {
 }

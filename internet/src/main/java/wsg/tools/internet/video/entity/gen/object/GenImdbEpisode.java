@@ -13,6 +13,4 @@ import wsg.tools.internet.video.entity.gen.base.BaseGenImdbTitle;
 @Setter
 @Getter
 public class GenImdbEpisode extends BaseGenImdbTitle {
-
-    private Integer popularity;
 }

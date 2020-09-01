@@ -43,6 +43,8 @@ import java.util.List;
 })
 public abstract class BaseGenImdbTitle extends BaseGenResponse {
 
+    @JsonProperty("name")
+    private String text;
     private List<GenPerson> actors;
     private List<TitleItem> aka;
     @JsonProperty("contentRating")
@@ -65,8 +67,8 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
     private Double imdbRatingAverage;
     private Integer imdbVotes;
     private List<String> keywords;
-    private String name;
     private String poster;
+    private Integer popularity;
     @JsonProperty("release_date")
     private List<ReleaseItem> releaseDates;
     private Integer reviews;
@@ -74,7 +76,7 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
 
     @Getter
     @Setter
-    private static class TitleItem {
+    public static class TitleItem {
         @JsonDeserialize(using = CountryDeserializerExt.class)
         private CountryEnum country;
         private String title;
@@ -83,29 +85,24 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
     @Getter
     @Setter
     @JsonNaming(PropertyNamingStrategies.UpperSpaceStrategy.class)
-    private static class Detail {
+    public static class Detail {
 
         private LanguageEnum language;
         private CountryEnum country;
 
+        @JsonProperty("Runtime")
         @JsonDeserialize(using = DurationExtDeserializer.class)
-        private Duration runtime;
-        @JsonProperty("Official Sites")
-        private String officialSite;
+        private Duration duration;
+        private String officialSites;
 
-        @JsonProperty("Production Co")
         private String productionCo;
         private String color;
-        @JsonProperty("Sound Mix")
         private String soundMix;
 
-        @JsonProperty("Filming Locations")
-        private String filmingLocation;
+        private String filmingLocations;
 
-        @JsonProperty("Also Known As")
         private String alsoKnownAs;
 
-        @JsonProperty("Aspect Ratio")
         private String aspectRatio;
 
         @JsonDeserialize(using = ReleaseExtDeserializer.class)

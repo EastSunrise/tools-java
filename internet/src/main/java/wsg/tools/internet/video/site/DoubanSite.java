@@ -42,6 +42,7 @@ public class DoubanSite extends BaseSite {
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     protected static final int MAX_COUNT_ONCE = 100;
     private static final Pattern MOVIE_API_ALT_REGEX = Pattern.compile("https://api.douban.com/movie/(\\d+)/?");
+    private static final Pattern IMDB_URL_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d+)");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
 
@@ -165,6 +166,7 @@ public class DoubanSite extends BaseSite {
             throw AssertUtils.runtimeException(e);
         }
         String text = document.selectFirst("script[type=application/ld+json]").html();
+        text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
         try {
             subject = objectMapper.readValue(text, BaseDoubanSubject.class);
@@ -172,6 +174,11 @@ public class DoubanSite extends BaseSite {
             throw AssertUtils.runtimeException(e);
         }
 
+        Element info = document.selectFirst("div#info");
+        Matcher matcher = IMDB_URL_REGEX.matcher(info.html());
+        if (matcher.find()) {
+            subject.setImdbId(matcher.group(1));
+        }
         return subject;
     }
 

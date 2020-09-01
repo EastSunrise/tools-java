@@ -1,7 +1,9 @@
 package wsg.tools.internet.video.site;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
@@ -15,12 +17,12 @@ import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
 import wsg.tools.common.lang.Money;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.ContentTypeEnum;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.handler.SeparatedValueDeserializationProblemHandler;
 import wsg.tools.internet.video.jackson.handler.YearDeserializationProblemHandler;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -52,23 +54,14 @@ public final class OmdbSite extends BaseSite {
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
     public BaseOmdbTitle getSubjectById(String id) throws HttpResponseException {
-        URI uri;
-        try {
-            uri = buildUri().addParameter("i", id).addParameter("plot", "full").build();
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        BaseOmdbTitle subject = getObject(uri, BaseOmdbTitle.class);
-        if (!subject.getResponse()) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, subject.getError());
-        }
-        return subject;
+        return getResponse(buildUri()
+                .addParameter("i", id).addParameter("plot", "full"));
     }
 
     /**
      * Search subject fast.
      */
-    public BaseOmdbTitle searchSubject(String s) throws IOException, URISyntaxException {
+    public BaseOmdbTitle searchSubject(String s) throws HttpResponseException {
         return searchSubject(s, null, null, 1);
     }
 
@@ -79,7 +72,7 @@ public final class OmdbSite extends BaseSite {
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public BaseOmdbTitle searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws IOException, URISyntaxException {
+    public BaseOmdbTitle searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
         URIBuilder builder = buildUri().addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
@@ -92,7 +85,29 @@ public final class OmdbSite extends BaseSite {
         } else {
             builder.addParameter("page", String.valueOf(page));
         }
-        return getObject(builder.build(), BaseOmdbTitle.class);
+        return getResponse(builder);
+    }
+
+    private BaseOmdbTitle getResponse(URIBuilder builder) throws HttpResponseException {
+        URI uri;
+        try {
+            uri = builder.build();
+        } catch (URISyntaxException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+        String json = getCachedContent(uri, ContentTypeEnum.JSON);
+        BaseOmdbTitle title;
+        try {
+            title = objectMapper.readValue(json, BaseOmdbTitle.class);
+        } catch (InvalidTypeIdException e) {
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+        if (!title.getResponse()) {
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, title.getError());
+        }
+        return title;
     }
 
     @Override

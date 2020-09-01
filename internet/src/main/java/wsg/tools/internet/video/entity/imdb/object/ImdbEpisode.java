@@ -17,6 +17,7 @@ import java.time.Duration;
 @Setter
 public class ImdbEpisode extends BaseImdbTitle {
 
+    private String seriesId;
     @JsonProperty("timeRequired")
     private Duration duration;
 }

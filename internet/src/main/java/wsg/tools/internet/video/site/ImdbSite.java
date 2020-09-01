@@ -11,12 +11,14 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
+import wsg.tools.internet.video.entity.imdb.object.ImdbEpisode;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
 import wsg.tools.internet.video.jackson.handler.SingletonListDeserializationProblemHandler;
 
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -28,7 +30,7 @@ import java.util.regex.Pattern;
 public final class ImdbSite extends BaseSite {
 
     public static final String IMDB_TITLE_PREFIX = "tt";
-    private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/");
+    private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
 
     public ImdbSite() {
         super("IMDb", "imdb.com", 1);
@@ -62,6 +64,13 @@ public final class ImdbSite extends BaseSite {
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
+        if (subject instanceof ImdbEpisode) {
+            ImdbEpisode episode = (ImdbEpisode) subject;
+            String href = document.selectFirst("div[class=titleParent]").selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
+            String seriesId = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
+            episode.setSeriesId(seriesId);
+            return episode;
+        }
         return subject;
     }
 
@@ -83,7 +92,7 @@ public final class ImdbSite extends BaseSite {
 
             Element element = document.selectFirst("meta[itemprop=numberofEpisodes]");
             int episodesCount = Integer.parseInt(element.attr("content"));
-            String[] episodes = new String[episodesCount];
+            String[] episodes = new String[episodesCount + 1];
 
             Elements divs = document.select("div[itemprop=episodes]");
             for (Element div : divs) {
@@ -91,7 +100,7 @@ public final class ImdbSite extends BaseSite {
                 String title = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
                 if (episode == 0) {
-                    continue;
+                    episodes = Arrays.copyOf(episodes, episodesCount);
                 }
                 episodes[episode] = title;
             }

@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.entity.gen.object;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@JsonIgnoreProperties({"@type"})
 public class GenPerson {
 
     private String name;
