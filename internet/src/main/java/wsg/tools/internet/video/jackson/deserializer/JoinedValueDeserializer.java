@@ -22,20 +22,27 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
     public static final JoinedValueDeserializer INSTANCE = new JoinedValueDeserializer();
     private String separator = "";
     private JavaType targetType;
+    private BeanProperty property;
 
     protected JoinedValueDeserializer() {
     }
 
     @Override
     public Object deserialize(JsonParser parser, DeserializationContext context) throws IOException {
-        if (parser.hasToken(JsonToken.VALUE_STRING) && targetType.isCollectionLikeType()) {
-            String[] values = StringUtils.split(parser.getText(), separator);
-            ObjectMapper mapper = (ObjectMapper) parser.getCodec();
-            List<Object> list = new ArrayList<>();
-            for (String value : values) {
-                list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
+        if (targetType.isCollectionLikeType()) {
+            if (parser.hasToken(JsonToken.START_ARRAY)) {
+                JsonDeserializer<Object> deserializer = context.findContextualValueDeserializer(targetType, property);
+                return deserializer.deserialize(parser, context);
             }
-            return list;
+            if (parser.hasToken(JsonToken.VALUE_STRING)) {
+                String[] values = StringUtils.split(parser.getText(), separator);
+                ObjectMapper mapper = (ObjectMapper) parser.getCodec();
+                List<Object> list = new ArrayList<>();
+                for (String value : values) {
+                    list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
+                }
+                return list;
+            }
         }
         return context.handleUnexpectedToken(targetType, parser);
     }
@@ -47,6 +54,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
             separator = joinedValue.separator();
         }
         targetType = property.getType();
+        this.property = property;
         return this;
     }
 }

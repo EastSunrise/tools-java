@@ -4,16 +4,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.gen.base.BaseGenResponse;
 import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 import wsg.tools.internet.video.jackson.deserializer.StringOrPersonDeserializer;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Douban subject from PT Gen.
@@ -25,6 +30,8 @@ import java.util.List;
 @Setter
 public class GenDoubanSubject extends BaseGenResponse {
 
+    private static final Pattern DOUBAN_LINK_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d+)/");
+
     @JsonProperty("chinese_title")
     private String title;
     @JsonProperty("foreign_title")
@@ -35,6 +42,7 @@ public class GenDoubanSubject extends BaseGenResponse {
     @JsonProperty("language")
     private List<LanguageEnum> languages;
     @JsonProperty("region")
+    @JoinedValue(separator = SignConstants.SLASH)
     private List<CountryEnum> countries;
     private Duration duration;
     @JsonProperty("genre")
@@ -72,4 +80,11 @@ public class GenDoubanSubject extends BaseGenResponse {
 
     private String awards;
     private String poster;
+
+    public Long parseDoubanLink() {
+        if (StringUtils.isBlank(doubanLink)) {
+            return null;
+        }
+        return Long.parseLong(AssertUtils.matches(DOUBAN_LINK_REGEX, doubanLink).group(1));
+    }
 }

@@ -21,7 +21,7 @@ public class DurationDeserializationProblemHandler extends DeserializationProble
 
     public static final DurationDeserializationProblemHandler INSTANCE = new DurationDeserializationProblemHandler();
 
-    private static final Pattern DURATION_REGEX = Pattern.compile("(\\w+: )?((\\d+)\\s?h\\s)?(\\d+(,\\d{3})*)([-–](\\d+))?\\s?(min|分钟)?(\\s?\\([^()]*\\))*");
+    private static final Pattern DURATION_REGEX = Pattern.compile("([\\s\\w]+: )?((\\d+)\\s?h\\s)?(\\d+(,\\d{3})*)([-–](\\d+))?\\s?(min|分钟)?(\\s?\\([^()]*\\))*");
     private static final int HOUR_GROUP = 3;
     private static final int MINUTE_GROUP = 5;
     private static final int MINUTE_MAX_GROUP = 7;

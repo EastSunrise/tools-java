@@ -24,5 +24,5 @@ public @interface JoinedValue {
     /**
      * separator which deserialized string is joined with.
      */
-    String separator() default "";
+    String separator();
 }

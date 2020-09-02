@@ -20,7 +20,7 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     CN("China", "中国", new String[]{"中国大陆"}),
     US("United States", "美国", new String[]{"USA"}),
     GB("United Kingdom", "英国", new String[]{"UK"}),
-    HK("Hong Kong SAR China", "中国香港特别行政区", new String[]{"Hong Kong", "中国香港"}),
+    HK("Hong Kong SAR China", "中国香港特别行政区", new String[]{"Hong Kong", "中国香港", "香港"}),
     TW("Taiwan", "台湾", new String[]{"中国台湾"}),
     DE("Germany", "德国", new String[]{"西德", "West Germany"}),
     CZ("Czechia", "捷克", new String[]{"Czech Republic"}),
@@ -28,6 +28,7 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     CSX("Czechoslovakia", "捷克斯洛伐克"),
     USSR("Soviet Union", "苏联"),
     MK("Macedonia", "马其顿", new String[]{"Republic of North Macedonia"}),
+    CI("Côte d’Ivoire", "科特迪瓦", new String[]{"Côte d'Ivoire"}),
 
     /**
      * Other ISO countries
@@ -74,7 +75,6 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     CF("Central African Republic", "中非共和国"),
     CG("Congo - Brazzaville", "刚果（布）"),
     CH("Switzerland", "瑞士"),
-    CI("Côte d’Ivoire", "科特迪瓦"),
     CK("Cook Islands", "库克群岛"),
     CL("Chile", "智利"),
     CM("Cameroon", "喀麦隆"),
@@ -295,7 +295,7 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
 
     @Override
     public boolean alsoKnownAs(String other) {
-        return text.equals(other) || title.equals(other) || ArrayUtils.contains(aka, other);
+        return text.equals(other) || title.equals(other) || ArrayUtils.contains(aka, other) || text.replace("&", "and").equals(other);
     }
 
     @Override

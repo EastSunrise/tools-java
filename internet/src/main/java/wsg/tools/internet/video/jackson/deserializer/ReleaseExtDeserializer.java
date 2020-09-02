@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class ReleaseExtDeserializer extends AbstractNotBlankDeserializer<LocalDate> {
 
     private static final Pattern RELEASE_EXT_REGEX = Pattern.compile("(\\d+\\s[A-z]+\\s\\d{4})\\s\\([^()]+\\)");
+    private static final Pattern RELEASE_EXT_REGEX2 = Pattern.compile("(\\d+)\\s\\([^()]+\\)");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy").withLocale(Locale.ENGLISH);
 
     protected ReleaseExtDeserializer() {
@@ -26,7 +27,12 @@ public class ReleaseExtDeserializer extends AbstractNotBlankDeserializer<LocalDa
 
     @Override
     protected LocalDate parseText(String text) {
-        Matcher matcher = AssertUtils.matches(RELEASE_EXT_REGEX, text);
-        return LocalDate.parse(matcher.group(1), FORMATTER);
+        try {
+            Matcher matcher = AssertUtils.matches(RELEASE_EXT_REGEX, text);
+            return LocalDate.parse(matcher.group(1), FORMATTER);
+        } catch (IllegalArgumentException e) {
+            Matcher matcher = AssertUtils.matches(RELEASE_EXT_REGEX2, text);
+            return LocalDate.of(Integer.parseInt(matcher.group(1)), 1, 1);
+        }
     }
 }

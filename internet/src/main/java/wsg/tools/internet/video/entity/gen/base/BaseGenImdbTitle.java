@@ -98,6 +98,7 @@ public abstract class BaseGenImdbTitle extends BaseGenResponse {
         private List<CountryEnum> countries;
 
         @JsonProperty("Runtime")
+        @JoinedValue(separator = SEPARATOR)
         private List<Duration> durations;
         private String officialSites;
 

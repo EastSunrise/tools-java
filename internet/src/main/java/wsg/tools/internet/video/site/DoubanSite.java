@@ -52,13 +52,6 @@ public class DoubanSite extends BaseSite {
         super("Douban", "douban.com", 1);
     }
 
-    /**
-     * Obtains id by parsing alt.
-     */
-    public static long parseAlt(String apiAlt) {
-        return Long.parseLong(AssertUtils.matches(MOVIE_API_ALT_REGEX, apiAlt).group(1));
-    }
-
     @Override
     protected void setObjectMapper() {
         super.setObjectMapper();

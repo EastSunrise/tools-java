@@ -12,6 +12,7 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.entity.imdb.object.ImdbEpisode;
+import wsg.tools.internet.video.entity.imdb.object.ImdbSeries;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatedEnum;
@@ -19,6 +20,7 @@ import wsg.tools.internet.video.jackson.handler.SingletonListDeserializationProb
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -31,6 +33,7 @@ public final class ImdbSite extends BaseSite {
 
     public static final String IMDB_TITLE_PREFIX = "tt";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
+    private static final Pattern SEASON_EPISODES_REGEX = Pattern.compile("/title/tt\\d+/episodes\\?season=\\d+");
 
     public ImdbSite() {
         super("IMDb", "imdb.com", 1);
@@ -67,10 +70,25 @@ public final class ImdbSite extends BaseSite {
         }
         if (subject instanceof ImdbEpisode) {
             ImdbEpisode episode = (ImdbEpisode) subject;
-            String href = document.selectFirst("div[class=titleParent]").selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
+            String href = document.selectFirst("div.titleParent").selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
             String seriesId = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
             episode.setSeriesId(seriesId);
             return episode;
+        }
+        if (subject instanceof ImdbSeries) {
+            ImdbSeries series = (ImdbSeries) subject;
+            Element widget = document.selectFirst("div#title-episode-widget");
+            if (widget != null) {
+                Matcher matcher = SEASON_EPISODES_REGEX.matcher(widget.html());
+                int seasonsCount = 0;
+                while (matcher.find()) {
+                    seasonsCount++;
+                }
+                if (seasonsCount != 0) {
+                    series.setSeasonsCount(seasonsCount);
+                }
+            }
+            return series;
         }
         return subject;
     }

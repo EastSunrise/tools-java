@@ -3,6 +3,7 @@ package wsg.tools.internet.video.jackson.deserializer;
 import wsg.tools.common.jackson.deserializer.AbstractNotBlankDeserializer;
 
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -29,7 +30,11 @@ public class MultiFormatLocalDateDeserializer extends AbstractNotBlankDeserializ
         try {
             return LocalDate.parse(text, DATE_FORMAT);
         } catch (DateTimeParseException e) {
-            return YearMonth.parse(text, MONTH_FORMAT);
+            try {
+                return YearMonth.parse(text, MONTH_FORMAT);
+            } catch (DateTimeParseException exception) {
+                return Year.of(Integer.parseInt(text));
+            }
         }
     }
 }

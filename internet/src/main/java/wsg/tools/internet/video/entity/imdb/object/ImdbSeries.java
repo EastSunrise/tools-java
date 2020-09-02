@@ -13,4 +13,6 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 @Getter
 @Setter
 public class ImdbSeries extends BaseImdbTitle {
+
+    private Integer seasonsCount;
 }

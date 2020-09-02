@@ -24,6 +24,7 @@ import wsg.tools.common.util.AssertUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -49,6 +50,7 @@ public abstract class BaseSite {
     protected static final String HTML_HREF = "href";
     private static final int TIME_OUT = 30000;
     private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
+    private static final int TIMEOUT_RETRY = 1;
 
     @Getter
     protected final String name;
@@ -59,7 +61,7 @@ public abstract class BaseSite {
     private CloseableHttpClient client;
 
     public BaseSite(String name, String domain) {
-        this(name, SchemeEnum.HTTPS, domain, 10D);
+        this(name, SchemeEnum.HTTPS, domain, DEFAULT_PERMIT_PER_SECOND);
     }
 
     public BaseSite(String name, String domain, double permitsPerSecond) {
@@ -194,20 +196,27 @@ public abstract class BaseSite {
         httpGet.addHeader(HTTP.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                 "(KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
         CloseableHttpClient client = getClient();
-        limiter.acquire();
-        try {
-            HttpResponse response = client.execute(httpGet);
-            int code = response.getStatusLine().getStatusCode();
-            if (code == HttpStatus.SC_OK) {
-                return EntityUtils.toString(response.getEntity());
+        int timeoutRetry = 0;
+        while (true) {
+            limiter.acquire();
+            try {
+                HttpResponse response = client.execute(httpGet);
+                int code = response.getStatusLine().getStatusCode();
+                if (code == HttpStatus.SC_OK) {
+                    return EntityUtils.toString(response.getEntity());
+                }
+                throw new HttpResponseException(code, response.getStatusLine().getReasonPhrase());
+            } catch (HttpResponseException e) {
+                throw e;
+            } catch (SocketTimeoutException e) {
+                if (timeoutRetry < TIMEOUT_RETRY) {
+                    timeoutRetry++;
+                    continue;
+                }
+                throw AssertUtils.runtimeException(e);
+            } catch (IOException e) {
+                throw AssertUtils.runtimeException(e);
             }
-            throw new HttpResponseException(code, response.getStatusLine().getReasonPhrase());
-        } catch (HttpResponseException e) {
-            throw e;
-        } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
-        } finally {
-            httpGet.releaseConnection();
         }
     }
 
