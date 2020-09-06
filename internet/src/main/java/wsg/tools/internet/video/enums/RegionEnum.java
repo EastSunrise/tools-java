@@ -7,14 +7,14 @@ import wsg.tools.common.function.TextSupplier;
 import wsg.tools.common.function.TitleSupplier;
 
 /**
- * Enum for countries.
+ * Enum for regions.
  *
  * @author Kingen
  * @since 2020/6/26
  */
-public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier, AkaPredicate<String> {
+public enum RegionEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier, AkaPredicate<String> {
     /**
-     * Extended ISO countries.
+     * Extended ISO regions.
      */
     WW("World", "世界", new String[]{"World-wide"}),
     CN("China", "中国", new String[]{"中国大陆"}),
@@ -22,16 +22,17 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     GB("United Kingdom", "英国", new String[]{"UK"}),
     HK("Hong Kong SAR China", "中国香港特别行政区", new String[]{"Hong Kong", "中国香港", "香港"}),
     TW("Taiwan", "台湾", new String[]{"中国台湾"}),
-    DE("Germany", "德国", new String[]{"西德", "West Germany"}),
+    DE("Germany", "德国", new String[]{"西德", "West Germany", "East Germany"}),
     CZ("Czechia", "捷克", new String[]{"Czech Republic"}),
     AE("United Arab Emirates", "阿拉伯联合酋长国", new String[]{"阿联酋"}),
     CSX("Czechoslovakia", "捷克斯洛伐克"),
     USSR("Soviet Union", "苏联"),
     MK("Macedonia", "马其顿", new String[]{"Republic of North Macedonia"}),
     CI("Côte d’Ivoire", "科特迪瓦", new String[]{"Côte d'Ivoire"}),
+    YU("Yugoslavia", "南斯拉夫"),
 
     /**
-     * Other ISO countries
+     * Other ISO regions
      */
     AD("Andorra", "安道尔"),
     AF("Afghanistan", "阿富汗"),
@@ -278,11 +279,11 @@ public enum CountryEnum implements CodeSupplier<String>, TextSupplier, TitleSupp
     private final String title;
     private final String[] aka;
 
-    CountryEnum(String text, String title) {
+    RegionEnum(String text, String title) {
         this(text, title, null);
     }
 
-    CountryEnum(String text, String title, String[] aka) {
+    RegionEnum(String text, String title, String[] aka) {
         this.text = text;
         this.title = title;
         this.aka = aka;

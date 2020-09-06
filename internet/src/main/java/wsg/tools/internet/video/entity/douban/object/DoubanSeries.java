@@ -13,4 +13,6 @@ import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 @Getter
 @Setter
 public class DoubanSeries extends BaseDoubanSubject {
+
+    private Integer episodesCount;
 }

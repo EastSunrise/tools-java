@@ -1,5 +1,9 @@
 package wsg.tools.internet.video.site;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -7,23 +11,14 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
-import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
-import wsg.tools.common.lang.Money;
-import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.gen.base.BaseGenImdbTitle;
 import wsg.tools.internet.video.entity.gen.base.BaseGenResponse;
 import wsg.tools.internet.video.entity.gen.object.GenDoubanSubject;
-import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.enums.RatedEnum;
-import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
-import wsg.tools.internet.video.jackson.handler.ReleaseDeserializationProblemHandler;
-import wsg.tools.internet.video.jackson.handler.SingletonListDeserializationProblemHandler;
-
-import java.net.URI;
-import java.net.URISyntaxException;
+import wsg.tools.internet.video.enums.RatingEnum;
+import wsg.tools.internet.video.enums.RegionEnum;
 
 /**
  * <a href="https://ptgen.rhilip.workers.dev/">PT Gen</a>
@@ -31,6 +26,7 @@ import java.net.URISyntaxException;
  * @author Kingen
  * @since 2020/8/29
  */
+@Deprecated
 public class PtGenSite extends BaseSite {
 
     private static final String NOT_FOUND_MSG = "The corresponding resource does not exist.";
@@ -40,22 +36,17 @@ public class PtGenSite extends BaseSite {
     }
 
     @Override
-    protected void setObjectMapper() {
-        super.setObjectMapper();
-        objectMapper
+    protected ObjectMapper objectMapper() {
+        return super.objectMapper()
                 .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+                .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
                 .registerModule(new SimpleModule()
                         .addDeserializer(GenreEnum.class, EnumDeserializers.getAkaDeserializer(String.class, GenreEnum.class))
-                        .addDeserializer(RatedEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatedEnum.class))
+                        .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
                         .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                        .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
-                        .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
+                        .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
                 )
-                .registerModule(new JavaTimeModule())
-                .addHandler(SingletonListDeserializationProblemHandler.INSTANCE)
-                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
-                .addHandler(ReleaseDeserializationProblemHandler.INSTANCE)
-        ;
+                .registerModule(new JavaTimeModule());
     }
 
     public GenDoubanSubject doubanSubject(long dbId) throws HttpResponseException {
@@ -66,7 +57,7 @@ public class PtGenSite extends BaseSite {
         return gen("douban", imdbId, GenDoubanSubject.class);
     }
 
-    public BaseGenImdbTitle imdbSubject(String imdbId) throws HttpResponseException {
+    public BaseGenImdbTitle imdbTitle(String imdbId) throws HttpResponseException {
         return gen("imdb", imdbId, BaseGenImdbTitle.class);
     }
 
@@ -77,26 +68,29 @@ public class PtGenSite extends BaseSite {
      * @param sid  tt\d+ or db id
      */
     private <T extends BaseGenResponse> T gen(String site, String sid, Class<T> clazz) throws HttpResponseException {
-        try {
-            URI uri = buildPath("/tool/movieinfo/gen")
-                    .addParameter("site", site)
-                    .addParameter("sid", sid)
-                    .build();
-            T subject = getObject(uri, clazz);
-            if (subject.getSuccess()) {
-                return subject;
+        URIBuilder builder = uriBuilder("/tool/movieinfo/gen")
+                .addParameter("site", site)
+                .addParameter("sid", sid);
+        return getObject(builder, clazz);
+    }
+
+    @Override
+    protected String handleJson(String json) throws JsonProcessingException, HttpResponseException {
+        JsonNode node = objectMapper.readTree(json);
+        boolean response = node.get("success").asBoolean();
+        if (response) {
+            return json;
+        } else {
+            String error = node.get("error").asText();
+            if (NOT_FOUND_MSG.equals(error)) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
             }
-            if (NOT_FOUND_MSG.equals(subject.getError())) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND_MSG);
-            }
-            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, subject.getError());
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
         }
     }
 
     @Override
-    protected URIBuilder buildPath(String path, Object... pathArgs) {
-        return super.buildPath(path, pathArgs).setHost("api." + domain);
+    protected URIBuilder uriBuilder(String path, Object... pathArgs) {
+        return super.uriBuilder(path, pathArgs).setHost("api." + domain);
     }
 }

@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.jackson.deserializer;
 
-import wsg.tools.common.jackson.deserializer.AbstractNotBlankDeserializer;
+import wsg.tools.common.jackson.deserializer.AbstractStringDeserializer;
 
 import java.time.LocalDate;
 import java.time.Year;
@@ -16,12 +16,12 @@ import java.util.Locale;
  * @author Kingen
  * @since 2020/9/1
  */
-public class MultiFormatLocalDateDeserializer extends AbstractNotBlankDeserializer<Temporal> {
+public class MultiFormatTemporalDeserializer extends AbstractStringDeserializer<Temporal> {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy").withLocale(Locale.ENGLISH);
     private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern("MMMM yyyy").withLocale(Locale.ENGLISH);
 
-    protected MultiFormatLocalDateDeserializer() {
+    protected MultiFormatTemporalDeserializer() {
         super(Temporal.class);
     }
 

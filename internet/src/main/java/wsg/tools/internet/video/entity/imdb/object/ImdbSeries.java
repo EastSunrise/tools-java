@@ -15,4 +15,6 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 public class ImdbSeries extends BaseImdbTitle {
 
     private Integer seasonsCount;
+
+    private ImdbVideoObject trailer;
 }

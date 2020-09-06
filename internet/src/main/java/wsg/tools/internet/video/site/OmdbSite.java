@@ -1,31 +1,23 @@
 package wsg.tools.internet.video.site;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
-import wsg.tools.common.jackson.deserializer.MoneyDeserializer;
-import wsg.tools.common.jackson.deserializer.NumberDeserializersExt;
-import wsg.tools.common.lang.Money;
-import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.ContentTypeEnum;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
+import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
+import wsg.tools.internet.video.entity.omdb.object.OmdbSeason;
 import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
-import wsg.tools.internet.video.jackson.handler.YearDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.handler.CommaSeparatedNumberDeserializationProblemHandler;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
@@ -39,12 +31,31 @@ import java.util.Locale;
 public final class OmdbSite extends BaseSite {
 
     private static final int MAX_PAGE = 100;
+    private static final String NOT_FOUND_MSG = "Error getting data.";
+    private static final String SEASON_NOT_FOUND_MSG = "Series or season not found!";
+    private static final String EPISODE_NOT_FOUND_MSG = "Series or episode not found!";
 
-    private final String apiKey;
+    private final String apikey;
 
-    public OmdbSite(String apiKey) {
+    public OmdbSite(String apikey) {
         super("OMDb", "omdbapi.com");
-        this.apiKey = apiKey;
+        this.apikey = apikey;
+    }
+
+    @Override
+    protected ObjectMapper objectMapper() {
+        return super.objectMapper()
+                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+                .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
+                .setLocale(Locale.ENGLISH)
+                .registerModule(new SimpleModule()
+                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
+                        .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
+                        .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
+                        .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
+                )
+                .registerModule(new JavaTimeModule())
+                .addHandler(CommaSeparatedNumberDeserializationProblemHandler.INSTANCE);
     }
 
     /**
@@ -52,16 +63,40 @@ public final class OmdbSite extends BaseSite {
      *
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
-    public BaseOmdbTitle getSubjectById(String id) throws HttpResponseException {
-        return getResponse(buildUri()
-                .addParameter("i", id).addParameter("plot", "full"));
+    public BaseOmdbTitle title(String id) throws HttpResponseException {
+        return getObject(uriBuilder("/")
+                .addParameter("i", id)
+                .addParameter("plot", "full"), BaseOmdbTitle.class);
+    }
+
+    /**
+     * Get a season of TV series.
+     *
+     * @param season start with 1
+     */
+    public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
+        return getObject(uriBuilder("/")
+                .addParameter("i", seriesId)
+                .addParameter("season", String.valueOf(season)), OmdbSeason.class);
+    }
+
+    /**
+     * Get an episode of TV series.
+     *
+     * @param season start with 1
+     */
+    public OmdbEpisode episode(String seriesId, int season, int episode) throws HttpResponseException {
+        return getObject(uriBuilder("/")
+                .addParameter("i", seriesId)
+                .addParameter("season", String.valueOf(season))
+                .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);
     }
 
     /**
      * Search subject fast.
      */
-    public BaseOmdbTitle searchSubject(String s) throws HttpResponseException {
-        return searchSubject(s, null, null, 1);
+    public BaseOmdbTitle search(String s) throws HttpResponseException {
+        return search(s, null, null, 1);
     }
 
     /**
@@ -71,8 +106,8 @@ public final class OmdbSite extends BaseSite {
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public BaseOmdbTitle searchSubject(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
-        URIBuilder builder = buildUri().addParameter("s", s);
+    public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
+        URIBuilder builder = uriBuilder("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
         }
@@ -84,54 +119,27 @@ public final class OmdbSite extends BaseSite {
         } else {
             builder.addParameter("page", String.valueOf(page));
         }
-        return getResponse(builder);
+        return getObject(builder, BaseOmdbTitle.class);
     }
 
-    private BaseOmdbTitle getResponse(URIBuilder builder) throws HttpResponseException {
-        URI uri;
-        try {
-            uri = builder.build();
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        String json = getCachedContent(uri, ContentTypeEnum.JSON);
-        try {
-            return objectMapper.readValue(json, BaseOmdbTitle.class);
-        } catch (InvalidTypeIdException e) {
-            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
+    @Override
+    protected String handleJson(String json) throws JsonProcessingException, HttpResponseException {
+        JsonNode node = objectMapper.readTree(json);
+        boolean response = Boolean.parseBoolean(node.get("Response").asText());
+        if (response) {
+            return json.replace("\"N/A\"", "null");
+        } else {
+            String error = node.get("Error").asText();
+            if (NOT_FOUND_MSG.equals(error) ||
+                    SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
+            }
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
         }
     }
 
     @Override
-    protected void setObjectMapper() {
-        super.setObjectMapper();
-        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-                .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
-                .registerModule(new SimpleModule()
-                        .addDeserializer(Long.class, NumberDeserializersExt.LongDeserializer.INSTANCE)
-                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                        .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
-                        .addDeserializer(RatedEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatedEnum.class))
-                        .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
-                        .addDeserializer(Money.class, MoneyDeserializer.INSTANCE)
-                )
-                .registerModule(new JavaTimeModule()
-                        .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.ENGLISH)))
-                )
-                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
-                .addHandler(YearDeserializationProblemHandler.INSTANCE)
-        ;
-    }
-
-    @Override
-    protected String getContent(URI uri) throws HttpResponseException {
-        return super.getContent(uri).replace("\"N/A\"", "null");
-    }
-
-    protected URIBuilder buildUri(Object... pathArgs) {
-        return super.buildPath("/", pathArgs)
-                .addParameter("apikey", apiKey);
+    protected URIBuilder addToken(URIBuilder builder) {
+        return super.addToken(builder).setParameter("apikey", apikey);
     }
 }

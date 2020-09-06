@@ -1,8 +1,11 @@
 package wsg.tools.internet.video.entity.imdb.object;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
+
+import java.util.List;
 
 /**
  * IMDb creative works.
@@ -13,4 +16,7 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 @Getter
 @Setter
 public class ImdbCreativeWork extends BaseImdbTitle {
+
+    @JsonProperty("director")
+    private List<ImdbPerson> directors;
 }

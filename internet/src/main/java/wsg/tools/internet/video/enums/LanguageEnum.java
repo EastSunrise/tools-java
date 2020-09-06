@@ -6,8 +6,6 @@ import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.function.TextSupplier;
 import wsg.tools.common.function.TitleSupplier;
 
-import java.util.Locale;
-
 /**
  * Enum for languages.
  *
@@ -57,6 +55,7 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     PAW("Pawnee", "波尼语"),
     NAI("North American Indian", "北美印第安语"),
     HUN("Huns", "匈奴语"),
+    PAR("Parsee", "帕西语"),
 
     /**
      * Other ISO languages
@@ -244,17 +243,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
         this.text = text;
         this.title = title;
         this.aka = aka;
-    }
-
-    public static void main(String[] args) {
-        for (Locale locale : Locale.getAvailableLocales()) {
-            System.out.print(locale.getCountry());
-            System.out.print(locale.getDisplayCountry());
-            System.out.print(locale.getDisplayCountry(Locale.ENGLISH));
-            System.out.print(locale.getLanguage());
-            System.out.print(locale.getDisplayLanguage());
-            System.out.println(locale.getDisplayLanguage(Locale.ENGLISH));
-        }
     }
 
     @Override

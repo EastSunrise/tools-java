@@ -1,8 +1,12 @@
 package wsg.tools.common.jackson.deserializer;
 
-import wsg.tools.common.util.AssertUtils;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import wsg.tools.common.constant.SignConstants;
 
-import java.util.regex.Pattern;
+import java.io.IOException;
 
 /**
  * Extended deserializers for {@link Number}/
@@ -21,31 +25,32 @@ public final class NumberDeserializersExt {
         }
 
         @Override
-        public Long parseNumber(String s) {
-            return Long.parseLong(s);
+        public Long parseNumber(String text) {
+            return Long.parseLong(text);
         }
     }
 
-    public static abstract class BaseNumberDeserializer<T extends Number> extends AbstractNotBlankDeserializer<T> {
-
-        private static final Pattern NUMBER_REGEX = Pattern.compile("\\d+(,\\d{3})*");
+    public static abstract class BaseNumberDeserializer<T extends Number> extends StdDeserializer<T> {
 
         protected BaseNumberDeserializer(Class<T> javaType) {
             super(javaType);
         }
 
         @Override
-        public T parseText(String s) {
-            AssertUtils.matches(NUMBER_REGEX, s);
-            return parseNumber(s.replace(",", ""));
+        @SuppressWarnings("unchecked")
+        public T deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.hasToken(JsonToken.VALUE_STRING)) {
+                return parseNumber(parser.getText().replace(SignConstants.COMMA, ""));
+            }
+            return parser.readValueAs((Class<T>) handledType());
         }
 
         /**
          * Obtains a number from a string
          *
-         * @param s the string to parse
+         * @param text the string to parse
          * @return a number
          */
-        public abstract T parseNumber(String s);
+        public abstract T parseNumber(String text);
     }
 }

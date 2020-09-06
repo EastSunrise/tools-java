@@ -6,6 +6,7 @@ import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * IMDb TV Episode.
@@ -20,4 +21,8 @@ public class ImdbEpisode extends BaseImdbTitle {
     private String seriesId;
     @JsonProperty("timeRequired")
     private Duration duration;
+
+    private ImdbVideoObject trailer;
+    @JsonProperty("director")
+    private List<ImdbPerson> directors;
 }

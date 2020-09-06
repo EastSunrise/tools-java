@@ -9,7 +9,7 @@ import wsg.tools.common.constant.SignConstants;
 import wsg.tools.internet.video.entity.imdb.extra.AggregateRating;
 import wsg.tools.internet.video.entity.imdb.object.*;
 import wsg.tools.internet.video.enums.GenreEnum;
-import wsg.tools.internet.video.enums.RatedEnum;
+import wsg.tools.internet.video.enums.RatingEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
 import java.time.LocalDate;
@@ -53,16 +53,12 @@ public abstract class BaseImdbTitle {
      */
     @JsonProperty("creator")
     private List<BaseImdbObject> creators;
-    @JsonProperty("director")
-    private List<ImdbPerson> directors;
     @JsonProperty("actor")
     private List<ImdbPerson> actors;
 
     private ImdbReview review;
-    @JsonProperty("contentRating")
-    private RatedEnum rated;
+    private RatingEnum contentRating;
     private AggregateRating aggregateRating;
-    private ImdbVideoObject trailer;
 
     @JsonProperty("@context")
     private String context;

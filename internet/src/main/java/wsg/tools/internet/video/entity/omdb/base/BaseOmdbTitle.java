@@ -1,23 +1,23 @@
 package wsg.tools.internet.video.entity.omdb.base;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.common.constant.SignConstants;
+import wsg.tools.internet.video.entity.imdb.info.RuntimeInfo;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
 import wsg.tools.internet.video.entity.omdb.object.OmdbMovie;
 import wsg.tools.internet.video.entity.omdb.object.OmdbSeries;
-import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.enums.RatedEnum;
+import wsg.tools.internet.video.enums.RatingEnum;
+import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.List;
 
 /**
@@ -38,12 +38,11 @@ public abstract class BaseOmdbTitle extends BaseOmdbResponse {
 
     @JsonProperty("title")
     private String text;
-    private Year year;
-    private RatedEnum rated;
+    private RatingEnum rated;
     @JsonProperty("released")
+    @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate release;
-    @JsonProperty("runtime")
-    private Duration duration;
+    private RuntimeInfo runtime;
     @JsonProperty("Genre")
     @JoinedValue(separator = SignConstants.COMMA)
     private List<GenreEnum> genres;
@@ -62,14 +61,14 @@ public abstract class BaseOmdbTitle extends BaseOmdbResponse {
     private List<LanguageEnum> languages;
     @JsonProperty("Country")
     @JoinedValue(separator = SignConstants.COMMA)
-    private List<CountryEnum> countries;
+    private List<RegionEnum> regions;
     private String awards;
     @JsonProperty("poster")
     private String posterUrl;
     private List<Rating> ratings;
     private Integer metascore;
     private Double imdbRating;
-    private Long imdbVotes;
+    private Integer imdbVotes;
     private String imdbId;
 
     @Setter

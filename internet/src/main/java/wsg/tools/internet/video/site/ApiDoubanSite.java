@@ -1,26 +1,23 @@
 package wsg.tools.internet.video.site;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
-import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
 import wsg.tools.internet.video.entity.douban.container.ContentResult;
 import wsg.tools.internet.video.entity.douban.container.RankedResult;
 import wsg.tools.internet.video.entity.douban.pojo.*;
 import wsg.tools.internet.video.enums.CityEnum;
-import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
-import wsg.tools.internet.video.jackson.handler.DurationDeserializationProblemHandler;
-import wsg.tools.internet.video.jackson.handler.ReleaseDeserializationProblemHandler;
 
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -32,70 +29,67 @@ import java.util.List;
  */
 public class ApiDoubanSite extends DoubanSite {
 
-    private final String apiKey;
+    private final String apikey;
 
-    public ApiDoubanSite(String apiKey) {
+    public ApiDoubanSite(String apikey) {
         super();
-        this.apiKey = apiKey;
+        this.apikey = apikey;
     }
 
     @Override
-    protected void setObjectMapper() {
-        super.setObjectMapper();
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+    protected ObjectMapper objectMapper() {
+        return super.objectMapper()
+                .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
                 .registerModule(new SimpleModule()
                         .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                        .addDeserializer(CountryEnum.class, EnumDeserializers.getAkaDeserializer(String.class, CountryEnum.class))
+                        .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
                         .addDeserializer(SubtypeEnum.class, EnumDeserializers.getAkaDeserializer(String.class, SubtypeEnum.class))
-                )
-                .addHandler(ReleaseDeserializationProblemHandler.INSTANCE)
-                .addHandler(DurationDeserializationProblemHandler.INSTANCE)
-        ;
+                );
     }
 
     /**
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
     public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
-        return getApiObject(buildPath("/v2/movie/subject/%d", subjectId), Subject.class);
+        return getObject(uriBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
     public ImdbInfo apiMovieImdb(String imdbId) throws HttpResponseException {
-        return getApiObject(buildPath("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
+        return getObject(uriBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
     public Celebrity apiMovieCelebrity(long celebrityId) throws HttpResponseException {
-        return getApiObject(buildPath("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
+        return getObject(uriBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
-        return getApiObject(buildPath("/v2/movie/weekly"), RankedResult.class, false);
+        return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, false);
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws HttpResponseException {
-        return getApiObject(buildPath("/v2/movie/us_box"), BoxResult.class, true);
+        return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, true);
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
-        return getApiChart(buildPath("/v2/movie/top250"));
+        return getApiChart(uriBuilder("/v2/movie/top250"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws HttpResponseException {
-        return getApiChart(buildPath("/v2/movie/new_movies"));
+        return getApiChart(uriBuilder("/v2/movie/new_movies"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
-        return getApiChart(buildPath("/v2/movie/in_theaters").addParameter("city", city.getPath()));
+        return getApiChart(uriBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {
-        return getApiChart(buildPath("/v2/movie/coming_soon"));
+        return getApiChart(uriBuilder("/v2/movie/coming_soon"));
     }
 
     /**
@@ -110,7 +104,7 @@ public class ApiDoubanSite extends DoubanSite {
         builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
             builder.setParameter("start", String.valueOf(start));
-            ChartResult chartResult = getApiObject(builder, ChartResult.class, false);
+            ChartResult chartResult = getObject(builder, ChartResult.class, false);
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -154,16 +148,10 @@ public class ApiDoubanSite extends DoubanSite {
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
-            URIBuilder builder = buildPath(path, ownerId)
+            URIBuilder builder = uriBuilder(path, ownerId)
                     .addParameter("start", String.valueOf(start))
-                    .addParameter("count", String.valueOf(MAX_COUNT_ONCE))
-                    .addParameter("apikey", apiKey);
-            ContentResult<O, C> contentResult;
-            try {
-                contentResult = getObject(builder.build(), type);
-            } catch (URISyntaxException e) {
-                throw AssertUtils.runtimeException(e);
-            }
+                    .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
+            ContentResult<O, C> contentResult = getObject(builder, type);
             content.addAll(contentResult.getContent());
             owner = contentResult.getOwner();
             start += contentResult.getCount();
@@ -174,26 +162,13 @@ public class ApiDoubanSite extends DoubanSite {
         return Pair.of(owner, content);
     }
 
-    private <T> T getApiObject(URIBuilder builder, Class<T> clazz) throws HttpResponseException {
-        return getApiObject(builder, clazz, true);
-    }
-
-    /**
-     * Obtains an object from api. Append api key after the uri.
-     *
-     * @param <T> type of object
-     * @return target object
-     */
-    private <T> T getApiObject(URIBuilder builder, Class<T> clazz, boolean cached) throws HttpResponseException {
-        try {
-            return getObject(builder.setParameter("apikey", apiKey).build(), clazz, cached);
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    @Override
+    protected URIBuilder addToken(URIBuilder builder) {
+        return super.addToken(builder).setParameter("apikey", apikey);
     }
 
     @Override
-    protected URIBuilder buildPath(String path, Object... pathArgs) {
-        return super.buildPath(path, pathArgs).setHost("api." + domain);
+    protected URIBuilder uriBuilder(String path, Object... pathArgs) {
+        return super.uriBuilder(path, pathArgs).setHost("api." + domain);
     }
 }

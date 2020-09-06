@@ -1,18 +1,16 @@
 package wsg.tools.internet.video.entity.gen.object;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.gen.base.BaseGenResponse;
-import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
-import wsg.tools.internet.video.jackson.deserializer.StringOrPersonDeserializer;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -43,8 +41,10 @@ public class GenDoubanSubject extends BaseGenResponse {
     private List<LanguageEnum> languages;
     @JsonProperty("region")
     @JoinedValue(separator = SignConstants.SLASH)
-    private List<CountryEnum> countries;
-    private Duration duration;
+    private List<RegionEnum> regions;
+    @JsonProperty("duration")
+    @JoinedValue(separator = SignConstants.SLASH)
+    private List<Duration> runtimes;
     @JsonProperty("genre")
     private List<GenreEnum> genres;
     private List<String> aka;
@@ -59,13 +59,10 @@ public class GenDoubanSubject extends BaseGenResponse {
     private String imdbLink;
 
     @JsonProperty("cast")
-    @JsonDeserialize(contentUsing = StringOrPersonDeserializer.class)
     private List<GenPerson> casts;
     @JsonProperty("director")
-    @JsonDeserialize(contentUsing = StringOrPersonDeserializer.class)
     private List<GenPerson> directors;
     @JsonProperty("writer")
-    @JsonDeserialize(contentUsing = StringOrPersonDeserializer.class)
     private List<GenPerson> writers;
     private String doubanRating;
     private Integer doubanVotes;

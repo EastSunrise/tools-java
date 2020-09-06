@@ -10,9 +10,11 @@ import wsg.tools.internet.video.entity.douban.object.DoubanPerson;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
 import wsg.tools.internet.video.entity.imdb.extra.AggregateRating;
 import wsg.tools.internet.video.enums.GenreEnum;
+import wsg.tools.internet.video.enums.LanguageEnum;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.List;
 
 /**
@@ -34,6 +36,10 @@ public abstract class BaseDoubanSubject {
      * Extra info
      */
     private String imdbId;
+    private String title;
+    private String originalTitle;
+    private Year year;
+    private List<LanguageEnum> languages;
 
     /**
      * Combined with title and original title.

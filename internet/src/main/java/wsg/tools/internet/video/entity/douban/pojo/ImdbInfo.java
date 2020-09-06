@@ -3,9 +3,9 @@ package wsg.tools.internet.video.entity.douban.pojo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.internet.video.enums.CountryEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.enums.RegionEnum;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -40,7 +40,7 @@ public class ImdbInfo {
         private List<String> title;
         private List<Year> year;
         @JsonProperty("country")
-        private List<CountryEnum> countries;
+        private List<RegionEnum> regions;
         @JsonProperty("language")
         private List<LanguageEnum> languages;
         @JsonProperty("movie_duration")

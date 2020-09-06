@@ -1,6 +1,7 @@
 package wsg.tools.internet.video.enums;
 
 import lombok.Getter;
+import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
 /**
@@ -9,24 +10,32 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/29
  */
-public enum CatalogEnum implements PathParameterized {
+public enum CatalogEnum implements CodeSupplier<Integer>, PathParameterized {
     /**
      * movie/book/music
      */
-    MOVIE(CreatorEnum.CELEBRITY),
-    BOOK(CreatorEnum.AUTHOR),
-    MUSIC(CreatorEnum.MUSICIAN);
+    BOOK(1001, CreatorEnum.AUTHOR),
+    MOVIE(1002, CreatorEnum.CELEBRITY),
+    MUSIC(1003, CreatorEnum.MUSICIAN),
+    ;
 
+    private final int code;
     @Getter
     private final CreatorEnum creator;
 
-    CatalogEnum(CreatorEnum creator) {
+    CatalogEnum(int code, CreatorEnum creator) {
+        this.code = code;
         this.creator = creator;
     }
 
     @Override
     public String getPath() {
         return name().toLowerCase();
+    }
+
+    @Override
+    public Integer getCode() {
+        return code;
     }
 
     public enum CreatorEnum implements PathParameterized {

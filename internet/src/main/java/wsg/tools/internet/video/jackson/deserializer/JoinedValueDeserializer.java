@@ -29,22 +29,21 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
 
     @Override
     public Object deserialize(JsonParser parser, DeserializationContext context) throws IOException {
-        if (targetType.isCollectionLikeType()) {
-            if (parser.hasToken(JsonToken.START_ARRAY)) {
-                JsonDeserializer<Object> deserializer = context.findContextualValueDeserializer(targetType, property);
-                return deserializer.deserialize(parser, context);
+        if (targetType.isCollectionLikeType() && parser.hasToken(JsonToken.VALUE_STRING)) {
+            String text = parser.getText();
+            if (StringUtils.isBlank(text)) {
+                return null;
             }
-            if (parser.hasToken(JsonToken.VALUE_STRING)) {
-                String[] values = StringUtils.split(parser.getText(), separator);
-                ObjectMapper mapper = (ObjectMapper) parser.getCodec();
-                List<Object> list = new ArrayList<>();
-                for (String value : values) {
-                    list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
-                }
-                return list;
+            String[] values = StringUtils.split(text, separator);
+            ObjectMapper mapper = (ObjectMapper) parser.getCodec();
+            List<Object> list = new ArrayList<>();
+            for (String value : values) {
+                list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
             }
+            return list;
         }
-        return context.handleUnexpectedToken(targetType, parser);
+        JsonDeserializer<Object> deserializer = context.findContextualValueDeserializer(targetType, property);
+        return deserializer.deserialize(parser, context);
     }
 
     @Override

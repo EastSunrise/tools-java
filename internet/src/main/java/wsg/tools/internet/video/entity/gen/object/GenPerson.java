@@ -17,4 +17,11 @@ public class GenPerson {
 
     private String name;
     private String url;
+
+    public GenPerson() {
+    }
+
+    public GenPerson(String name) {
+        this.name = name;
+    }
 }

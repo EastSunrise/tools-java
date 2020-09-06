@@ -1,8 +1,10 @@
 package wsg.tools.internet.video.entity.gen.object;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.gen.base.BaseGenImdbTitle;
+import wsg.tools.internet.video.enums.RatingEnum;
 
 /**
  * IMDb movie from PT Gen.
@@ -14,5 +16,7 @@ import wsg.tools.internet.video.entity.gen.base.BaseGenImdbTitle;
 @Getter
 public class GenImdbMovie extends BaseGenImdbTitle {
 
+    @JsonProperty("contentRating")
+    private RatingEnum rating;
     private Integer metascore;
 }

@@ -1,10 +1,16 @@
 package wsg.tools.common.jackson.deserializer;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import wsg.tools.common.function.AkaPredicate;
 import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.function.TextSupplier;
 import wsg.tools.common.function.TitleSupplier;
 import wsg.tools.common.util.EnumUtilExt;
+
+import java.io.IOException;
 
 /**
  * Deserializers for {@link Enum} which usually implements {@link CodeSupplier}
@@ -30,51 +36,67 @@ public class EnumDeserializers {
         return new EnumTitleDeserializer<>(tClass);
     }
 
-    public static class EnumCodeDeserializer<Code, E extends Enum<E> & CodeSupplier<Code>> extends AbstractNonNullDeserializer<E, Code> {
+    public static class EnumCodeDeserializer<Code, E extends Enum<E> & CodeSupplier<Code>> extends StdDeserializer<E> {
 
-        protected EnumCodeDeserializer(Class<E> javaType, Class<Code> jsonType) {
-            super(javaType, jsonType);
+        private final Class<Code> codeClass;
+
+        protected EnumCodeDeserializer(Class<E> eClass, Class<Code> codeClass) {
+            super(eClass);
+            this.codeClass = codeClass;
         }
 
         @Override
-        public E convert(Code code) {
-            return EnumUtilExt.deserializeCode(code, getJavaType());
+        @SuppressWarnings("unchecked")
+        public E deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.hasToken(JsonToken.VALUE_NULL)) {
+                return null;
+            }
+            Code code = parser.readValueAs(codeClass);
+            return EnumUtilExt.deserializeCode(code, (Class<E>) handledType());
         }
     }
 
-    public static class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaPredicate<Aka>> extends AbstractNonNullDeserializer<E, Aka> {
+    public static class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaPredicate<Aka>> extends StdDeserializer<E> {
 
-        protected EnumAkaDeserializer(Class<E> javaType, Class<Aka> jsonType) {
-            super(javaType, jsonType);
+        private final Class<Aka> akaClass;
+
+        public EnumAkaDeserializer(Class<E> eClass, Class<Aka> akaClass) {
+            super(eClass);
+            this.akaClass = akaClass;
         }
 
         @Override
-        public E convert(Aka aka) {
-            return EnumUtilExt.deserializeAka(aka, getJavaType());
+        @SuppressWarnings("unchecked")
+        public E deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.hasToken(JsonToken.VALUE_NULL)) {
+                return null;
+            }
+            Aka aka = parser.readValueAs(akaClass);
+            return EnumUtilExt.deserializeAka(aka, (Class<E>) handledType());
         }
     }
 
-    public static class EnumTextDeserializer<E extends Enum<E> & TextSupplier> extends AbstractNotBlankDeserializer<E> {
+    public static class EnumTextDeserializer<E extends Enum<E> & TextSupplier> extends AbstractStringDeserializer<E> {
 
-        protected EnumTextDeserializer(Class<E> javaType) {
-            super(javaType);
+        protected EnumTextDeserializer(Class<E> eClass) {
+            super(eClass);
         }
 
         @Override
         protected E parseText(String text) {
-            return EnumUtilExt.deserializeText(text, getJavaType());
+            return EnumUtilExt.deserializeText(text, clazz);
         }
     }
 
-    public static class EnumTitleDeserializer<E extends Enum<E> & TitleSupplier> extends AbstractNotBlankDeserializer<E> {
+    public static class EnumTitleDeserializer<E extends Enum<E> & TitleSupplier> extends AbstractStringDeserializer<E> {
 
-        protected EnumTitleDeserializer(Class<E> javaType) {
-            super(javaType);
+        protected EnumTitleDeserializer(Class<E> eClass) {
+            super(eClass);
         }
 
         @Override
-        protected E parseText(String text) {
-            return EnumUtilExt.deserializeTitle(text, getJavaType());
+        protected E parseText(String title) {
+            return EnumUtilExt.deserializeTitle(title, clazz);
         }
     }
 }
