@@ -8,14 +8,19 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -27,17 +32,13 @@ import org.jsoup.nodes.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.util.AssertUtils;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -124,7 +125,7 @@ public abstract class BaseSite implements Closeable {
         if (loaded) {
             return Jsoup.parse(loadContent(builder));
         }
-        return Jsoup.parse(requestContent(builder));
+        return Jsoup.parse(getContent(builder));
     }
 
     /**
@@ -149,7 +150,7 @@ public abstract class BaseSite implements Closeable {
             if (cached) {
                 return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), clazz);
             } else {
-                return objectMapper.readValue(handleJsonAfterReading(requestContent(builder)), clazz);
+                return objectMapper.readValue(handleJsonAfterReading(getContent(builder)), clazz);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -164,7 +165,7 @@ public abstract class BaseSite implements Closeable {
             if (cached) {
                 return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), type);
             } else {
-                return objectMapper.readValue(handleJsonAfterReading(requestContent(builder)), type);
+                return objectMapper.readValue(handleJsonAfterReading(getContent(builder)), type);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -205,7 +206,7 @@ public abstract class BaseSite implements Closeable {
             if (loaded) {
                 content = loadContent(builder);
             } else {
-                content = requestContent(builder);
+                content = getContent(builder);
             }
         } catch (HttpResponseException e) {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
@@ -232,40 +233,31 @@ public abstract class BaseSite implements Closeable {
      * Build path of cached file by uri and type of content.
      */
     private String filepath(URIBuilder uriBuilder, ContentTypeEnum contentType) {
-        URI uri;
-        try {
-            uri = uriBuilder.build();
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
         StringBuilder builder = new StringBuilder();
         if (cdn != null) {
             builder.append(cdn);
         }
 
-        String scheme = uri.getScheme();
-        Objects.requireNonNull(scheme);
-        builder.append(File.separator).append(scheme);
+        if (uriBuilder.isAbsolute()) {
+            builder.append(File.separator).append(scheme);
+        }
 
-        String host = uri.getHost();
-        Objects.requireNonNull(host);
+        String host = uriBuilder.getHost();
         String[] parts = host.split("\\.");
         for (int i = parts.length - 1; i >= 0; i--) {
             builder.append(File.separator).append(parts[i]);
         }
 
-        String path = uri.getPath();
-        Objects.requireNonNull(path);
-        parts = path.split(SignConstants.SLASH);
-        for (String part : parts) {
-            if (!"".equals(part)) {
-                builder.append(File.separator).append(part);
+        if (!uriBuilder.isPathEmpty()) {
+            for (String part : uriBuilder.getPathSegments()) {
+                if (!"".equals(part)) {
+                    builder.append(File.separator).append(part);
+                }
             }
         }
 
-        String query = uri.getQuery();
-        if (query != null) {
-            builder.append(File.separator).append(query);
+        if (!uriBuilder.isQueryEmpty()) {
+            builder.append(File.separator).append(URLEncodedUtils.format(uriBuilder.getQueryParams(), Consts.UTF_8));
         }
 
         if (contentType != null) {
@@ -321,33 +313,33 @@ public abstract class BaseSite implements Closeable {
     }
 
     /**
-     * Execute the request of the given uri and return content of response.
+     * Execute the get request of the given uri and return content of response.
      */
-    private String requestContent(URIBuilder builder) throws IOException {
-        URI uri;
-        try {
-            uri = addToken(builder).build();
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        log.info("Get from {}", uri.toString());
+    private String getContent(URIBuilder builder) throws IOException {
+        String uri = addToken(builder).toString();
+        log.info("Get from {}", uri);
         HttpGet httpGet = new HttpGet(uri);
         limiter.acquire();
         return httpClient.execute(httpGet, DEFAULT_RESPONSE_HANDLER, localHttpContext);
     }
 
     /**
+     * Execute the post request of the given uri and params.
+     */
+    protected String postContent(URIBuilder builder, Iterable<? extends NameValuePair> params) throws IOException {
+        String uri = builder.toString();
+        log.info("Post from {}", uri);
+        HttpPost httpPost = new HttpPost(uri);
+        httpPost.setEntity(new UrlEncodedFormEntity(params, Constants.UTF_8));
+        return httpClient.execute(httpPost, DEFAULT_RESPONSE_HANDLER, localHttpContext);
+    }
+
+    /**
      * Get the source by loading a web page in the current browser window.
      */
     private String loadContent(URIBuilder builder) {
-        URI uri;
-        try {
-            uri = addToken(builder).build();
-        } catch (URISyntaxException e) {
-            throw AssertUtils.runtimeException(e);
-        }
         limiter.acquire();
-        chrome().get(uri.toString());
+        chrome().get(builder.toString());
         return chrome().getPageSource();
     }
 
@@ -377,7 +369,7 @@ public abstract class BaseSite implements Closeable {
         return new ObjectMapper();
     }
 
-    private WebDriver chrome() {
+    protected WebDriver chrome() {
         if (webDriver == null) {
             webDriver = new ChromeDriver();
         }

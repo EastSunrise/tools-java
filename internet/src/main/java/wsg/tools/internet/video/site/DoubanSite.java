@@ -9,12 +9,15 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignConstants;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
@@ -23,6 +26,7 @@ import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
+import wsg.tools.internet.video.entity.douban.base.LoginResult;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
 import wsg.tools.internet.video.entity.douban.object.SearchItem;
 import wsg.tools.internet.video.enums.CatalogEnum;
@@ -71,6 +75,26 @@ public class DoubanSite extends BaseSite {
                 );
     }
 
+    public LoginResult login(String username, String password) throws IOException {
+        List<NameValuePair> params = Arrays.asList(
+                new BasicNameValuePair("ck", ""),
+                new BasicNameValuePair("name", username),
+                new BasicNameValuePair("password", password),
+                new BasicNameValuePair("remember", Boolean.toString(true))
+        );
+        String content = postContent(withLowDomain("accounts", "/j/mobile/login/basic"), params);
+        return objectMapper.readValue(content, LoginResult.class);
+    }
+
+    private void logChrome(String username, String password) {
+        chrome().get(withLowDomain("accounts", "/passport/login").toString());
+        chrome().findElement(By.className("account-tab-account")).click();
+        chrome().findElement(By.id("username")).sendKeys(username);
+        chrome().findElement(By.id("password")).sendKeys(password);
+        chrome().findElement(By.id("account-form-remember")).click();
+        chrome().findElement(By.className("btn-account")).click();
+    }
+
     /**
      * Parse the page of a subject to get its info.
      * <p>
@@ -79,7 +103,7 @@ public class DoubanSite extends BaseSite {
      * @return IMDb id
      */
     public BaseDoubanSubject subject(long subjectId) throws IOException {
-        Document document = getDocument(buildCatalogPath(CatalogEnum.MOVIE, "/subject/%d", subjectId));
+        Document document = getDocument(withLowDomain(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId));
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -158,8 +182,7 @@ public class DoubanSite extends BaseSite {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = uriBuilder("/%s/subject_search", catalog.getPath())
-                .setHost("search." + domain)
+        URIBuilder builder = withLowDomain("search", "/%s/subject_search", catalog.getPath())
                 .setParameter("search_text", keyword)
                 .setParameter("cat", String.valueOf(catalog.getCode()));
         if (page > 0) {
@@ -195,7 +218,7 @@ public class DoubanSite extends BaseSite {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = buildCatalogPath(catalog, "/j/subject_suggest")
+        URIBuilder builder = withLowDomain(catalog.getPath(), "/j/subject_suggest")
                 .setParameter("q", keyword);
         return getObject(builder, new TypeReference<>() {}, false);
     }
@@ -215,7 +238,7 @@ public class DoubanSite extends BaseSite {
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
-            URIBuilder builder = buildCatalogPath(catalog, "/people/%d/%s", userId, mark.getPath())
+            URIBuilder builder = withLowDomain(catalog.getPath(), "/people/%d/%s", userId, mark.getPath())
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
@@ -256,7 +279,7 @@ public class DoubanSite extends BaseSite {
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
-            URIBuilder builder = buildCatalogPath(catalog, "/people/%d/%s", userId, catalog.getCreator().getPath())
+            URIBuilder builder = withLowDomain(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
             Document document = getDocument(builder, false, false);
             String itemClass = ".item";
@@ -276,7 +299,7 @@ public class DoubanSite extends BaseSite {
         return ids;
     }
 
-    private URIBuilder buildCatalogPath(CatalogEnum catalog, String path, Object... pathArgs) {
-        return super.uriBuilder(path, pathArgs).setHost(catalog.getPath() + "." + domain);
+    protected URIBuilder withLowDomain(String lowDomain, String path, Object... pathArgs) {
+        return super.uriBuilder(path, pathArgs).setHost(lowDomain + "." + domain);
     }
 }

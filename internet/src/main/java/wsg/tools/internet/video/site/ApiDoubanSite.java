@@ -169,6 +169,6 @@ public class ApiDoubanSite extends DoubanSite {
 
     @Override
     protected URIBuilder uriBuilder(String path, Object... pathArgs) {
-        return super.uriBuilder(path, pathArgs).setHost("api." + domain);
+        return super.withLowDomain("api", path, pathArgs);
     }
 }
