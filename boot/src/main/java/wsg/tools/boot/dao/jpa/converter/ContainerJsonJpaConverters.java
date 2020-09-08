@@ -61,10 +61,6 @@ public class ContainerJsonJpaConverters {
             this.type = type;
         }
 
-        public static void main(String[] args) throws JsonProcessingException {
-            System.out.println(OBJECT_MAPPER.writeValueAsString(Duration.ofMinutes(80)));
-        }
-
         @Override
         protected Container deserialize(String dbData) {
             try {

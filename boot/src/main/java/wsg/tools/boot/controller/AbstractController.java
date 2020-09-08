@@ -19,7 +19,6 @@ import wsg.tools.common.function.CreatorSupplier;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.jackson.handler.SeparatedValueDeserializationProblemHandler;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -49,7 +48,6 @@ public abstract class AbstractController {
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
                     .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignConstants.SLASH))
             ).registerModule(new JavaTimeModule())
-            .addHandler(SeparatedValueDeserializationProblemHandler.getInstance(SignConstants.SLASH))
             .addHandler(ExcelDeserializationProblemHandlers.FloatToYearDeserializationProblemHandler.INSTANCE)
     );
 
@@ -83,9 +81,9 @@ public abstract class AbstractController {
     /**
      * Export an .xlsx file.
      *
-     * @see ExcelFactory#writeXlsx(OutputStream, List, LinkedHashMap)
+     * @see ExcelFactory#writeXlsx(OutputStream, Iterable, LinkedHashMap)
      */
-    protected <T> void exportXlsx(HttpServletResponse response, List<T> data, String filename,
+    protected <T> void exportXlsx(HttpServletResponse response, Iterable<T> data, String filename,
                                   LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
         FACTORY.writeXlsx(getOutputStream(response, filename, ContentType.XLSX), data, writers);
     }

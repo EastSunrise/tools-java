@@ -19,6 +19,26 @@ public class GenericResult<T> extends Result {
         put("data", data);
     }
 
+    public GenericResult(String format, Object... formatArgs) {
+        super(String.format(format, formatArgs));
+        this.data = null;
+    }
+
+    public GenericResult(Result result) {
+        super(result);
+        this.data = null;
+    }
+
+    public GenericResult(GenericResult<T> result) {
+        super(result);
+        this.data = result.data;
+    }
+
+    public GenericResult(Exception e) {
+        super(e);
+        this.data = null;
+    }
+
     /**
      * Obtains a successful instance of {@link GenericResult}.
      */

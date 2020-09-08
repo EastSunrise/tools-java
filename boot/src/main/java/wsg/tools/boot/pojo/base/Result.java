@@ -53,6 +53,15 @@ public class Result implements Serializable {
     }
 
     /**
+     * Instantiate a result from a known result.
+     */
+    protected Result(Result result) {
+        this.success = result.success;
+        this.message = result.message;
+        this.args = result.args;
+    }
+
+    /**
      * Obtain an instance of successful result.
      */
     public static Result success() {
@@ -62,8 +71,8 @@ public class Result implements Serializable {
     /**
      * Obtain an instance of failed result.
      */
-    public static Result fail(String message, Object... formatArgs) {
-        return new Result(String.format(message, formatArgs));
+    public static Result fail(String format, Object... formatArgs) {
+        return new Result(String.format(format, formatArgs));
     }
 
     /**

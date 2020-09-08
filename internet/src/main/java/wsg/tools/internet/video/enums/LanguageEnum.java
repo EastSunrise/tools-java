@@ -40,6 +40,8 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     NDS("Low German", "低地德语", new String[]{"Mende", "门德语"}),
     FA("Persian", "波斯语", new String[]{"Dari"}),
     FUR("Friulian", "弗留利语", new String[]{"Fur"}),
+    RU("Russian", "俄语", new String[]{"俄语 Russian"}),
+
     /**
      * Manual languages, three-letter abbreviation as code
      */
@@ -183,7 +185,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     RM("Romansh", "罗曼什语"),
     RN("Rundi", "隆迪语"),
     RO("Romanian", "罗马尼亚语"),
-    RU("Russian", "俄语"),
     RW("Kinyarwanda", "卢旺达语"),
     SA("Sanskrit", "梵语"),
     SC("Sardinian", "萨丁语"),

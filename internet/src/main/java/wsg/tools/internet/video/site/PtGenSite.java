@@ -20,6 +20,8 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
 
+import java.io.IOException;
+
 /**
  * <a href="https://ptgen.rhilip.workers.dev/">PT Gen</a>
  *
@@ -49,15 +51,15 @@ public class PtGenSite extends BaseSite {
                 .registerModule(new JavaTimeModule());
     }
 
-    public GenDoubanSubject doubanSubject(long dbId) throws HttpResponseException {
+    public GenDoubanSubject doubanSubject(long dbId) throws IOException {
         return gen("douban", String.valueOf(dbId), GenDoubanSubject.class);
     }
 
-    public GenDoubanSubject doubanSubject(String imdbId) throws HttpResponseException {
+    public GenDoubanSubject doubanSubject(String imdbId) throws IOException {
         return gen("douban", imdbId, GenDoubanSubject.class);
     }
 
-    public BaseGenImdbTitle imdbTitle(String imdbId) throws HttpResponseException {
+    public BaseGenImdbTitle imdbTitle(String imdbId) throws IOException {
         return gen("imdb", imdbId, BaseGenImdbTitle.class);
     }
 
@@ -67,7 +69,7 @@ public class PtGenSite extends BaseSite {
      * @param site douban, imdb
      * @param sid  tt\d+ or db id
      */
-    private <T extends BaseGenResponse> T gen(String site, String sid, Class<T> clazz) throws HttpResponseException {
+    private <T extends BaseGenResponse> T gen(String site, String sid, Class<T> clazz) throws IOException {
         URIBuilder builder = uriBuilder("/tool/movieinfo/gen")
                 .addParameter("site", site)
                 .addParameter("sid", sid);
@@ -75,7 +77,7 @@ public class PtGenSite extends BaseSite {
     }
 
     @Override
-    protected String handleJson(String json) throws JsonProcessingException, HttpResponseException {
+    protected String handleJsonAfterReading(String json) throws JsonProcessingException, HttpResponseException {
         JsonNode node = objectMapper.readTree(json);
         boolean response = node.get("success").asBoolean();
         if (response) {

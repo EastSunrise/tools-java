@@ -30,6 +30,7 @@ import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -50,6 +51,7 @@ public class DoubanSite extends BaseSite {
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     protected static final int MAX_COUNT_ONCE = 100;
     protected static final int COUNT_PER_PAGE = 15;
+    private static final Pattern SUBJECT_URL_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d{7,8})/?");
     private static final Pattern IMDB_URL_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d+)");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
@@ -76,7 +78,7 @@ public class DoubanSite extends BaseSite {
      *
      * @return IMDb id
      */
-    public BaseDoubanSubject subject(long subjectId) throws HttpResponseException {
+    public BaseDoubanSubject subject(long subjectId) throws IOException {
         Document document = getDocument(buildCatalogPath(CatalogEnum.MOVIE, "/subject/%d", subjectId));
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
@@ -130,13 +132,29 @@ public class DoubanSite extends BaseSite {
     }
 
     /**
+     * Obtains id of Douban by searching id of IMDb.
+     */
+    public Long getDbIdByImdbId(String imdbId) {
+        List<SearchItem> items = search(CatalogEnum.MOVIE, imdbId, 0);
+        if (items.size() == 0) {
+            return null;
+        }
+        if (items.size() == 1) {
+            SearchItem item = items.get(0);
+            Matcher matcher = AssertUtils.matches(SUBJECT_URL_REGEX, item.getHref());
+            return Long.parseLong(matcher.group(1));
+        }
+        throw new RuntimeException("More than one items returned when searching by id of IMDb.");
+    }
+
+    /**
      * Fuzzy search by specified keyword.
      *
      * @param catalog which catalog
      * @param keyword not blank
      * @param page    start with 0. Negative number is regarded as 0.
      */
-    public List<SearchItem> search(CatalogEnum catalog, String keyword, int page) throws HttpResponseException {
+    public List<SearchItem> search(CatalogEnum catalog, String keyword, int page) {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
@@ -147,7 +165,12 @@ public class DoubanSite extends BaseSite {
         if (page > 0) {
             builder.setParameter("start", String.valueOf(page * COUNT_PER_PAGE));
         }
-        Document document = getDocument(builder, true, true);
+        Document document;
+        try {
+            document = getDocument(builder, true, true);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         Elements items = document.select("div.item-root");
         List<SearchItem> result = new ArrayList<>();
         for (Element item : items) {
@@ -161,12 +184,14 @@ public class DoubanSite extends BaseSite {
     }
 
     /**
-     * Suggested by keyword. Items are not returned every time since non-null response may have delay.
+     * Suggested by keyword.
+     * <p>
+     * Attention: items are not returned every time since non-null response may have delay.
      *
      * @param catalog which catalog
      * @param keyword not blank
      */
-    public List<BaseSuggestItem> suggest(CatalogEnum catalog, String keyword) throws HttpResponseException {
+    public List<BaseSuggestItem> suggest(CatalogEnum catalog, String keyword) throws IOException {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
@@ -182,7 +207,7 @@ public class DoubanSite extends BaseSite {
      * @param mark    wish/do/collect
      * @return map of (id, mark date)
      */
-    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws HttpResponseException {
+    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws IOException {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
@@ -226,7 +251,7 @@ public class DoubanSite extends BaseSite {
      *
      * @param catalog movie/book/music/...
      */
-    public List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws HttpResponseException {
+    public List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws IOException {
         log.info("Collect {} of user {}", catalog.getCreator().getPath(), userId);
         List<Long> ids = new LinkedList<>();
         int start = 0;

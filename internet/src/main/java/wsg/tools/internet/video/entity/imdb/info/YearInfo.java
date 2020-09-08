@@ -22,13 +22,20 @@ public class YearInfo {
 
     private Year start;
     private Year end;
+    private boolean finished;
 
     public YearInfo(String text) {
         Matcher matcher = AssertUtils.matches(YEAR_REGEX, text);
         this.start = Year.parse(matcher.group(1));
-        String end = matcher.group(3);
-        if (end != null) {
+        String suffix = matcher.group(2);
+        if (suffix != null) {
+            String end = matcher.group(3);
+            if (end == null) {
+                this.finished = false;
+                return;
+            }
             this.end = Year.parse(end);
         }
+        this.finished = true;
     }
 }

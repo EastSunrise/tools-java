@@ -17,7 +17,7 @@ import javax.persistence.Entity;
 @Entity
 @DiscriminatorValue("2")
 public class SeasonEntity extends SubjectEntity {
+    private Long seriesId;
     private Integer currentSeason;
     private Integer episodesCount;
-    private Long seriesId;
 }

@@ -18,6 +18,7 @@ import wsg.tools.internet.video.entity.omdb.object.OmdbSeason;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.handler.CommaSeparatedNumberDeserializationProblemHandler;
 
+import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -63,7 +64,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
-    public BaseOmdbTitle title(String id) throws HttpResponseException {
+    public BaseOmdbTitle title(String id) throws IOException {
         return getObject(uriBuilder("/")
                 .addParameter("i", id)
                 .addParameter("plot", "full"), BaseOmdbTitle.class);
@@ -74,7 +75,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @param season start with 1
      */
-    public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
+    public OmdbSeason season(String seriesId, int season) throws IOException {
         return getObject(uriBuilder("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season)), OmdbSeason.class);
@@ -85,7 +86,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @param season start with 1
      */
-    public OmdbEpisode episode(String seriesId, int season, int episode) throws HttpResponseException {
+    public OmdbEpisode episode(String seriesId, int season, int episode) throws IOException {
         return getObject(uriBuilder("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season))
@@ -95,7 +96,7 @@ public final class OmdbSite extends BaseSite {
     /**
      * Search subject fast.
      */
-    public BaseOmdbTitle search(String s) throws HttpResponseException {
+    public BaseOmdbTitle search(String s) throws IOException {
         return search(s, null, null, 1);
     }
 
@@ -106,7 +107,7 @@ public final class OmdbSite extends BaseSite {
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
+    public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws IOException {
         URIBuilder builder = uriBuilder("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
@@ -123,7 +124,7 @@ public final class OmdbSite extends BaseSite {
     }
 
     @Override
-    protected String handleJson(String json) throws JsonProcessingException, HttpResponseException {
+    protected String handleJsonAfterReading(String json) throws JsonProcessingException, HttpResponseException {
         JsonNode node = objectMapper.readTree(json);
         boolean response = Boolean.parseBoolean(node.get("Response").asText());
         if (response) {

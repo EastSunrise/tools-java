@@ -15,16 +15,12 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.entity.imdb.object.ImdbEpisode;
-import wsg.tools.internet.video.entity.imdb.object.ImdbSeries;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 
-import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,10 +34,11 @@ public final class ImdbSite extends BaseSite {
 
     public static final String IMDB_TITLE_PREFIX = "tt";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
-    private static final Pattern SEASON_EPISODES_REGEX = Pattern.compile("/title/tt\\d+/episodes\\?season=\\d+");
+    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("([ !#%&'()*+,-./0-9:>?A-z·áâèéñóôùûü]+) - Season (\\d{1,2}) - IMDb");
+    private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
 
     public ImdbSite() {
-        super("IMDb", "imdb.com", 1);
+        super("IMDb", "imdb.com", 10);
     }
 
     @Override
@@ -59,7 +56,7 @@ public final class ImdbSite extends BaseSite {
     /**
      * Get subject info by parsing the html page
      */
-    public BaseImdbTitle title(String tt) throws HttpResponseException {
+    public BaseImdbTitle title(String tt) throws IOException {
         Document document = getDocument(uriBuilder("/title/%s", tt));
         BaseImdbTitle subject;
         try {
@@ -74,56 +71,49 @@ public final class ImdbSite extends BaseSite {
             episode.setSeriesId(seriesId);
             return episode;
         }
-        if (subject instanceof ImdbSeries) {
-            ImdbSeries series = (ImdbSeries) subject;
-            Element widget = document.selectFirst("div#title-episode-widget");
-            if (widget != null) {
-                Matcher matcher = SEASON_EPISODES_REGEX.matcher(widget.html());
-                int seasonsCount = 0;
-                while (matcher.find()) {
-                    seasonsCount++;
-                }
-                if (seasonsCount != 0) {
-                    series.setSeasonsCount(seasonsCount);
-                }
-            }
-            return series;
-        }
         return subject;
     }
 
     /**
      * Obtains ids of all episodes. Index of a given episode is array[currentSeason-1][currentEpisode].
      * Ep0 may be included if exists.
+     *
+     * @return all episodes. Maybe uncompleted.
+     * @throws IOException 404 if not TV series, or other HTTP errors.
      */
-    @Nullable
-    public String[][] episodes(String seriesId, int seasonsCount) throws HttpResponseException {
-        String[][] result = new String[seasonsCount][];
-        for (int index = 0; index < seasonsCount; index++) {
+    public List<String[]> episodes(String seriesId) throws IOException {
+        List<String[]> result = new ArrayList<>();
+        int currentSeason = 0;
+        while (true) {
+            currentSeason++;
             Document document = getDocument(uriBuilder("/title/%s/episodes", seriesId)
-                    .addParameter("season", String.valueOf(index + 1)));
-            Element element = document.selectFirst("meta[itemprop=numberofEpisodes]");
-            if (element == null) {
-                return null;
+                    .addParameter("season", String.valueOf(currentSeason)));
+            String title = document.title();
+            if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
+                break;
             }
-            int episodesCount = Integer.parseInt(element.attr("content"));
+            Matcher matcher = AssertUtils.matches(SEASON_PAGE_TITLE_REGEX, title);
+            if (Integer.parseInt(matcher.group(2)) != currentSeason) {
+                break;
+            }
 
+            Element element = document.selectFirst("meta[itemprop=numberofEpisodes]");
+            int episodesCount = Integer.parseInt(element.attr("content"));
             Elements divs = document.select("div[itemprop=episodes]");
             Map<Integer, String> map = new HashMap<>(episodesCount);
             for (int i = divs.size() - 1; i >= 0; i--) {
                 Element div = divs.get(i);
                 String href = div.selectFirst(HTML_STRONG).selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
-                String title = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
+                String id = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
-                if (null != map.put(episode, title)) {
+                if (null != map.put(episode, id)) {
                     throw new HttpResponseException(HttpStatus.SC_EXPECTATION_FAILED, "Conflict episodes of " + seriesId);
                 }
             }
             String[] episodes = new String[Collections.max(map.keySet()) + 1];
             map.forEach((key, value) -> episodes[key] = value);
-            result[index] = episodes;
+            result.add(episodes);
         }
-
         return result;
     }
 }

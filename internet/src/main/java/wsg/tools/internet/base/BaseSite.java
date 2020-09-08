@@ -18,12 +18,12 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.jsoup.nodes.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import wsg.tools.common.constant.Constants;
@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -58,6 +59,9 @@ public abstract class BaseSite implements Closeable {
     protected static final String HTML_STRONG = "strong";
     protected static final String HTML_TITLE = "title";
     protected static final String HTML_HREF = "href";
+    protected static final Set<String> USELESS_TAGS = Set.of(
+            "link", "style", "img", "br"
+    );
     protected static final int CONNECT_TIME_OUT = 15000;
     protected static final int SOCKET_TIME_OUT = 15000;
     private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
@@ -98,53 +102,54 @@ public abstract class BaseSite implements Closeable {
         this.httpClient = HttpClientBuilder.create()
                 .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
                 .setDefaultHeaders(DEFAULT_HEADERS)
-                .setRetryHandler(DefaultHttpRequestRetryHandler.INSTANCE)
+                .setConnectionManager(new PoolingHttpClientConnectionManager())
                 .build();
     }
 
-    protected Document getDocument(URIBuilder builder) throws HttpResponseException {
+    protected Document getDocument(URIBuilder builder) throws IOException {
         return getDocument(builder, true, false);
     }
 
     /**
      * Return the content of response in form of a parsed HTML document.
      *
-     * @param cached  whether use the cached file.
-     * @param delayed whether use webdriver.
+     * @param cached whether use the cached file.
+     * @param loaded load by chromedriver if true, otherwise request by httpclient.
+     * @throws IOException only thrown when not loaded
      */
-    protected Document getDocument(URIBuilder builder, boolean cached, boolean delayed) throws HttpResponseException {
+    protected Document getDocument(URIBuilder builder, boolean cached, boolean loaded) throws IOException {
         if (cached) {
-            return Jsoup.parse(getCachedContent(builder, ContentTypeEnum.HTML, delayed));
+            return Jsoup.parse(readCachedContent(builder, ContentTypeEnum.HTML, loaded));
         }
-        if (delayed) {
-            return Jsoup.parse(getDelayedContent(builder));
+        if (loaded) {
+            return Jsoup.parse(loadContent(builder));
         }
-        return Jsoup.parse(getContent(builder));
+        return Jsoup.parse(requestContent(builder));
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected <T> T getObject(URIBuilder builder, Class<T> clazz) throws HttpResponseException {
+    protected <T> T getObject(URIBuilder builder, Class<T> clazz) throws IOException {
         return getObject(builder, clazz, true);
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
-    protected <T> T getObject(URIBuilder builder, TypeReference<T> type) throws HttpResponseException {
+    protected <T> T getObject(URIBuilder builder, TypeReference<T> type) throws IOException {
         return getObject(builder, type, true);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws HttpResponseException {
+    protected <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws IOException {
         try {
             if (cached) {
-                return objectMapper.readValue(handleJson(getCachedContent(builder, ContentTypeEnum.JSON, false)), clazz);
+                return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), clazz);
             } else {
-                return objectMapper.readValue(handleJson(getContent(builder)), clazz);
+                return objectMapper.readValue(handleJsonAfterReading(requestContent(builder)), clazz);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -154,12 +159,12 @@ public abstract class BaseSite implements Closeable {
     /**
      * Return the content of response with a generic Java object.
      */
-    protected <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws HttpResponseException {
+    protected <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws IOException {
         try {
             if (cached) {
-                return objectMapper.readValue(handleJson(getCachedContent(builder, ContentTypeEnum.JSON, false)), type);
+                return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), type);
             } else {
-                return objectMapper.readValue(handleJson(getContent(builder)), type);
+                return objectMapper.readValue(handleJsonAfterReading(requestContent(builder)), type);
             }
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -167,18 +172,19 @@ public abstract class BaseSite implements Closeable {
     }
 
     /**
-     * Pre-handle content of JSON.
+     * Pre-handle content of JSON after reading cached or not content and before convert to the target object.
      */
-    protected String handleJson(String json) throws JsonProcessingException, HttpResponseException {
+    protected String handleJsonAfterReading(String json) throws JsonProcessingException, HttpResponseException {
         return json;
     }
 
     /**
      * Get requested content. Read from the corresponding cached file if exists.
      *
-     * @param delayed request by chromedriver if true, otherwise by httpclient.
+     * @param loaded load by chromedriver if true, otherwise request by httpclient.
+     * @throws IOException only thrown when not loaded
      */
-    private String getCachedContent(URIBuilder builder, ContentTypeEnum contentType, boolean delayed) throws HttpResponseException {
+    private String readCachedContent(URIBuilder builder, ContentTypeEnum contentType, boolean loaded) throws IOException {
         File file = new File(filepath(builder, contentType));
         if (file.isFile()) {
             log.info("Read from {}", file.getPath());
@@ -196,10 +202,10 @@ public abstract class BaseSite implements Closeable {
 
         String content;
         try {
-            if (delayed) {
-                content = getDelayedContent(builder);
+            if (loaded) {
+                content = loadContent(builder);
             } else {
-                content = getContent(builder);
+                content = requestContent(builder);
             }
         } catch (HttpResponseException e) {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
@@ -210,6 +216,9 @@ public abstract class BaseSite implements Closeable {
                 }
             }
             throw e;
+        }
+        if (ContentTypeEnum.HTML.equals(contentType)) {
+            content = handleHtmlBeforeCaching(content);
         }
         try {
             FileUtils.write(file, content, UTF_8);
@@ -267,31 +276,70 @@ public abstract class BaseSite implements Closeable {
     }
 
     /**
-     * Do request and return content of response.
+     * Pre-handle content of html after requesting or loading and before writing to the cached file.
      */
-    private String getContent(URIBuilder builder) throws HttpResponseException {
+    protected String handleHtmlBeforeCaching(String html) {
+        Document document = Jsoup.parse(html);
+        handleNode(document);
+        return document.html();
+    }
+
+    /**
+     * Remove useless tags, blank texts, and comments.
+     */
+    private void handleNode(Node root) {
+        int size = root.childNodeSize();
+        for (int i = 0; i < size; i++) {
+            Node child = root.childNode(i);
+            boolean removed = false;
+            if (child instanceof Element) {
+                Element element = (Element) child;
+                String tagName = element.tagName();
+                if (USELESS_TAGS.contains(tagName)) {
+                    removed = true;
+                } else if ("script".equals(tagName)) {
+                    if ("text/javascript".equals(element.attr("type"))) {
+                        removed = true;
+                    }
+                }
+            } else if (child instanceof TextNode) {
+                if (((TextNode) child).isBlank()) {
+                    removed = true;
+                }
+            } else if (child instanceof Comment) {
+                removed = true;
+            }
+
+            if (removed) {
+                child.remove();
+                i--;
+                size--;
+                continue;
+            }
+            handleNode(child);
+        }
+    }
+
+    /**
+     * Execute the request of the given uri and return content of response.
+     */
+    private String requestContent(URIBuilder builder) throws IOException {
         URI uri;
         try {
             uri = addToken(builder).build();
         } catch (URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
-        HttpGet httpGet = new HttpGet(uri);
         log.info("Get from {}", uri.toString());
+        HttpGet httpGet = new HttpGet(uri);
         limiter.acquire();
-        try {
-            return httpClient.execute(httpGet, DEFAULT_RESPONSE_HANDLER, localHttpContext);
-        } catch (HttpResponseException e) {
-            throw e;
-        } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        return httpClient.execute(httpGet, DEFAULT_RESPONSE_HANDLER, localHttpContext);
     }
 
     /**
-     * Request by chrome driver.
+     * Get the source by loading a web page in the current browser window.
      */
-    private String getDelayedContent(URIBuilder builder) {
+    private String loadContent(URIBuilder builder) {
         URI uri;
         try {
             uri = addToken(builder).build();

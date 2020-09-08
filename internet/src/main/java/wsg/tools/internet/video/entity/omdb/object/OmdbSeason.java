@@ -21,7 +21,8 @@ public class OmdbSeason extends BaseOmdbResponse {
     private String title;
     @JsonProperty("Season")
     private Integer currentSeason;
-    private Integer totalSeasons;
+    @JsonProperty("TotalSeasons")
+    private Integer seasonsCount;
     private List<Episode> episodes;
 
     @Getter

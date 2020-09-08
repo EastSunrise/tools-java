@@ -2,7 +2,6 @@ package wsg.tools.boot.pojo.enums;
 
 import wsg.tools.common.function.CodeSupplier;
 import wsg.tools.common.function.TitleSupplier;
-import wsg.tools.internet.video.enums.ImdbTypeEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
 
 /**
@@ -38,22 +37,6 @@ public enum VideoTypeEnum implements CodeSupplier<Integer>, TitleSupplier {
                 return SEASON;
             default:
                 throw new IllegalArgumentException("Unknown subtype " + subtype);
-        }
-    }
-
-    public static VideoTypeEnum of(ImdbTypeEnum imdbType) {
-        if (imdbType == null) {
-            return null;
-        }
-        switch (imdbType) {
-            case MOVIE:
-                return MOVIE;
-            case SERIES:
-                return SERIES;
-            case EPISODE:
-                return SEASON;
-            default:
-                throw new IllegalArgumentException("Unknown imdb type " + imdbType);
         }
     }
 

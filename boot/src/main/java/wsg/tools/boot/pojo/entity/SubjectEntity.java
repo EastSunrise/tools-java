@@ -28,7 +28,7 @@ import java.util.List;
 @Table(name = "video_subject")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.INTEGER)
-public class SubjectEntity extends BaseEntity {
+public abstract class SubjectEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

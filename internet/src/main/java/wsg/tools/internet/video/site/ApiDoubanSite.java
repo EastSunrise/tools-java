@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
@@ -18,6 +17,7 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,45 +50,45 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
-    public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
+    public Subject apiMovieSubject(long subjectId) throws IOException {
         return getObject(uriBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
-    public ImdbInfo apiMovieImdb(String imdbId) throws HttpResponseException {
+    public ImdbInfo apiMovieImdb(String imdbId) throws IOException {
         return getObject(uriBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
-    public Celebrity apiMovieCelebrity(long celebrityId) throws HttpResponseException {
+    public Celebrity apiMovieCelebrity(long celebrityId) throws IOException {
         return getObject(uriBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
-    public RankedResult apiMovieWeekly() throws HttpResponseException {
+    public RankedResult apiMovieWeekly() throws IOException {
         return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, false);
     }
 
     /**
      * It's updated every Friday.
      */
-    public BoxResult apiMovieUsBox() throws HttpResponseException {
+    public BoxResult apiMovieUsBox() throws IOException {
         return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, true);
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieTop250() throws IOException {
         return getApiChart(uriBuilder("/v2/movie/top250"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws IOException {
         return getApiChart(uriBuilder("/v2/movie/new_movies"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws IOException {
         return getApiChart(uriBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws IOException {
         return getApiChart(uriBuilder("/v2/movie/coming_soon"));
     }
 
@@ -97,7 +97,7 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(URIBuilder builder) throws HttpResponseException {
+    private Pair<String, List<SimpleSubject>> getApiChart(URIBuilder builder) throws IOException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
@@ -118,23 +118,23 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * Only include official photos.
      */
-    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId) throws HttpResponseException {
+    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId) throws IOException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/photos", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId) throws HttpResponseException {
+    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId) throws IOException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/reviews", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId) throws HttpResponseException {
+    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId) throws IOException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/comments", subjectId);
     }
 
-    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId) throws HttpResponseException {
+    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId) throws IOException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/photos", celebrityId);
     }
 
-    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId) throws HttpResponseException {
+    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId) throws IOException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/works", celebrityId);
     }
 
@@ -143,7 +143,7 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of owner-content
      */
-    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type, String path, long ownerId) throws HttpResponseException {
+    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type, String path, long ownerId) throws IOException {
         int start = 0;
         List<C> content = new LinkedList<>();
         O owner;

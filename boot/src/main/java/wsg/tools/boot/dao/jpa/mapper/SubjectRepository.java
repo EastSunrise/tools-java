@@ -1,6 +1,7 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
+import wsg.tools.boot.pojo.entity.IdRelation;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
 
 import java.util.Optional;
@@ -19,7 +20,7 @@ public interface SubjectRepository extends BaseRepository<SubjectEntity, Long> {
      * @param dbId db id
      * @return result
      */
-    Optional<SubjectEntity> findByDbId(Long dbId);
+    Optional<IdRelation> findByDbId(Long dbId);
 
     /**
      * Query by imdb id.
@@ -27,5 +28,5 @@ public interface SubjectRepository extends BaseRepository<SubjectEntity, Long> {
      * @param imdbId imdb id
      * @return result
      */
-    Optional<SubjectEntity> findByImdbId(String imdbId);
+    Optional<IdRelation> findByImdbId(String imdbId);
 }

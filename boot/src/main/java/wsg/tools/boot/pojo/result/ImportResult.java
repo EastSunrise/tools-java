@@ -3,7 +3,7 @@ package wsg.tools.boot.pojo.result;
 import lombok.Getter;
 import wsg.tools.boot.pojo.base.Result;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * Result when importing.
@@ -14,32 +14,26 @@ import java.util.List;
 @Getter
 public class ImportResult extends Result {
 
-    private final int added;
-    private final int exists;
-    private final List<?> notFounds;
+    private int count;
+    private Map<?, String> fails;
 
     /**
      * Instantiate a successful result.
      */
-    public ImportResult(int added, int exists, List<?> notFounds) {
-        this.added = added;
-        this.exists = exists;
-        this.notFounds = notFounds;
-        put("added", added);
-        put("exists", exists);
-        put("not found", notFounds);
+    public ImportResult(int count, Map<?, String> fails) {
+        this.count = count;
+        this.fails = fails;
+        put("count", count);
+        put("fails", fails);
         put("total", getTotal());
     }
 
     public ImportResult(Exception e) {
         super(e);
-        added = 0;
-        exists = 0;
-        notFounds = null;
     }
 
     public int getTotal() {
         assert success;
-        return added + exists + notFounds.size();
+        return count + fails.size();
     }
 }
