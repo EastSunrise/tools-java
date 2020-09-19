@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.entity.imdb.extra.AggregateRating;
 import wsg.tools.internet.video.entity.imdb.object.*;
 import wsg.tools.internet.video.enums.GenreEnum;
@@ -39,7 +39,7 @@ public abstract class BaseImdbTitle {
     private List<GenreEnum> genres;
     @JsonProperty("datePublished")
     private LocalDate release;
-    @JoinedValue(separator = SignConstants.COMMA)
+    @JoinedValue(separator = SignEnum.COMMA)
     private List<String> keywords;
     @JsonProperty("image")
     private String posterUrl;

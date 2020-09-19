@@ -7,7 +7,7 @@ package wsg.tools.common.function;
  * @since 2020/7/21
  */
 @FunctionalInterface
-public interface ValueGetter<T, V> {
+public interface GetterFunction<T, V> {
 
     /**
      * Obtains value from the given object

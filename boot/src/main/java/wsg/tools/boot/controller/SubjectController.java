@@ -3,24 +3,19 @@ package wsg.tools.boot.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import wsg.tools.boot.pojo.base.PageResult;
 import wsg.tools.boot.pojo.base.Result;
-import wsg.tools.boot.pojo.dto.QuerySubjectDto;
-import wsg.tools.boot.pojo.dto.SubjectDto;
-import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.VideoTypeEnum;
+import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.result.ImportResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.excel.ExcelTemplate;
-import wsg.tools.internet.video.enums.MarkEnum;
 
+import javax.servlet.http.HttpServletResponse;
+import java.beans.IntrospectionException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -42,13 +37,11 @@ public class SubjectController extends AbstractController {
             .put("Douban", DefaultKeyValue::getValue, DefaultKeyValue::setValue, Long.class);
     private SubjectService subjectService;
 
-    @RequestMapping(value = "/subjects", method = RequestMethod.GET)
-    public ResponseEntity<?> subjects(QuerySubjectDto querySubject, Pageable pageable, PagedResourcesAssembler<SubjectDto> assembler) {
-        PageResult<SubjectDto> result = subjectService.list(querySubject, pageable);
-        result.put("archives", ArchivedEnum.values());
-        result.put("marks", MarkEnum.values());
-        result.put("types", VideoTypeEnum.values());
-        return result.toResponse(assembler);
+    @RequestMapping(value = "/export", method = RequestMethod.GET)
+    public void export(HttpServletResponse response) throws IntrospectionException, IOException {
+        List<SubjectEntity> entities = subjectService.export().getData();
+        ExcelTemplate<SubjectEntity> template = ExcelTemplate.create(SubjectEntity.class);
+        exportXlsx(response, entities, "Subjects", template.getWriters());
     }
 
     @RequestMapping(value = "/douban", method = RequestMethod.POST)

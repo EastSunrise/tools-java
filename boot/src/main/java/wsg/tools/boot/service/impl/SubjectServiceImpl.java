@@ -5,19 +5,14 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import wsg.tools.boot.common.BeanUtilExt;
 import wsg.tools.boot.config.VideoConfig;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.dao.jpa.mapper.UserRecordRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
-import wsg.tools.boot.pojo.base.PageResult;
-import wsg.tools.boot.pojo.dto.QuerySubjectDto;
-import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.pojo.base.ListResult;
 import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.result.ImportResult;
 import wsg.tools.boot.pojo.result.SiteResult;
@@ -39,7 +34,6 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
 
-import javax.persistence.criteria.Predicate;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -68,7 +62,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         if (!subjectResult.isSuccess()) {
             Optional<IdRelation> optional = subjectRepository.findByDbId(dbId);
             return optional.map(idRelation -> GenericResult.of(idRelation.getId()))
-                    .orElseGet(() -> new GenericResult<Long>(subjectResult));
+                    .orElseGet(() -> new GenericResult<>(subjectResult.getMessage()));
         }
 
         BaseDoubanSubject subject = subjectResult.getData();
@@ -153,7 +147,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
         SiteResult<List<String[]>> episodesResult = config.episodes(seriesImdbId);
         if (!episodesResult.isSuccess()) {
-            return new GenericResult<Long>(episodesResult);
+            return new GenericResult<>(episodesResult.getMessage());
         }
 
         SeriesEntity seriesEntity = new SeriesEntity();
@@ -273,6 +267,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         entity.setTitle(subject.getTitle());
         entity.getLanguages().addAll(subject.getLanguages());
         entity.getDurations().add(subject.getDuration());
+        if (subject.getExtDurations() != null) {
+            entity.getDurations().addAll(subject.getExtDurations());
+        }
     }
 
     private void copyImdb(String imdbId, SubjectEntity entity) throws IOException {
@@ -376,20 +373,14 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable) {
-        Specification<SubjectEntity> spec = (Specification<SubjectEntity>) (root, query, builder) -> {
-            Predicate predicate = getPredicate(querySubjectDto, root, builder, SubjectEntity.class);
-            if (querySubjectDto.getIncomplete()) {
-                Predicate or = builder.or(root.get(SubjectEntity_.imdbId).isNull(), root.get(SubjectEntity_.dbId).isNull());
-                return builder.and(predicate, or);
-            }
-            return predicate;
-        };
-        if (pageable == null) {
-            return PageResult.of(subjectRepository.findAll(spec).stream()
-                    .map(entity -> BeanUtilExt.convert(entity, SubjectDto.class)).collect(Collectors.toList()));
-        }
-        return PageResult.of(subjectRepository.findAll(spec, pageable).map(entity -> BeanUtilExt.convert(entity, SubjectDto.class)));
+    public ListResult<SubjectEntity> export() {
+        return new ListResult<>(subjectRepository.findAll().stream()
+                .filter(entity -> entity instanceof MovieEntity || entity instanceof SeriesEntity)
+                .filter(entity -> entity.getDbId() == null || entity.getImdbId() == null
+                        || entity.getTitle() == null || entity.getText() == null
+                        || entity.getYear() == null || entity.getLanguages() == null)
+                .collect(Collectors.toList())
+        );
     }
 
     @Autowired

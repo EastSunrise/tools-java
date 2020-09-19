@@ -4,9 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
-import wsg.tools.common.function.ValueGetter;
-import wsg.tools.common.function.ValueSetter;
+import wsg.tools.common.function.GetterFunction;
+import wsg.tools.common.function.SetterBiConsumer;
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 
 /**
@@ -18,6 +23,45 @@ import java.util.LinkedHashMap;
 public class ExcelTemplate<T> {
     private final LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers = new LinkedHashMap<>(Constants.DEFAULT_MAP_CAPACITY);
     private final LinkedHashMap<String, BaseCellToSetter<T, ?>> readers = new LinkedHashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+
+    private ExcelTemplate() {
+    }
+
+    /**
+     * Create a template including all properties of the given type.
+     */
+    public static <T> ExcelTemplate<T> create(Class<T> clazz) throws IntrospectionException {
+        PropertyDescriptor[] descriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
+        ExcelTemplate<T> builder = ExcelTemplate.builder();
+        for (PropertyDescriptor descriptor : descriptors) {
+            if (descriptor != null) {
+                final String name = descriptor.getName();
+                final Method readMethod = descriptor.getReadMethod();
+                final Method writeMethod = descriptor.getWriteMethod();
+                final Class<?> propertyType = descriptor.getPropertyType();
+                if (readMethod != null) {
+                    builder.putGetter(name, t -> {
+                        try {
+                            return readMethod.invoke(t);
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    });
+                }
+                if (writeMethod != null) {
+                    builder.putSetter(name, (t, o) -> {
+                        try {
+                            writeMethod.invoke(t, o);
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                    }, propertyType);
+                }
+            }
+        }
+        return builder;
+    }
 
     public static <T> ExcelTemplate<T> builder() {
         return new ExcelTemplate<>();
@@ -37,7 +81,7 @@ public class ExcelTemplate<T> {
         return putWriter(header, writer).putReader(header, reader);
     }
 
-    public <V> ExcelTemplate<T> putGetter(String header, ValueGetter<T, V> getter) {
+    public <V> ExcelTemplate<T> putGetter(String header, GetterFunction<T, V> getter) {
         return putWriter(header, new BaseCellFromGetter<T, V>() {
             @Override
             public V getValue(T t) {
@@ -46,7 +90,7 @@ public class ExcelTemplate<T> {
         });
     }
 
-    public <V> ExcelTemplate<T> putSetter(String header, ValueSetter<T, V> setter, Class<V> clazz) {
+    public <V> ExcelTemplate<T> putSetter(String header, SetterBiConsumer<T, V> setter, Class<V> clazz) {
         return putReader(header, new BaseCellToSetter<>(clazz) {
             @Override
             public void setValue(T t, V v) {
@@ -55,7 +99,7 @@ public class ExcelTemplate<T> {
         });
     }
 
-    public <V> ExcelTemplate<T> putSetter(String header, ValueSetter<T, V> setter, TypeReference<V> typeReference) {
+    public <V> ExcelTemplate<T> putSetter(String header, SetterBiConsumer<T, V> setter, TypeReference<V> typeReference) {
         return putReader(header, new BaseCellToSetter<>(typeReference) {
             @Override
             public void setValue(T t, V v) {
@@ -64,11 +108,11 @@ public class ExcelTemplate<T> {
         });
     }
 
-    public <V> ExcelTemplate<T> put(String header, ValueGetter<T, V> getter, ValueSetter<T, V> setter, Class<V> clazz) {
+    public <V> ExcelTemplate<T> put(String header, GetterFunction<T, V> getter, SetterBiConsumer<T, V> setter, Class<V> clazz) {
         return putGetter(header, getter).putSetter(header, setter, clazz);
     }
 
-    public <V> ExcelTemplate<T> put(String header, ValueGetter<T, V> getter, ValueSetter<T, V> setter, TypeReference<V> typeReference) {
+    public <V> ExcelTemplate<T> put(String header, GetterFunction<T, V> getter, SetterBiConsumer<T, V> setter, TypeReference<V> typeReference) {
         return putGetter(header, getter).putSetter(header, setter, typeReference);
     }
 

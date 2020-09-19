@@ -1,5 +1,6 @@
 package wsg.tools.boot.config;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
 import org.openqa.selenium.chrome.ChromeDriverService;
@@ -36,15 +37,18 @@ public class VideoConfig implements InitializingBean {
 
     private static final String DOUBAN_RESOURCE = "douban subject";
     private static final String IMDB_RESOURCE = "imdb title";
-    private ImdbSite imdbSite;
-    private DoubanSite doubanSite;
+
     @Value("${omdb.api.key}")
     private String omdbApiKey;
-    private OmdbSite omdbSite;
+    @Getter
     @Value("${site.cdn}")
     private String cdn;
     @Value("${webdriver.chrome}")
     private String chromeDriver;
+
+    private ImdbSite imdbSite;
+    private DoubanSite doubanSite;
+    private OmdbSite omdbSite;
 
     public SiteResult<BaseDoubanSubject> doubanSubject(long dbId) throws IOException {
         try {
@@ -89,10 +93,10 @@ public class VideoConfig implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
         doubanSite = new DoubanSite();
-        imdbSite = new ImdbSite();
-        omdbSite = new OmdbSite(omdbApiKey);
         doubanSite.setCdn(cdn);
+        imdbSite = new ImdbSite();
         imdbSite.setCdn(cdn);
+        omdbSite = new OmdbSite(omdbApiKey);
         omdbSite.setCdn(cdn);
         System.setProperty(ChromeDriverService.CHROME_DRIVER_EXE_PROPERTY, chromeDriver);
     }

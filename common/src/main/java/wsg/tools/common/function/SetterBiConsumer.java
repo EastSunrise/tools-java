@@ -7,7 +7,7 @@ package wsg.tools.common.function;
  * @since 2020/7/23
  */
 @FunctionalInterface
-public interface ValueSetter<T, V> {
+public interface SetterBiConsumer<T, V> {
 
     /**
      * Set value.

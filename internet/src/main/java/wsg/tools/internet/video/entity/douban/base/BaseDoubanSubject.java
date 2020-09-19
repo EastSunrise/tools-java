@@ -40,6 +40,10 @@ public abstract class BaseDoubanSubject {
     private String originalTitle;
     private Year year;
     private List<LanguageEnum> languages;
+    /**
+     * Only for movies
+     */
+    private List<Duration> extDurations;
 
     /**
      * Combined with title and original title.

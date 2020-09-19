@@ -13,7 +13,6 @@ public enum SchemeEnum {
     HTTPS,
     HTTP;
 
-
     @Override
     public String toString() {
         return name().toLowerCase();

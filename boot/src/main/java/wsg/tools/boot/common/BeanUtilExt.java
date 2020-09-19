@@ -72,7 +72,7 @@ public class BeanUtilExt {
     }
 
     /**
-     * Get all properties and values of the given type.
+     * Get all properties and values of the given object.
      */
     public static Map<String, Object> convertToMap(Object o, boolean ignoreNull) {
         Objects.requireNonNull(o, "Can't convert a null object to map.");

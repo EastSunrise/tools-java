@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpResponseException;
@@ -15,11 +16,12 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
@@ -35,6 +37,7 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -53,6 +56,8 @@ import java.util.stream.Collectors;
 public class DoubanSite extends BaseSite {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
+    public static final String TITLE_PERMIT_CHARS = "[ ?#&*,-.!'0-9:;A-z·\u0080-\u024F\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\u2150-\u218F\u3040-\u30FF\u4E00-\u9FBF\uAC00-\uD7AF！：。]";
+
     protected static final int MAX_COUNT_ONCE = 100;
     protected static final int COUNT_PER_PAGE = 15;
     private static final Pattern SUBJECT_URL_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d{7,8})/?");
@@ -60,6 +65,7 @@ public class DoubanSite extends BaseSite {
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
+    private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
 
     public DoubanSite() {
         super("Douban", "douban.com", 1);
@@ -103,7 +109,8 @@ public class DoubanSite extends BaseSite {
      * @return IMDb id
      */
     public BaseDoubanSubject subject(long subjectId) throws IOException {
-        Document document = getDocument(withLowDomain(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId));
+        Document document = getDocument(
+                withLowDomain(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), true);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -118,7 +125,7 @@ public class DoubanSite extends BaseSite {
         String name = subject.getName().replace("  ", " ");
         if (name.startsWith(title)) {
             if (name.length() > title.length()) {
-                subject.setOriginalTitle(name.substring(title.length()));
+                subject.setOriginalTitle(StringEscapeUtils.unescapeHtml4(name.substring(title.length()).strip()));
             }
         } else {
             throw new HttpResponseException(HttpStatus.SC_EXPECTATION_FAILED, "Name and title are not matched.");
@@ -133,7 +140,7 @@ public class DoubanSite extends BaseSite {
 
         final String plLanguage = "语言:";
         if ((span = spans.get(plLanguage)) != null) {
-            String[] languages = ((TextNode) span.nextSibling()).text().split(SignConstants.SLASH);
+            String[] languages = StringUtils.split(((TextNode) span.nextSibling()).text(), SignEnum.SLASH.getC());
             subject.setLanguages(Arrays.stream(languages).map(
                     language -> EnumUtilExt.deserializeAka(language.strip(), LanguageEnum.class)
             ).collect(Collectors.toList()));
@@ -142,6 +149,18 @@ public class DoubanSite extends BaseSite {
         if ((span = spans.get(plImdb)) != null) {
             String href = span.nextElementSibling().attr("href");
             subject.setImdbId(AssertUtils.matches(IMDB_URL_REGEX, href).group(1));
+        }
+
+        final String propertyRuntime = "span[property=v:runtime]";
+        if ((span = info.selectFirst(propertyRuntime)) != null) {
+            Node node = span.nextSibling();
+            if (node instanceof TextNode && !((TextNode) node).isBlank()) {
+                subject.setExtDurations(new ArrayList<>());
+                Matcher matcher = EXT_DURATIONS_REGEX.matcher(((TextNode) node).text().strip());
+                while (matcher.find()) {
+                    subject.getExtDurations().add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
+                }
+            }
         }
 
         if (subject instanceof DoubanSeries) {
@@ -190,7 +209,7 @@ public class DoubanSite extends BaseSite {
         }
         Document document;
         try {
-            document = getDocument(builder, true, true);
+            document = loadDocument(builder, true);
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -200,7 +219,7 @@ public class DoubanSite extends BaseSite {
             Element a = item.selectFirst("a.title-text");
             SearchItem searchItem = new SearchItem();
             searchItem.setTitle(a.text().strip());
-            searchItem.setHref(a.attr(HTML_HREF));
+            searchItem.setHref(a.attr(ATTR_HREF));
             result.add(searchItem);
         }
         return result;
@@ -242,12 +261,12 @@ public class DoubanSite extends BaseSite {
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
-            Document document = getDocument(builder, false, false);
+            Document document = getDocument(builder, false);
             boolean done = false;
             String listClass = ".list-view";
-            for (Element li : document.selectFirst(listClass).select(HTML_LI)) {
+            for (Element li : document.selectFirst(listClass).select(TAG_LI)) {
                 Element div = li.selectFirst(".title");
-                String href = div.selectFirst(HTML_A).attr("href");
+                String href = div.selectFirst(TAG_A).attr("href");
                 long id = Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/"));
                 LocalDate markDate = LocalDate.parse(div.nextElementSibling().text().strip());
                 if (!markDate.isBefore(since)) {
@@ -281,25 +300,20 @@ public class DoubanSite extends BaseSite {
         while (true) {
             URIBuilder builder = withLowDomain(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
-            Document document = getDocument(builder, false, false);
+            Document document = getDocument(builder, false);
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
-                Element a = div.selectFirst(".title").selectFirst(HTML_A);
+                Element a = div.selectFirst(".title").selectFirst(TAG_A);
                 String href = a.attr("href");
                 ids.add(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
                 start++;
             }
-            Element title = document.selectFirst(HTML_TITLE);
-            Matcher matcher = AssertUtils.matches(CREATORS_PAGE_TITLE_REGEX, title.text().strip());
+            Matcher matcher = AssertUtils.matches(CREATORS_PAGE_TITLE_REGEX, document.title().strip());
             if (start >= Integer.parseInt(matcher.group(1))) {
                 break;
             }
         }
         log.info("Collected {} {}", ids.size(), catalog.getCreator().getPath());
         return ids;
-    }
-
-    protected URIBuilder withLowDomain(String lowDomain, String path, Object... pathArgs) {
-        return super.uriBuilder(path, pathArgs).setHost(lowDomain + "." + domain);
     }
 }

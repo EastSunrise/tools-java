@@ -10,7 +10,7 @@ import wsg.tools.boot.config.hanler.ExcelDeserializationProblemHandlers;
 import wsg.tools.boot.config.serializer.ContainerSerializers;
 import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.excel.ExcelFactory;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.reader.CellReader;
@@ -46,7 +46,7 @@ public abstract class AbstractController {
                     .addDeserializer(VideoTypeEnum.class, EnumDeserializers.getTitleDeserializer(VideoTypeEnum.class))
                     .addSerializer(TitleSerializer.getInstance(LanguageEnum.class))
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
-                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignConstants.SLASH))
+                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignEnum.SLASH))
             ).registerModule(new JavaTimeModule())
             .addHandler(ExcelDeserializationProblemHandlers.FloatToYearDeserializationProblemHandler.INSTANCE)
     );

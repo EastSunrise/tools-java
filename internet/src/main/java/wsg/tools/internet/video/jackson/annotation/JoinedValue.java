@@ -2,6 +2,7 @@ package wsg.tools.internet.video.jackson.annotation;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.jackson.deserializer.JoinedValueDeserializer;
 
 import java.lang.annotation.ElementType;
@@ -24,5 +25,5 @@ public @interface JoinedValue {
     /**
      * separator which deserialized string is joined with.
      */
-    String separator();
+    SignEnum separator();
 }

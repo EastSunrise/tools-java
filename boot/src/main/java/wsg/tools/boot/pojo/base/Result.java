@@ -104,7 +104,9 @@ public class Result implements Serializable {
     }
 
     public Result put(String key, Object value) {
-        assert success;
+        if (!success) {
+            throw new IllegalArgumentException("Failed result doesn't have args.");
+        }
         args.put(key, value);
         return this;
     }

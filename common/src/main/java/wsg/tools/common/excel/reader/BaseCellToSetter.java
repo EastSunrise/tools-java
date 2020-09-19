@@ -3,7 +3,7 @@ package wsg.tools.common.excel.reader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.poi.ss.usermodel.Cell;
-import wsg.tools.common.function.ValueSetter;
+import wsg.tools.common.function.SetterBiConsumer;
 
 /**
  * Read a cell as a property value of target object {@link T}.
@@ -13,7 +13,7 @@ import wsg.tools.common.function.ValueSetter;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class BaseCellToSetter<T, V> extends CellReader<V> implements ValueSetter<T, V> {
+public abstract class BaseCellToSetter<T, V> extends CellReader<V> implements SetterBiConsumer<T, V> {
 
     public BaseCellToSetter(Class<V> clazz) {
         super(clazz);

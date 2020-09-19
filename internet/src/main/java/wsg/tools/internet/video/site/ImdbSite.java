@@ -32,9 +32,10 @@ import java.util.regex.Pattern;
  */
 public final class ImdbSite extends BaseSite {
 
-    public static final String IMDB_TITLE_PREFIX = "tt";
+    public static final Pattern TITLE_ID_REGEX = Pattern.compile("tt(\\d+)");
+    private static final String TEXT_REGEX_STR = "[ !#%&'()*+,-./0-9:>?A-z·áâèéñóôùûü]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
-    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("([ !#%&'()*+,-./0-9:>?A-z·áâèéñóôùûü]+) - Season (\\d{1,2}) - IMDb");
+    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
 
     public ImdbSite() {
@@ -57,7 +58,7 @@ public final class ImdbSite extends BaseSite {
      * Get subject info by parsing the html page
      */
     public BaseImdbTitle title(String tt) throws IOException {
-        Document document = getDocument(uriBuilder("/title/%s", tt));
+        Document document = getDocument(uriBuilder("/title/%s", tt), true);
         BaseImdbTitle subject;
         try {
             subject = objectMapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), BaseImdbTitle.class);
@@ -66,7 +67,7 @@ public final class ImdbSite extends BaseSite {
         }
         if (subject instanceof ImdbEpisode) {
             ImdbEpisode episode = (ImdbEpisode) subject;
-            String href = document.selectFirst("div.titleParent").selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
+            String href = document.selectFirst("div.titleParent").selectFirst(TAG_A).attr(ATTR_HREF).split("\\?")[0];
             String seriesId = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
             episode.setSeriesId(seriesId);
             return episode;
@@ -87,7 +88,7 @@ public final class ImdbSite extends BaseSite {
         while (true) {
             currentSeason++;
             Document document = getDocument(uriBuilder("/title/%s/episodes", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)));
+                    .addParameter("season", String.valueOf(currentSeason)), true);
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;
@@ -103,7 +104,7 @@ public final class ImdbSite extends BaseSite {
             Map<Integer, String> map = new HashMap<>(episodesCount);
             for (int i = divs.size() - 1; i >= 0; i--) {
                 Element div = divs.get(i);
-                String href = div.selectFirst(HTML_STRONG).selectFirst(HTML_A).attr(HTML_HREF).split("\\?")[0];
+                String href = div.selectFirst(TAG_STRONG).selectFirst(TAG_A).attr(ATTR_HREF).split("\\?")[0];
                 String id = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
                 if (null != map.put(episode, id)) {

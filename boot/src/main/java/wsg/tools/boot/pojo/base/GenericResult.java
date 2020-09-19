@@ -24,11 +24,6 @@ public class GenericResult<T> extends Result {
         this.data = null;
     }
 
-    public GenericResult(Result result) {
-        super(result);
-        this.data = null;
-    }
-
     public GenericResult(GenericResult<T> result) {
         super(result);
         this.data = result.data;

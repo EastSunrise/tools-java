@@ -3,9 +3,7 @@ package wsg.tools.internet.video.entity.gen.object;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.SignConstants;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.entity.gen.base.BaseGenResponse;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -40,10 +38,10 @@ public class GenDoubanSubject extends BaseGenResponse {
     @JsonProperty("language")
     private List<LanguageEnum> languages;
     @JsonProperty("region")
-    @JoinedValue(separator = SignConstants.SLASH)
+    @JoinedValue(separator = SignEnum.SLASH)
     private List<RegionEnum> regions;
     @JsonProperty("duration")
-    @JoinedValue(separator = SignConstants.SLASH)
+    @JoinedValue(separator = SignEnum.SLASH)
     private List<Duration> runtimes;
     @JsonProperty("genre")
     private List<GenreEnum> genres;
@@ -77,11 +75,4 @@ public class GenDoubanSubject extends BaseGenResponse {
 
     private String awards;
     private String poster;
-
-    public Long parseDoubanLink() {
-        if (StringUtils.isBlank(doubanLink)) {
-            return null;
-        }
-        return Long.parseLong(AssertUtils.matches(DOUBAN_LINK_REGEX, doubanLink).group(1));
-    }
 }

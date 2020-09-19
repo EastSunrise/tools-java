@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class ListResult<T> extends GenericResult<List<T>> {
 
-    protected ListResult(List<T> data) {
+    public ListResult(List<T> data) {
         super(data);
     }
 }

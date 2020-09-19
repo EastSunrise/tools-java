@@ -1,6 +1,6 @@
 package wsg.tools.common.util;
 
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -18,6 +18,6 @@ public class NumberUtilsExt {
     public static long parseCommaSeparatedNumber(String text) {
         Objects.requireNonNull(text, "Text can't be null");
         AssertUtils.matches(COMMA_NUMBER_REGEX, text);
-        return Long.parseLong(text.replace(SignConstants.COMMA, ""));
+        return Long.parseLong(StringUtilsExt.remove(text, SignEnum.COMMA));
     }
 }

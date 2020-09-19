@@ -1,11 +1,9 @@
 package wsg.tools.boot.service.intf;
 
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
-import org.springframework.data.domain.Pageable;
 import wsg.tools.boot.pojo.base.GenericResult;
-import wsg.tools.boot.pojo.base.PageResult;
-import wsg.tools.boot.pojo.dto.QuerySubjectDto;
-import wsg.tools.boot.pojo.dto.SubjectDto;
+import wsg.tools.boot.pojo.base.ListResult;
+import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.result.ImportResult;
 
 import java.io.IOException;
@@ -59,9 +57,7 @@ public interface SubjectService {
     /**
      * Returns subjects matching the given condition
      *
-     * @param querySubjectDto condition
-     * @param pageable        pagination, nullable
-     * @return page of subjects
+     * @return list of subjects
      */
-    PageResult<SubjectDto> list(QuerySubjectDto querySubjectDto, Pageable pageable);
+    ListResult<SubjectEntity> export();
 }

@@ -19,23 +19,26 @@ public class SystemUtils {
     /**
      * Open a file with local default application.
      */
-    public static void openFile(File file) throws IOException {
+    public static Process openFile(File file) throws IOException {
         Objects.requireNonNull(file, "Can't open a null file.");
         if (!file.exists()) {
             throw new FileNotFoundException(file.getPath());
         }
 
-        open(file.getAbsolutePath());
+        return open(file.getAbsolutePath());
     }
 
     /**
-     * Open a url with local default browser.
+     * Open a url with local default browser or corresponding application.
      *
      * @param url     url string
      * @param urlArgs optional args to format the url
      */
-    public static void openUrl(String url, Object... urlArgs) throws IOException {
-        open(String.format(url, urlArgs));
+    public static Process openUrl(String url, Object... urlArgs) throws IOException {
+        if (urlArgs.length == 0) {
+            return open(url);
+        }
+        return open(String.format(url, urlArgs));
     }
 
     /**
@@ -43,9 +46,9 @@ public class SystemUtils {
      *
      * @param target a url or a path referring to a file
      */
-    private static void open(String target) throws IOException {
+    private static Process open(String target) throws IOException {
         Runtime runtime = Runtime.getRuntime();
-        runtime.exec("rundll32 url.dll FileProtocolHandler " + target);
+        return runtime.exec("rundll32 url.dll FileProtocolHandler " + target);
     }
 
     /**

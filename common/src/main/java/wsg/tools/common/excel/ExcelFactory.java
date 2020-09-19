@@ -191,7 +191,7 @@ public class ExcelFactory {
     }
 
     /**
-     * Write a excel workbook to stream.
+     * Write data to stream.
      *
      * @param data    data to write
      * @param writers writers to set cells by column

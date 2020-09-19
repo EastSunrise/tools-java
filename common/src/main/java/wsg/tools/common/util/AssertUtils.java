@@ -38,7 +38,7 @@ public final class AssertUtils {
     }
 
     /**
-     * Check if the text is full-matched for the pattern
+     * Check if the text is full-matched for the pattern.
      *
      * @return an matcher if full-matched.
      * @throws IllegalArgumentException if not full-matched
@@ -49,5 +49,33 @@ public final class AssertUtils {
             return matcher;
         }
         throw new IllegalArgumentException(String.format("Not matched string: '%s' for pattern: '%s'", text, pattern.pattern()));
+    }
+
+    /**
+     * Check if the pattern is found in the text.
+     *
+     * @return an matcher if found
+     * @throws IllegalArgumentException if not found
+     */
+    public static Matcher find(Pattern pattern, String text) {
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher;
+        }
+        throw new IllegalArgumentException(String.format("Not found pattern: '%s' in the text: '%s'", pattern.pattern(), text));
+    }
+
+    /**
+     * Check if the text starts with the pattern.
+     *
+     * @return an matcher if starting with
+     * @throws IllegalArgumentException if not start
+     */
+    public static Matcher lookingAt(Pattern pattern, String text) {
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.lookingAt()) {
+            return matcher;
+        }
+        throw new IllegalArgumentException(String.format("Not start with pattern: '%s' do the text: '%s'", pattern.pattern(), text));
     }
 }

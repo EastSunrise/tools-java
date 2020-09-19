@@ -7,11 +7,10 @@ import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.Consts;
-import org.apache.http.Header;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.*;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
@@ -26,19 +25,25 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.function.throwable.ThrowableFunction;
 import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.util.StringUtilsExt;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -55,23 +60,33 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("UnstableApiUsage")
 public abstract class BaseSite implements Closeable {
 
-    protected static final String HTML_A = "a";
-    protected static final String HTML_LI = "li";
-    protected static final String HTML_STRONG = "strong";
-    protected static final String HTML_TITLE = "title";
-    protected static final String HTML_HREF = "href";
+    protected static final String TAG_A = "a";
+    protected static final String TAG_LI = "li";
+    protected static final String TAG_SMALL = "small";
+    protected static final String TAG_STRONG = "strong";
+    protected static final String TAG_TR = "tr";
+    protected static final String TAG_H3 = "h3";
+    protected static final String TAG_DL = "dl";
+    protected static final String ATTR_HREF = "href";
     protected static final Set<String> USELESS_TAGS = Set.of(
             "link", "style", "img", "br"
     );
-    protected static final int CONNECT_TIME_OUT = 15000;
-    protected static final int SOCKET_TIME_OUT = 15000;
+
+    protected static final int CONNECT_TIME_OUT = 30000;
+    protected static final int SOCKET_TIME_OUT = 30000;
+
     private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
     private static final Collection<? extends Header> DEFAULT_HEADERS = Collections.singletonList(
             new BasicHeader(HTTP.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                     "(KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"));
     private static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
             .setConnectTimeout(CONNECT_TIME_OUT).setSocketTimeout(SOCKET_TIME_OUT).build();
-    private static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler();
+    private static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler() {
+        @Override
+        public String handleEntity(HttpEntity entity) throws IOException {
+            return EntityUtils.toString(entity, Constants.UTF_8);
+        }
+    };
 
     @Getter
     protected final String name;
@@ -80,6 +95,7 @@ public abstract class BaseSite implements Closeable {
     protected final ObjectMapper objectMapper;
     private final HttpClientContext localHttpContext;
     private final RateLimiter limiter;
+    private final RateLimiter postLimiter;
     private final CloseableHttpClient httpClient;
     private WebDriver webDriver;
     @Setter
@@ -90,15 +106,16 @@ public abstract class BaseSite implements Closeable {
     }
 
     public BaseSite(String name, String domain, double permitsPerSecond) {
-        this(name, SchemeEnum.HTTPS, domain, permitsPerSecond);
+        this(name, SchemeEnum.HTTPS, domain, permitsPerSecond, permitsPerSecond);
     }
 
-    public BaseSite(String name, SchemeEnum scheme, String domain, double permitsPerSecond) {
+    public BaseSite(String name, SchemeEnum scheme, String domain, double permitsPerSecond, double postPermitsPerSecond) {
         this.name = name;
         this.scheme = scheme;
         this.domain = domain;
         this.objectMapper = objectMapper();
         this.limiter = RateLimiter.create(permitsPerSecond);
+        this.postLimiter = RateLimiter.create(postPermitsPerSecond);
         this.localHttpContext = new HttpClientContext();
         this.httpClient = HttpClientBuilder.create()
                 .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
@@ -107,25 +124,55 @@ public abstract class BaseSite implements Closeable {
                 .build();
     }
 
-    protected Document getDocument(URIBuilder builder) throws IOException {
-        return getDocument(builder, true, false);
+    /**
+     * Return the content of html content of post request.
+     */
+    protected Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, boolean cached) throws IOException {
+        try {
+            String html;
+            if (cached) {
+                html = readCachedContent(builder, ContentTypeEnum.HTML, b -> postContent(b, params), params);
+            } else {
+                html = postContent(builder, params);
+            }
+            return Jsoup.parse(html);
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     /**
-     * Return the content of response in form of a parsed HTML document.
-     *
-     * @param cached whether use the cached file.
-     * @param loaded load by chromedriver if true, otherwise request by httpclient.
-     * @throws IOException only thrown when not loaded
+     * Return the document of html content of get request.
      */
-    protected Document getDocument(URIBuilder builder, boolean cached, boolean loaded) throws IOException {
-        if (cached) {
-            return Jsoup.parse(readCachedContent(builder, ContentTypeEnum.HTML, loaded));
+    protected Document getDocument(URIBuilder builder, boolean cached) throws IOException {
+        try {
+            String html;
+            if (cached) {
+                html = readCachedContent(builder, ContentTypeEnum.HTML, this::getContent);
+            } else {
+                html = getContent(builder);
+            }
+            return Jsoup.parse(html);
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
         }
-        if (loaded) {
-            return Jsoup.parse(loadContent(builder));
+    }
+
+    /**
+     * Return the document of html content loaded by webdriver.
+     */
+    protected Document loadDocument(URIBuilder builder, boolean cached) throws IOException {
+        try {
+            String html;
+            if (cached) {
+                html = readCachedContent(builder, ContentTypeEnum.HTML, this::loadContent);
+            } else {
+                html = loadContent(builder);
+            }
+            return Jsoup.parse(html);
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
         }
-        return Jsoup.parse(getContent(builder));
     }
 
     /**
@@ -147,11 +194,13 @@ public abstract class BaseSite implements Closeable {
      */
     protected <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws IOException {
         try {
+            String json;
             if (cached) {
-                return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), clazz);
+                json = readCachedContent(builder, ContentTypeEnum.JSON, this::getContent);
             } else {
-                return objectMapper.readValue(handleJsonAfterReading(getContent(builder)), clazz);
+                json = getContent(builder);
             }
+            return objectMapper.readValue(handleJsonAfterReading(json), clazz);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -162,11 +211,13 @@ public abstract class BaseSite implements Closeable {
      */
     protected <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws IOException {
         try {
+            String json;
             if (cached) {
-                return objectMapper.readValue(handleJsonAfterReading(readCachedContent(builder, ContentTypeEnum.JSON, false)), type);
+                json = readCachedContent(builder, ContentTypeEnum.JSON, this::getContent);
             } else {
-                return objectMapper.readValue(handleJsonAfterReading(getContent(builder)), type);
+                json = getContent(builder);
             }
+            return objectMapper.readValue(handleJsonAfterReading(json), type);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -179,14 +230,23 @@ public abstract class BaseSite implements Closeable {
         return json;
     }
 
+    private String readCachedContent
+            (URIBuilder builder, ContentTypeEnum contentType, ThrowableFunction<URIBuilder, String, IOException> function)
+            throws IOException {
+        return readCachedContent(builder, contentType, function, null);
+    }
+
     /**
-     * Get requested content. Read from the corresponding cached file if exists.
+     * Read content from the corresponding cached file if exists.
+     * Otherwise acquire content and save to file system.
      *
-     * @param loaded load by chromedriver if true, otherwise request by httpclient.
+     * @param function function to acquire content by the given uri.
      * @throws IOException only thrown when not loaded
      */
-    private String readCachedContent(URIBuilder builder, ContentTypeEnum contentType, boolean loaded) throws IOException {
-        File file = new File(filepath(builder, contentType));
+    private String readCachedContent(
+            URIBuilder builder, ContentTypeEnum contentType, ThrowableFunction<URIBuilder, String, IOException> function,
+            List<BasicNameValuePair> params) throws IOException {
+        File file = new File(filepath(builder, contentType, params));
         if (file.isFile()) {
             log.info("Read from {}", file.getPath());
             String content;
@@ -203,11 +263,7 @@ public abstract class BaseSite implements Closeable {
 
         String content;
         try {
-            if (loaded) {
-                content = loadContent(builder);
-            } else {
-                content = getContent(builder);
-            }
+            content = function.apply(builder);
         } catch (HttpResponseException e) {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
                 try {
@@ -231,12 +287,11 @@ public abstract class BaseSite implements Closeable {
 
     /**
      * Build path of cached file by uri and type of content.
+     *
+     * @param params when posting
      */
-    private String filepath(URIBuilder uriBuilder, ContentTypeEnum contentType) {
+    private String filepath(URIBuilder uriBuilder, ContentTypeEnum contentType, List<BasicNameValuePair> params) {
         StringBuilder builder = new StringBuilder();
-        if (cdn != null) {
-            builder.append(cdn);
-        }
 
         if (uriBuilder.isAbsolute()) {
             builder.append(File.separator).append(scheme);
@@ -260,17 +315,25 @@ public abstract class BaseSite implements Closeable {
             builder.append(File.separator).append(URLEncodedUtils.format(uriBuilder.getQueryParams(), Consts.UTF_8));
         }
 
+        if (params != null) {
+            builder.append(File.separator).append(StringUtils.join(params, SignEnum.AND.getC()));
+        }
+
         if (contentType != null) {
             builder.append(contentType.getSuffix());
         }
 
-        return builder.toString();
+        String filepath = StringUtilsExt.toFilename(builder.toString());
+        if (cdn != null) {
+            filepath = cdn + filepath;
+        }
+        return filepath;
     }
 
     /**
      * Pre-handle content of html after requesting or loading and before writing to the cached file.
      */
-    protected String handleHtmlBeforeCaching(String html) {
+    protected String handleHtmlBeforeCaching(String html) throws IOException {
         Document document = Jsoup.parse(html);
         handleNode(document);
         return document.html();
@@ -317,20 +380,24 @@ public abstract class BaseSite implements Closeable {
      */
     private String getContent(URIBuilder builder) throws IOException {
         String uri = addToken(builder).toString();
+        log.info("Slept for {}s.", limiter.acquire());
         log.info("Get from {}", uri);
         HttpGet httpGet = new HttpGet(uri);
-        limiter.acquire();
         return httpClient.execute(httpGet, DEFAULT_RESPONSE_HANDLER, localHttpContext);
     }
 
     /**
      * Execute the post request of the given uri and params.
      */
-    protected String postContent(URIBuilder builder, Iterable<? extends NameValuePair> params) throws IOException {
+    protected String postContent(URIBuilder builder, List<? extends NameValuePair> params) throws IOException {
         String uri = builder.toString();
+        log.info("Slept for {}s.", postLimiter.acquire());
         log.info("Post from {}", uri);
         HttpPost httpPost = new HttpPost(uri);
-        httpPost.setEntity(new UrlEncodedFormEntity(params, Constants.UTF_8));
+        if (CollectionUtils.isNotEmpty(params)) {
+            log.info("Params: {}", StringUtils.join(params, SignEnum.AND.getC()));
+            httpPost.setEntity(new UrlEncodedFormEntity(params, Constants.UTF_8));
+        }
         return httpClient.execute(httpPost, DEFAULT_RESPONSE_HANDLER, localHttpContext);
     }
 
@@ -338,7 +405,7 @@ public abstract class BaseSite implements Closeable {
      * Get the source by loading a web page in the current browser window.
      */
     private String loadContent(URIBuilder builder) {
-        limiter.acquire();
+        log.info("Slept for {}s.", limiter.acquire());
         chrome().get(builder.toString());
         return chrome().getPageSource();
     }
@@ -350,6 +417,16 @@ public abstract class BaseSite implements Closeable {
         return new URIBuilder()
                 .setScheme(scheme.toString())
                 .setHost(domain)
+                .setPath(String.format(path, pathArgs));
+    }
+
+    /**
+     * Get builder of request uri with low domain.
+     */
+    protected URIBuilder withLowDomain(String lowDomain, String path, Object... pathArgs) {
+        return new URIBuilder()
+                .setScheme(scheme.toString())
+                .setHost(lowDomain + "." + domain)
                 .setPath(String.format(path, pathArgs));
     }
 

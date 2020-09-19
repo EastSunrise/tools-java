@@ -50,7 +50,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
     public JsonDeserializer<?> createContextual(DeserializationContext context, BeanProperty property) {
         JoinedValue joinedValue = property.getAnnotation(JoinedValue.class);
         if (joinedValue != null) {
-            separator = joinedValue.separator();
+            separator = joinedValue.separator().toString();
         }
         targetType = property.getType();
         this.property = property;

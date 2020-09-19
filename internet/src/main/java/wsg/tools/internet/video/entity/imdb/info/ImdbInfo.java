@@ -3,7 +3,7 @@ package wsg.tools.internet.video.entity.imdb.info;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
@@ -48,7 +48,7 @@ public class ImdbInfo {
     private List<PlotOutlineInfo> plotOutlines;
     private List<SummaryInfo> summaries;
     private String synopsis;
-    @JoinedValue(separator = SignConstants.COMMA)
+    @JoinedValue(separator = SignEnum.COMMA)
     private List<String> keywords;
     private List<QuoteInfo> quotes;
     @JsonProperty("genre")

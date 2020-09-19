@@ -73,7 +73,7 @@ public abstract class BaseCellWriter<V> {
      * @return middle type
      */
     protected Class<?> getMiddleType() {
-        return String.class;
+        return null;
     }
 
     /**

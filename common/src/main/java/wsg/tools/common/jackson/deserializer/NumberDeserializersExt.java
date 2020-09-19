@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import wsg.tools.common.constant.SignConstants;
+import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.util.StringUtilsExt;
 
 import java.io.IOException;
 
@@ -40,7 +41,7 @@ public final class NumberDeserializersExt {
         @SuppressWarnings("unchecked")
         public T deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             if (parser.hasToken(JsonToken.VALUE_STRING)) {
-                return parseNumber(parser.getText().replace(SignConstants.COMMA, ""));
+                return parseNumber(StringUtilsExt.remove(parser.getText(), SignEnum.COMMA));
             }
             return parser.readValueAs((Class<T>) handledType());
         }

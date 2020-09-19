@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Workbook;
-import wsg.tools.common.function.ValueGetter;
+import wsg.tools.common.function.GetterFunction;
 
 import java.io.IOException;
 
@@ -16,7 +16,7 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class BaseCellFromGetter<T, V> extends BaseCellWriter<V> implements ValueGetter<T, V> {
+public abstract class BaseCellFromGetter<T, V> extends BaseCellWriter<V> implements GetterFunction<T, V> {
 
     /**
      * Set the given cell with value got from implemented getter.
