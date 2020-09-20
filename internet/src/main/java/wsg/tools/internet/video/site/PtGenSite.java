@@ -29,7 +29,7 @@ import java.io.IOException;
  * @since 2020/8/29
  */
 @Deprecated
-public class PtGenSite extends BaseSite {
+public class PtGenSite extends BaseSite<Void> {
 
     private static final String NOT_FOUND_MSG = "The corresponding resource does not exist.";
 

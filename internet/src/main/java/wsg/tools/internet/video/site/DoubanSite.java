@@ -10,16 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
@@ -53,7 +52,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends BaseSite {
+public class DoubanSite extends BaseSite<Long> {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     public static final String TITLE_PERMIT_CHARS = "[ ?#&*,-.!'0-9:;A-z·\u0080-\u024F\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\u2150-\u218F\u3040-\u30FF\u4E00-\u9FBF\uAC00-\uD7AF！：。]";
@@ -66,6 +65,7 @@ public class DoubanSite extends BaseSite {
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
     private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
+    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9A-z]+\"");
 
     public DoubanSite() {
         super("Douban", "douban.com", 1);
@@ -81,24 +81,27 @@ public class DoubanSite extends BaseSite {
                 );
     }
 
-    public LoginResult login(String username, String password) throws IOException {
-        List<NameValuePair> params = Arrays.asList(
+    @Override
+    public final boolean login(String username, String password) throws IOException {
+        getContent(uriBuilder(""));
+        String content = postContent(withLowDomain("accounts", "/j/mobile/login/basic"), Arrays.asList(
                 new BasicNameValuePair("ck", ""),
                 new BasicNameValuePair("name", username),
                 new BasicNameValuePair("password", password),
-                new BasicNameValuePair("remember", Boolean.toString(true))
-        );
-        String content = postContent(withLowDomain("accounts", "/j/mobile/login/basic"), params);
-        return objectMapper.readValue(content, LoginResult.class);
+                new BasicNameValuePair("remember", String.valueOf(true))
+        ));
+        return objectMapper.readValue(content, LoginResult.class).isSuccess();
     }
 
-    private void logChrome(String username, String password) {
-        chrome().get(withLowDomain("accounts", "/passport/login").toString());
-        chrome().findElement(By.className("account-tab-account")).click();
-        chrome().findElement(By.id("username")).sendKeys(username);
-        chrome().findElement(By.id("password")).sendKeys(password);
-        chrome().findElement(By.id("account-form-remember")).click();
-        chrome().findElement(By.className("btn-account")).click();
+    @Override
+    public final Long user() {
+        for (Cookie cookie : getCookies()) {
+            if ("dbcl2".equals(cookie.getName())) {
+                Matcher matcher = AssertUtils.matches(COOKIE_DBCL2_REGEX, cookie.getValue());
+                return Long.parseLong(matcher.group("id"));
+            }
+        }
+        return null;
     }
 
     /**
@@ -209,7 +212,7 @@ public class DoubanSite extends BaseSite {
         }
         Document document;
         try {
-            document = loadDocument(builder, true);
+            document = loadDocument(builder);
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
         }

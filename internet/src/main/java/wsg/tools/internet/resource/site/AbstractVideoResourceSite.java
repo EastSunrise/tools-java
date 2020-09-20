@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends BaseSite {
+public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends BaseSite<Void> {
 
     private static final Pattern POSSIBLE_TITLE_REGEX = Pattern.compile("(\\[[^\\[\\]]+])?([^\\[\\]]+)(\\[[^\\[\\]]+][^\\[\\]]*)?");
 

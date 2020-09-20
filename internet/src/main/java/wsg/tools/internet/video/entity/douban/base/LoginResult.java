@@ -1,7 +1,9 @@
 package wsg.tools.internet.video.entity.douban.base;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.video.entity.douban.pojo.Account;
 
 /**
  * Base class of subjects from douban.
@@ -16,9 +18,16 @@ public class LoginResult {
     private String status;
     private String message;
     private String description;
-    private Object payload;
+    private Payload payload;
 
     public boolean isSuccess() {
         return "success".equals(status);
+    }
+
+    @Getter
+    @Setter
+    public static class Payload {
+        @JsonProperty("account_info")
+        private Account accountInfo;
     }
 }

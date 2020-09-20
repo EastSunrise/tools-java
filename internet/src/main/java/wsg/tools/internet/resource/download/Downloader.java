@@ -41,13 +41,9 @@ public final class Downloader {
     private static final String PAN_HOST = "pan.baidu.com";
     private static final String THUNDER_URL_PREFIX = "thunder";
 
-    private final List<AbstractVideoResourceSite<? extends TitleDetail>> SITES = Arrays.asList(
+    private static final List<AbstractVideoResourceSite<? extends TitleDetail>> SITES = Arrays.asList(
             new Y80sSite(), new XlcSite()
     );
-
-    public Downloader(final String siteCdn) {
-        SITES.forEach(site -> site.setCdn(siteCdn));
-    }
 
     /**
      * Encode a url to a thunder url.
@@ -125,7 +121,7 @@ public final class Downloader {
      * @param dbId may null
      * @return count of resources downloading
      */
-    public int downloadMovie(@Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId) {
+    public static int downloadMovie(@Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId) {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
@@ -149,7 +145,7 @@ public final class Downloader {
         return count;
     }
 
-    private boolean filterResource(AbstractResource resource) {
+    private static boolean filterResource(AbstractResource resource) {
         if (resource instanceof InvalidResource) {
             return false;
         }
@@ -157,7 +153,8 @@ public final class Downloader {
             return isSuffix(((Ed2kResource) resource).getFilename(), VIDEO_SUFFIXES);
         }
         if (resource instanceof MagnetResource) {
-            return isSuffix(((MagnetResource) resource).getDisplayName(), VIDEO_SUFFIXES);
+            return ((MagnetResource) resource).getDisplayName() == null ||
+                    isSuffix(((MagnetResource) resource).getDisplayName(), VIDEO_SUFFIXES);
         }
         if (resource instanceof HttpResource) {
             return isSuffix(((HttpResource) resource).getFilename(), VIDEO_SUFFIXES) ||

@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Subject entity.
@@ -45,4 +46,21 @@ public abstract class SubjectEntity extends BaseEntity {
     private Year year;
     @UpdateTimestamp
     private LocalDateTime gmtModified;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SubjectEntity entity = (SubjectEntity) o;
+        return id.equals(entity.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

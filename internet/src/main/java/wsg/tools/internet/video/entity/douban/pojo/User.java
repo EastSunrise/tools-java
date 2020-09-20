@@ -12,8 +12,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class User {
-    private String uid;
-    private String avatar;
+    private Long uid;
+    private Avatar avatar;
     private String signature;
     private String alt;
     private Long id;

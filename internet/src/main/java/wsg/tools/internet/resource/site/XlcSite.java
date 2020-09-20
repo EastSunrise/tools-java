@@ -65,7 +65,7 @@ public class XlcSite extends AbstractVideoResourceSite<TitleDetail> {
     @Override
     public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
-        Document document = postDocument(uriBuilder("/vod-search"), params, true);
+        Document document = postDocument(uriBuilder("/vod-search"), params);
         List<SimpleTitle> titles = new ArrayList<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {

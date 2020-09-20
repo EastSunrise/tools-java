@@ -80,7 +80,7 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     @Override
     public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
-        Elements as = postDocument(uriBuilder("/search"), params, true).select("a.list-group-item");
+        Elements as = postDocument(uriBuilder("/search"), params).select("a.list-group-item");
         List<SimpleTitle> titles = new ArrayList<>();
         for (Element a : as) {
             SimpleTitle title = new SimpleTitle();
