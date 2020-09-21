@@ -30,7 +30,7 @@ public class RuntimeInfo extends BaseImdbInfo {
      */
     private RegionEnum region;
     /**
-     * Unit: minutes usually
+     * in minutes usually
      */
     private Duration duration;
 

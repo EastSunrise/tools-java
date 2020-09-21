@@ -10,8 +10,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.ContentTypeEnum;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
 import wsg.tools.internet.video.entity.omdb.object.OmdbSeason;
@@ -65,7 +68,7 @@ public final class OmdbSite extends BaseSite<Void> {
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
     public BaseOmdbTitle title(String id) throws IOException {
-        return getObject(uriBuilder("/")
+        return getObject(builder0("/")
                 .addParameter("i", id)
                 .addParameter("plot", "full"), BaseOmdbTitle.class);
     }
@@ -76,7 +79,7 @@ public final class OmdbSite extends BaseSite<Void> {
      * @param season start with 1
      */
     public OmdbSeason season(String seriesId, int season) throws IOException {
-        return getObject(uriBuilder("/")
+        return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season)), OmdbSeason.class);
     }
@@ -87,7 +90,7 @@ public final class OmdbSite extends BaseSite<Void> {
      * @param season start with 1
      */
     public OmdbEpisode episode(String seriesId, int season, int episode) throws IOException {
-        return getObject(uriBuilder("/")
+        return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season))
                 .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);
@@ -108,7 +111,7 @@ public final class OmdbSite extends BaseSite<Void> {
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
     public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws IOException {
-        URIBuilder builder = uriBuilder("/").addParameter("s", s);
+        URIBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
         }
@@ -124,11 +127,24 @@ public final class OmdbSite extends BaseSite<Void> {
     }
 
     @Override
-    protected String handleJsonAfterReading(String json) throws JsonProcessingException, HttpResponseException {
-        JsonNode node = objectMapper.readTree(json);
+    public void handleRequest(URIBuilder builder, HttpContext context) {
+        builder.setParameter("apikey", apikey);
+    }
+
+    @Override
+    public String handleContent(String content, ContentTypeEnum contentType) throws HttpResponseException {
+        if (!ContentTypeEnum.JSON.equals(contentType)) {
+            return content;
+        }
+        JsonNode node;
+        try {
+            node = mapper.readTree(content);
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         boolean response = Boolean.parseBoolean(node.get("Response").asText());
         if (response) {
-            return json.replace("\"N/A\"", "null");
+            return content.replace("\"N/A\"", "null");
         } else {
             String error = node.get("Error").asText();
             if (NOT_FOUND_MSG.equals(error) ||
@@ -137,10 +153,5 @@ public final class OmdbSite extends BaseSite<Void> {
             }
             throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
         }
-    }
-
-    @Override
-    protected URIBuilder addToken(URIBuilder builder) {
-        return super.addToken(builder).setParameter("apikey", apikey);
     }
 }

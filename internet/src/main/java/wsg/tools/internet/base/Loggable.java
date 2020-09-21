@@ -10,7 +10,7 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/9/19
  */
-public interface Loggable<U> {
+interface Loggable<U> {
 
     /**
      * Log in the site with given username ana password.

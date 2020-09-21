@@ -80,7 +80,7 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     @Override
     public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
-        Elements as = postDocument(uriBuilder("/search"), params).select("a.list-group-item");
+        Elements as = postDocument(builder0("/search"), params, true).select("a.list-group-item");
         List<SimpleTitle> titles = new ArrayList<>();
         for (Element a : as) {
             SimpleTitle title = new SimpleTitle();
@@ -99,7 +99,7 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     @Override
     public IdentifiedTitleDetail find(@Nonnull SimpleTitle title) throws IOException {
         IdentifiedTitleDetail detail = new IdentifiedTitleDetail();
-        Document document = getDocument(uriBuilder(title.getPath()), true);
+        Document document = getDocument(builder0(title.getPath()), true);
         String idStr = AssertUtils.find(DOUBAN_REVIEWS_REGEX, document.selectFirst("p.col-xs-6").html()).group(1);
         detail.setDbId("".equals(idStr) ? null : Long.parseLong(idStr));
         List<AbstractResource> resources = new ArrayList<>();

@@ -57,10 +57,10 @@ public final class ImdbSite extends BaseSite<String> {
      * Get subject info by parsing the html page
      */
     public BaseImdbTitle title(String tt) throws IOException {
-        Document document = getDocument(uriBuilder("/title/%s", tt), true);
+        Document document = getDocument(builder0("/title/%s", tt), true);
         BaseImdbTitle subject;
         try {
-            subject = objectMapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), BaseImdbTitle.class);
+            subject = mapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), BaseImdbTitle.class);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -86,7 +86,7 @@ public final class ImdbSite extends BaseSite<String> {
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            Document document = getDocument(uriBuilder("/title/%s/episodes", seriesId)
+            Document document = getDocument(builder0("/title/%s/episodes", seriesId)
                     .addParameter("season", String.valueOf(currentSeason)), true);
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {

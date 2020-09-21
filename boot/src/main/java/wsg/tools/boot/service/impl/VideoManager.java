@@ -49,7 +49,7 @@ public class VideoManager extends BaseServiceImpl {
     private static final String TV_DIR = "TV";
     private static final String MOVIE_DIR = "Movies";
     /**
-     * standard bps of files of a movie, unit: KB/s.
+     * standard bps of files of a movie in KB/s.
      */
     private static final int MOVIE_STANDARD_KBPS = 250;
     /**
@@ -136,12 +136,7 @@ public class VideoManager extends BaseServiceImpl {
                         .max(Comparator.comparingInt(e -> (e.getValue().isSuccess() ? e.getValue().getData() : -1))).orElseThrow();
                 GenericResult<Integer> result = max.getValue();
                 if (!result.isSuccess()) {
-                    try {
-                        FileUtils.deleteDirectory(tempDir);
-                    } catch (IOException e) {
-                        throw AssertUtils.runtimeException(e);
-                    }
-                    return new GenericResult<>("No qualified files downloaded for %s.", entity.getTitle());
+                    return new GenericResult<>("No qualified files downloaded for %s. Check manually.", entity.getTitle());
                 }
                 File srcFile = max.getKey();
                 File destFile = new File(location + srcFile.getName().substring(srcFile.getName().lastIndexOf(SignEnum.DOT.getC())));
@@ -232,7 +227,7 @@ public class VideoManager extends BaseServiceImpl {
     }
 
     /**
-     * @param size unit: B
+     * @param size in Byte
      */
     private String printSize(double size) {
         for (String unit : new String[]{"B", "KB", "MB", "GB", "TB"}) {

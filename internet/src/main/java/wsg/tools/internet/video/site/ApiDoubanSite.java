@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
@@ -163,12 +164,11 @@ public class ApiDoubanSite extends DoubanSite {
     }
 
     @Override
-    protected URIBuilder addToken(URIBuilder builder) {
-        return super.addToken(builder).setParameter("apikey", apikey);
+    public void handleRequest(URIBuilder builder, HttpContext context) {
+        builder.setParameter("apikey", apikey);
     }
 
-    @Override
-    protected URIBuilder uriBuilder(String path, Object... pathArgs) {
-        return super.withLowDomain("api", path, pathArgs);
+    private URIBuilder uriBuilder(String path, Object... pathArgs) {
+        return super.builder("api", path, pathArgs);
     }
 }

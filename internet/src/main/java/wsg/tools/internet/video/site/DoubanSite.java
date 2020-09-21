@@ -65,10 +65,10 @@ public class DoubanSite extends BaseSite<Long> {
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
     private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
-    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9A-z]+\"");
+    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9/A-z]+\"");
 
     public DoubanSite() {
-        super("Douban", "douban.com", 1);
+        super("Douban", "douban.com", 0.03);
     }
 
     @Override
@@ -83,14 +83,14 @@ public class DoubanSite extends BaseSite<Long> {
 
     @Override
     public final boolean login(String username, String password) throws IOException {
-        getContent(uriBuilder(""));
-        String content = postContent(withLowDomain("accounts", "/j/mobile/login/basic"), Arrays.asList(
+        getDocument(builder0(null), false);
+        LoginResult loginResult = postObject(builder("accounts", "/j/mobile/login/basic"), Arrays.asList(
                 new BasicNameValuePair("ck", ""),
                 new BasicNameValuePair("name", username),
                 new BasicNameValuePair("password", password),
                 new BasicNameValuePair("remember", String.valueOf(true))
-        ));
-        return objectMapper.readValue(content, LoginResult.class).isSuccess();
+        ), LoginResult.class, false);
+        return loginResult.isSuccess();
     }
 
     @Override
@@ -112,13 +112,12 @@ public class DoubanSite extends BaseSite<Long> {
      * @return IMDb id
      */
     public BaseDoubanSubject subject(long subjectId) throws IOException {
-        Document document = getDocument(
-                withLowDomain(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), true);
+        Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), true);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
         try {
-            subject = objectMapper.readValue(text, BaseDoubanSubject.class);
+            subject = mapper.readValue(text, BaseDoubanSubject.class);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -204,7 +203,7 @@ public class DoubanSite extends BaseSite<Long> {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = withLowDomain("search", "/%s/subject_search", catalog.getPath())
+        URIBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
                 .setParameter("search_text", keyword)
                 .setParameter("cat", String.valueOf(catalog.getCode()));
         if (page > 0) {
@@ -212,7 +211,7 @@ public class DoubanSite extends BaseSite<Long> {
         }
         Document document;
         try {
-            document = loadDocument(builder);
+            document = loadDocument(builder, true);
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -240,7 +239,7 @@ public class DoubanSite extends BaseSite<Long> {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = withLowDomain(catalog.getPath(), "/j/subject_suggest")
+        URIBuilder builder = builder(catalog.getPath(), "/j/subject_suggest")
                 .setParameter("q", keyword);
         return getObject(builder, new TypeReference<>() {}, false);
     }
@@ -260,7 +259,7 @@ public class DoubanSite extends BaseSite<Long> {
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
-            URIBuilder builder = withLowDomain(catalog.getPath(), "/people/%d/%s", userId, mark.getPath())
+            URIBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, mark.getPath())
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
@@ -301,7 +300,7 @@ public class DoubanSite extends BaseSite<Long> {
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
-            URIBuilder builder = withLowDomain(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
+            URIBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
             Document document = getDocument(builder, false);
             String itemClass = ".item";

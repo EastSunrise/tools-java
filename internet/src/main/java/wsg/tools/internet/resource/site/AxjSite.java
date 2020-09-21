@@ -9,6 +9,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.internet.base.ContentTypeEnum;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
 import wsg.tools.internet.resource.entity.SimpleTitle;
@@ -47,10 +48,10 @@ public class AxjSite extends AbstractVideoResourceSite<TitleDetail> {
 
     @Override
     public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
-        return getDocument(uriBuilder("/app-thread-run")
+        return get(builder0("/app-thread-run")
                 .addParameter("app", "search")
                 .addParameter("keywords", keyword)
-                .addParameter("orderby", "lastpost_time"), true)
+                .addParameter("orderby", "lastpost_time"))
                 .selectFirst("div.search_content")
                 .select(TAG_DL).stream()
                 .map(dl -> {
@@ -84,7 +85,7 @@ public class AxjSite extends AbstractVideoResourceSite<TitleDetail> {
     @Override
     public TitleDetail find(@Nonnull SimpleTitle title) throws IOException {
         TitleDetail detail = new TitleDetail();
-        detail.setResources(getDocument(uriBuilder(title.getPath()), true)
+        detail.setResources(get(builder0(title.getPath()))
                 .selectFirst("div.editor_content").select(TAG_A)
                 .stream().map(a -> {
                     AbstractResource resource = Downloader.classifyUrl(a.attr(ATTR_HREF));
@@ -96,11 +97,10 @@ public class AxjSite extends AbstractVideoResourceSite<TitleDetail> {
         return detail;
     }
 
-    @Override
-    protected Document getDocument(URIBuilder builder, boolean cached) throws IOException {
+    private Document get(URIBuilder builder) throws IOException {
         while (true) {
             try {
-                return super.getDocument(builder, cached);
+                return super.getDocument(builder, true);
             } catch (HttpResponseException e) {
                 if (e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                     continue;
@@ -111,11 +111,14 @@ public class AxjSite extends AbstractVideoResourceSite<TitleDetail> {
     }
 
     @Override
-    protected String handleHtmlBeforeCaching(String html) throws IOException {
-        Document document = Jsoup.parse(html);
+    public String handleResponse(String content, ContentTypeEnum contentType) throws HttpResponseException {
+        if (!ContentTypeEnum.HTML.equals(contentType)) {
+            return content;
+        }
+        Document document = Jsoup.parse(content);
         if (ERROR_TITLE.equals(document.title())) {
             throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, document.selectFirst("li#J_html_error").text());
         }
-        return html;
+        return content;
     }
 }
