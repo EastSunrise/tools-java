@@ -294,6 +294,12 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
         BaseImdbTitle imdbTitle = config.imdbTitle(imdbId);
         entity.setText(imdbTitle.getText());
+        if (imdbTitle instanceof ImdbMovie) {
+            entity.getDurations().add(((ImdbMovie) imdbTitle).getDuration());
+        }
+        if (imdbTitle instanceof ImdbEpisode) {
+            entity.getDurations().add(((ImdbEpisode) imdbTitle).getDuration());
+        }
     }
 
     private <T> void addAll(List<T> target, List<T> added) {

@@ -18,10 +18,10 @@ interface Loggable<U> {
      *
      * @param username username, not null
      * @param password password, not null
-     * @return if logon.
-     * @throws IOException exception when requesting
+     * @throws IOException    exception when requesting
+     * @throws LoginException if failed to log in
      */
-    boolean login(String username, String password) throws IOException;
+    void login(String username, String password) throws IOException;
 
     /**
      * Obtains current user, null if not logon yet.

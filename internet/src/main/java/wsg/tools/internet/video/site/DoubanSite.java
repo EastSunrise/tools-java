@@ -18,13 +18,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
-import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.LoginException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
 import wsg.tools.internet.video.entity.douban.base.LoginResult;
@@ -35,7 +35,9 @@ import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -59,16 +61,17 @@ public class DoubanSite extends BaseSite<Long> {
 
     protected static final int MAX_COUNT_ONCE = 100;
     protected static final int COUNT_PER_PAGE = 15;
-    private static final Pattern SUBJECT_URL_REGEX = Pattern.compile("https://movie.douban.com/subject/(\\d{7,8})/?");
-    private static final Pattern IMDB_URL_REGEX = Pattern.compile("https://www.imdb.com/title/(tt\\d+)");
+    private static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
     private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
-    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9/A-z]+\"");
+    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9+/A-z]+\"");
+    private static final Pattern SEARCH_ITEM_HREF_REGEX =
+            Pattern.compile("https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-z%.-]+)&query=(?<q>[0-9A-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
 
     public DoubanSite() {
-        super("Douban", "douban.com", 0.03);
+        super("Douban", "douban.com", 1);
     }
 
     @Override
@@ -82,15 +85,20 @@ public class DoubanSite extends BaseSite<Long> {
     }
 
     @Override
-    public final boolean login(String username, String password) throws IOException {
-        getDocument(builder0(null), false);
+    public final void login(String username, String password) throws IOException {
+        if (getCookies().size() == 0) {
+            getDocument(builder0(null), false);
+        }
         LoginResult loginResult = postObject(builder("accounts", "/j/mobile/login/basic"), Arrays.asList(
                 new BasicNameValuePair("ck", ""),
                 new BasicNameValuePair("name", username),
                 new BasicNameValuePair("password", password),
                 new BasicNameValuePair("remember", String.valueOf(true))
         ), LoginResult.class, false);
-        return loginResult.isSuccess();
+        if (!loginResult.isSuccess()) {
+            throw new LoginException(loginResult.getMessage());
+        }
+        log.info("Success logging in: {}.", user());
     }
 
     @Override
@@ -149,8 +157,7 @@ public class DoubanSite extends BaseSite<Long> {
         }
         final String plImdb = "IMDb链接:";
         if ((span = spans.get(plImdb)) != null) {
-            String href = span.nextElementSibling().attr("href");
-            subject.setImdbId(AssertUtils.matches(IMDB_URL_REGEX, href).group(1));
+            subject.setImdbId(span.nextElementSibling().text().strip());
         }
 
         final String propertyRuntime = "span[property=v:runtime]";
@@ -179,52 +186,45 @@ public class DoubanSite extends BaseSite<Long> {
     /**
      * Obtains id of Douban by searching id of IMDb.
      */
-    public Long getDbIdByImdbId(String imdbId) {
-        List<SearchItem> items = search(CatalogEnum.MOVIE, imdbId, 0);
+    public Long getDbIdByImdbId(String imdbId) throws IOException {
+        List<SearchItem> items = search(CatalogEnum.MOVIE, imdbId);
         if (items.size() == 0) {
             return null;
         }
         if (items.size() == 1) {
             SearchItem item = items.get(0);
-            Matcher matcher = AssertUtils.matches(SUBJECT_URL_REGEX, item.getHref());
-            return Long.parseLong(matcher.group(1));
+            Matcher matcher = AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, item.getUrl());
+            return Long.parseLong(matcher.group("id"));
         }
         throw new RuntimeException("More than one items returned when searching by id of IMDb.");
     }
 
     /**
-     * Fuzzy search by specified keyword.
+     * Search items by specified keyword.
      *
      * @param catalog which catalog
      * @param keyword not blank
-     * @param page    start with 0. Negative number is regarded as 0.
      */
-    public List<SearchItem> search(CatalogEnum catalog, String keyword, int page) {
+    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) throws IOException {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
-                .setParameter("search_text", keyword)
-                .setParameter("cat", String.valueOf(catalog.getCode()));
-        if (page > 0) {
-            builder.setParameter("start", String.valueOf(page * COUNT_PER_PAGE));
+        URIBuilder builder = builder0("/search")
+                .setParameter("q", keyword);
+        if (catalog != null) {
+            builder.setParameter("cat", String.valueOf(catalog.getCode()));
         }
-        Document document;
-        try {
-            document = loadDocument(builder, true);
-        } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        Elements items = document.select("div.item-root");
-        List<SearchItem> result = new ArrayList<>();
-        for (Element item : items) {
-            Element a = item.selectFirst("a.title-text");
-            SearchItem searchItem = new SearchItem();
-            searchItem.setTitle(a.text().strip());
-            searchItem.setHref(a.attr(ATTR_HREF));
-            result.add(searchItem);
-        }
-        return result;
+        Document document = getDocument(builder, true);
+
+        return document.selectFirst("div.search-result").select("div.result").stream()
+                .map(div -> {
+                    SearchItem item = new SearchItem();
+                    Element a = div.selectFirst(TAG_H3).selectFirst(TAG_A);
+                    Matcher matcher = AssertUtils.matches(SEARCH_ITEM_HREF_REGEX, a.attr(ATTR_HREF));
+                    item.setTitle(a.text().strip());
+                    item.setUrl(URLDecoder.decode(matcher.group("url"), Constants.UTF_8));
+                    return item;
+                }).collect(Collectors.toList());
     }
 
     /**
@@ -241,7 +241,7 @@ public class DoubanSite extends BaseSite<Long> {
         }
         URIBuilder builder = builder(catalog.getPath(), "/j/subject_suggest")
                 .setParameter("q", keyword);
-        return getObject(builder, new TypeReference<>() {}, false);
+        return getObject(builder, new TypeReference<>() {}, true);
     }
 
     /**

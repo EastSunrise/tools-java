@@ -20,10 +20,13 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.resource.download.Downloader;
+import wsg.tools.internet.resource.entity.Ed2kResource;
+import wsg.tools.internet.resource.entity.MagnetResource;
 import wsg.tools.internet.resource.site.AbstractVideoResourceSite;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +55,7 @@ public class VideoManager extends BaseServiceImpl {
      * standard bps of files of a movie in KB/s.
      */
     private static final int MOVIE_STANDARD_KBPS = 250;
+    private static final int MOVIE_STANDARD_FPS = 24;
     /**
      * Permit size of a file mustn't be half smaller nor four bigger than the standard duration.
      */
@@ -60,20 +64,20 @@ public class VideoManager extends BaseServiceImpl {
     /**
      * Permit duration of a file mustn't be 30s shorter nor 90s longer than the standard duration.
      */
-    private static final int MOVIE_DURATION_FLOOR = -30;
-    private static final int MOVIE_DURATION_CEIL = 90;
+    private static final int MOVIE_DURATION_FLOOR = -60;
+    private static final int MOVIE_DURATION_CEIL = 60;
 
     static {
         System.setProperty("java.awt.headless", "false");
     }
 
-    private final Semaphore semaphore = new Semaphore(0);
     @Value("${video.cdn}")
     private String cdn;
     private SubjectRepository subjectRepository;
     private ThreadPoolTaskExecutor executor;
 
     public Map<SubjectEntity, GenericResult<File>> collect() throws ExecutionException, InterruptedException {
+        Semaphore semaphore = new Semaphore(0);
         Semaphore closed = new Semaphore(0);
         executor.submit(() -> {
             JFrame frame = new JFrame("Next");
@@ -95,7 +99,7 @@ public class VideoManager extends BaseServiceImpl {
             for (SubjectEntity entity : subjectRepository.findAll()) {
                 if (entity instanceof MovieEntity) {
                     try {
-                        GenericResult<File> result = getFile((MovieEntity) entity);
+                        GenericResult<File> result = getFile((MovieEntity) entity, semaphore);
                         if (!result.isSuccess()) {
                             log.info(result.getMessage());
                             map.put(entity, result);
@@ -117,12 +121,11 @@ public class VideoManager extends BaseServiceImpl {
      * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
      * If still not found, search by {@link AbstractVideoResourceSite}s and download by {@link Downloader}.
      */
-    public final GenericResult<File> getFile(MovieEntity entity) {
+    public final GenericResult<File> getFile(MovieEntity entity, @Nullable Semaphore semaphore) {
         String location = getLocation(entity);
         for (String suffix : Downloader.VIDEO_SUFFIXES) {
             File file = new File(location + SignEnum.DOT + suffix);
             if (file.isFile()) {
-                log.info("Find file: {}.", file.getPath());
                 return GenericResult.of(file);
             }
         }
@@ -130,13 +133,16 @@ public class VideoManager extends BaseServiceImpl {
                 cdn, "Temp", entity.getId() + "" + SignEnum.UNDERSCORE + entity.getTitle()));
         if (tempDir.isDirectory() && Objects.requireNonNull(tempDir.list()).length > 0) {
             if (FileUtils.listFiles(tempDir, Downloader.THUNDER_FILE_SUFFIXES, true).isEmpty()) {
-                Map.Entry<File, GenericResult<Integer>> max = FileUtils.listFiles(tempDir, Downloader.VIDEO_SUFFIXES, true).stream()
-                        .collect(Collectors.toMap(file -> file, file -> this.weight(file, entity.getDurations())))
-                        .entrySet().stream()
+                Map<File, GenericResult<Integer>> map = FileUtils.listFiles(tempDir, Downloader.VIDEO_SUFFIXES, true).stream()
+                        .collect(Collectors.toMap(file -> file, file -> this.weight(file, entity.getDurations())));
+                Map.Entry<File, GenericResult<Integer>> max = map.entrySet().stream()
                         .max(Comparator.comparingInt(e -> (e.getValue().isSuccess() ? e.getValue().getData() : -1))).orElseThrow();
                 GenericResult<Integer> result = max.getValue();
                 if (!result.isSuccess()) {
-                    return new GenericResult<>("No qualified files downloaded for %s. Check manually.", entity.getTitle());
+                    String message = map.entrySet().stream()
+                            .map(entry -> String.format("Reason: %s File: %s", entry.getValue().getMessage(), entry.getKey().getName()))
+                            .collect(Collectors.joining("\n"));
+                    return new GenericResult<>("No qualified files downloaded for %s.\n%s", entity.getTitle(), message);
                 }
                 File srcFile = max.getKey();
                 File destFile = new File(location + srcFile.getName().substring(srcFile.getName().lastIndexOf(SignEnum.DOT.getC())));
@@ -151,12 +157,38 @@ public class VideoManager extends BaseServiceImpl {
                 return new GenericResult<>("None files of %s found, resources downloading.", entity.getTitle());
             }
         }
-        int count = Downloader.downloadMovie(tempDir, entity.getTitle(), entity.getYear(), entity.getDbId());
+
+        final long maxSize = entity.getDurations().stream()
+                .max(Duration::compareTo).orElseThrow()
+                .plusSeconds(MOVIE_DURATION_CEIL)
+                .getSeconds() * MOVIE_SIZE_CEIL;
+        final long minSize = (long) (entity.getDurations().stream()
+                .min(Duration::compareTo).orElseThrow()
+                .plusSeconds(MOVIE_DURATION_FLOOR)
+                .getSeconds() * MOVIE_SIZE_FLOOR);
+        int count = Downloader.downloadMovie(tempDir, entity.getTitle(), entity.getYear(), entity.getDbId(),
+                resource -> {
+                    if (!Downloader.filterResource(resource)) {
+                        return false;
+                    }
+                    if (resource instanceof Ed2kResource) {
+                        if (((Ed2kResource) resource).getSize() < minSize || ((Ed2kResource) resource).getSize() > maxSize) {
+                            return false;
+                        }
+                    }
+                    if (resource instanceof MagnetResource) {
+                        long size = ((MagnetResource) resource).getSize();
+                        return size <= 0 || (size >= minSize && size <= maxSize);
+                    }
+                    return true;
+                });
         if (count > 0) {
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                throw AssertUtils.runtimeException(e);
+            if (semaphore != null) {
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    throw AssertUtils.runtimeException(e);
+                }
             }
             return new GenericResult<>("None files of %s found, %d resources added to download.", entity.getTitle(), count);
         } else {
@@ -175,7 +207,7 @@ public class VideoManager extends BaseServiceImpl {
         } else if (Downloader.isSuffix(name, Downloader.OTHER_VIDEO_SUFFIXES)) {
             weights[0] = 50;
         } else {
-            return new GenericResult<>("Not permit suffix of file: %s.", file.getPath());
+            return new GenericResult<>("Not permit suffix.");
         }
 
         int size = durations.size();
@@ -187,7 +219,7 @@ public class VideoManager extends BaseServiceImpl {
         try {
             long millis = new MultimediaObject(file).getInfo().getDuration();
             if (millis < 0) {
-                return new GenericResult<>("Can't get duration of file: %s, .", file.getPath());
+                return new GenericResult<>("Can't get duration.");
             }
             fileDuration = Duration.ofMillis(millis);
         } catch (EncoderException e) {
@@ -204,12 +236,13 @@ public class VideoManager extends BaseServiceImpl {
             return false;
         });
         if (!anyMatch) {
-            return new GenericResult<>("Wrong duration %d min of file: %s, .", fileDuration.toMinutes(), file.getPath());
+            return new GenericResult<>("Wrong duration: %d min, required: %s.", fileDuration.toMinutes(),
+                    durations.stream().map(duration -> duration.toMinutes() + "min").collect(Collectors.joining("/")));
         }
 
         long length = file.length();
         if (length == 0) {
-            return new GenericResult<>("Can't get size of file: %s.", file.getPath());
+            return new GenericResult<>("Can't get size.");
         }
         long targetSize = fileDuration.getSeconds() * MOVIE_STANDARD_KBPS * 1024;
         if (length < targetSize * MOVIE_SIZE_FLOOR) {
@@ -246,7 +279,7 @@ public class VideoManager extends BaseServiceImpl {
      * @return location of the given entity
      */
     @Nonnull
-    private String getLocation(MovieEntity entity) {
+    public String getLocation(MovieEntity entity) {
         Objects.requireNonNull(entity, "Given entity mustn't be null.");
         Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");

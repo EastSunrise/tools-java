@@ -14,5 +14,5 @@ import lombok.Setter;
 public class SearchItem {
 
     private String title;
-    private String href;
+    private String url;
 }

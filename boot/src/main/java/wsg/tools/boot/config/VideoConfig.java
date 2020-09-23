@@ -2,12 +2,15 @@ package wsg.tools.boot.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
-import org.openqa.selenium.chrome.ChromeDriverService;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
+import wsg.tools.boot.pojo.entity.IdRelationEntity;
 import wsg.tools.boot.pojo.result.SiteResult;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
@@ -22,6 +25,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Configuration for video to get instances of video sites.
@@ -39,12 +43,12 @@ public class VideoConfig implements InitializingBean {
 
     @Value("${omdb.api.key}")
     private String omdbApiKey;
-    @Value("${webdriver.chrome}")
-    private String chromeDriver;
 
     private ImdbSite imdbSite;
     private DoubanSite doubanSite;
     private OmdbSite omdbSite;
+
+    private IdRelationRepository relationRepository;
 
     public SiteResult<BaseDoubanSubject> doubanSubject(long dbId) throws IOException {
         try {
@@ -56,7 +60,23 @@ public class VideoConfig implements InitializingBean {
     }
 
     public Long getDbIdByImdbId(String imdbId) {
-        return doubanSite.getDbIdByImdbId(imdbId);
+        Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
+        if (optional.isPresent()) {
+            return optional.get().getDbId();
+        }
+        Long dbId;
+        try {
+            dbId = doubanSite.getDbIdByImdbId(imdbId);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+        if (dbId != null) {
+            IdRelationEntity entity = new IdRelationEntity();
+            entity.setImdbId(imdbId);
+            entity.setDbId(dbId);
+            relationRepository.insert(entity);
+        }
+        return dbId;
     }
 
     public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws IOException {
@@ -91,6 +111,10 @@ public class VideoConfig implements InitializingBean {
         doubanSite = new DoubanSite();
         imdbSite = new ImdbSite();
         omdbSite = new OmdbSite(omdbApiKey);
-        System.setProperty(ChromeDriverService.CHROME_DRIVER_EXE_PROPERTY, chromeDriver);
+    }
+
+    @Autowired
+    public void setRelationRepository(IdRelationRepository relationRepository) {
+        this.relationRepository = relationRepository;
     }
 }

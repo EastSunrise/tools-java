@@ -8,6 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
 import wsg.tools.internet.video.entity.douban.container.ContentResult;
@@ -164,8 +165,8 @@ public class ApiDoubanSite extends DoubanSite {
     }
 
     @Override
-    public void handleRequest(URIBuilder builder, HttpContext context) {
-        builder.setParameter("apikey", apikey);
+    public void handleRequest(RequestBuilder builder, HttpContext context) {
+        builder.addToken("apikey", apikey);
     }
 
     private URIBuilder uriBuilder(String path, Object... pathArgs) {

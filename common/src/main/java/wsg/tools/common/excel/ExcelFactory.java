@@ -12,6 +12,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.reader.CellReader;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
+import wsg.tools.common.excel.writer.BaseCellWriter;
 import wsg.tools.common.function.CreatorSupplier;
 
 import java.io.IOException;
@@ -188,6 +189,41 @@ public class ExcelFactory {
             printer.println();
         }
         printer.close(true);
+    }
+
+    /**
+     * Write data to stream.
+     *
+     * @param data list of map to write
+     */
+    public <V> void writeXlsx(OutputStream stream, List<Map<String, V>> data) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet();
+        Set<String> set = new HashSet<>();
+        data.forEach(map -> set.addAll(map.keySet()));
+        String[] headers = set.toArray(new String[0]);
+        int i = 0;
+        Row row = sheet.createRow(i++);
+        int j = 0;
+        for (String header : headers) {
+            Cell cell = row.createCell(j++);
+            cell.setCellValue(header);
+        }
+        BaseCellWriter<V> writer = new BaseCellWriter<>();
+        for (Map<String, V> map : data) {
+            row = sheet.createRow(i++);
+            j = 0;
+            for (String header : headers) {
+                V value = map.get(header);
+                Cell cell = row.createCell(j++);
+                if (value != null) {
+                    writer.setCellValue(cell, value, objectMapper);
+                    writer.setCellStyle(cell, value, workbook);
+                }
+            }
+        }
+        workbook.write(stream);
+        workbook.close();
     }
 
     /**

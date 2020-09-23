@@ -15,6 +15,7 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ContentTypeEnum;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
 import wsg.tools.internet.video.entity.omdb.object.OmdbSeason;
@@ -127,8 +128,8 @@ public final class OmdbSite extends BaseSite<Void> {
     }
 
     @Override
-    public void handleRequest(URIBuilder builder, HttpContext context) {
-        builder.setParameter("apikey", apikey);
+    public void handleRequest(RequestBuilder builder, HttpContext context) {
+        builder.addToken("apikey", apikey);
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.time.Year;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Utility for downloading.
@@ -122,6 +123,19 @@ public final class Downloader {
      * @return count of resources downloading
      */
     public static int downloadMovie(@Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId) {
+        return downloadMovie(dir, title, year, dbId, Downloader::filterResource);
+    }
+
+    /**
+     * Search and download resources of the given movie.
+     *
+     * @param dir  target directory, create if not exist
+     * @param dbId may null
+     * @return count of resources downloading
+     */
+    public static int downloadMovie(
+            @Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId,
+            @Nonnull Predicate<AbstractResource> filter) {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
@@ -129,7 +143,7 @@ public final class Downloader {
         for (AbstractVideoResourceSite<? extends TitleDetail> site : SITES) {
             try {
                 for (AbstractResource resource : site.collectMovie(title, year, dbId)) {
-                    if (filterResource(resource)) {
+                    if (filter.test(resource)) {
                         try {
                             SystemUtils.openUrl(encodeThunder(resource.getUrl()));
                             count++;
@@ -145,7 +159,7 @@ public final class Downloader {
         return count;
     }
 
-    private static boolean filterResource(AbstractResource resource) {
+    public static boolean filterResource(AbstractResource resource) {
         if (resource instanceof InvalidResource) {
             return false;
         }
