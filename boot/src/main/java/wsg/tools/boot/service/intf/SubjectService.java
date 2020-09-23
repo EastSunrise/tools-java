@@ -4,7 +4,7 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.base.ListResult;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
-import wsg.tools.boot.pojo.result.ImportResult;
+import wsg.tools.boot.pojo.result.BatchResult;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -44,7 +44,7 @@ public interface SubjectService {
      * @param since  since when
      * @return result of importing
      */
-    ImportResult importDouban(long userId, LocalDate since);
+    BatchResult<Long> importDouban(long userId, LocalDate since);
 
     /**
      * Import subject with doubanId-IMDbId pairs
@@ -52,7 +52,7 @@ public interface SubjectService {
      * @param ids key-values of doubanId-IMDbId
      * @return result
      */
-    ImportResult importManually(List<DefaultKeyValue<String, Long>> ids);
+    BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids);
 
     /**
      * Returns subjects matching the given condition

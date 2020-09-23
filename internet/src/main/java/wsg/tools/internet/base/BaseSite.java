@@ -84,7 +84,9 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
     protected static final String TAG_TR = "tr";
     protected static final String TAG_H3 = "h3";
     protected static final String TAG_DL = "dl";
+    protected static final String TAG_TIME = "time";
     protected static final String ATTR_HREF = "href";
+    protected static final String ATTR_DATETIME = "datetime";
 
     protected static final int CONNECT_TIME_OUT = 30000;
     protected static final int SOCKET_TIME_OUT = 30000;

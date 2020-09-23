@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
-import wsg.tools.boot.pojo.result.ImportResult;
+import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.excel.ExcelTemplate;
 
@@ -54,9 +54,9 @@ public class SubjectController extends AbstractController {
         try {
             List<DefaultKeyValue<String, Long>> all = readXlsx(file, NOT_FOUND.getReaders(), DefaultKeyValue::new);
             List<DefaultKeyValue<String, Long>> keyValues = all.stream().filter(keyValue -> keyValue.getKey() != null).collect(Collectors.toList());
-            ImportResult importResult = subjectService.importManually(keyValues);
-            importResult.put("Wrong Rows", all.size() - keyValues.size());
-            return importResult.toResponse();
+            BatchResult<String> batchResult = subjectService.importManually(keyValues);
+            batchResult.put("Wrong Rows", all.size() - keyValues.size());
+            return batchResult.toResponse();
         } catch (IOException | IllegalArgumentException e) {
             return Result.response(e);
         }

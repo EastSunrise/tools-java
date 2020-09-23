@@ -12,6 +12,7 @@ import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -43,6 +44,9 @@ public abstract class BaseImdbTitle {
     private List<String> keywords;
     @JsonProperty("image")
     private String posterUrl;
+
+    private List<Duration> runtimes;
+
     /**
      * Short description ending with ellipsis.
      */

@@ -10,12 +10,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
+import wsg.tools.boot.common.ServiceUtil;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.entity.SubjectEntity;
+import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.StringUtilsExt;
@@ -32,8 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
@@ -64,8 +63,8 @@ public class VideoManager extends BaseServiceImpl {
     /**
      * Permit duration of a file mustn't be 30s shorter nor 90s longer than the standard duration.
      */
-    private static final int MOVIE_DURATION_FLOOR = -60;
-    private static final int MOVIE_DURATION_CEIL = 60;
+    private static final int MOVIE_DURATION_FLOOR = -180;
+    private static final int MOVIE_DURATION_CEIL = 180;
 
     static {
         System.setProperty("java.awt.headless", "false");
@@ -76,7 +75,7 @@ public class VideoManager extends BaseServiceImpl {
     private SubjectRepository subjectRepository;
     private ThreadPoolTaskExecutor executor;
 
-    public Map<SubjectEntity, GenericResult<File>> collect() throws ExecutionException, InterruptedException {
+    public BatchResult<SubjectEntity> collect() {
         Semaphore semaphore = new Semaphore(0);
         Semaphore closed = new Semaphore(0);
         executor.submit(() -> {
@@ -94,25 +93,12 @@ public class VideoManager extends BaseServiceImpl {
             frame.dispose();
         });
 
-        Future<Map<SubjectEntity, GenericResult<File>>> task = executor.submit(() -> {
-            Map<SubjectEntity, GenericResult<File>> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-            for (SubjectEntity entity : subjectRepository.findAll()) {
-                if (entity instanceof MovieEntity) {
-                    try {
-                        GenericResult<File> result = getFile((MovieEntity) entity, semaphore);
-                        if (!result.isSuccess()) {
-                            log.info(result.getMessage());
-                            map.put(entity, result);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            closed.release();
-            return map;
-        });
-        return task.get();
+        List<SubjectEntity> entities = subjectRepository.findAll().stream()
+                .filter(entity -> entity instanceof MovieEntity)
+                .collect(Collectors.toList());
+        BatchResult<SubjectEntity> result = ServiceUtil.batch(entities, entity -> getFile((MovieEntity) entity, semaphore));
+        closed.release();
+        return result;
     }
 
     /**
@@ -133,7 +119,7 @@ public class VideoManager extends BaseServiceImpl {
                 cdn, "Temp", entity.getId() + "" + SignEnum.UNDERSCORE + entity.getTitle()));
         if (tempDir.isDirectory() && Objects.requireNonNull(tempDir.list()).length > 0) {
             if (FileUtils.listFiles(tempDir, Downloader.THUNDER_FILE_SUFFIXES, true).isEmpty()) {
-                Map<File, GenericResult<Integer>> map = FileUtils.listFiles(tempDir, Downloader.VIDEO_SUFFIXES, true).stream()
+                Map<File, GenericResult<Integer>> map = FileUtils.listFiles(tempDir, null, true).stream()
                         .collect(Collectors.toMap(file -> file, file -> this.weight(file, entity.getDurations())));
                 Map.Entry<File, GenericResult<Integer>> max = map.entrySet().stream()
                         .max(Comparator.comparingInt(e -> (e.getValue().isSuccess() ? e.getValue().getData() : -1))).orElseThrow();
@@ -142,7 +128,7 @@ public class VideoManager extends BaseServiceImpl {
                     String message = map.entrySet().stream()
                             .map(entry -> String.format("Reason: %s File: %s", entry.getValue().getMessage(), entry.getKey().getName()))
                             .collect(Collectors.joining("\n"));
-                    return new GenericResult<>("No qualified files downloaded for %s.\n%s", entity.getTitle(), message);
+                    return new GenericResult<>("No qualified files downloaded.\n%s", message);
                 }
                 File srcFile = max.getKey();
                 File destFile = new File(location + srcFile.getName().substring(srcFile.getName().lastIndexOf(SignEnum.DOT.getC())));
@@ -154,7 +140,7 @@ public class VideoManager extends BaseServiceImpl {
                 }
                 return GenericResult.of(destFile);
             } else {
-                return new GenericResult<>("None files of %s found, resources downloading.", entity.getTitle());
+                return new GenericResult<>("Resources are downloading.");
             }
         }
 
@@ -190,12 +176,12 @@ public class VideoManager extends BaseServiceImpl {
                     throw AssertUtils.runtimeException(e);
                 }
             }
-            return new GenericResult<>("None files of %s found, %d resources added to download.", entity.getTitle(), count);
+            return new GenericResult<>("Resources added to download, count: %d.", count);
         } else {
             if (!tempDir.delete()) {
                 log.error("Can't delete temp directory {}.", tempDir.getPath());
             }
-            return new GenericResult<>("None files of %s found, none resources found either.", entity.getTitle());
+            return new GenericResult<>("None resources found.");
         }
     }
 

@@ -14,7 +14,7 @@ import wsg.tools.internet.base.BaseSite;
 @Getter
 public class SiteResult<T> extends GenericResult<T> {
 
-    private BaseSite site;
+    private BaseSite<?> site;
     private String resource;
     private String resourceId;
     private HttpResponseException cause;
@@ -23,7 +23,7 @@ public class SiteResult<T> extends GenericResult<T> {
         super(data);
     }
 
-    public SiteResult(BaseSite site, String resource, String resourceId, HttpResponseException cause) {
+    public SiteResult(BaseSite<?> site, String resource, String resourceId, HttpResponseException cause) {
         super("Can't get %s from %s, id: %s, reason: %s.", resource, site.getName(), resourceId, cause.getReasonPhrase());
         this.site = site;
         this.resource = resource;

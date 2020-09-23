@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
@@ -20,9 +22,11 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * <a href="https://imdb.com">IMDb</a>
@@ -71,6 +75,13 @@ public final class ImdbSite extends BaseSite<String> {
             episode.setSeriesId(seriesId);
             return episode;
         }
+
+        Element details = document.selectFirst("div#titleDetails");
+        List<Duration> runtimes = details.select(TAG_TIME).stream()
+                .map(e -> Duration.parse(StringUtils.remove(e.attr(ATTR_DATETIME), SignEnum.COMMA.getC())))
+                .collect(Collectors.toList());
+        subject.setRuntimes(runtimes);
+
         return subject;
     }
 

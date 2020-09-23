@@ -14,7 +14,7 @@ import wsg.tools.boot.dao.jpa.mapper.UserRecordRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.base.ListResult;
 import wsg.tools.boot.pojo.entity.*;
-import wsg.tools.boot.pojo.result.ImportResult;
+import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.SiteResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
@@ -300,6 +300,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         if (imdbTitle instanceof ImdbEpisode) {
             entity.getDurations().add(((ImdbEpisode) imdbTitle).getDuration());
         }
+        if (imdbTitle.getRuntimes() != null) {
+            entity.getDurations().addAll(imdbTitle.getRuntimes());
+        }
     }
 
     private <T> void addAll(List<T> target, List<T> added) {
@@ -309,7 +312,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public ImportResult importDouban(long userId, LocalDate since) {
+    public BatchResult<Long> importDouban(long userId, LocalDate since) {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate();
             if (since == null) {
@@ -327,7 +330,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 log.error(e.getMessage());
                 continue;
             } catch (IOException e) {
-                return new ImportResult(e);
+                return new BatchResult<>(e);
             }
             for (Map.Entry<Long, LocalDate> entry : subjects.entrySet()) {
                 GenericResult<Long> result = template.execute(status -> {
@@ -352,11 +355,11 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 }
             }
         }
-        return new ImportResult(count, fails);
+        return new BatchResult<>(count, fails);
     }
 
     @Override
-    public ImportResult importManually(List<DefaultKeyValue<String, Long>> ids) {
+    public BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids) {
         log.info("Start to import subjects manually.");
         int count = 0;
         Map<String, String> fails = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
@@ -375,7 +378,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 fails.put(entry.getKey(), result.getMessage());
             }
         }
-        return new ImportResult(count, fails);
+        return new BatchResult<>(count, fails);
     }
 
     @Override
