@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Detail of a title.
@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class TitleDetail {
+public class BaseDetail {
 
-    private List<AbstractResource> resources;
+    private Set<AbstractResource> resources;
 }

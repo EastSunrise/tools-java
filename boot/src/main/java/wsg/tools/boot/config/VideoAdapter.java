@@ -8,9 +8,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
+import wsg.tools.boot.pojo.base.ListResult;
 import wsg.tools.boot.pojo.entity.IdRelationEntity;
+import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.result.SiteResult;
 import wsg.tools.common.util.AssertUtils;
+import wsg.tools.internet.resource.entity.AbstractResource;
+import wsg.tools.internet.resource.site.BdFilmSite;
+import wsg.tools.internet.resource.site.XlcSite;
+import wsg.tools.internet.resource.site.Y80sSite;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
@@ -22,10 +28,7 @@ import wsg.tools.internet.video.site.OmdbSite;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Configuration for video to get instances of video sites.
@@ -36,19 +39,39 @@ import java.util.Optional;
 @Slf4j
 @Configuration
 @PropertySource("classpath:config/private/video.properties")
-public class VideoConfig implements InitializingBean {
+public class VideoAdapter implements InitializingBean {
 
     private static final String DOUBAN_RESOURCE = "douban subject";
     private static final String IMDB_RESOURCE = "imdb title";
-
+    private final Y80sSite y80sSite = new Y80sSite();
+    private final XlcSite xlcSite = new XlcSite();
+    private final BdFilmSite bdFilmSite = new BdFilmSite();
+    private final ImdbSite imdbSite = new ImdbSite();
+    private final DoubanSite doubanSite = new DoubanSite();
     @Value("${omdb.api.key}")
     private String omdbApiKey;
-
-    private ImdbSite imdbSite;
-    private DoubanSite doubanSite;
     private OmdbSite omdbSite;
-
     private IdRelationRepository relationRepository;
+
+    public ListResult<AbstractResource> searchResources(MovieEntity entity) {
+        List<AbstractResource> resources = new ArrayList<>();
+        try {
+            resources.addAll(y80sSite.collectMovie(entity.getTitle(), entity.getYear(), entity.getDbId()));
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+        try {
+            resources.addAll(xlcSite.collectMovie(entity.getTitle(), entity.getYear()));
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+        try {
+            resources.addAll(bdFilmSite.collectMovie(entity.getTitle(), entity.getImdbId(), entity.getDbId()));
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+        return new ListResult<>(resources);
+    }
 
     public SiteResult<BaseDoubanSubject> doubanSubject(long dbId) throws IOException {
         try {
@@ -108,8 +131,6 @@ public class VideoConfig implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        doubanSite = new DoubanSite();
-        imdbSite = new ImdbSite();
         omdbSite = new OmdbSite(omdbApiKey);
     }
 

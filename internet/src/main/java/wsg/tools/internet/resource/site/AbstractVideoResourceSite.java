@@ -7,18 +7,14 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.SchemeEnum;
 import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.entity.SimpleTitle;
-import wsg.tools.internet.resource.entity.TitleDetail;
-import wsg.tools.internet.video.site.DoubanSite;
+import wsg.tools.internet.resource.entity.BaseDetail;
+import wsg.tools.internet.resource.entity.BaseTitle;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.time.Year;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,9 +25,13 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends BaseSite<Void> {
+public abstract class AbstractVideoResourceSite<T extends BaseTitle, D extends BaseDetail> extends BaseSite {
 
     private static final Pattern POSSIBLE_TITLE_REGEX = Pattern.compile("(\\[[^\\[\\]]+])?([^\\[\\]]+)(\\[[^\\[\\]]+][^\\[\\]]*)?");
+
+    protected AbstractVideoResourceSite(String name, String host) {
+        super(name, host);
+    }
 
     protected AbstractVideoResourceSite(String name, String domain, double postPermitsPerSecond) {
         this(name, SchemeEnum.HTTPS, domain, postPermitsPerSecond);
@@ -42,24 +42,13 @@ public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends B
     }
 
     /**
-     * Search and collect resources based on the given arguments.
-     *
-     * @param title title of the subject
-     * @param year  year of the subject
-     * @param dbId  corresponding id on {@link DoubanSite}, may null
-     * @return list of resources
-     * @throws IOException exception when requesting
-     */
-    public abstract List<AbstractResource> collectMovie(@Nonnull String title, @Nonnull Year year, @Nullable Long dbId) throws IOException;
-
-    /**
      * Collect all available resources by the given keyword.
      * <p>
      * The resources are not filtered.
      */
-    public List<AbstractResource> collect(String keyword) throws IOException {
-        List<AbstractResource> resources = new ArrayList<>();
-        for (SimpleTitle title : search(keyword)) {
+    public Set<AbstractResource> collect(String keyword) throws IOException {
+        Set<AbstractResource> resources = new HashSet<>();
+        for (T title : search(keyword)) {
             resources.addAll(find(title).getResources());
         }
         return resources;
@@ -72,7 +61,7 @@ public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends B
      * @return list of returned items
      * @throws IOException request exception
      */
-    public abstract List<SimpleTitle> search(@Nonnull String keyword) throws IOException;
+    protected abstract Set<T> search(@Nonnull String keyword) throws IOException;
 
     /**
      * Obtains details of the given title.
@@ -81,7 +70,7 @@ public abstract class AbstractVideoResourceSite<T extends TitleDetail> extends B
      * @return resource
      * @throws IOException request exception
      */
-    public abstract T find(@Nonnull SimpleTitle title) throws IOException;
+    protected abstract D find(@Nonnull T title) throws IOException;
 
     /**
      * Validate whether the title is one possible title of the given target.

@@ -7,18 +7,14 @@ import org.jsoup.nodes.Element;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
+import wsg.tools.internet.resource.entity.BaseDetail;
 import wsg.tools.internet.resource.entity.SimpleTitle;
-import wsg.tools.internet.resource.entity.TitleDetail;
 import wsg.tools.internet.resource.entity.VideoTypeEnum;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.Year;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +24,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends AbstractVideoResourceSite<TitleDetail> {
+public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> {
 
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(/vod-read-id-\\d+.html)");
     private static final int TYPE_INFO_START = "类型: ".length();
@@ -38,11 +34,10 @@ public class XlcSite extends AbstractVideoResourceSite<TitleDetail> {
     }
 
     /**
-     * Search resources of movies by the given title and id of Douban.
+     * Search and collect resources based on the given arguments.
      */
-    @Override
-    public List<AbstractResource> collectMovie(@Nonnull String title, @Nonnull Year year, @Nullable Long dbId) throws IOException {
-        List<AbstractResource> resources = new ArrayList<>();
+    public Set<AbstractResource> collectMovie(String title, Year year) throws IOException {
+        Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
             if (!Objects.equals(item.getType(), VideoTypeEnum.MOVIE)) {
                 log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), VideoTypeEnum.MOVIE, item.getType());
@@ -63,10 +58,10 @@ public class XlcSite extends AbstractVideoResourceSite<TitleDetail> {
     }
 
     @Override
-    public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
+    protected final Set<SimpleTitle> search(@Nonnull String keyword) throws IOException {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
         Document document = postDocument(builder0("/vod-search"), params, true);
-        List<SimpleTitle> titles = new ArrayList<>();
+        Set<SimpleTitle> titles = new HashSet<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {
             Element h3 = div.selectFirst(TAG_H3);
@@ -88,9 +83,9 @@ public class XlcSite extends AbstractVideoResourceSite<TitleDetail> {
     }
 
     @Override
-    public TitleDetail find(@Nonnull SimpleTitle title) throws IOException {
-        TitleDetail detail = new TitleDetail();
-        List<AbstractResource> resources = new ArrayList<>();
+    protected final BaseDetail find(@Nonnull SimpleTitle title) throws IOException {
+        BaseDetail detail = new BaseDetail();
+        Set<AbstractResource> resources = new HashSet<>();
         String downList = "ul.down-list";
         String item = "li.item";
         for (Element ul : getDocument(builder0(title.getPath()), true).select(downList)) {

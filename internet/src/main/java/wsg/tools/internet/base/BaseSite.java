@@ -36,6 +36,7 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.AssertUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 
@@ -75,7 +76,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @Slf4j
 @SuppressWarnings("UnstableApiUsage")
-public abstract class BaseSite<U> implements Closeable, Loggable<U> {
+public abstract class BaseSite implements Closeable {
 
     protected static final String TAG_A = "a";
     protected static final String TAG_LI = "li";
@@ -83,9 +84,9 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_TR = "tr";
     protected static final String TAG_H3 = "h3";
-    protected static final String TAG_DL = "dl";
     protected static final String TAG_TIME = "time";
     protected static final String ATTR_HREF = "href";
+    protected static final String ATTR_TITLE = "title";
     protected static final String ATTR_DATETIME = "datetime";
 
     protected static final int CONNECT_TIME_OUT = 30000;
@@ -135,13 +136,13 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
         };
     }
 
-    @Override
-    public void login(String username, String password) throws IOException {
-        throw new LoginException("The site can't log in.");
-    }
-
-    @Override
-    public U user() {
+    /**
+     * Obtains current user, null if not logon yet.
+     *
+     * @return object of user, may identity or username
+     */
+    @Nullable
+    public String user() {
         return null;
     }
 
@@ -230,10 +231,10 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
     private String readContent(RequestBuilder builder, ContentTypeEnum contentType, boolean cached) throws IOException {
         String content;
         if (!cached) {
-            content = execute(builder, contentType);
+            content = execute(builder);
         } else {
             String filepath = builder.filepath();
-            U user = user();
+            String user = user();
             if (user != null) {
                 filepath += SignEnum.HASH.toString() + user;
             }
@@ -254,7 +255,7 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
                 }
             } else {
                 try {
-                    content = execute(builder, contentType);
+                    content = execute(builder);
                     try {
                         FileUtils.write(file, content, UTF_8);
                     } catch (IOException e) {
@@ -275,17 +276,12 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
         return handleContent(content, contentType);
     }
 
-    private String execute(RequestBuilder builder, ContentTypeEnum contentType)
+    private String execute(RequestBuilder builder)
             throws IOException {
         handleRequest(builder, context);
-        try {
-            log.info("{} from {}", builder.getMethod(), builder.displayUrl());
-            log.info("Slept for {}s.", limiters.get(builder.getMethod()).acquire());
-            String content = client.execute(builder.build(), responseHandler, context);
-            return handleResponse(content, contentType);
-        } finally {
-            updateContext();
-        }
+        log.info("{} from {}", builder.getMethod(), builder.displayUrl());
+        log.info("Slept for {}s.", limiters.get(builder.getMethod()).acquire());
+        return client.execute(builder.build(), responseHandler, context);
     }
 
     /**
@@ -298,18 +294,6 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
      * @param context the context for the request
      */
     protected void handleRequest(RequestBuilder builder, HttpContext context) { }
-
-    /**
-     * Handle content of the response.
-     *
-     * @param content     content of the response
-     * @param contentType type of the content
-     * @return handled content
-     * @throws HttpResponseException if the content contains an error
-     */
-    protected String handleResponse(String content, ContentTypeEnum contentType) throws HttpResponseException {
-        return content;
-    }
 
     /**
      * Handle content before returning as an object or a document.
@@ -344,7 +328,11 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
         }
     }
 
-    private void updateContext() {
+    /**
+     * Update context of this site.
+     * It should be called when logging in the site or the site is going to be closed, as {@link #close()} is called.
+     */
+    protected final void updateContext() {
         try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(cookieFile()))) {
             log.info("Synchronize cookies.");
             stream.writeObject(this.context.getCookieStore());
@@ -397,6 +385,7 @@ public abstract class BaseSite<U> implements Closeable, Loggable<U> {
 
     @Override
     public final void close() throws IOException {
+        updateContext();
         if (client != null) {
             client.close();
         }

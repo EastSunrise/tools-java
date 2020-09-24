@@ -25,6 +25,7 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.LoginException;
+import wsg.tools.internet.base.UnexpectContentException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
 import wsg.tools.internet.video.entity.douban.base.LoginResult;
@@ -54,14 +55,13 @@ import java.util.stream.Collectors;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends BaseSite<Long> {
+public class DoubanSite extends BaseSite {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     public static final String TITLE_PERMIT_CHARS = "[ ?#&*,-.!'0-9:;A-z·\u0080-\u024F\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\u2150-\u218F\u3040-\u30FF\u4E00-\u9FBF\uAC00-\uD7AF！：。]";
-
+    public static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
     protected static final int MAX_COUNT_ONCE = 100;
     protected static final int COUNT_PER_PAGE = 15;
-    private static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
@@ -84,7 +84,6 @@ public class DoubanSite extends BaseSite<Long> {
                 );
     }
 
-    @Override
     public final void login(String username, String password) throws IOException {
         if (getCookies().size() == 0) {
             getDocument(builder0(null), false);
@@ -98,15 +97,16 @@ public class DoubanSite extends BaseSite<Long> {
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }
+        updateContext();
         log.info("Success logging in: {}.", user());
     }
 
     @Override
-    public final Long user() {
+    public final String user() {
         for (Cookie cookie : getCookies()) {
             if ("dbcl2".equals(cookie.getName())) {
                 Matcher matcher = AssertUtils.matches(COOKIE_DBCL2_REGEX, cookie.getValue());
-                return Long.parseLong(matcher.group("id"));
+                return matcher.group("id");
             }
         }
         return null;
@@ -196,7 +196,7 @@ public class DoubanSite extends BaseSite<Long> {
             Matcher matcher = AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, item.getUrl());
             return Long.parseLong(matcher.group("id"));
         }
-        throw new RuntimeException("More than one items returned when searching by id of IMDb.");
+        throw new UnexpectContentException("More than one items returned when searching by id of IMDb.");
     }
 
     /**

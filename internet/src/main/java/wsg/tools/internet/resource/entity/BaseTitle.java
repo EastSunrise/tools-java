@@ -3,19 +3,20 @@ package wsg.tools.internet.resource.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Year;
+import java.util.Objects;
 
 /**
- * Titles of 80s.
+ * Item obtained by searching, including necessary properties.
  *
  * @author Kingen
- * @since 2020/9/23
+ * @since 2020/9/9
  */
 @Getter
 @Setter
-public class SimpleTitle extends BaseTitle {
-    private Year year;
-    private VideoTypeEnum type;
+public class BaseTitle {
+
+    private String title;
+    private String path;
 
     @Override
     public boolean equals(Object o) {
@@ -25,11 +26,12 @@ public class SimpleTitle extends BaseTitle {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return super.equals(o);
+        BaseTitle baseTitle = (BaseTitle) o;
+        return path.equals(baseTitle.path);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(path);
     }
 }

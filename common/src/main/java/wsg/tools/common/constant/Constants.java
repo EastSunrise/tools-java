@@ -26,4 +26,5 @@ public class Constants {
     public static final DateTimeFormatter NULL_FORMATTER = new DateTimeFormatterBuilder().toFormatter();
 
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
+    public static final Charset GBK = Charset.forName("GBK");
 }

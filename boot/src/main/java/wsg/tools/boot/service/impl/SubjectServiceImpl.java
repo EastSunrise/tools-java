@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import wsg.tools.boot.config.VideoConfig;
+import wsg.tools.boot.config.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.dao.jpa.mapper.UserRecordRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
-    private VideoConfig config;
+    private VideoAdapter adapter;
     private SubjectRepository subjectRepository;
     private UserRecordRepository userRecordRepository;
     private TransactionTemplate template;
@@ -58,7 +58,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     @Override
     @Transactional(rollbackFor = {IOException.class})
     public GenericResult<Long> insertSubjectByDb(long dbId) throws IOException {
-        SiteResult<BaseDoubanSubject> subjectResult = config.doubanSubject(dbId);
+        SiteResult<BaseDoubanSubject> subjectResult = adapter.doubanSubject(dbId);
         if (!subjectResult.isSuccess()) {
             Optional<IdRelation> optional = subjectRepository.findByDbId(dbId);
             return optional.map(idRelation -> GenericResult.of(idRelation.getId()))
@@ -76,17 +76,17 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return new GenericResult<>("Can't save series %d without IMDb id.", dbId);
         }
 
-        BaseImdbTitle imdbTitle = config.imdbTitle(imdbId);
+        BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId);
         return insertSeries(imdbId, imdbTitle);
     }
 
     @Override
     @Transactional(rollbackFor = {IOException.class})
     public GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId) throws IOException {
-        BaseImdbTitle imdbTitle = config.imdbTitle(imdbId);
+        BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId);
         if (imdbTitle instanceof ImdbMovie) {
             if (dbId == null) {
-                dbId = config.getDbIdByImdbId(imdbId);
+                dbId = adapter.getDbIdByImdbId(imdbId);
             }
             return insertMovie(dbId, imdbId);
         }
@@ -113,7 +113,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         MovieEntity entity = new MovieEntity();
         initEntity(entity, dbId, imdbId);
         if (dbId != null) {
-            SiteResult<BaseDoubanSubject> subjectResult = config.doubanSubject(dbId);
+            SiteResult<BaseDoubanSubject> subjectResult = adapter.doubanSubject(dbId);
             if (subjectResult.isSuccess()) {
                 copyDouban(subjectResult.getData(), entity);
             }
@@ -145,7 +145,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         if (optional.isPresent()) {
             return GenericResult.of(optional.get().getId());
         }
-        SiteResult<List<String[]>> episodesResult = config.episodes(seriesImdbId);
+        SiteResult<List<String[]>> episodesResult = adapter.episodes(seriesImdbId);
         if (!episodesResult.isSuccess()) {
             return new GenericResult<>(episodesResult.getMessage());
         }
@@ -185,7 +185,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      * All args are required not null.
      */
     private void insertSeason(String seasonImdbId, String[] episodes, long seriesId, int currentSeason) throws IOException {
-        Long seasonDbId = config.getDbIdByImdbId(seasonImdbId);
+        Long seasonDbId = adapter.getDbIdByImdbId(seasonImdbId);
         if (seasonDbId == null) {
             log.error("Can't get douban id of the season by id of IMDb {}.", seasonImdbId);
             return;
@@ -193,7 +193,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
         SeasonEntity seasonEntity = new SeasonEntity();
         initEntity(seasonEntity, seasonDbId, null);
-        SiteResult<BaseDoubanSubject> seasonResult = config.doubanSubject(seasonDbId);
+        SiteResult<BaseDoubanSubject> seasonResult = adapter.doubanSubject(seasonDbId);
         if (seasonResult.isSuccess()) {
             copyDouban(seasonResult.getData(), seasonEntity);
             seasonEntity.setEpisodesCount(((DoubanSeries) seasonResult.getData()).getEpisodesCount());
@@ -240,7 +240,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 .filter(Objects::nonNull).collect(Collectors.toList());
         entity.setLanguages(languages.size() == 0 ? null : languages);
         List<Duration> durations = new HashSet<>(entity.getDurations()).stream()
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                .filter(Objects::nonNull).sorted().collect(Collectors.toList());
         entity.setDurations(durations.size() == 0 ? null : durations);
     }
 
@@ -273,7 +273,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     private void copyImdb(String imdbId, SubjectEntity entity) throws IOException {
-        SiteResult<BaseOmdbTitle> omdbResult = config.omdbTitle(imdbId);
+        SiteResult<BaseOmdbTitle> omdbResult = adapter.omdbTitle(imdbId);
         if (omdbResult.isSuccess()) {
             BaseOmdbTitle title = omdbResult.getData();
             entity.setText(title.getText());
@@ -292,7 +292,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             log.error(omdbResult.getMessage());
         }
 
-        BaseImdbTitle imdbTitle = config.imdbTitle(imdbId);
+        BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId);
         entity.setText(imdbTitle.getText());
         if (imdbTitle instanceof ImdbMovie) {
             entity.getDurations().add(((ImdbMovie) imdbTitle).getDuration());
@@ -325,7 +325,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         for (MarkEnum mark : MarkEnum.values()) {
             Map<Long, LocalDate> subjects;
             try {
-                subjects = config.collectUserSubjects(userId, since, mark);
+                subjects = adapter.collectUserSubjects(userId, since, mark);
             } catch (HttpResponseException e) {
                 log.error(e.getMessage());
                 continue;
@@ -408,7 +408,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Autowired
-    public void setConfig(VideoConfig config) {
-        this.config = config;
+    public void setAdapter(VideoAdapter adapter) {
+        this.adapter = adapter;
     }
 }

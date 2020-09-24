@@ -8,15 +8,10 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.SystemUtils;
 import wsg.tools.internet.resource.entity.*;
-import wsg.tools.internet.resource.site.AbstractVideoResourceSite;
-import wsg.tools.internet.resource.site.XlcSite;
-import wsg.tools.internet.resource.site.Y80sSite;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.time.Year;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -36,15 +31,11 @@ public final class Downloader {
     };
     public static final String[] GOOD_VIDEO_SUFFIXES = new String[]{"mp4", "mkv"};
     public static final String[] OTHER_VIDEO_SUFFIXES = new String[]{
-            "rmvb", "avi", "mov"
+            "rmvb", "avi"
     };
     public static final String[] VIDEO_SUFFIXES = ArrayUtils.addAll(GOOD_VIDEO_SUFFIXES, OTHER_VIDEO_SUFFIXES);
     private static final String PAN_HOST = "pan.baidu.com";
     private static final String THUNDER_URL_PREFIX = "thunder";
-
-    private static final List<AbstractVideoResourceSite<? extends TitleDetail>> SITES = Arrays.asList(
-            new Y80sSite(), new XlcSite()
-    );
 
     /**
      * Encode a url to a thunder url.
@@ -112,68 +103,70 @@ public final class Downloader {
             return false;
         }
         String lowerCase = str.toLowerCase();
-        return Arrays.stream(schemes).anyMatch(suffix -> lowerCase.startsWith(suffix.toLowerCase() + "://"));
+        return Arrays.stream(schemes).anyMatch(suffix -> lowerCase.startsWith(suffix.toLowerCase() + ":"));
     }
 
     /**
      * Search and download resources of the given movie.
      *
-     * @param dir  target directory, create if not exist
-     * @param dbId may null
+     * @param dir target directory, create if not exist
      * @return count of resources downloading
      */
-    public static int downloadMovie(@Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId) {
-        return downloadMovie(dir, title, year, dbId, Downloader::filterResource);
-    }
-
-    /**
-     * Search and download resources of the given movie.
-     *
-     * @param dir  target directory, create if not exist
-     * @param dbId may null
-     * @return count of resources downloading
-     */
-    public static int downloadMovie(
-            @Nonnull File dir, @Nonnull String title, @Nonnull Year year, @Nullable Long dbId,
-            @Nonnull Predicate<AbstractResource> filter) {
+    public static int downloadResources(List<AbstractResource> resources, File dir, Predicate<AbstractResource> filter) {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
         int count = 0;
-        for (AbstractVideoResourceSite<? extends TitleDetail> site : SITES) {
-            try {
-                for (AbstractResource resource : site.collectMovie(title, year, dbId)) {
-                    if (filter.test(resource)) {
-                        try {
-                            SystemUtils.openUrl(encodeThunder(resource.getUrl()));
-                            count++;
-                        } catch (IOException e) {
-                            log.error(e.getMessage());
-                        }
-                    }
+        for (AbstractResource resource : resources) {
+            if (filter.test(resource)) {
+                try {
+                    SystemUtils.openUrl(encodeThunder(resource.getUrl()));
+                    count++;
+                } catch (IOException e) {
+                    log.error(e.getMessage());
                 }
-            } catch (IOException e) {
-                log.error(e.getMessage());
             }
         }
         return count;
     }
 
-    public static boolean filterResource(AbstractResource resource) {
-        if (resource instanceof InvalidResource) {
+    public static Predicate<AbstractResource> filter() {
+        return resource -> {
+            if (resource instanceof InvalidResource) {
+                return false;
+            }
+            if (resource instanceof Ed2kResource) {
+                return isSuffix(((Ed2kResource) resource).getFilename(), VIDEO_SUFFIXES);
+            }
+            if (resource instanceof MagnetResource) {
+                return ((MagnetResource) resource).getDisplayName() == null ||
+                        isSuffix(((MagnetResource) resource).getDisplayName(), VIDEO_SUFFIXES);
+            }
+            if (resource instanceof HttpResource) {
+                return isSuffix(((HttpResource) resource).getFilename(), VIDEO_SUFFIXES) ||
+                        isSuffix(((HttpResource) resource).getFilename(), "torrent");
+            }
             return false;
+        };
+    }
+
+    public static Predicate<AbstractResource> filter(final long minSize, final long maxSize) {
+        if (minSize < 0 || maxSize <= minSize) {
+            throw new IllegalArgumentException("Size mustn't be negative and the max one must be larger than the min one.");
         }
-        if (resource instanceof Ed2kResource) {
-            return isSuffix(((Ed2kResource) resource).getFilename(), VIDEO_SUFFIXES);
-        }
-        if (resource instanceof MagnetResource) {
-            return ((MagnetResource) resource).getDisplayName() == null ||
-                    isSuffix(((MagnetResource) resource).getDisplayName(), VIDEO_SUFFIXES);
-        }
-        if (resource instanceof HttpResource) {
-            return isSuffix(((HttpResource) resource).getFilename(), VIDEO_SUFFIXES) ||
-                    isSuffix(((HttpResource) resource).getFilename(), "torrent");
-        }
-        return false;
+        return resource -> {
+            if (!filter().test(resource)) {
+                return false;
+            }
+            if (resource instanceof Ed2kResource) {
+                long size = ((Ed2kResource) resource).getSize();
+                return size < 0 || (size >= minSize && size <= maxSize);
+            }
+            if (resource instanceof MagnetResource) {
+                long size = ((MagnetResource) resource).getSize();
+                return size < 0 || (size >= minSize && size <= maxSize);
+            }
+            return true;
+        };
     }
 }

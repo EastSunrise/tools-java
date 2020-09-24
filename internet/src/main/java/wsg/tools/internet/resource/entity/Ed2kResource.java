@@ -25,7 +25,7 @@ public class Ed2kResource extends AbstractResource {
                     "\\|(?<size>\\d+)" +
                     "\\|(?<hash>[0-9A-z]{32})" +
                     "(\\|h=(?<h>[0-9A-z]{32}))?" +
-                    "\\|/(?<extra>.*)");
+                    "(\\|/)?(?<extra>.*)");
     private final String filename;
     private final long size;
     private final String hash;

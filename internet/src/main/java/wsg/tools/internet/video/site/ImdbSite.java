@@ -34,8 +34,9 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/6/16
  */
-public final class ImdbSite extends BaseSite<String> {
+public final class ImdbSite extends BaseSite {
 
+    public static final Pattern URL_TITLE_REGEX = Pattern.compile("https://imdb\\.com/title/(?<id>tt\\d+)/?");
     private static final String TEXT_REGEX_STR = "[ !#%&'()*+,-./0-9:>?A-z·áâèéñóôùûü]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
     private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");

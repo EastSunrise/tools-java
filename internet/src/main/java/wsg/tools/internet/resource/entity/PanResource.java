@@ -1,9 +1,9 @@
 package wsg.tools.internet.resource.entity;
 
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.common.util.AssertUtils;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,15 +16,36 @@ import java.util.regex.Pattern;
 @Getter
 public class PanResource extends AbstractResource {
 
-    private static final Pattern URI_REGEX = Pattern.compile("https?://pan\\.baidu\\.com/s/([-0-9A-z]+)([^-0-9A-z].*)?");
+    private static final Pattern URI_REGEX = Pattern.compile("pan\\.baidu\\.com/s/([-0-9A-z]+)([^-0-9A-z].*)?");
 
     private final String path;
-    @Setter
-    private String password;
+    private final String password;
 
     public PanResource(String url) {
-        Matcher matcher = AssertUtils.matches(URI_REGEX, url);
+        this(url, null);
+    }
+
+    public PanResource(String url, String password) {
+        Matcher matcher = AssertUtils.find(URI_REGEX, url);
         this.path = matcher.group(1);
+        this.password = password;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PanResource that = (PanResource) o;
+        return Objects.equals(path, that.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path);
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
 import wsg.tools.boot.common.ServiceUtil;
+import wsg.tools.boot.config.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.MovieEntity;
@@ -21,8 +22,7 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.resource.download.Downloader;
-import wsg.tools.internet.resource.entity.Ed2kResource;
-import wsg.tools.internet.resource.entity.MagnetResource;
+import wsg.tools.internet.resource.entity.AbstractResource;
 import wsg.tools.internet.resource.site.AbstractVideoResourceSite;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
@@ -73,6 +73,7 @@ public class VideoManager extends BaseServiceImpl {
     @Value("${video.cdn}")
     private String cdn;
     private SubjectRepository subjectRepository;
+    private VideoAdapter adapter;
     private ThreadPoolTaskExecutor executor;
 
     public BatchResult<SubjectEntity> collect() {
@@ -152,22 +153,8 @@ public class VideoManager extends BaseServiceImpl {
                 .min(Duration::compareTo).orElseThrow()
                 .plusSeconds(MOVIE_DURATION_FLOOR)
                 .getSeconds() * MOVIE_SIZE_FLOOR);
-        int count = Downloader.downloadMovie(tempDir, entity.getTitle(), entity.getYear(), entity.getDbId(),
-                resource -> {
-                    if (!Downloader.filterResource(resource)) {
-                        return false;
-                    }
-                    if (resource instanceof Ed2kResource) {
-                        if (((Ed2kResource) resource).getSize() < minSize || ((Ed2kResource) resource).getSize() > maxSize) {
-                            return false;
-                        }
-                    }
-                    if (resource instanceof MagnetResource) {
-                        long size = ((MagnetResource) resource).getSize();
-                        return size <= 0 || (size >= minSize && size <= maxSize);
-                    }
-                    return true;
-                });
+        List<AbstractResource> resources = adapter.searchResources(entity).getData();
+        int count = Downloader.downloadResources(resources, tempDir, Downloader.filter(minSize, maxSize));
         if (count > 0) {
             if (semaphore != null) {
                 try {
@@ -292,6 +279,11 @@ public class VideoManager extends BaseServiceImpl {
             builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getOriginalTitle()));
         }
         return builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getTitle())).toString();
+    }
+
+    @Autowired
+    public void setAdapter(VideoAdapter adapter) {
+        this.adapter = adapter;
     }
 
     @Autowired

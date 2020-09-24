@@ -33,7 +33,7 @@ import java.util.Locale;
  * @author Kingen
  * @since 2020/6/18
  */
-public final class OmdbSite extends BaseSite<Void> {
+public final class OmdbSite extends BaseSite {
 
     private static final int MAX_PAGE = 100;
     private static final String NOT_FOUND_MSG = "Error getting data.";

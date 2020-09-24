@@ -11,7 +11,7 @@ import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.SchemeEnum;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.entity.IdentifiedTitleDetail;
+import wsg.tools.internet.resource.entity.IdentifiedDetail;
 import wsg.tools.internet.resource.entity.SimpleTitle;
 import wsg.tools.internet.resource.entity.VideoTypeEnum;
 
@@ -19,10 +19,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.Year;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +29,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
+public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedDetail> {
 
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com(/(ju|movie|dm|trailer|mv|video|course|zy)/\\d+)");
     private static final Pattern DOUBAN_REVIEWS_REGEX = Pattern.compile("//movie.douban.com/subject/(\\d*) ?//?reviews");
@@ -43,11 +40,10 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     }
 
     /**
-     * Search resources of movies by the given title and id of Douban.
+     * Search and collect resources based on the given arguments.
      */
-    @Override
-    public List<AbstractResource> collectMovie(@Nonnull String title, @Nonnull Year year, @Nullable Long dbId) throws IOException {
-        List<AbstractResource> resources = new ArrayList<>();
+    public Set<AbstractResource> collectMovie(String title, Year year, @Nullable Long dbId) throws IOException {
+        Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
             // excluded: not same type
             if (!Objects.equals(item.getType(), VideoTypeEnum.MOVIE)) {
@@ -58,7 +54,7 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
                 log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), year, item.getYear());
                 continue;
             }
-            IdentifiedTitleDetail resource = find(item);
+            IdentifiedDetail resource = find(item);
             // excluded: not same douban id if provided
             if (dbId != null) {
                 if (!Objects.equals(resource.getDbId(), dbId)) {
@@ -78,10 +74,10 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     }
 
     @Override
-    public List<SimpleTitle> search(@Nonnull String keyword) throws IOException {
+    protected final Set<SimpleTitle> search(@Nonnull String keyword) throws IOException {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
         Elements as = postDocument(builder0("/search"), params, true).select("a.list-group-item");
-        List<SimpleTitle> titles = new ArrayList<>();
+        Set<SimpleTitle> titles = new HashSet<>();
         for (Element a : as) {
             SimpleTitle title = new SimpleTitle();
             Matcher matcher = AssertUtils.matches(TITLE_HREF_REGEX, a.attr(ATTR_HREF));
@@ -97,12 +93,12 @@ public class Y80sSite extends AbstractVideoResourceSite<IdentifiedTitleDetail> {
     }
 
     @Override
-    public IdentifiedTitleDetail find(@Nonnull SimpleTitle title) throws IOException {
-        IdentifiedTitleDetail detail = new IdentifiedTitleDetail();
+    protected final IdentifiedDetail find(@Nonnull SimpleTitle title) throws IOException {
+        IdentifiedDetail detail = new IdentifiedDetail();
         Document document = getDocument(builder0(title.getPath()), true);
         String idStr = AssertUtils.find(DOUBAN_REVIEWS_REGEX, document.selectFirst("p.col-xs-6").html()).group(1);
         detail.setDbId("".equals(idStr) ? null : Long.parseLong(idStr));
-        List<AbstractResource> resources = new ArrayList<>();
+        Set<AbstractResource> resources = new HashSet<>();
         for (Element tr : document.select(TAG_TR)) {
             Element a = tr.selectFirst(TAG_A);
             AbstractResource resource = Downloader.classifyUrl(a.attr(ATTR_HREF));

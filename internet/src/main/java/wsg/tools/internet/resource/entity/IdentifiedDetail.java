@@ -4,14 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Detail of title with id of Douban.
+ * Detail of title with ids.
  *
  * @author Kingen
  * @since 2020/9/10
  */
 @Getter
 @Setter
-public class IdentifiedTitleDetail extends TitleDetail {
+public class IdentifiedDetail extends BaseDetail {
 
     private Long dbId;
+    private String imdbId;
 }
