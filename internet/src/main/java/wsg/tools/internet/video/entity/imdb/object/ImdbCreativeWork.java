@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
+import java.time.Year;
 import java.util.List;
 
 /**
@@ -16,6 +17,8 @@ import java.util.List;
 @Getter
 @Setter
 public class ImdbCreativeWork extends BaseImdbTitle {
+
+    private Year year;
 
     @JsonProperty("director")
     private List<ImdbPerson> directors;

@@ -1,6 +1,9 @@
 package wsg.tools.boot.pojo.base;
 
-import lombok.Getter;
+import org.slf4j.Logger;
+
+import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 /**
  * Return generic result with an object of data.
@@ -8,31 +11,63 @@ import lombok.Getter;
  * @author Kingen
  * @since 2020/6/30
  */
-@Getter
 public class GenericResult<T> extends Result {
 
-    private final T data;
+    private final T record;
 
-    protected GenericResult(T data) {
+    protected GenericResult(T record) {
         super();
-        this.data = data;
-        put("data", data);
+        this.record = record;
     }
 
     public GenericResult(String format, Object... formatArgs) {
         super(String.format(format, formatArgs));
-        this.data = null;
+        this.record = null;
     }
 
     public GenericResult(Exception e) {
         super(e);
-        this.data = null;
+        this.record = null;
     }
 
     /**
      * Obtains a successful instance of {@link GenericResult}.
      */
-    public static <T> GenericResult<T> of(T data) {
+    public static <T> GenericResult<T> of(@Nonnull T data) {
         return new GenericResult<>(data);
+    }
+
+    public T get() {
+        if (!isSuccess()) {
+            throw new IllegalArgumentException("No value present.");
+        }
+        return record;
+    }
+
+    public void ifPresentOrLog(Consumer<? super T> action, Logger logger) {
+        if (isSuccess()) {
+            action.accept(record);
+        } else {
+            logger.error(error());
+        }
+    }
+
+    public void ifPresentOr(Consumer<? super T> action, Consumer<String> errorAction) {
+        if (isSuccess()) {
+            action.accept(record);
+        } else {
+            errorAction.accept(error());
+        }
+    }
+
+    public void ifPresentOrThrows(Consumer<? super T> action) {
+        action.accept(get());
+    }
+
+    public T orElse(T other) {
+        if (isSuccess()) {
+            return record;
+        }
+        return other;
     }
 }

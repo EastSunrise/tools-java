@@ -10,12 +10,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
-import wsg.tools.boot.common.ServiceUtil;
-import wsg.tools.boot.config.VideoAdapter;
-import wsg.tools.boot.dao.jpa.mapper.SubjectRepository;
+import wsg.tools.boot.common.util.ServiceUtil;
+import wsg.tools.boot.dao.api.VideoAdapter;
+import wsg.tools.boot.dao.jpa.mapper.MovieRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.MovieEntity;
-import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.common.constant.SignEnum;
@@ -72,11 +71,11 @@ public class VideoManager extends BaseServiceImpl {
 
     @Value("${video.cdn}")
     private String cdn;
-    private SubjectRepository subjectRepository;
+    private MovieRepository movieRepository;
     private VideoAdapter adapter;
     private ThreadPoolTaskExecutor executor;
 
-    public BatchResult<SubjectEntity> collect() {
+    public BatchResult<MovieEntity> collect() {
         Semaphore semaphore = new Semaphore(0);
         Semaphore closed = new Semaphore(0);
         executor.submit(() -> {
@@ -94,10 +93,10 @@ public class VideoManager extends BaseServiceImpl {
             frame.dispose();
         });
 
-        List<SubjectEntity> entities = subjectRepository.findAll().stream()
-                .filter(entity -> entity instanceof MovieEntity)
-                .collect(Collectors.toList());
-        BatchResult<SubjectEntity> result = ServiceUtil.batch(entities, entity -> getFile((MovieEntity) entity, semaphore));
+        BatchResult<MovieEntity> result = ServiceUtil.batch(
+                movieRepository.findAll(),
+                entity -> getFile(entity, semaphore)
+        );
         closed.release();
         return result;
     }
@@ -123,11 +122,11 @@ public class VideoManager extends BaseServiceImpl {
                 Map<File, GenericResult<Integer>> map = FileUtils.listFiles(tempDir, null, true).stream()
                         .collect(Collectors.toMap(file -> file, file -> this.weight(file, entity.getDurations())));
                 Map.Entry<File, GenericResult<Integer>> max = map.entrySet().stream()
-                        .max(Comparator.comparingInt(e -> (e.getValue().isSuccess() ? e.getValue().getData() : -1))).orElseThrow();
+                        .max(Comparator.comparingInt(entry -> (entry.getValue().orElse(-1)))).orElseThrow();
                 GenericResult<Integer> result = max.getValue();
                 if (!result.isSuccess()) {
                     String message = map.entrySet().stream()
-                            .map(entry -> String.format("Reason: %s File: %s", entry.getValue().getMessage(), entry.getKey().getName()))
+                            .map(entry -> String.format("Reason: %s File: %s", entry.getValue().error(), entry.getKey().getName()))
                             .collect(Collectors.joining("\n"));
                     return new GenericResult<>("No qualified files downloaded.\n%s", message);
                 }
@@ -153,7 +152,7 @@ public class VideoManager extends BaseServiceImpl {
                 .min(Duration::compareTo).orElseThrow()
                 .plusSeconds(MOVIE_DURATION_FLOOR)
                 .getSeconds() * MOVIE_SIZE_FLOOR);
-        List<AbstractResource> resources = adapter.searchResources(entity).getData();
+        Set<AbstractResource> resources = adapter.searchResources(entity);
         int count = Downloader.downloadResources(resources, tempDir, Downloader.filter(minSize, maxSize));
         if (count > 0) {
             if (semaphore != null) {
@@ -273,8 +272,7 @@ public class VideoManager extends BaseServiceImpl {
                     .append(SignEnum.SPACE)
                     .append("其他");
         }
-        builder.append(File.separator)
-                .append(entity.getYear());
+        builder.append(File.separator).append(entity.getYear());
         if (StringUtils.isNotBlank(entity.getOriginalTitle())) {
             builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getOriginalTitle()));
         }
@@ -292,7 +290,7 @@ public class VideoManager extends BaseServiceImpl {
     }
 
     @Autowired
-    public void setSubjectRepository(SubjectRepository subjectRepository) {
-        this.subjectRepository = subjectRepository;
+    public void setMovieRepository(MovieRepository movieRepository) {
+        this.movieRepository = movieRepository;
     }
 }

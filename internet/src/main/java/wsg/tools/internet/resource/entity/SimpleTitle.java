@@ -3,8 +3,6 @@ package wsg.tools.internet.resource.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Year;
-
 /**
  * Titles of 80s.
  *
@@ -14,7 +12,7 @@ import java.time.Year;
 @Getter
 @Setter
 public class SimpleTitle extends BaseTitle {
-    private Year year;
+    private Integer year;
     private VideoTypeEnum type;
 
     @Override

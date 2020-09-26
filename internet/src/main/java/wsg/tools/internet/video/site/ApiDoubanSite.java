@@ -8,6 +8,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.util.AssertUtils;
+import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
 import wsg.tools.internet.video.entity.douban.container.ChartResult;
@@ -19,7 +21,6 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -52,45 +53,53 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
-    public Subject apiMovieSubject(long subjectId) throws IOException {
+    public Subject apiMovieSubject(long subjectId) throws NotFoundException {
         return getObject(uriBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
-    public ImdbInfo apiMovieImdb(String imdbId) throws IOException {
+    public ImdbInfo apiMovieImdb(String imdbId) throws NotFoundException {
         return getObject(uriBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
-    public Celebrity apiMovieCelebrity(long celebrityId) throws IOException {
+    public Celebrity apiMovieCelebrity(long celebrityId) throws NotFoundException {
         return getObject(uriBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
-    public RankedResult apiMovieWeekly() throws IOException {
-        return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, false);
+    public RankedResult apiMovieWeekly() {
+        try {
+            return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, false);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     /**
      * It's updated every Friday.
      */
-    public BoxResult apiMovieUsBox() throws IOException {
-        return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, true);
+    public BoxResult apiMovieUsBox() {
+        try {
+            return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieTop250() throws IOException {
+    public Pair<String, List<SimpleSubject>> apiMovieTop250() {
         return getApiChart(uriBuilder("/v2/movie/top250"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws IOException {
+    public Pair<String, List<SimpleSubject>> apiMovieNewMovies() {
         return getApiChart(uriBuilder("/v2/movie/new_movies"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws IOException {
+    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) {
         return getApiChart(uriBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws IOException {
+    public Pair<String, List<SimpleSubject>> apiMovieComingSoon() {
         return getApiChart(uriBuilder("/v2/movie/coming_soon"));
     }
 
@@ -99,14 +108,19 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(URIBuilder builder) throws IOException {
+    private Pair<String, List<SimpleSubject>> getApiChart(URIBuilder builder) {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
         builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
             builder.setParameter("start", String.valueOf(start));
-            ChartResult chartResult = getObject(builder, ChartResult.class, false);
+            ChartResult chartResult;
+            try {
+                chartResult = getObject(builder, ChartResult.class, false);
+            } catch (NotFoundException e) {
+                throw AssertUtils.runtimeException(e);
+            }
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -120,23 +134,23 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * Only include official photos.
      */
-    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId) throws IOException {
+    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId) throws NotFoundException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/photos", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId) throws IOException {
+    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId) throws NotFoundException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/reviews", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId) throws IOException {
+    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId) throws NotFoundException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/comments", subjectId);
     }
 
-    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId) throws IOException {
+    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId) throws NotFoundException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/photos", celebrityId);
     }
 
-    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId) throws IOException {
+    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId) throws NotFoundException {
         return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/works", celebrityId);
     }
 
@@ -145,7 +159,8 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of owner-content
      */
-    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type, String path, long ownerId) throws IOException {
+    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type, String path, long ownerId)
+            throws NotFoundException {
         int start = 0;
         List<C> content = new LinkedList<>();
         O owner;

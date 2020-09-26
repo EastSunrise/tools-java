@@ -7,14 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ContentTypeEnum;
+import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.video.entity.omdb.base.BaseOmdbTitle;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
@@ -22,7 +21,6 @@ import wsg.tools.internet.video.entity.omdb.object.OmdbSeason;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.handler.CommaSeparatedNumberDeserializationProblemHandler;
 
-import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -68,7 +66,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
-    public BaseOmdbTitle title(String id) throws IOException {
+    public BaseOmdbTitle title(String id) throws NotFoundException {
         return getObject(builder0("/")
                 .addParameter("i", id)
                 .addParameter("plot", "full"), BaseOmdbTitle.class);
@@ -79,7 +77,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @param season start with 1
      */
-    public OmdbSeason season(String seriesId, int season) throws IOException {
+    public OmdbSeason season(String seriesId, int season) throws NotFoundException {
         return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season)), OmdbSeason.class);
@@ -90,7 +88,7 @@ public final class OmdbSite extends BaseSite {
      *
      * @param season start with 1
      */
-    public OmdbEpisode episode(String seriesId, int season, int episode) throws IOException {
+    public OmdbEpisode episode(String seriesId, int season, int episode) throws NotFoundException {
         return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season))
@@ -100,7 +98,7 @@ public final class OmdbSite extends BaseSite {
     /**
      * Search subject fast.
      */
-    public BaseOmdbTitle search(String s) throws IOException {
+    public BaseOmdbTitle search(String s) {
         return search(s, null, null, 1);
     }
 
@@ -111,7 +109,7 @@ public final class OmdbSite extends BaseSite {
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws IOException {
+    public BaseOmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) {
         URIBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
@@ -124,7 +122,11 @@ public final class OmdbSite extends BaseSite {
         } else {
             builder.addParameter("page", String.valueOf(page));
         }
-        return getObject(builder, BaseOmdbTitle.class);
+        try {
+            return getObject(builder, BaseOmdbTitle.class);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     @Override
@@ -133,7 +135,7 @@ public final class OmdbSite extends BaseSite {
     }
 
     @Override
-    public String handleContent(String content, ContentTypeEnum contentType) throws HttpResponseException {
+    public String handleContent(String content, ContentTypeEnum contentType) throws NotFoundException {
         if (!ContentTypeEnum.JSON.equals(contentType)) {
             return content;
         }
@@ -150,9 +152,9 @@ public final class OmdbSite extends BaseSite {
             String error = node.get("Error").asText();
             if (NOT_FOUND_MSG.equals(error) ||
                     SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
+                throw new NotFoundException(error);
             }
-            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
+            throw new RuntimeException(error);
         }
     }
 }

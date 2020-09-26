@@ -8,6 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.base.SchemeEnum;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
@@ -17,8 +18,6 @@ import wsg.tools.internet.resource.entity.VideoTypeEnum;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,7 +41,7 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
     /**
      * Search and collect resources based on the given arguments.
      */
-    public Set<AbstractResource> collectMovie(String title, Year year, @Nullable Long dbId) throws IOException {
+    public Set<AbstractResource> collectMovie(String title, int year, @Nullable Long dbId) {
         Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
             // excluded: not same type
@@ -63,7 +62,7 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
                 }
             }
             // excluded: not a possible title
-            if (notPossibleTitles(title, year.getValue(), item.getTitle())) {
+            if (notPossibleTitles(title, year, item.getTitle())) {
                 log.info("Excluded title: {}, not a possible title by {}.", item.getTitle(), title);
                 continue;
             }
@@ -74,9 +73,14 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
     }
 
     @Override
-    protected final Set<SimpleTitle> search(@Nonnull String keyword) throws IOException {
+    protected final Set<SimpleTitle> search(@Nonnull String keyword) {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
-        Elements as = postDocument(builder0("/search"), params, true).select("a.list-group-item");
+        Elements as;
+        try {
+            as = postDocument(builder0("/search"), params, true).select("a.list-group-item");
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         Set<SimpleTitle> titles = new HashSet<>();
         for (Element a : as) {
             SimpleTitle title = new SimpleTitle();
@@ -86,16 +90,21 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
             Element small = a.selectFirst(TAG_SMALL);
             title.setTitle(small.previousSibling().outerHtml().strip());
             String text = small.text();
-            title.setYear((StringUtils.isBlank(text) || UNKNOWN_YEAR.equals(text)) ? null : Year.parse(text));
+            title.setYear((StringUtils.isBlank(text) || UNKNOWN_YEAR.equals(text)) ? null : Integer.parseInt(text));
             titles.add(title);
         }
         return titles;
     }
 
     @Override
-    protected final IdentifiedDetail find(@Nonnull SimpleTitle title) throws IOException {
+    protected final IdentifiedDetail find(@Nonnull SimpleTitle title) {
         IdentifiedDetail detail = new IdentifiedDetail();
-        Document document = getDocument(builder0(title.getPath()), true);
+        Document document;
+        try {
+            document = getDocument(builder0(title.getPath()), true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         String idStr = AssertUtils.find(DOUBAN_REVIEWS_REGEX, document.selectFirst("p.col-xs-6").html()).group(1);
         detail.setDbId("".equals(idStr) ? null : Long.parseLong(idStr));
         Set<AbstractResource> resources = new HashSet<>();

@@ -6,6 +6,7 @@ import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
 import java.time.Duration;
+import java.time.Year;
 import java.util.List;
 
 /**
@@ -17,6 +18,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ImdbEpisode extends BaseImdbTitle {
+    private Year year;
 
     private String seriesId;
     @JsonProperty("timeRequired")

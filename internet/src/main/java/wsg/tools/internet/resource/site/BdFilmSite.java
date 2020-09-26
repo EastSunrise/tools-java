@@ -8,6 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
+import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
 import wsg.tools.internet.resource.entity.BaseTitle;
@@ -15,7 +16,6 @@ import wsg.tools.internet.resource.entity.IdentifiedDetail;
 import wsg.tools.internet.resource.entity.PanResource;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
@@ -44,7 +44,7 @@ public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, Ident
         super("BD-Film", "bd-film.cc");
     }
 
-    public Set<AbstractResource> collectMovie(String title, String imdbId, Long dbId) throws IOException {
+    public Set<AbstractResource> collectMovie(String title, String imdbId, Long dbId) {
         if (imdbId == null && dbId == null) {
             throw new IllegalArgumentException("At least one of the ids is provided.");
         }
@@ -73,8 +73,13 @@ public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, Ident
     }
 
     @Override
-    protected final Set<BaseTitle> search(@Nonnull String keyword) throws IOException {
-        Document document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
+    protected final Set<BaseTitle> search(@Nonnull String keyword) {
+        Document document;
+        try {
+            document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
         Set<BaseTitle> titles = new HashSet<>();
         for (Element li : lis) {
@@ -93,9 +98,14 @@ public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, Ident
     }
 
     @Override
-    protected final IdentifiedDetail find(@Nonnull BaseTitle title) throws IOException {
+    protected final IdentifiedDetail find(@Nonnull BaseTitle title) {
         IdentifiedDetail detail = new IdentifiedDetail();
-        Document document = getDocument(builder0(title.getPath()), true);
+        Document document;
+        try {
+            document = getDocument(builder0(title.getPath()), true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
 
         Element script = document.body().selectFirst("> script[type=text/javascript]");
         if (script == null) {

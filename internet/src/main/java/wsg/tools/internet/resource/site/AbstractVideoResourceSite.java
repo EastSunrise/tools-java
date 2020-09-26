@@ -11,7 +11,6 @@ import wsg.tools.internet.resource.entity.BaseDetail;
 import wsg.tools.internet.resource.entity.BaseTitle;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,7 +45,7 @@ public abstract class AbstractVideoResourceSite<T extends BaseTitle, D extends B
      * <p>
      * The resources are not filtered.
      */
-    public Set<AbstractResource> collect(String keyword) throws IOException {
+    public Set<AbstractResource> collect(String keyword) {
         Set<AbstractResource> resources = new HashSet<>();
         for (T title : search(keyword)) {
             resources.addAll(find(title).getResources());
@@ -59,18 +58,16 @@ public abstract class AbstractVideoResourceSite<T extends BaseTitle, D extends B
      *
      * @param keyword keyword to search
      * @return list of returned items
-     * @throws IOException request exception
      */
-    protected abstract Set<T> search(@Nonnull String keyword) throws IOException;
+    protected abstract Set<T> search(@Nonnull String keyword);
 
     /**
      * Obtains details of the given title.
      *
      * @param title given title of the page of the resources
      * @return resource
-     * @throws IOException request exception
      */
-    protected abstract D find(@Nonnull T title) throws IOException;
+    protected abstract D find(@Nonnull T title);
 
     /**
      * Validate whether the title is one possible title of the given target.

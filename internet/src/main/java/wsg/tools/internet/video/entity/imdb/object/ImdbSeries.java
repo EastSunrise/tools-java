@@ -3,6 +3,7 @@ package wsg.tools.internet.video.entity.imdb.object;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
+import wsg.tools.internet.video.entity.imdb.info.YearInfo;
 
 /**
  * IMDb TV Series.
@@ -14,5 +15,6 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 @Setter
 public class ImdbSeries extends BaseImdbTitle {
 
+    private YearInfo yearInfo;
     private ImdbVideoObject trailer;
 }

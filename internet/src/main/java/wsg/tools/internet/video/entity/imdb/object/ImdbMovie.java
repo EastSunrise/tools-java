@@ -6,6 +6,7 @@ import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
 import java.time.Duration;
+import java.time.Year;
 import java.util.List;
 
 /**
@@ -18,6 +19,7 @@ import java.util.List;
 @Setter
 public class ImdbMovie extends BaseImdbTitle {
 
+    private Year year;
     private Duration duration;
 
     private ImdbVideoObject trailer;

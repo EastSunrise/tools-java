@@ -11,29 +11,20 @@ import java.util.Map;
  * @author Kingen
  * @since 2020/8/6
  */
-@Getter
 public class BatchResult<T> extends Result {
 
-    private int count;
-    private Map<T, String> fails;
+    private final int total;
+    private final int count;
+    @Getter
+    private final Map<T, String> fails;
 
     /**
      * Instantiate a successful result.
      */
     public BatchResult(int count, Map<T, String> fails) {
+        super();
         this.count = count;
         this.fails = fails;
-        put("count", count);
-        put("fails", fails);
-        put("total", getTotal());
-    }
-
-    public BatchResult(Exception e) {
-        super(e);
-    }
-
-    public int getTotal() {
-        assert success;
-        return count + fails.size();
+        this.total = count + fails.size();
     }
 }

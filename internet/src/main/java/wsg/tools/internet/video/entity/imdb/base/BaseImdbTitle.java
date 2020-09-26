@@ -9,6 +9,7 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.entity.imdb.extra.AggregateRating;
 import wsg.tools.internet.video.entity.imdb.object.*;
 import wsg.tools.internet.video.enums.GenreEnum;
+import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
@@ -46,6 +47,7 @@ public abstract class BaseImdbTitle {
     private String posterUrl;
 
     private List<Duration> runtimes;
+    private List<LanguageEnum> languages;
 
     /**
      * Short description ending with ellipsis.

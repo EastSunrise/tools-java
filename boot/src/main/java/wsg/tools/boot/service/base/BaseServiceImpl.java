@@ -2,7 +2,7 @@ package wsg.tools.boot.service.base;
 
 import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
-import wsg.tools.boot.common.BeanUtilExt;
+import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.pojo.base.BaseEntity;
 import wsg.tools.boot.pojo.base.BaseQueryDto;
 

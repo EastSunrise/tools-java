@@ -6,23 +6,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.NotFoundException;
+import wsg.tools.internet.base.UnexpectedContentException;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
+import wsg.tools.internet.video.entity.imdb.info.YearInfo;
+import wsg.tools.internet.video.entity.imdb.object.ImdbCreativeWork;
 import wsg.tools.internet.video.entity.imdb.object.ImdbEpisode;
+import wsg.tools.internet.video.entity.imdb.object.ImdbMovie;
+import wsg.tools.internet.video.entity.imdb.object.ImdbSeries;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 
-import java.io.IOException;
 import java.time.Duration;
+import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,10 +41,18 @@ import java.util.stream.Collectors;
  */
 public final class ImdbSite extends BaseSite {
 
-    public static final Pattern URL_TITLE_REGEX = Pattern.compile("https://imdb\\.com/title/(?<id>tt\\d+)/?");
-    private static final String TEXT_REGEX_STR = "[ !#%&'()*+,-./0-9:>?A-z·áâèéñóôùûü]+";
+    private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
-    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
+    private static final Pattern MOVIE_PAGE_TITLE_REGEX =
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
+    private static final Pattern SERIES_PAGE_TITLE_REGEX =
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV (Mini-)?Series (?<start>\\d{4})(–((?<end>\\d{4})| )?)?\\) - IMDb");
+    private static final Pattern SEASON_PAGE_TITLE_REGEX =
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
+    private static final Pattern EPISODE_PAGE_TITLE_REGEX =
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
+    private static final Pattern WORK_PAGE_TITLE_REGEX =
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
 
     public ImdbSite() {
@@ -61,29 +74,67 @@ public final class ImdbSite extends BaseSite {
     /**
      * Get subject info by parsing the html page
      */
-    public BaseImdbTitle title(String tt) throws IOException {
+    public BaseImdbTitle title(String tt) throws NotFoundException {
         Document document = getDocument(builder0("/title/%s", tt), true);
-        BaseImdbTitle subject;
+        BaseImdbTitle title;
         try {
-            subject = mapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), BaseImdbTitle.class);
+            title = mapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), BaseImdbTitle.class);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
-        if (subject instanceof ImdbEpisode) {
-            ImdbEpisode episode = (ImdbEpisode) subject;
+
+        if (title instanceof ImdbEpisode) {
             String href = document.selectFirst("div.titleParent").selectFirst(TAG_A).attr(ATTR_HREF).split("\\?")[0];
             String seriesId = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
-            episode.setSeriesId(seriesId);
-            return episode;
+            ((ImdbEpisode) title).setSeriesId(seriesId);
         }
 
-        Element details = document.selectFirst("div#titleDetails");
-        List<Duration> runtimes = details.select(TAG_TIME).stream()
-                .map(e -> Duration.parse(StringUtils.remove(e.attr(ATTR_DATETIME), SignEnum.COMMA.getC())))
-                .collect(Collectors.toList());
-        subject.setRuntimes(runtimes);
+        if (title instanceof ImdbMovie) {
+            Matcher matcher = AssertUtils.matches(MOVIE_PAGE_TITLE_REGEX, document.title());
+            String year = matcher.group("year");
+            if (year != null) {
+                ((ImdbMovie) title).setYear(Year.of(Integer.parseInt(year)));
+            }
+        } else if (title instanceof ImdbSeries) {
+            Matcher matcher = AssertUtils.matches(SERIES_PAGE_TITLE_REGEX, document.title());
+            String end = matcher.group("end");
+            ((ImdbSeries) title).setYearInfo(new YearInfo(
+                    Year.of(Integer.parseInt(matcher.group("start"))),
+                    end == null ? null : Year.of(Integer.parseInt(end))
+            ));
+        } else if (title instanceof ImdbEpisode) {
+            Matcher matcher = AssertUtils.matches(EPISODE_PAGE_TITLE_REGEX, document.title());
+            String year = matcher.group("year");
+            if (year != null) {
+                ((ImdbEpisode) title).setYear(Year.of(Integer.parseInt(year)));
+            }
+        } else if (title instanceof ImdbCreativeWork) {
+            Matcher matcher = AssertUtils.matches(WORK_PAGE_TITLE_REGEX, document.title());
+            ((ImdbCreativeWork) title).setYear(Year.of(Integer.parseInt(matcher.group("year"))));
+        } else {
+            throw new UnexpectedContentException("Unknown type of imdb title: " + tt);
+        }
 
-        return subject;
+        Map<String, Element> details = document.selectFirst("div#titleDetails").select("div.txt-block").stream()
+                .filter(div -> div.selectFirst(TAG_H4) != null)
+                .collect(Collectors.toMap(div -> StringUtils.strip(div.selectFirst(TAG_H4).text(), " :"), div -> div));
+        Element block;
+        final String language = "Language";
+        if ((block = details.get(language)) != null) {
+            List<LanguageEnum> languages = block.select(TAG_A).stream()
+                    .map(a -> EnumUtilExt.deserializeAka(a.text(), LanguageEnum.class))
+                    .collect(Collectors.toList());
+            title.setLanguages(languages);
+        }
+        final String runtime = "Runtime";
+        if ((block = details.get(runtime)) != null) {
+            List<Duration> runtimes = block.select(TAG_TIME).stream()
+                    .map(e -> Duration.parse(StringUtils.remove(e.attr(ATTR_DATETIME), SignEnum.COMMA.getC())))
+                    .collect(Collectors.toList());
+            title.setRuntimes(runtimes);
+        }
+
+        return title;
     }
 
     /**
@@ -91,9 +142,8 @@ public final class ImdbSite extends BaseSite {
      * Ep0 may be included if exists.
      *
      * @return all episodes. Maybe uncompleted.
-     * @throws IOException 404 if not TV series, or other HTTP errors.
      */
-    public List<String[]> episodes(String seriesId) throws IOException {
+    public List<String[]> episodes(String seriesId) throws NotFoundException {
         List<String[]> result = new ArrayList<>();
         int currentSeason = 0;
         while (true) {
@@ -119,7 +169,7 @@ public final class ImdbSite extends BaseSite {
                 String id = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
                 if (null != map.put(episode, id)) {
-                    throw new HttpResponseException(HttpStatus.SC_EXPECTATION_FAILED, "Conflict episodes of " + seriesId);
+                    throw new UnexpectedContentException("Conflict episodes of " + seriesId);
                 }
             }
             String[] episodes = new String[Collections.max(map.keySet()) + 1];

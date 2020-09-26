@@ -6,9 +6,9 @@ package wsg.tools.internet.base;
  * @author Kingen
  * @since 2020/9/24
  */
-public class UnexpectContentException extends RuntimeException {
+public class UnexpectedContentException extends RuntimeException {
 
-    public UnexpectContentException(String message) {
+    public UnexpectedContentException(String message) {
         super(message);
     }
 }

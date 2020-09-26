@@ -2,9 +2,15 @@ package wsg.tools.boot.pojo.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.boot.pojo.base.IdentityEntity;
+import wsg.tools.internet.video.enums.LanguageEnum;
 
-import javax.persistence.DiscriminatorValue;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Table;
+import java.time.Duration;
+import java.time.Year;
+import java.util.List;
 
 /**
  * Entity of TV series.
@@ -15,7 +21,24 @@ import javax.persistence.Entity;
 @Setter
 @Getter
 @Entity
-@DiscriminatorValue("1")
-public class SeriesEntity extends SubjectEntity {
+@Table(name = "video_series")
+public class SeriesEntity extends IdentityEntity {
+
+    @Column(nullable = false, unique = true, length = 10)
+    private String imdbId;
+
+    @Column(nullable = false, length = 127)
+    private String text;
+
+    @Column(nullable = false)
+    private Year year;
+
+    @Column(nullable = false, length = 63)
+    private List<LanguageEnum> languages;
+
+    @Column(nullable = false, length = 63)
+    private List<Duration> durations;
+
+    @Column(nullable = false)
     private Integer seasonsCount;
 }

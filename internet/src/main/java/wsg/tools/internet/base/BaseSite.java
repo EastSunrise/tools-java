@@ -83,7 +83,9 @@ public abstract class BaseSite implements Closeable {
     protected static final String TAG_SMALL = "small";
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_TR = "tr";
+    protected static final String TAG_H1 = "h1";
     protected static final String TAG_H3 = "h3";
+    protected static final String TAG_H4 = "h4";
     protected static final String TAG_TIME = "time";
     protected static final String ATTR_HREF = "href";
     protected static final String ATTR_TITLE = "title";
@@ -149,45 +151,38 @@ public abstract class BaseSite implements Closeable {
     /**
      * Return the document of html content of get request.
      */
-    protected final Document getDocument(URIBuilder builder, boolean cached) throws IOException {
-        try {
-            String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.HTML, cached);
-            return Jsoup.parse(content);
-        } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected final Document getDocument(URIBuilder builder, boolean cached) throws NotFoundException {
+        String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.HTML, cached);
+        return Jsoup.parse(content);
     }
 
     /**
      * Return the content of html content of post request.
      */
-    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, boolean cached) throws IOException {
-        try {
-            String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.HTML, cached);
-            return Jsoup.parse(content);
-        } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, boolean cached)
+            throws NotFoundException {
+        String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.HTML, cached);
+        return Jsoup.parse(content);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws IOException {
+    protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws NotFoundException {
         return getObject(builder, clazz, true);
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws IOException {
+    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws NotFoundException {
         return getObject(builder, type, true);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws IOException {
+    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws NotFoundException {
         try {
             String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, cached);
             return mapper.readValue(content, clazz);
@@ -199,7 +194,7 @@ public abstract class BaseSite implements Closeable {
     /**
      * Return the content of response with a generic Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws IOException {
+    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws NotFoundException {
         try {
             String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, cached);
             return mapper.readValue(content, type);
@@ -211,7 +206,8 @@ public abstract class BaseSite implements Closeable {
     /**
      * Return the content of post response with a Java object.
      */
-    protected final <T> T postObject(URIBuilder builder, List<BasicNameValuePair> params, Class<T> clazz, boolean cached) throws IOException {
+    protected final <T> T postObject(URIBuilder builder, List<BasicNameValuePair> params, Class<T> clazz, boolean cached)
+            throws NotFoundException {
         try {
             String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.JSON, cached);
             return mapper.readValue(content, clazz);
@@ -226,9 +222,8 @@ public abstract class BaseSite implements Closeable {
      * @param builder     builder for request.
      * @param contentType content type of the response
      * @param cached      whether to read cached content
-     * @throws IOException only thrown when not loaded
      */
-    private String readContent(RequestBuilder builder, ContentTypeEnum contentType, boolean cached) throws IOException {
+    private String readContent(RequestBuilder builder, ContentTypeEnum contentType, boolean cached) throws NotFoundException {
         String content;
         if (!cached) {
             content = execute(builder);
@@ -251,7 +246,7 @@ public abstract class BaseSite implements Closeable {
                     throw AssertUtils.runtimeException(e);
                 }
                 if (Constants.NULL_NA.equals(content)) {
-                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not Found");
+                    throw new NotFoundException("Not Found");
                 }
             } else {
                 try {
@@ -261,13 +256,11 @@ public abstract class BaseSite implements Closeable {
                     } catch (IOException e) {
                         throw AssertUtils.runtimeException(e);
                     }
-                } catch (HttpResponseException e) {
-                    if (HttpStatus.SC_NOT_FOUND == e.getStatusCode()) {
-                        try {
-                            FileUtils.write(file, Constants.NULL_NA, UTF_8);
-                        } catch (IOException ex) {
-                            throw AssertUtils.runtimeException(ex);
-                        }
+                } catch (NotFoundException e) {
+                    try {
+                        FileUtils.write(file, Constants.NULL_NA, UTF_8);
+                    } catch (IOException ex) {
+                        throw AssertUtils.runtimeException(ex);
                     }
                     throw e;
                 }
@@ -276,12 +269,20 @@ public abstract class BaseSite implements Closeable {
         return handleContent(content, contentType);
     }
 
-    private String execute(RequestBuilder builder)
-            throws IOException {
+    private String execute(RequestBuilder builder) throws NotFoundException {
         handleRequest(builder, context);
         log.info("{} from {}", builder.getMethod(), builder.displayUrl());
         log.info("Slept for {}s.", limiters.get(builder.getMethod()).acquire());
-        return client.execute(builder.build(), responseHandler, context);
+        try {
+            return client.execute(builder.build(), responseHandler, context);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                throw new NotFoundException(e.getReasonPhrase());
+            }
+            throw AssertUtils.runtimeException(e);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     /**
@@ -301,9 +302,8 @@ public abstract class BaseSite implements Closeable {
      * @param content     source content
      * @param contentType type of the content
      * @return handled content
-     * @throws HttpResponseException if the content contains an error
      */
-    protected String handleContent(String content, ContentTypeEnum contentType) throws HttpResponseException {
+    protected String handleContent(String content, ContentTypeEnum contentType) throws NotFoundException {
         return content;
     }
 
@@ -334,7 +334,7 @@ public abstract class BaseSite implements Closeable {
      */
     protected final void updateContext() {
         try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(cookieFile()))) {
-            log.info("Synchronize cookies.");
+            log.info("Synchronize cookies of {}.", getName());
             stream.writeObject(this.context.getCookieStore());
         } catch (IOException e) {
             log.error(e.getMessage());

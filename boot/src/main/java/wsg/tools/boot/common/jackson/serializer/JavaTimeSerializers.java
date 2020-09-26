@@ -1,4 +1,4 @@
-package wsg.tools.boot.config.serializer;
+package wsg.tools.boot.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;

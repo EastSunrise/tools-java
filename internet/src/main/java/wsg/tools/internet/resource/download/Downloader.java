@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -112,7 +111,7 @@ public final class Downloader {
      * @param dir target directory, create if not exist
      * @return count of resources downloading
      */
-    public static int downloadResources(List<AbstractResource> resources, File dir, Predicate<AbstractResource> filter) {
+    public static int downloadResources(Iterable<AbstractResource> resources, File dir, Predicate<AbstractResource> filter) {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }

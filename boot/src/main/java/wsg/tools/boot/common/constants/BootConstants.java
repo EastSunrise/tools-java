@@ -1,4 +1,4 @@
-package wsg.tools.boot.common;
+package wsg.tools.boot.common.constants;
 
 /**
  * Constants.

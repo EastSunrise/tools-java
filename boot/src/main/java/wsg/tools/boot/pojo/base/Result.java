@@ -1,13 +1,7 @@
 package wsg.tools.boot.pojo.base;
 
-import lombok.Getter;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import wsg.tools.common.constant.Constants;
-
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Return common result with a message if failed.
@@ -15,32 +9,23 @@ import java.util.Map;
  * @author Kingen
  * @since 2020/6/26
  */
-@Getter
 public class Result implements Serializable {
 
-    protected final boolean success;
-    protected Map<String, Object> args;
-    private String message;
+    private final boolean success;
+    private final String message;
 
     /**
      * Instantiate a successful result.
      */
-    protected Result() {
-        this(new HashMap<>(Constants.DEFAULT_MAP_CAPACITY));
-    }
-
-    /**
-     * Instantiate a successful result with args.
-     */
-    protected Result(Map<String, Object> args) {
+    public Result() {
         this.success = true;
-        this.args = args;
+        this.message = null;
     }
 
     /**
      * Instantiate a failed result.
      */
-    protected Result(String message) {
+    public Result(String message) {
         this.success = false;
         this.message = message;
     }
@@ -58,7 +43,6 @@ public class Result implements Serializable {
     protected Result(Result result) {
         this.success = result.success;
         this.message = result.message;
-        this.args = result.args;
     }
 
     /**
@@ -82,40 +66,23 @@ public class Result implements Serializable {
         return new Result(e);
     }
 
-    /**
-     * Obtain response of a successful result.
-     */
-    public static ResponseEntity<?> response() {
-        return success().toResponse();
+    public final boolean isSuccess() {
+        return success;
     }
 
-    /**
-     * Obtain response of a failed result.
-     */
-    public static ResponseEntity<?> response(String message, Object... formatArgs) {
-        return fail(message, formatArgs).toResponse();
-    }
-
-    /**
-     * Obtain response of a failed result from an {@link Exception}.
-     */
-    public static ResponseEntity<?> response(Exception e) {
-        return fail(e).toResponse();
-    }
-
-    public Result put(String key, Object value) {
-        if (!success) {
-            throw new IllegalArgumentException("Failed result doesn't have args.");
+    public String error() {
+        if (isSuccess()) {
+            throw new IllegalArgumentException("Not a failed result.");
         }
-        args.put(key, value);
-        return this;
+        return message;
     }
 
-    public ResponseEntity<?> toResponse() {
-        if (success) {
-            return new ResponseEntity<>(args, HttpStatus.OK);
+    public void ifSuccessOr(Runnable action, Consumer<String> errorAction) {
+        if (isSuccess()) {
+            action.run();
         } else {
-            return new ResponseEntity<>(message, HttpStatus.INTERNAL_SERVER_ERROR);
+            errorAction.accept(error());
         }
     }
+
 }

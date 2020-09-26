@@ -1,4 +1,4 @@
-package wsg.tools.boot.common;
+package wsg.tools.boot.common.util;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;

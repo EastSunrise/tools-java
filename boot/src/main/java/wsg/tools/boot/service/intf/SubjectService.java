@@ -2,8 +2,6 @@ package wsg.tools.boot.service.intf;
 
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import wsg.tools.boot.pojo.base.GenericResult;
-import wsg.tools.boot.pojo.base.ListResult;
-import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 
 import java.io.IOException;
@@ -21,7 +19,7 @@ public interface SubjectService {
     /**
      * Insert entity obtained by id of douban.
      *
-     * @param dbId id of Douban, not null
+     * @param dbId id of Douban
      * @return result with subject id
      * @throws IOException unexpected IOException except HttpResponseException
      */
@@ -53,11 +51,4 @@ public interface SubjectService {
      * @return result
      */
     BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids);
-
-    /**
-     * Returns subjects matching the given condition
-     *
-     * @return list of subjects
-     */
-    ListResult<SubjectEntity> export();
 }

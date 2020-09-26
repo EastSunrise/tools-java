@@ -6,8 +6,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -40,18 +42,16 @@ public class PageResult<T extends BaseDto> extends Result {
         return new PageResult<>(new PageImpl<>(list));
     }
 
-    @Override
-    public ResponseEntity<?> toResponse() {
-        put("page", new PagedModel.PageMetadata(page.getSize(), page.getNumber(), page.getTotalElements()));
-        put("data", page.getContent());
-        return super.toResponse();
-    }
-
     public ResponseEntity<?> toResponse(PagedResourcesAssembler<T> assembler) {
-        PagedModel<EntityModel<T>> pagedModel = assembler.toModel(page);
-        put("page", pagedModel.getMetadata());
-        put("links", pagedModel.getLinks());
-        put("data", pagedModel.getContent());
-        return super.toResponse();
+        if (isSuccess()) {
+            PagedModel<EntityModel<T>> pagedModel = assembler.toModel(page);
+            return ResponseEntity.ok(new HashMap<>(3) {{
+                put("page", pagedModel.getMetadata());
+                put("links", pagedModel.getLinks());
+                put("data", pagedModel.getContent());
+            }});
+        } else {
+            return new ResponseEntity<>(error(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

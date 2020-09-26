@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.entity.AbstractResource;
 import wsg.tools.internet.resource.entity.BaseDetail;
@@ -12,8 +14,6 @@ import wsg.tools.internet.resource.entity.SimpleTitle;
 import wsg.tools.internet.resource.entity.VideoTypeEnum;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +36,7 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
     /**
      * Search and collect resources based on the given arguments.
      */
-    public Set<AbstractResource> collectMovie(String title, Year year) throws IOException {
+    public Set<AbstractResource> collectMovie(String title, int year) {
         Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
             if (!Objects.equals(item.getType(), VideoTypeEnum.MOVIE)) {
@@ -47,7 +47,7 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
                 log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), year, item.getYear());
                 continue;
             }
-            if (notPossibleTitles(title, year.getValue(), item.getTitle())) {
+            if (notPossibleTitles(title, year, item.getTitle())) {
                 log.info("Excluded title: {}, not a possible title by {}.", item.getTitle(), title);
                 continue;
             }
@@ -58,9 +58,14 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
     }
 
     @Override
-    protected final Set<SimpleTitle> search(@Nonnull String keyword) throws IOException {
+    protected final Set<SimpleTitle> search(@Nonnull String keyword) {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
-        Document document = postDocument(builder0("/vod-search"), params, true);
+        Document document;
+        try {
+            document = postDocument(builder0("/vod-search"), params, true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         Set<SimpleTitle> titles = new HashSet<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {
@@ -76,26 +81,30 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
             title.setPath(matcher.group(3));
             title.setType(EnumUtilExt.deserializeAka(typeInfo.substring(TYPE_INFO_START), VideoTypeEnum.class));
             title.setTitle(a.text().strip());
-            title.setYear(year == 0 ? null : Year.of(year));
+            title.setYear(year == 0 ? null : year);
             titles.add(title);
         }
         return titles;
     }
 
     @Override
-    protected final BaseDetail find(@Nonnull SimpleTitle title) throws IOException {
+    protected final BaseDetail find(@Nonnull SimpleTitle title) {
         BaseDetail detail = new BaseDetail();
         Set<AbstractResource> resources = new HashSet<>();
         String downList = "ul.down-list";
         String item = "li.item";
-        for (Element ul : getDocument(builder0(title.getPath()), true).select(downList)) {
-            for (Element li : ul.select(item)) {
-                Element a = li.selectFirst(TAG_A);
-                String href = a.attr(ATTR_HREF);
-                AbstractResource resource = Downloader.classifyUrl(href);
-                resource.setTitle(a.text().strip());
-                resources.add(resource);
+        try {
+            for (Element ul : getDocument(builder0(title.getPath()), true).select(downList)) {
+                for (Element li : ul.select(item)) {
+                    Element a = li.selectFirst(TAG_A);
+                    String href = a.attr(ATTR_HREF);
+                    AbstractResource resource = Downloader.classifyUrl(href);
+                    resource.setTitle(a.text().strip());
+                    resources.add(resource);
+                }
             }
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
         }
         detail.setResources(resources);
         return detail;

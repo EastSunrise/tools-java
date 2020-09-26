@@ -9,8 +9,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
@@ -25,7 +23,8 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.LoginException;
-import wsg.tools.internet.base.UnexpectContentException;
+import wsg.tools.internet.base.NotFoundException;
+import wsg.tools.internet.base.UnexpectedContentException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
 import wsg.tools.internet.video.entity.douban.base.LoginResult;
@@ -37,7 +36,6 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -84,16 +82,25 @@ public class DoubanSite extends BaseSite {
                 );
     }
 
-    public final void login(String username, String password) throws IOException {
+    public final void login(String username, String password) {
         if (getCookies().size() == 0) {
-            getDocument(builder0(null), false);
+            try {
+                getDocument(builder0(null), false);
+            } catch (NotFoundException e) {
+                throw AssertUtils.runtimeException(e);
+            }
         }
-        LoginResult loginResult = postObject(builder("accounts", "/j/mobile/login/basic"), Arrays.asList(
-                new BasicNameValuePair("ck", ""),
-                new BasicNameValuePair("name", username),
-                new BasicNameValuePair("password", password),
-                new BasicNameValuePair("remember", String.valueOf(true))
-        ), LoginResult.class, false);
+        LoginResult loginResult;
+        try {
+            loginResult = postObject(builder("accounts", "/j/mobile/login/basic"), Arrays.asList(
+                    new BasicNameValuePair("ck", ""),
+                    new BasicNameValuePair("name", username),
+                    new BasicNameValuePair("password", password),
+                    new BasicNameValuePair("remember", String.valueOf(true))
+            ), LoginResult.class, false);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }
@@ -119,7 +126,7 @@ public class DoubanSite extends BaseSite {
      *
      * @return IMDb id
      */
-    public BaseDoubanSubject subject(long subjectId) throws IOException {
+    public BaseDoubanSubject subject(long subjectId) throws NotFoundException {
         Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), true);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
@@ -138,7 +145,7 @@ public class DoubanSite extends BaseSite {
                 subject.setOriginalTitle(StringEscapeUtils.unescapeHtml4(name.substring(title.length()).strip()));
             }
         } else {
-            throw new HttpResponseException(HttpStatus.SC_EXPECTATION_FAILED, "Name and title are not matched.");
+            throw new UnexpectedContentException("Name and title are not matched.");
         }
 
         String year = StringUtils.strip(document.selectFirst("span.year").html(), "()");
@@ -186,7 +193,8 @@ public class DoubanSite extends BaseSite {
     /**
      * Obtains id of Douban by searching id of IMDb.
      */
-    public Long getDbIdByImdbId(String imdbId) throws IOException {
+    @Nullable
+    public Long getDbIdByImdbId(String imdbId) {
         List<SearchItem> items = search(CatalogEnum.MOVIE, imdbId);
         if (items.size() == 0) {
             return null;
@@ -196,7 +204,7 @@ public class DoubanSite extends BaseSite {
             Matcher matcher = AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, item.getUrl());
             return Long.parseLong(matcher.group("id"));
         }
-        throw new UnexpectContentException("More than one items returned when searching by id of IMDb.");
+        throw new UnexpectedContentException("More than one items returned when searching by id of IMDb.");
     }
 
     /**
@@ -205,7 +213,7 @@ public class DoubanSite extends BaseSite {
      * @param catalog which catalog
      * @param keyword not blank
      */
-    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) throws IOException {
+    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
@@ -214,7 +222,12 @@ public class DoubanSite extends BaseSite {
         if (catalog != null) {
             builder.setParameter("cat", String.valueOf(catalog.getCode()));
         }
-        Document document = getDocument(builder, true);
+        Document document;
+        try {
+            document = getDocument(builder, true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
 
         return document.selectFirst("div.search-result").select("div.result").stream()
                 .map(div -> {
@@ -235,13 +248,17 @@ public class DoubanSite extends BaseSite {
      * @param catalog which catalog
      * @param keyword not blank
      */
-    public List<BaseSuggestItem> suggest(CatalogEnum catalog, String keyword) throws IOException {
+    public List<BaseSuggestItem> suggest(CatalogEnum catalog, String keyword) {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
         URIBuilder builder = builder(catalog.getPath(), "/j/subject_suggest")
                 .setParameter("q", keyword);
-        return getObject(builder, new TypeReference<>() {}, true);
+        try {
+            return getObject(builder, new TypeReference<>() {}, true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     /**
@@ -251,7 +268,8 @@ public class DoubanSite extends BaseSite {
      * @param mark    wish/do/collect
      * @return map of (id, mark date)
      */
-    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws IOException {
+    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark)
+            throws NotFoundException {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
@@ -295,7 +313,7 @@ public class DoubanSite extends BaseSite {
      *
      * @param catalog movie/book/music/...
      */
-    public List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws IOException {
+    public List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws NotFoundException {
         log.info("Collect {} of user {}", catalog.getCreator().getPath(), userId);
         List<Long> ids = new LinkedList<>();
         int start = 0;

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.base.BaseEntity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -21,6 +22,9 @@ import javax.persistence.Table;
 public class IdRelationEntity extends BaseEntity {
 
     @Id
+    @Column(length = 10)
     private String imdbId;
-    private long dbId;
+
+    @Column(nullable = false)
+    private Long dbId;
 }
