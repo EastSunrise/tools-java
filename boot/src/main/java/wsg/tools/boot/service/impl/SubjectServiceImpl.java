@@ -120,7 +120,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 movieEntity.setYear(subject.getYear());
                 movieEntity.setLanguages(subject.getLanguages());
                 CollectionUtils.addIgnoreNull(durations, subject.getDuration());
-                addAll(durations, subject.getExtDurations());
+                addAll(durations, ((DoubanMovie) subject).getExtDurations());
             }, log);
         }
         if (StringUtils.isNotBlank(imdbId)) {
@@ -135,7 +135,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 addAll(durations, imdbTitle.getRuntimes());
             });
         }
-        movieEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
+        if (!durations.isEmpty()) {
+            movieEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
+        }
         return GenericResult.of(movieRepository.insert(movieEntity).getId());
     }
 
@@ -165,12 +167,12 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
         SeriesEntity seriesEntity = new SeriesEntity();
         seriesEntity.setImdbId(seriesImdbId);
-        Set<Duration> durations = new HashSet<>();
         seriesEntity.setText(imdbSeries.getText());
         seriesEntity.setYear(imdbSeries.getYearInfo().getStart());
         seriesEntity.setLanguages(imdbSeries.getLanguages());
-        addAll(durations, imdbSeries.getRuntimes());
-        seriesEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
+        if (imdbSeries.getRuntimes() != null) {
+            seriesEntity.setDurations(imdbSeries.getRuntimes().stream().sorted().collect(Collectors.toList()));
+        }
 
         List<String[]> allEpisodes = adapter.episodes(seriesImdbId).get();
         int seasonsCount = allEpisodes.size();
@@ -202,27 +204,25 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     /**
      * All args are required not null.
      */
-    private void insertSeason(String seasonImdbId, String[] episodes, long seriesId, int currentSeason) {
+    private GenericResult<Long> insertSeason(String seasonImdbId, String[] episodes, long seriesId, int currentSeason) {
         GenericResult<Long> idResult = adapter.getDbIdByImdbId(seasonImdbId);
         if (!idResult.isSuccess()) {
-            log.error(idResult.error());
-            return;
+            return new GenericResult<>(idResult.error());
         }
         Long seasonDbId = idResult.get();
 
         SeasonEntity seasonEntity = new SeasonEntity();
         seasonEntity.setDbId(seasonDbId);
-        Set<Duration> durations = new HashSet<>();
         adapter.doubanSubject(seasonDbId).ifPresentOrThrows(subject -> {
             seasonEntity.setTitle(subject.getTitle());
             seasonEntity.setOriginalTitle(subject.getOriginalTitle());
             seasonEntity.setYear(subject.getYear());
             seasonEntity.setLanguages(subject.getLanguages());
-            CollectionUtils.addIgnoreNull(durations, subject.getDuration());
-            addAll(durations, subject.getExtDurations());
+            if (subject.getDuration() != null) {
+                seasonEntity.setDurations(Collections.singletonList(subject.getDuration()));
+            }
             seasonEntity.setEpisodesCount(((DoubanSeries) subject).getEpisodesCount());
         });
-        seasonEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
         if (seasonEntity.getEpisodesCount() == null || seasonEntity.getEpisodesCount() < 1) {
             seasonEntity.setEpisodesCount(episodes.length - 1);
         }
@@ -236,24 +236,24 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 insertEpisode(episodeImdbId, seasonId, i);
             }
         }
+        return GenericResult.of(seasonId);
     }
 
-    private void insertEpisode(String episodeImdbId, long seasonId, int currentEpisode) {
+    private GenericResult<Long> insertEpisode(String episodeImdbId, long seasonId, int currentEpisode) {
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
-        Set<Duration> durations = new HashSet<>();
 
         adapter.imdbTitle(episodeImdbId).ifPresentOrThrows(imdbTitle -> {
             episodeEntity.setText(imdbTitle.getText());
             episodeEntity.setReleased(imdbTitle.getRelease());
-            CollectionUtils.addIgnoreNull(durations, ((ImdbEpisode) imdbTitle).getDuration());
-            addAll(durations, imdbTitle.getRuntimes());
+            if (imdbTitle.getRuntimes() != null) {
+                episodeEntity.setDurations(imdbTitle.getRuntimes().stream().sorted().collect(Collectors.toList()));
+            }
         });
 
-        episodeEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
         episodeEntity.setCurrentEpisode(currentEpisode);
         episodeEntity.setSeasonId(seasonId);
-        episodeRepository.insert(episodeEntity);
+        return GenericResult.of(episodeRepository.insert(episodeEntity).getId());
     }
 
     private <T> void addAll(Collection<T> target, Collection<T> added) {

@@ -28,6 +28,7 @@ import wsg.tools.internet.base.UnexpectedContentException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
 import wsg.tools.internet.video.entity.douban.base.LoginResult;
+import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
 import wsg.tools.internet.video.entity.douban.object.SearchItem;
 import wsg.tools.internet.video.enums.CatalogEnum;
@@ -168,13 +169,13 @@ public class DoubanSite extends BaseSite {
         }
 
         final String propertyRuntime = "span[property=v:runtime]";
-        if ((span = info.selectFirst(propertyRuntime)) != null) {
+        if ((span = info.selectFirst(propertyRuntime)) != null && subject instanceof DoubanMovie) {
             Node node = span.nextSibling();
             if (node instanceof TextNode && !((TextNode) node).isBlank()) {
-                subject.setExtDurations(new ArrayList<>());
+                ((DoubanMovie) subject).setExtDurations(new ArrayList<>());
                 Matcher matcher = EXT_DURATIONS_REGEX.matcher(((TextNode) node).text().strip());
                 while (matcher.find()) {
-                    subject.getExtDurations().add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
+                    ((DoubanMovie) subject).getExtDurations().add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
                 }
             }
         }

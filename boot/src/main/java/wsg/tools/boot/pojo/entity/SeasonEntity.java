@@ -39,7 +39,7 @@ public class SeasonEntity extends IdentityEntity {
     @Column(nullable = false, length = 63)
     private List<LanguageEnum> languages;
 
-    @Column(nullable = false, length = 63)
+    @Column(length = 63)
     private List<Duration> durations;
 
     @Column(nullable = false)

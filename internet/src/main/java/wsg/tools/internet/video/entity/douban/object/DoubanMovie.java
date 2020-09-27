@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 
+import java.time.Duration;
+import java.util.List;
+
 /**
  * Movie.
  *
@@ -13,4 +16,6 @@ import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 @Getter
 @Setter
 public class DoubanMovie extends BaseDoubanSubject {
+
+    private List<Duration> extDurations;
 }

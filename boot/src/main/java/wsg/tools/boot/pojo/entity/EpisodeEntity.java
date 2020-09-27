@@ -31,7 +31,7 @@ public class EpisodeEntity extends IdentityEntity {
 
     private LocalDate released;
 
-    @Column(nullable = false, length = 63)
+    @Column(length = 63)
     private List<Duration> durations;
 
     @Column(nullable = false)
