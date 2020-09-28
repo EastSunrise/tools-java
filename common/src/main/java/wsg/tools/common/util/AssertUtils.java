@@ -1,5 +1,7 @@
 package wsg.tools.common.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -13,6 +15,15 @@ import java.util.stream.Stream;
  * @since 2020/6/22
  */
 public final class AssertUtils {
+
+    /**
+     * Validate args to be not blank.
+     */
+    public static void requireNotBlank(String arg) {
+        if (StringUtils.isBlank(arg)) {
+            throw new IllegalArgumentException("Arg mustn't be blank.");
+        }
+    }
 
     /**
      * Returns a {@link RuntimeException}.

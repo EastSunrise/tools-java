@@ -36,6 +36,7 @@ import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URLDecoder;
 import java.time.Duration;
@@ -196,16 +197,29 @@ public class DoubanSite extends BaseSite {
      */
     @Nullable
     public Long getDbIdByImdbId(String imdbId) {
-        List<SearchItem> items = search(CatalogEnum.MOVIE, imdbId);
-        if (items.size() == 0) {
+        AssertUtils.requireNotBlank(imdbId);
+        Document document;
+        try {
+            CatalogEnum cat = CatalogEnum.MOVIE;
+            document = postDocument(builder(cat.getPath(), "/new_subject"), Arrays.asList(
+                    new BasicNameValuePair("ck", "Fgus"),
+                    new BasicNameValuePair("type", "0"),
+                    new BasicNameValuePair("p_title", imdbId),
+                    new BasicNameValuePair("p_uid", imdbId),
+                    new BasicNameValuePair("cat", String.valueOf(cat.getCode())),
+                    new BasicNameValuePair("subject_submit", "下一步")
+            ), true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+
+        Element fieldset = document.selectFirst("div#content").selectFirst(TAG_FIELDSET);
+        Element input = fieldset.selectFirst("input#p_uid");
+        if (input == null) {
             return null;
         }
-        if (items.size() == 1) {
-            SearchItem item = items.get(0);
-            Matcher matcher = AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, item.getUrl());
-            return Long.parseLong(matcher.group("id"));
-        }
-        throw new UnexpectedContentException("More than one items returned when searching by id of IMDb.");
+        String href = input.nextElementSibling().nextElementSibling().attr(ATTR_HREF);
+        return Long.parseLong(AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
     }
 
     /**
@@ -214,7 +228,37 @@ public class DoubanSite extends BaseSite {
      * @param catalog which catalog
      * @param keyword not blank
      */
-    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) {
+    public List<SearchItem> search(@Nonnull CatalogEnum catalog, String keyword) {
+        if (StringUtils.isBlank(keyword)) {
+            throw new IllegalArgumentException("Keyword mustn't be blank.");
+        }
+        URIBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
+                .setParameter("search_text", keyword)
+                .setParameter("cat", String.valueOf(catalog.getCode()));
+        Document document;
+        try {
+            document = getDocument(builder, true);
+        } catch (NotFoundException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+
+        return document.select("div.item-root").stream()
+                .map(div -> {
+                    Element a = div.selectFirst("a.title-text");
+                    SearchItem item = new SearchItem();
+                    item.setTitle(a.text().strip());
+                    item.setUrl(a.attr(ATTR_HREF));
+                    return item;
+                }).collect(Collectors.toList());
+    }
+
+    /**
+     * Search items by specified keyword.
+     *
+     * @param catalog which catalog
+     * @param keyword not blank
+     */
+    public List<SearchItem> search0(@Nullable CatalogEnum catalog, String keyword) {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
@@ -232,8 +276,8 @@ public class DoubanSite extends BaseSite {
 
         return document.selectFirst("div.search-result").select("div.result").stream()
                 .map(div -> {
-                    SearchItem item = new SearchItem();
                     Element a = div.selectFirst(TAG_H3).selectFirst(TAG_A);
+                    SearchItem item = new SearchItem();
                     Matcher matcher = AssertUtils.matches(SEARCH_ITEM_HREF_REGEX, a.attr(ATTR_HREF));
                     item.setTitle(a.text().strip());
                     item.setUrl(URLDecoder.decode(matcher.group("url"), Constants.UTF_8));

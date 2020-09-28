@@ -78,12 +78,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("UnstableApiUsage")
 public abstract class BaseSite implements Closeable {
 
+    /**
+     * Common HTML tags and attributes.
+     */
     protected static final String TAG_A = "a";
+    protected static final String TAG_FIELDSET = "fieldset";
     protected static final String TAG_LI = "li";
     protected static final String TAG_SMALL = "small";
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_TR = "tr";
-    protected static final String TAG_H1 = "h1";
     protected static final String TAG_H3 = "h3";
     protected static final String TAG_H4 = "h4";
     protected static final String TAG_TIME = "time";
@@ -94,7 +97,9 @@ public abstract class BaseSite implements Closeable {
     protected static final int CONNECT_TIME_OUT = 30000;
     protected static final int SOCKET_TIME_OUT = 30000;
 
-    private static final double DEFAULT_PERMIT_PER_SECOND = 10D;
+    /**
+     * temporary directory to cache content.
+     */
     private static final String TMPDIR = System.getProperty("java.io.tmpdir") + "tools";
 
     @Getter
@@ -108,7 +113,7 @@ public abstract class BaseSite implements Closeable {
     private final CloseableHttpClient client;
 
     public BaseSite(String name, String host) {
-        this(name, host, DEFAULT_PERMIT_PER_SECOND);
+        this(name, host, 10D);
     }
 
     public BaseSite(String name, String host, double permitsPerSecond) {

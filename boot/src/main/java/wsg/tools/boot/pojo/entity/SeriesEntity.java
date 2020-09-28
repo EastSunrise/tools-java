@@ -36,7 +36,7 @@ public class SeriesEntity extends IdentityEntity {
     @Column(nullable = false, length = 63)
     private List<LanguageEnum> languages;
 
-    @Column(length = 63)
+    @Column(nullable = false, length = 63)
     private List<Duration> durations;
 
     @Column(nullable = false)

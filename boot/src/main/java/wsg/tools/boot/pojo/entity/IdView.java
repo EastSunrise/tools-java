@@ -6,7 +6,7 @@ package wsg.tools.boot.pojo.entity;
  * @author Kingen
  * @since 2020/9/9
  */
-public interface IdSupplier {
+public interface IdView {
 
     /**
      * Id of database.

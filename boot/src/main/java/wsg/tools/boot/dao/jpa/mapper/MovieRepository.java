@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.IdSupplier;
+import wsg.tools.boot.pojo.entity.IdView;
 import wsg.tools.boot.pojo.entity.MovieEntity;
 
 import java.util.Optional;
@@ -20,7 +20,7 @@ public interface MovieRepository extends BaseRepository<MovieEntity, Long> {
      * @param dbId db id
      * @return id
      */
-    Optional<IdSupplier> findByDbId(Long dbId);
+    Optional<IdView> findByDbId(Long dbId);
 
     /**
      * Query id by imdb id.
@@ -28,5 +28,5 @@ public interface MovieRepository extends BaseRepository<MovieEntity, Long> {
      * @param imdbId imdb id
      * @return id
      */
-    Optional<IdSupplier> findByImdbId(String imdbId);
+    Optional<IdView> findByImdbId(String imdbId);
 }

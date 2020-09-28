@@ -4,7 +4,6 @@ import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.result.BatchResult;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -21,9 +20,8 @@ public interface SubjectService {
      *
      * @param dbId id of Douban
      * @return result with subject id
-     * @throws IOException unexpected IOException except HttpResponseException
      */
-    GenericResult<Long> insertSubjectByDb(long dbId) throws IOException;
+    GenericResult<Long> insertSubjectByDb(long dbId);
 
     /**
      * Insert entity obtained by id of IMDb.
@@ -31,9 +29,8 @@ public interface SubjectService {
      * @param imdbId id of IMDb, not null
      * @param dbId   may null
      * @return result with subject id
-     * @throws IOException unexpected IOException except HttpResponseException
      */
-    GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId) throws IOException;
+    GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId);
 
     /**
      * Collect subjects under the user.

@@ -15,4 +15,12 @@ public class SearchItem {
 
     private String title;
     private String url;
+
+    @Override
+    public String toString() {
+        return "SearchItem{" +
+                "title='" + title + '\'' +
+                ", url='" + url + '\'' +
+                '}';
+    }
 }

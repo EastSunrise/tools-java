@@ -6,12 +6,13 @@ import org.apache.commons.collections4.keyvalue.AbstractKeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.common.util.ServiceUtil;
 import wsg.tools.boot.dao.api.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
+import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.result.BatchResult;
@@ -52,8 +53,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     private TransactionTemplate template;
 
     @Override
-    @Transactional(rollbackFor = {Exception.class})
-    public GenericResult<Long> insertSubjectByDb(long dbId) {
+    public GenericResult<Long> insertSubjectByDb(long dbId) throws AppException {
         GenericResult<BaseDoubanSubject> subjectResult = adapter.doubanSubject(dbId);
         if (!subjectResult.isSuccess()) {
             return new GenericResult<>(subjectResult.error());
@@ -75,8 +75,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    @Transactional(rollbackFor = {Exception.class})
-    public GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId) {
+    public GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId) throws AppException {
         GenericResult<BaseImdbTitle> result = adapter.imdbTitle(imdbId);
         if (!result.isSuccess()) {
             return new GenericResult<>(result.error());
@@ -97,13 +96,13 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      */
     private GenericResult<Long> insertMovie(Long dbId, String imdbId) {
         if (dbId != null) {
-            Optional<IdSupplier> optional = movieRepository.findByDbId(dbId);
+            Optional<IdView> optional = movieRepository.findByDbId(dbId);
             if (optional.isPresent()) {
                 return GenericResult.of(optional.get().getId());
             }
         }
         if (imdbId != null) {
-            Optional<IdSupplier> optional = movieRepository.findByImdbId(imdbId);
+            Optional<IdView> optional = movieRepository.findByImdbId(imdbId);
             if (optional.isPresent()) {
                 return GenericResult.of(optional.get().getId());
             }
@@ -144,7 +143,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     /**
      * Id and title are both required not null.
      */
-    private GenericResult<Long> insertSeries(String imdbId, BaseImdbTitle title) {
+    private GenericResult<Long> insertSeries(String imdbId, BaseImdbTitle title) throws AppException {
         String seriesImdbId;
         ImdbSeries imdbSeries;
         if (title instanceof ImdbEpisode) {
@@ -160,7 +159,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return new GenericResult<>("Unexpected type %s for title %s.", title.getClass().getSimpleName(), imdbId);
         }
 
-        Optional<IdSupplier> optional = seriesRepository.findByImdbId(seriesImdbId);
+        Optional<IdView> optional = seriesRepository.findByImdbId(seriesImdbId);
         if (optional.isPresent()) {
             return GenericResult.of(optional.get().getId());
         }
@@ -180,25 +179,43 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             seasonsCount = 1;
         }
         seriesEntity.setSeasonsCount(seasonsCount);
-        long seriesId = seriesRepository.insert(seriesEntity).getId();
 
-        // insert seasons and episodes
-        String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
-        insertSeason(seriesImdbId, season1Episodes, seriesId, 1);
+        try {
+            return template.execute(status -> {
+                long seriesId = seriesRepository.insert(seriesEntity).getId();
 
-        if (allEpisodes.size() > 1) {
-            for (int i = 1; i < allEpisodes.size(); i++) {
-                String[] episodes = allEpisodes.get(i);
-                String seasonImdbId = episodes[1];
-                if (seasonImdbId == null) {
-                    log.error("None id of IMDb exists for season {} of series {}.", i + 1, seriesImdbId);
-                    continue;
+                // insert seasons and episodes
+                Map<Integer, String> fails = new HashMap<>(4);
+                String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
+                insertSeason(seriesImdbId, season1Episodes, seriesId, 1)
+                        .ifSuccessOr(() -> {
+                        }, msg -> fails.put(1, msg));
+
+                if (allEpisodes.size() > 1) {
+                    for (int i = 1; i < allEpisodes.size(); i++) {
+                        String[] episodes = allEpisodes.get(i);
+                        String seasonImdbId = episodes[1];
+                        if (seasonImdbId == null) {
+                            fails.put(i + 1, "None id of IMDb exists.");
+                        } else {
+                            GenericResult<Long> result = insertSeason(seasonImdbId, episodes, seriesId, i + 1);
+                            if (!result.isSuccess()) {
+                                fails.put(i + 1, result.error());
+                            }
+                        }
+                    }
                 }
-                insertSeason(seasonImdbId, episodes, seriesId, i + 1);
-            }
-        }
 
-        return GenericResult.of(seriesId);
+                if (fails.isEmpty()) {
+                    return GenericResult.of(seriesId);
+                }
+                throw new AppException(fails.toString());
+            });
+        } catch (AppException e) {
+            return new GenericResult<>(e);
+        } catch (DataIntegrityViolationException e) {
+            return new GenericResult<>("Data of the series aren't integral.");
+        }
     }
 
     /**
@@ -210,19 +227,22 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return new GenericResult<>(idResult.error());
         }
         Long seasonDbId = idResult.get();
+        GenericResult<BaseDoubanSubject> subjectResult = adapter.doubanSubject(seasonDbId);
+        if (!subjectResult.isSuccess()) {
+            return new GenericResult<>(subjectResult.error());
+        }
+        BaseDoubanSubject subject = subjectResult.get();
 
         SeasonEntity seasonEntity = new SeasonEntity();
         seasonEntity.setDbId(seasonDbId);
-        adapter.doubanSubject(seasonDbId).ifPresentOrThrows(subject -> {
-            seasonEntity.setTitle(subject.getTitle());
-            seasonEntity.setOriginalTitle(subject.getOriginalTitle());
-            seasonEntity.setYear(subject.getYear());
-            seasonEntity.setLanguages(subject.getLanguages());
-            if (subject.getDuration() != null) {
-                seasonEntity.setDurations(Collections.singletonList(subject.getDuration()));
-            }
-            seasonEntity.setEpisodesCount(((DoubanSeries) subject).getEpisodesCount());
-        });
+        seasonEntity.setTitle(subject.getTitle());
+        seasonEntity.setOriginalTitle(subject.getOriginalTitle());
+        seasonEntity.setYear(subject.getYear());
+        seasonEntity.setLanguages(subject.getLanguages());
+        if (subject.getDuration() != null) {
+            seasonEntity.setDurations(Collections.singletonList(subject.getDuration()));
+        }
+        seasonEntity.setEpisodesCount(((DoubanSeries) subject).getEpisodesCount());
         if (seasonEntity.getEpisodesCount() == null || seasonEntity.getEpisodesCount() < 1) {
             seasonEntity.setEpisodesCount(episodes.length - 1);
         }
@@ -239,7 +259,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return GenericResult.of(seasonId);
     }
 
-    private GenericResult<Long> insertEpisode(String episodeImdbId, long seasonId, int currentEpisode) {
+    private void insertEpisode(String episodeImdbId, long seasonId, int currentEpisode) {
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
 
@@ -253,7 +273,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
         episodeEntity.setCurrentEpisode(currentEpisode);
         episodeEntity.setSeasonId(seasonId);
-        return GenericResult.of(episodeRepository.insert(episodeEntity).getId());
+        episodeRepository.insert(episodeEntity);
     }
 
     private <T> void addAll(Collection<T> target, Collection<T> added) {
@@ -276,7 +296,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         for (MarkEnum mark : MarkEnum.values()) {
             adapter.collectUserSubjects(userId, since, mark).ifPresentOrLog(map -> {
                 for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
-                    Objects.requireNonNull(template.execute(status -> insertSubjectByDb(entry.getKey()))).ifPresentOr(
+                    insertSubjectByDb(entry.getKey()).ifPresentOr(
                             id -> {
                                 count[0]++;
                                 UserRecordEntity entity = new UserRecordEntity();
@@ -299,7 +319,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     public BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids) {
         log.info("Start to import subjects manually.");
         return ServiceUtil.batch(
-                ids, entry -> template.execute(status -> insertSubjectByImdb(entry.getKey(), entry.getValue())),
+                ids, entry -> insertSubjectByImdb(entry.getKey(), entry.getValue()),
                 AbstractKeyValue::getKey
         );
     }
