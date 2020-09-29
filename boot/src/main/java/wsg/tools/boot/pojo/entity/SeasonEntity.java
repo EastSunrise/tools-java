@@ -5,9 +5,7 @@ import lombok.Setter;
 import wsg.tools.boot.pojo.base.IdentityEntity;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.Duration;
 import java.time.Year;
 import java.util.List;
@@ -50,4 +48,7 @@ public class SeasonEntity extends IdentityEntity {
 
     @Column(nullable = false)
     private Integer episodesCount;
+
+    @OneToMany(mappedBy = "seasonId", fetch = FetchType.EAGER)
+    private List<EpisodeEntity> episodes;
 }

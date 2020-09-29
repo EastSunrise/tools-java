@@ -3,6 +3,7 @@ package wsg.tools.common.util;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.SignEnum;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -13,7 +14,25 @@ import java.util.regex.Pattern;
  */
 public class StringUtilsExt {
 
-    private static final Pattern CHINESE_REGEX = Pattern.compile("[\\u4E00-\\u9FA5]");
+    private static final Pattern CHINESE_REGEX = Pattern.compile("[\u4E00-\u9FBF]");
+    private static final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
+
+    /**
+     * Encode a string as a pattern.
+     */
+    public static String encodeAsPattern(String str) {
+        if (str == null) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (char c : str.toCharArray()) {
+            if (SPECIAL_CHARS.contains(c)) {
+                builder.append("\\");
+            }
+            builder.append(c);
+        }
+        return builder.toString();
+    }
 
     /**
      * Check if the string contain a Chinese character.

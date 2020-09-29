@@ -5,10 +5,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.keyvalue.AbstractKeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.common.util.ServiceUtil;
 import wsg.tools.boot.dao.api.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
@@ -19,6 +17,8 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
@@ -32,6 +32,7 @@ import wsg.tools.internet.video.site.DoubanSite;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -44,13 +45,26 @@ import java.util.stream.Collectors;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
-    private VideoAdapter adapter;
-    private MovieRepository movieRepository;
-    private SeriesRepository seriesRepository;
-    private SeasonRepository seasonRepository;
-    private EpisodeRepository episodeRepository;
-    private UserRecordRepository userRecordRepository;
-    private TransactionTemplate template;
+    private static final char[] UNITS = {'零', '一', '二', '三', '四', '五', '六', '七', '八', '九'};
+
+    private final VideoAdapter adapter;
+    private final MovieRepository movieRepository;
+    private final SeriesRepository seriesRepository;
+    private final SeasonRepository seasonRepository;
+    private final EpisodeRepository episodeRepository;
+    private final UserRecordRepository userRecordRepository;
+
+    public SubjectServiceImpl(
+            VideoAdapter adapter, MovieRepository movieRepository, SeriesRepository seriesRepository,
+            SeasonRepository seasonRepository, EpisodeRepository episodeRepository,
+            UserRecordRepository userRecordRepository) {
+        this.adapter = adapter;
+        this.movieRepository = movieRepository;
+        this.seriesRepository = seriesRepository;
+        this.seasonRepository = seasonRepository;
+        this.episodeRepository = episodeRepository;
+        this.userRecordRepository = userRecordRepository;
+    }
 
     @Override
     public GenericResult<Long> insertSubjectByDb(long dbId) throws AppException {
@@ -180,48 +194,82 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
         seriesEntity.setSeasonsCount(seasonsCount);
 
+        // get seasons and episodes
+        Map<Integer, String> fails = new HashMap<>(4);
+        List<SeasonEntity> seasons = new ArrayList<>();
+        String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
+        getSeason(seriesImdbId, season1Episodes, 1)
+                .ifPresentOr(seasons::add, msg -> fails.put(1, msg));
+
+        if (allEpisodes.size() > 1) {
+            for (int i = 1; i < allEpisodes.size(); i++) {
+                String[] episodes = allEpisodes.get(i);
+                String seasonImdbId = episodes[1];
+                if (seasonImdbId == null) {
+                    fails.put(i + 1, "None id of IMDb exists.");
+                } else {
+                    final int j = i + 1;
+                    getSeason(seasonImdbId, episodes, i + 1)
+                            .ifPresentOr(seasons::add, msg -> fails.put(j, msg));
+                }
+            }
+        }
+
+        if (!fails.isEmpty()) {
+            return new GenericResult<>(fails.toString());
+        }
         try {
-            return template.execute(status -> {
-                long seriesId = seriesRepository.insert(seriesEntity).getId();
-
-                // insert seasons and episodes
-                Map<Integer, String> fails = new HashMap<>(4);
-                String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
-                insertSeason(seriesImdbId, season1Episodes, seriesId, 1)
-                        .ifSuccessOr(() -> {
-                        }, msg -> fails.put(1, msg));
-
-                if (allEpisodes.size() > 1) {
-                    for (int i = 1; i < allEpisodes.size(); i++) {
-                        String[] episodes = allEpisodes.get(i);
-                        String seasonImdbId = episodes[1];
-                        if (seasonImdbId == null) {
-                            fails.put(i + 1, "None id of IMDb exists.");
-                        } else {
-                            GenericResult<Long> result = insertSeason(seasonImdbId, episodes, seriesId, i + 1);
-                            if (!result.isSuccess()) {
-                                fails.put(i + 1, result.error());
-                            }
-                        }
-                    }
+            seriesEntity.setTitle(extractTitle(seasons));
+            long seriesId = seriesRepository.insert(seriesEntity).getId();
+            for (SeasonEntity season : seasons) {
+                season.setSeriesId(seriesId);
+                long seasonId = seasonRepository.insert(season).getId();
+                for (EpisodeEntity episode : season.getEpisodes()) {
+                    episode.setSeasonId(seasonId);
+                    episodeRepository.insert(episode);
                 }
-
-                if (fails.isEmpty()) {
-                    return GenericResult.of(seriesId);
-                }
-                throw new AppException(fails.toString());
-            });
-        } catch (AppException e) {
-            return new GenericResult<>(e);
+            }
+            return GenericResult.of(seriesId);
         } catch (DataIntegrityViolationException e) {
             return new GenericResult<>("Data of the series aren't integral.");
         }
     }
 
+    private String extractTitle(List<SeasonEntity> seasons) {
+        seasons.sort(Comparator.comparingInt(SeasonEntity::getCurrentSeason));
+        String title = seasons.get(0).getTitle();
+        final String first = " 第一季";
+        if (title.endsWith(first)) {
+            title = title.substring(0, title.length() - 4);
+        }
+        String encoded = StringUtilsExt.encodeAsPattern(title);
+        for (SeasonEntity season : seasons) {
+            Integer currentSeason = season.getCurrentSeason();
+            if (currentSeason == 1) {
+                continue;
+            }
+            String ji = "第";
+            if (currentSeason >= 20) {
+                ji += UNITS[currentSeason / 10];
+            }
+            if (currentSeason >= 10) {
+                ji += "十";
+            }
+            currentSeason %= 10;
+            if (currentSeason != 0) {
+                ji += UNITS[currentSeason];
+            }
+            ji += "季";
+            Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
+            AssertUtils.matches(pattern, season.getTitle());
+        }
+        return title;
+    }
+
     /**
      * All args are required not null.
      */
-    private GenericResult<Long> insertSeason(String seasonImdbId, String[] episodes, long seriesId, int currentSeason) {
+    private GenericResult<SeasonEntity> getSeason(String seasonImdbId, String[] episodes, int currentSeason) {
         GenericResult<Long> idResult = adapter.getDbIdByImdbId(seasonImdbId);
         if (!idResult.isSuccess()) {
             return new GenericResult<>(idResult.error());
@@ -246,20 +294,21 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         if (seasonEntity.getEpisodesCount() == null || seasonEntity.getEpisodesCount() < 1) {
             seasonEntity.setEpisodesCount(episodes.length - 1);
         }
-        seasonEntity.setSeriesId(seriesId);
         seasonEntity.setCurrentSeason(currentSeason);
-        long seasonId = seasonRepository.insert(seasonEntity).getId();
 
+        List<EpisodeEntity> episodeEntities = new ArrayList<>();
         for (int i = 0; i < episodes.length; i++) {
             String episodeImdbId = episodes[i];
             if (StringUtils.isNotBlank(episodeImdbId)) {
-                insertEpisode(episodeImdbId, seasonId, i);
+                insertEpisode(episodeImdbId, i)
+                        .ifPresentOrThrows(episodeEntities::add);
             }
         }
-        return GenericResult.of(seasonId);
+        seasonEntity.setEpisodes(episodeEntities);
+        return GenericResult.of(seasonEntity);
     }
 
-    private void insertEpisode(String episodeImdbId, long seasonId, int currentEpisode) {
+    private GenericResult<EpisodeEntity> insertEpisode(String episodeImdbId, int currentEpisode) {
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
 
@@ -272,8 +321,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         });
 
         episodeEntity.setCurrentEpisode(currentEpisode);
-        episodeEntity.setSeasonId(seasonId);
-        episodeRepository.insert(episodeEntity);
+        return GenericResult.of(episodeEntity);
     }
 
     private <T> void addAll(Collection<T> target, Collection<T> added) {
@@ -322,40 +370,5 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 ids, entry -> insertSubjectByImdb(entry.getKey(), entry.getValue()),
                 AbstractKeyValue::getKey
         );
-    }
-
-    @Autowired
-    public void setUserRecordRepository(UserRecordRepository userRecordRepository) {
-        this.userRecordRepository = userRecordRepository;
-    }
-
-    @Autowired
-    public void setMovieRepository(MovieRepository movieRepository) {
-        this.movieRepository = movieRepository;
-    }
-
-    @Autowired
-    public void setSeriesRepository(SeriesRepository seriesRepository) {
-        this.seriesRepository = seriesRepository;
-    }
-
-    @Autowired
-    public void setSeasonRepository(SeasonRepository seasonRepository) {
-        this.seasonRepository = seasonRepository;
-    }
-
-    @Autowired
-    public void setEpisodeRepository(EpisodeRepository episodeRepository) {
-        this.episodeRepository = episodeRepository;
-    }
-
-    @Autowired
-    public void setTemplate(TransactionTemplate template) {
-        this.template = template;
-    }
-
-    @Autowired
-    public void setAdapter(VideoAdapter adapter) {
-        this.adapter = adapter;
     }
 }
