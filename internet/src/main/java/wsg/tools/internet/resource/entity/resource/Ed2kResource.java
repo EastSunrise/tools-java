@@ -1,9 +1,10 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
 
+import javax.annotation.Nonnull;
 import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,5 +57,16 @@ public class Ed2kResource extends AbstractResource {
         }
         builder.append("|/");
         return builder.toString();
+    }
+
+    @Override
+    @Nonnull
+    public String filename() {
+        return filename;
+    }
+
+    @Override
+    public long size() {
+        return size;
     }
 }

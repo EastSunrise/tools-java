@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import wsg.tools.boot.pojo.enums.ArchivedEnum;
-import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.serializer.EnumSerializers;
 import wsg.tools.internet.video.enums.MarkEnum;
@@ -32,7 +31,6 @@ public class JacksonConfig {
                 .registerModule(new SimpleModule()
                         .addSerializer(EnumSerializers.getTitleSerializer(MarkEnum.class))
                         .addSerializer(EnumSerializers.getTitleSerializer(ArchivedEnum.class))
-                        .addSerializer(EnumSerializers.getTitleSerializer(VideoTypeEnum.class))
                 )
                 .registerModule(new JavaTimeModule()
                         .addSerializer(new LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE))

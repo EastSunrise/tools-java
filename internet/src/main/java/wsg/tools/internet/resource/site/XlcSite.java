@@ -7,14 +7,17 @@ import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.NotFoundException;
-import wsg.tools.internet.resource.download.Downloader;
-import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.entity.BaseDetail;
-import wsg.tools.internet.resource.entity.SimpleTitle;
-import wsg.tools.internet.resource.entity.VideoTypeEnum;
+import wsg.tools.internet.resource.common.ResourceUtil;
+import wsg.tools.internet.resource.common.VideoTypeEnum;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.title.BaseDetail;
+import wsg.tools.internet.resource.entity.title.SimpleTitle;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,7 +27,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> {
+public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
 
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(/vod-read-id-\\d+.html)");
     private static final int TYPE_INFO_START = "类型: ".length();
@@ -39,20 +42,19 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
     public Set<AbstractResource> collectMovie(String title, int year) {
         Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
-            if (!Objects.equals(item.getType(), VideoTypeEnum.MOVIE)) {
-                log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), VideoTypeEnum.MOVIE, item.getType());
+            String itemTitle = item.getTitle();
+            if (!validate(itemTitle, item.getType(), VideoTypeEnum.MOVIE)) {
                 continue;
             }
-            if (!Objects.equals(item.getYear(), year)) {
-                log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), year, item.getYear());
+            if (!validate(itemTitle, item.getYear(), year)) {
                 continue;
             }
-            if (notPossibleTitles(title, year, item.getTitle())) {
-                log.info("Excluded title: {}, not a possible title by {}.", item.getTitle(), title);
+            if (notPossibleTitle(itemTitle, title, year)) {
                 continue;
             }
-            resources.addAll(find(item).getResources());
-            log.info("Chosen title: {}", item.getTitle());
+            BaseDetail detail = find(item);
+            log.info("Chosen title: {}", itemTitle);
+            resources.addAll(detail.getResources());
         }
         return resources;
     }
@@ -98,7 +100,7 @@ public class XlcSite extends AbstractVideoResourceSite<SimpleTitle, BaseDetail> 
                 for (Element li : ul.select(item)) {
                     Element a = li.selectFirst(TAG_A);
                     String href = a.attr(ATTR_HREF);
-                    AbstractResource resource = Downloader.classifyUrl(href);
+                    AbstractResource resource = ResourceUtil.classifyUrl(href);
                     resource.setTitle(a.text().strip());
                     resources.add(resource);
                 }

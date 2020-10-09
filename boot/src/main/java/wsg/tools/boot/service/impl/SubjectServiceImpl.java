@@ -231,7 +231,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             }
             return GenericResult.of(seriesId);
         } catch (DataIntegrityViolationException e) {
-            return new GenericResult<>("Data of the series aren't integral.");
+            return new GenericResult<>("Data of the series aren't integral: %s.", e.getMessage());
         }
     }
 

@@ -85,4 +85,12 @@ public class Result implements Serializable {
         }
     }
 
+    @Override
+    public String toString() {
+        if (success) {
+            return "success";
+        } else {
+            return message;
+        }
+    }
 }

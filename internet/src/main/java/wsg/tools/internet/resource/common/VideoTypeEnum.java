@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.common;
 
 import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.function.AkaPredicate;
@@ -16,7 +16,8 @@ public enum VideoTypeEnum implements AkaPredicate<String> {
     UNKNOWN("国语配音", "/thread-15"),
     TV(
             "ju", "大陆剧", "日韩剧", "欧美剧", "港台剧",
-            "/thread-19", "/thread-20", "/thread-21", "/thread-22", "/thread-23", "/thread-24", "/thread-27", "/thread-36"
+            "/thread-19", "/thread-20", "/thread-21", "/thread-22", "/thread-23", "/thread-24", "/thread-27", "/thread-36",
+            "zy", "综艺片", "/thread-29", "/thread-30", "/thread-31", "/thread-32"
     ),
     MOVIE(
             "movie", "喜剧片", "剧情片", "动作片", "爱情片", "恐怖片", "战争片", "科幻片", "其它片",
@@ -27,7 +28,6 @@ public enum VideoTypeEnum implements AkaPredicate<String> {
     TRAILER("trailer"),
     MV("mv"),
     VIDEO("video"),
-    VARIETY("zy", "综艺片", "/thread-29", "/thread-30", "/thread-31", "/thread-32"),
     COURSE("course");
 
     private final String[] aka;

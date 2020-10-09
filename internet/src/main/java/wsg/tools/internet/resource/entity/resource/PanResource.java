@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import wsg.tools.common.util.AssertUtils;
@@ -51,5 +51,15 @@ public class PanResource extends AbstractResource {
     @Override
     public String getUrl() {
         return String.format("https://pan.baidu.com/s/%s", path);
+    }
+
+    @Override
+    public String filename() {
+        return null;
+    }
+
+    @Override
+    public long size() {
+        return -1;
     }
 }

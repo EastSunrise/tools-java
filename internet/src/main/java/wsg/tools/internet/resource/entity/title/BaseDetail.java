@@ -1,7 +1,8 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.title;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
 
 import java.util.Set;
 

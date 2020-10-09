@@ -14,6 +14,7 @@ import java.util.Map;
 public class BatchResult<T> extends Result {
 
     private final int total;
+    @Getter
     private final int count;
     @Getter
     private final Map<T, String> fails;

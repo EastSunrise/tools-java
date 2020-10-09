@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -72,5 +72,15 @@ public class MagnetResource extends AbstractResource {
             builder.append("&dl=").append(size);
         }
         return builder.toString();
+    }
+
+    @Override
+    public String filename() {
+        return displayName;
+    }
+
+    @Override
+    public long size() {
+        return size;
     }
 }

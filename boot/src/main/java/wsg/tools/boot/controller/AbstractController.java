@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import wsg.tools.boot.common.jackson.handler.ExcelDeserializationProblemHandlers;
 import wsg.tools.boot.common.jackson.serializer.ContainerSerializers;
-import wsg.tools.boot.pojo.enums.VideoTypeEnum;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.excel.ExcelFactory;
@@ -42,8 +41,6 @@ public abstract class AbstractController {
     private static final ExcelFactory FACTORY = new ExcelFactory(new ObjectMapper()
             .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
             .registerModule(new SimpleModule()
-                    .addSerializer(TitleSerializer.getInstance(VideoTypeEnum.class))
-                    .addDeserializer(VideoTypeEnum.class, EnumDeserializers.getTitleDeserializer(VideoTypeEnum.class))
                     .addSerializer(TitleSerializer.getInstance(LanguageEnum.class))
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
                     .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignEnum.SLASH))

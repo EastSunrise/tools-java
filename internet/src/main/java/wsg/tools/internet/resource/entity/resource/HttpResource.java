@@ -1,9 +1,10 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 
+import javax.annotation.Nonnull;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -27,7 +28,7 @@ public class HttpResource extends AbstractResource {
         this.uri = URI.create(url);
         String path = this.uri.getPath();
         if (path == null || path.endsWith(SignEnum.SLASH.toString())) {
-            this.filename = null;
+            this.filename = "index.html";
         } else {
             this.filename = URLDecoder.decode(path.substring(path.lastIndexOf(SignEnum.SLASH.getC()) + 1), Constants.UTF_8);
         }
@@ -36,5 +37,16 @@ public class HttpResource extends AbstractResource {
     @Override
     public String getUrl() {
         return uri.toString();
+    }
+
+    @Override
+    @Nonnull
+    public String filename() {
+        return filename;
+    }
+
+    @Override
+    public long size() {
+        return -1;
     }
 }

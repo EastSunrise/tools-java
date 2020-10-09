@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity;
+package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +23,20 @@ public abstract class AbstractResource {
      * @return url
      */
     public abstract String getUrl();
+
+    /**
+     * Obtains the file name of this resource.
+     *
+     * @return file name
+     */
+    public abstract String filename();
+
+    /**
+     * Obtains size of the resource.
+     *
+     * @return size, Byte as unit, -1 if unknown
+     */
+    public abstract long size();
 
     @Override
     public String toString() {

@@ -16,7 +16,7 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     /**
      * Extended ISO languages
      */
-    ZH("Chinese", "华语", new String[]{"汉语普通话", "普通话", "Mandarin", "中文",
+    ZH("Chinese", "华语", new String[]{"汉语普通话", "普通话", "Mandarin", "中文", "国语",
             "粤语", "Cantonese", "湖南方言", "云南方言", "安徽方言", "陕西方言", "河南方言", "甘肃方言", "贵州方言",
             "北京话", "Shanghainese", "上海话", "南京话", "西安话", "重庆话", "唐山话", "温州话", "武汉话", "Hakka", "客家话",
             "Shanxi", "陕西话", "福建话", "湖南话", "四川话", "山西话", "贵州话", "Min Nan", "Hokkien", "闽南语", "贵州独山话"}),

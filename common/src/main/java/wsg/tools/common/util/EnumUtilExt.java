@@ -21,7 +21,7 @@ public class EnumUtilExt {
     public static <A, T extends Enum<T> & AkaPredicate<A>> T deserializeAka(A object, Class<T> clazz) {
         T[] enums = clazz.getEnumConstants();
         return AssertUtils.findOne(Arrays.stream(enums), anEnum -> anEnum.alsoKnownAs(object),
-                "Unknown object %s for %s", object, clazz.getName());
+                "Unknown aka %s for %s", object, clazz.getName());
     }
 
     /**

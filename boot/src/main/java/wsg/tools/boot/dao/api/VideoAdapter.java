@@ -12,7 +12,7 @@ import wsg.tools.boot.pojo.entity.IdRelationEntity;
 import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.NotFoundException;
-import wsg.tools.internet.resource.entity.AbstractResource;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.site.BdFilmSite;
 import wsg.tools.internet.resource.site.XlcSite;
 import wsg.tools.internet.resource.site.Y80sSite;

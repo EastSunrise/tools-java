@@ -10,15 +10,18 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.base.SchemeEnum;
-import wsg.tools.internet.resource.download.Downloader;
-import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.entity.IdentifiedDetail;
-import wsg.tools.internet.resource.entity.SimpleTitle;
-import wsg.tools.internet.resource.entity.VideoTypeEnum;
+import wsg.tools.internet.resource.common.ResourceUtil;
+import wsg.tools.internet.resource.common.VideoTypeEnum;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.title.IdentifiedDetail;
+import wsg.tools.internet.resource.entity.title.SimpleTitle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +31,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedDetail> {
+public class Y80sSite extends BaseResourceSite<SimpleTitle, IdentifiedDetail> {
 
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com(/(ju|movie|dm|trailer|mv|video|course|zy)/\\d+)");
     private static final Pattern DOUBAN_REVIEWS_REGEX = Pattern.compile("//movie.douban.com/subject/(\\d*) ?//?reviews");
@@ -44,29 +47,23 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
     public Set<AbstractResource> collectMovie(String title, int year, @Nullable Long dbId) {
         Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
-            // excluded: not same type
-            if (!Objects.equals(item.getType(), VideoTypeEnum.MOVIE)) {
-                log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), VideoTypeEnum.MOVIE, item.getType());
-                continue;
-            }
-            if (!Objects.equals(item.getYear(), year)) {
-                log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), year, item.getYear());
-                continue;
-            }
+            String itemTitle = item.getTitle();
             IdentifiedDetail resource = find(item);
-            // excluded: not same douban id if provided
-            if (dbId != null) {
-                if (!Objects.equals(resource.getDbId(), dbId)) {
-                    log.info("Excluded title: {}, required: {}, provided: {}.", item.getTitle(), dbId, resource.getDbId());
+            Long providedId = resource.getDbId();
+            if (dbId == null || providedId == null) {
+                if (!validate(itemTitle, item.getType(), VideoTypeEnum.MOVIE)) {
                     continue;
                 }
-            }
-            // excluded: not a possible title
-            if (notPossibleTitles(title, year, item.getTitle())) {
-                log.info("Excluded title: {}, not a possible title by {}.", item.getTitle(), title);
+                if (!validate(itemTitle, item.getYear(), year)) {
+                    continue;
+                }
+                if (notPossibleTitle(itemTitle, title, year)) {
+                    continue;
+                }
+            } else if (!validate(itemTitle, providedId, dbId)) {
                 continue;
             }
-            log.info("Chosen title: {}", item.getTitle());
+            log.info("Chosen title: {}", itemTitle);
             resources.addAll(resource.getResources());
         }
         return resources;
@@ -110,7 +107,7 @@ public class Y80sSite extends AbstractVideoResourceSite<SimpleTitle, IdentifiedD
         Set<AbstractResource> resources = new HashSet<>();
         for (Element tr : document.select(TAG_TR)) {
             Element a = tr.selectFirst(TAG_A);
-            AbstractResource resource = Downloader.classifyUrl(a.attr(ATTR_HREF));
+            AbstractResource resource = ResourceUtil.classifyUrl(a.attr(ATTR_HREF));
             resource.setTitle(a.text().strip());
             resources.add(resource);
         }

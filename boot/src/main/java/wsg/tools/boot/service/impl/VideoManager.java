@@ -1,32 +1,38 @@
 package wsg.tools.boot.service.impl;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
-import wsg.tools.boot.common.util.ServiceUtil;
 import wsg.tools.boot.dao.api.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.MovieRepository;
+import wsg.tools.boot.dao.jpa.mapper.SeriesRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.MovieEntity;
+import wsg.tools.boot.pojo.entity.SeasonEntity;
+import wsg.tools.boot.pojo.entity.SeriesEntity;
+import wsg.tools.boot.pojo.entity.SubjectEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.io.Filetype;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.resource.download.Downloader;
-import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.site.AbstractVideoResourceSite;
+import wsg.tools.internet.resource.download.Thunder;
+import wsg.tools.internet.resource.entity.resource.*;
+import wsg.tools.internet.resource.site.BaseResourceSite;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -49,11 +55,12 @@ public class VideoManager extends BaseServiceImpl {
     private static final SignEnum NAME_SEPARATOR = SignEnum.UNDERSCORE;
     private static final String TV_DIR = "TV";
     private static final String MOVIE_DIR = "Movies";
+    private static final Filetype[] GOOD_VIDEO_SUFFIXES = new Filetype[]{Filetype.MP4, Filetype.MKV};
+
     /**
      * standard bps of files of a movie in KB/s.
      */
     private static final int MOVIE_STANDARD_KBPS = 250;
-    private static final int MOVIE_STANDARD_FPS = 24;
     /**
      * Permit size of a file mustn't be half smaller nor four bigger than the standard duration.
      */
@@ -69,13 +76,25 @@ public class VideoManager extends BaseServiceImpl {
         System.setProperty("java.awt.headless", "false");
     }
 
+    private final MovieRepository movieRepository;
+    private final SeriesRepository seriesRepository;
+    private final VideoAdapter adapter;
+    private final ThreadPoolTaskExecutor executor;
+    private final Downloader downloader = new Thunder();
+    @Value("${video.tmpdir}")
+    private String tmpdir;
     @Value("${video.cdn}")
     private String cdn;
-    private MovieRepository movieRepository;
-    private VideoAdapter adapter;
-    private ThreadPoolTaskExecutor executor;
 
-    public BatchResult<MovieEntity> collect() {
+    public VideoManager(MovieRepository movieRepository, SeriesRepository seriesRepository,
+                        VideoAdapter adapter, ThreadPoolTaskExecutor executor) {
+        this.movieRepository = movieRepository;
+        this.seriesRepository = seriesRepository;
+        this.adapter = adapter;
+        this.executor = executor;
+    }
+
+    public BatchResult<String> collect() {
         Semaphore semaphore = new Semaphore(0);
         Semaphore closed = new Semaphore(0);
         executor.submit(() -> {
@@ -93,32 +112,96 @@ public class VideoManager extends BaseServiceImpl {
             frame.dispose();
         });
 
-        BatchResult<MovieEntity> result = ServiceUtil.batch(
-                movieRepository.findAll(),
-                entity -> getFile(entity, semaphore)
-        );
+        int count = 0;
+        Map<String, String> fails = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        for (MovieEntity entity : movieRepository.findAll()) {
+            ArchivedStatus status = this.archive(entity);
+            if (status == ArchivedStatus.ARCHIVED) {
+                count++;
+            } else {
+                if (status == ArchivedStatus.ADDED) {
+                    try {
+                        semaphore.acquire();
+                    } catch (InterruptedException e) {
+                        throw AssertUtils.runtimeException(e);
+                    }
+                }
+                fails.put(entity.getTitle(), status.toString());
+            }
+        }
+        for (SeriesEntity entity : seriesRepository.findAll()) {
+            ArchivedStatus status = this.archive(entity);
+            if (status == ArchivedStatus.ARCHIVED) {
+                count++;
+            } else {
+                if (status == ArchivedStatus.ADDED) {
+                    try {
+                        semaphore.acquire();
+                    } catch (InterruptedException e) {
+                        throw AssertUtils.runtimeException(e);
+                    }
+                }
+                fails.put(entity.getTitle(), status.toString());
+            }
+        }
         closed.release();
-        return result;
+        return new BatchResult<>(count, fails);
     }
 
     /**
-     * Obtains corresponding file of the given movie.
+     * Obtains status when archiving the given tv series.
      * <p>
      * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search by {@link AbstractVideoResourceSite}s and download by {@link Downloader}.
+     * If still not found, search by {@link BaseResourceSite}s and download by {@link #downloader}.
      */
-    public final GenericResult<File> getFile(MovieEntity entity, @Nullable Semaphore semaphore) {
+    public final ArchivedStatus archive(SeriesEntity entity) {
+        // todo archive tv series
+        return ArchivedStatus.NONE_FOUND;
+    }
+
+    /**
+     * Obtains corresponding directory of the given tv series.
+     */
+    public final Optional<File> getFile(SeriesEntity entity) {
         String location = getLocation(entity);
-        for (String suffix : Downloader.VIDEO_SUFFIXES) {
-            File file = new File(location + SignEnum.DOT + suffix);
-            if (file.isFile()) {
-                return GenericResult.of(file);
+        File seriesDir = new File(location);
+        if (seriesDir.isDirectory()) {
+            List<SeasonEntity> seasons = entity.getSeasons();
+            if (seasons.size() > 1) {
+                for (SeasonEntity season : seasons) {
+                    File seasonDir = new File(location + File.separator + String.format("S%02d", season.getCurrentSeason()));
+                    if (!seasonDir.isDirectory()) {
+                        log.error("Not found season: {}.", seasonDir);
+                    } else if (FileUtils.listFiles(seasonDir, null, false).size() != season.getEpisodesCount()) {
+                        log.error("Lack of episodes: {}.", seasonDir);
+                    }
+                }
             }
+            return Optional.of(seriesDir);
         }
-        File tempDir = new File(String.join(File.separator,
-                cdn, "Temp", entity.getId() + "" + SignEnum.UNDERSCORE + entity.getTitle()));
-        if (tempDir.isDirectory() && Objects.requireNonNull(tempDir.list()).length > 0) {
-            if (FileUtils.listFiles(tempDir, Downloader.THUNDER_FILE_SUFFIXES, true).isEmpty()) {
+
+        return Optional.empty();
+    }
+
+    /**
+     * Obtains status when archiving the given movie.
+     * <p>
+     * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
+     * If still not found, search by {@link BaseResourceSite}s and download by {@link #downloader}.
+     */
+    public final ArchivedStatus archive(MovieEntity entity) {
+        Optional<File> optional = getFile(entity);
+        if (optional.isPresent()) {
+            return ArchivedStatus.ARCHIVED;
+        }
+
+        String tmpName = entity.getId() + "" + SignEnum.UNDERSCORE + entity.getTitle();
+        File tempDir = new File(String.join(File.separator, tmpdir, tmpName));
+        if (tempDir.isDirectory()) {
+            if (Objects.requireNonNull(tempDir.list()).length == 0) {
+                return ArchivedStatus.NONE_DOWNLOADED;
+            }
+            if (FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.downloadingTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
                 Map<File, GenericResult<Integer>> map = FileUtils.listFiles(tempDir, null, true).stream()
                         .collect(Collectors.toMap(file -> file, file -> this.weight(file, entity.getDurations())));
                 Map.Entry<File, GenericResult<Integer>> max = map.entrySet().stream()
@@ -128,19 +211,21 @@ public class VideoManager extends BaseServiceImpl {
                     String message = map.entrySet().stream()
                             .map(entry -> String.format("Reason: %s File: %s", entry.getValue().error(), entry.getKey().getName()))
                             .collect(Collectors.joining("\n"));
-                    return new GenericResult<>("No qualified files downloaded.\n%s", message);
+                    ArchivedStatus status = ArchivedStatus.NO_QUALIFIED;
+                    status.setMsg(message);
+                    return status;
                 }
                 File srcFile = max.getKey();
-                File destFile = new File(location + srcFile.getName().substring(srcFile.getName().lastIndexOf(SignEnum.DOT.getC())));
+                File destFile = new File(getLocation(entity) + srcFile.getName().substring(srcFile.getName().lastIndexOf(SignEnum.DOT.getC())));
                 try {
                     FileUtils.moveFile(srcFile, destFile);
                     FileUtils.deleteDirectory(tempDir);
                 } catch (IOException e) {
                     throw AssertUtils.runtimeException(e);
                 }
-                return GenericResult.of(destFile);
+                return ArchivedStatus.ARCHIVED;
             } else {
-                return new GenericResult<>("Resources are downloading.");
+                return ArchivedStatus.DOWNLOADING;
             }
         }
 
@@ -153,33 +238,62 @@ public class VideoManager extends BaseServiceImpl {
                 .plusSeconds(MOVIE_DURATION_FLOOR)
                 .getSeconds() * MOVIE_SIZE_FLOOR);
         Set<AbstractResource> resources = adapter.searchResources(entity);
-        int count = Downloader.downloadResources(resources, tempDir, Downloader.filter(minSize, maxSize));
-        if (count > 0) {
-            if (semaphore != null) {
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    throw AssertUtils.runtimeException(e);
-                }
-            }
-            return new GenericResult<>("Resources added to download, count: %d.", count);
-        } else {
-            if (!tempDir.delete()) {
-                log.error("Can't delete temp directory {}.", tempDir.getPath());
-            }
-            return new GenericResult<>("None resources found.");
+        int count = resources.stream().filter(resource -> this.filter(resource, minSize, maxSize))
+                .mapToInt(resource -> {
+                    try {
+                        downloader.download(tempDir, resource);
+                        return 1;
+                    } catch (IOException e) {
+                        log.error(e.getMessage());
+                        return 0;
+                    }
+                }).sum();
+        if (count == 0) {
+            return ArchivedStatus.NONE_FOUND;
         }
+        return ArchivedStatus.ADDED;
+    }
+
+    /**
+     * Obtains corresponding file of the given movie.
+     */
+    public final Optional<File> getFile(MovieEntity entity) {
+        String location = getLocation(entity);
+        for (Filetype type : Filetype.videoTypes()) {
+            File file = new File(location + SignEnum.DOT + type.suffix());
+            if (file.isFile()) {
+                return Optional.of(file);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private boolean filter(AbstractResource resource, long minSize, long maxSize) {
+        if (resource instanceof InvalidResource) {
+            return false;
+        }
+        if (resource instanceof PanResource) {
+            return false;
+        }
+        if (resource instanceof Ed2kResource || resource instanceof HttpResource) {
+            Filetype filetype = Filetype.typeOf(resource.filename());
+            if (filetype == null || !filetype.isVideo()) {
+                return false;
+            }
+        }
+        long size = resource.size();
+        return size < 0 || size >= minSize && size <= maxSize;
     }
 
     private GenericResult<Integer> weight(@Nonnull File file, final List<Duration> durations) {
         int[] weights = new int[3];
-        String name = file.getName();
-        if (Downloader.isSuffix(name, Downloader.GOOD_VIDEO_SUFFIXES)) {
+        Filetype filetype = Filetype.typeOf(file.getName());
+        if (filetype == null || !filetype.isVideo()) {
+            return new GenericResult<>("Not a video file.");
+        } else if (ArrayUtils.contains(GOOD_VIDEO_SUFFIXES, filetype)) {
             weights[0] = 100;
-        } else if (Downloader.isSuffix(name, Downloader.OTHER_VIDEO_SUFFIXES)) {
-            weights[0] = 50;
         } else {
-            return new GenericResult<>("Not permit suffix.");
+            weights[0] = 50;
         }
 
         int size = durations.size();
@@ -244,14 +358,13 @@ public class VideoManager extends BaseServiceImpl {
         return String.format("%.2f PB", size);
     }
 
-
     /**
      * Obtains corresponding location of the given entity, based on {@link #cdn}.
      *
      * @return location of the given entity
      */
     @Nonnull
-    public String getLocation(MovieEntity entity) {
+    private String getLocation(SubjectEntity entity) {
         Objects.requireNonNull(entity, "Given entity mustn't be null.");
         Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");
@@ -259,9 +372,14 @@ public class VideoManager extends BaseServiceImpl {
 
         StringBuilder builder = new StringBuilder()
                 .append(cdn)
-                .append(File.separator)
-                .append(MOVIE_DIR)
                 .append(File.separator);
+        if (entity instanceof MovieEntity) {
+            builder.append(MOVIE_DIR);
+        } else {
+            builder.append(TV_DIR);
+        }
+        builder.append(File.separator);
+
         LanguageEnum language = entity.getLanguages().get(0);
         if (language.ordinal() <= LanguageEnum.TH.ordinal()) {
             builder.append(String.format("%02d", language.ordinal()))
@@ -273,24 +391,26 @@ public class VideoManager extends BaseServiceImpl {
                     .append("其他");
         }
         builder.append(File.separator).append(entity.getYear());
-        if (StringUtils.isNotBlank(entity.getOriginalTitle())) {
-            builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getOriginalTitle()));
-        }
         return builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getTitle())).toString();
     }
 
-    @Autowired
-    public void setAdapter(VideoAdapter adapter) {
-        this.adapter = adapter;
-    }
+    public enum ArchivedStatus {
+        /**
+         * Statuses of archiving
+         */
+        NONE_FOUND,
+        ADDED,
+        DOWNLOADING,
+        NONE_DOWNLOADED,
+        NO_QUALIFIED,
+        ARCHIVED;
 
-    @Autowired
-    public void setExecutor(ThreadPoolTaskExecutor executor) {
-        this.executor = executor;
-    }
+        @Setter
+        private String msg;
 
-    @Autowired
-    public void setMovieRepository(MovieRepository movieRepository) {
-        this.movieRepository = movieRepository;
+        @Override
+        public String toString() {
+            return name() + (msg == null ? "" : ("{" + msg + '}'));
+        }
     }
 }

@@ -9,11 +9,11 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.NotFoundException;
-import wsg.tools.internet.resource.download.Downloader;
-import wsg.tools.internet.resource.entity.AbstractResource;
-import wsg.tools.internet.resource.entity.BaseTitle;
-import wsg.tools.internet.resource.entity.IdentifiedDetail;
-import wsg.tools.internet.resource.entity.PanResource;
+import wsg.tools.internet.resource.common.ResourceUtil;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.resource.PanResource;
+import wsg.tools.internet.resource.entity.title.BaseTitle;
+import wsg.tools.internet.resource.entity.title.IdentifiedDetail;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, IdentifiedDetail> {
+public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDetail> {
 
     private static final Pattern TITLE_HREF_REGEX =
             Pattern.compile("https?://www\\.bd-film\\.(cc|com)(?<path>/(?<type>[a-z]{2}|hjtj|zuitop)/(?<id>\\d+).htm)");
@@ -61,13 +61,14 @@ public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, Ident
         Set<AbstractResource> resources = new HashSet<>();
         for (BaseTitle baseTitle : titles) {
             IdentifiedDetail detail = find(baseTitle);
-            if (imdbId != null && imdbId.equals(detail.getImdbId())) {
-                log.info("Chosen title: {}", baseTitle.getTitle());
-                resources.addAll(detail.getResources());
-            } else if (dbId != null && dbId.equals(detail.getDbId())) {
-                log.info("Chosen title: {}", baseTitle.getTitle());
-                resources.addAll(detail.getResources());
+            if (imdbId != null && !validate(baseTitle.getTitle(), detail.getImdbId(), imdbId)) {
+                continue;
             }
+            if (dbId != null && !validate(baseTitle.getTitle(), detail.getDbId(), dbId)) {
+                continue;
+            }
+            log.info("Chosen title: {}", baseTitle.getTitle());
+            resources.addAll(detail.getResources());
         }
         return resources;
     }
@@ -120,7 +121,7 @@ public final class BdFilmSite extends AbstractVideoResourceSite<BaseTitle, Ident
                 .replace("</p>", "");
         String[] urls = StringUtils.split(urlsStr, "#\r\n");
         Set<AbstractResource> resources = Arrays.stream(urls)
-                .map(Downloader::classifyUrl).collect(Collectors.toSet());
+                .map(ResourceUtil::classifyUrl).collect(Collectors.toSet());
 
         String diskStr = decode(AssertUtils.matches(URLS_REGEX, data[2].strip()).group("urls"));
         if (StringUtils.isNotBlank(diskStr)) {
