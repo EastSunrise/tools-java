@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.download;
 
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Filetype;
@@ -17,9 +18,11 @@ import java.util.Base64;
  * @author Kingen
  * @since 2020/10/8
  */
+@SuppressWarnings("UnstableApiUsage")
 public class Thunder implements Downloader {
 
     private static final String THUNDER_URL_PREFIX = "thunder";
+    private static final RateLimiter LIMITER = RateLimiter.create(1);
 
     /**
      * Encode a url to a thunder url.
@@ -52,10 +55,12 @@ public class Thunder implements Downloader {
     }
 
     @Override
-    public void download(File dir, AbstractResource resource) throws IOException {
+    public boolean addTask(File dir, AbstractResource resource) throws IOException {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
+        LIMITER.acquire();
         SystemUtils.openUrl(encodeThunder(resource.getUrl()));
+        return true;
     }
 }

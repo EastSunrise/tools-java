@@ -3,8 +3,9 @@ package wsg.tools.boot.pojo.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 /**
  * Entity of TV series.
@@ -26,7 +27,4 @@ public class SeriesEntity extends SubjectEntity {
 
     @Column(nullable = false)
     private Integer seasonsCount;
-
-    @OneToMany(mappedBy = "seriesId", fetch = FetchType.EAGER)
-    private List<SeasonEntity> seasons;
 }

@@ -45,8 +45,6 @@ import java.util.stream.Collectors;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
-    private static final char[] UNITS = {'零', '一', '二', '三', '四', '五', '六', '七', '八', '九'};
-
     private final VideoAdapter adapter;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
@@ -202,14 +200,14 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 .ifPresentOr(seasons::add, msg -> fails.put(1, msg));
 
         if (allEpisodes.size() > 1) {
-            for (int i = 1; i < allEpisodes.size(); i++) {
-                String[] episodes = allEpisodes.get(i);
+            for (int currentSeason = 2; currentSeason <= allEpisodes.size(); currentSeason++) {
+                String[] episodes = allEpisodes.get(currentSeason);
                 String seasonImdbId = episodes[1];
                 if (seasonImdbId == null) {
-                    fails.put(i + 1, "None id of IMDb exists.");
+                    fails.put(currentSeason, "None id of IMDb exists.");
                 } else {
-                    final int j = i + 1;
-                    getSeason(seasonImdbId, episodes, i + 1)
+                    final int j = currentSeason;
+                    getSeason(seasonImdbId, episodes, currentSeason)
                             .ifPresentOr(seasons::add, msg -> fails.put(j, msg));
                 }
             }
@@ -248,18 +246,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             if (currentSeason == 1) {
                 continue;
             }
-            String ji = "第";
-            if (currentSeason >= 20) {
-                ji += UNITS[currentSeason / 10];
-            }
-            if (currentSeason >= 10) {
-                ji += "十";
-            }
-            currentSeason %= 10;
-            if (currentSeason != 0) {
-                ji += UNITS[currentSeason];
-            }
-            ji += "季";
+            String ji = "第" + StringUtilsExt.chineseNumeric(currentSeason) + "季";
             Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
             AssertUtils.matches(pattern, season.getTitle());
         }

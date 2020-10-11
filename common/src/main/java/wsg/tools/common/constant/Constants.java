@@ -27,4 +27,6 @@ public class Constants {
 
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
     public static final Charset GBK = Charset.forName("GBK");
+
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 }

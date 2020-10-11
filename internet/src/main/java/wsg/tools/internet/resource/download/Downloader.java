@@ -18,7 +18,8 @@ public interface Downloader {
      *
      * @param dir      target directory
      * @param resource resource to download
+     * @return result of adding
      * @throws IOException i/o exception
      */
-    void download(File dir, AbstractResource resource) throws IOException;
+    boolean addTask(File dir, AbstractResource resource) throws IOException;
 }

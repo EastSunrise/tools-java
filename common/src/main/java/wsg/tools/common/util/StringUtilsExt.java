@@ -16,6 +16,9 @@ public class StringUtilsExt {
 
     private static final Pattern CHINESE_REGEX = Pattern.compile("[\u4E00-\u9FBF]");
     private static final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
+    private static final String[] UNITS = {
+            "零", "一", "二", "三", "四", "五", "六", "七", "八", "九"
+    };
 
     /**
      * Encode a string as a pattern.
@@ -32,6 +35,32 @@ public class StringUtilsExt {
             builder.append(c);
         }
         return builder.toString();
+    }
+
+    public static String chineseNumeric(int num) {
+        if (num < 0) {
+            throw new IllegalArgumentException("Number must be positive.");
+        }
+        if (num == 0) {
+            return UNITS[0];
+        }
+        int ten = UNITS.length;
+        if (num < ten * ten) {
+            int tens = num / ten;
+            int units = num % ten;
+            StringBuilder builder = new StringBuilder();
+            if (tens > 1) {
+                builder.append(UNITS[tens]);
+            }
+            if (tens > 0) {
+                builder.append("十");
+            }
+            if (units > 0) {
+                builder.append(UNITS[units]);
+            }
+            return builder.toString();
+        }
+        throw new IllegalArgumentException("Number must be smaller than 100.");
     }
 
     /**

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import wsg.tools.boot.pojo.enums.ArchivedEnum;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.serializer.EnumSerializers;
 import wsg.tools.internet.video.enums.MarkEnum;
@@ -30,7 +29,6 @@ public class JacksonConfig {
         return new ObjectMapper()
                 .registerModule(new SimpleModule()
                         .addSerializer(EnumSerializers.getTitleSerializer(MarkEnum.class))
-                        .addSerializer(EnumSerializers.getTitleSerializer(ArchivedEnum.class))
                 )
                 .registerModule(new JavaTimeModule()
                         .addSerializer(new LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE))

@@ -28,6 +28,7 @@ public enum Filetype {
     RMVB,
     SRT,
     TORRENT,
+    TS,
     XLTD;
 
     /**
@@ -37,17 +38,22 @@ public enum Filetype {
      * @return type
      */
     public static Filetype typeOf(String name) {
-        if (StringUtils.isBlank(name) || !name.contains(SignEnum.DOT.toString())) {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+        name = StringUtils.stripStart(name, null);
+        name = StringUtils.stripEnd(name, " .");
+        if (name.indexOf(SignEnum.DOT.getC()) < 0) {
             return null;
         }
         Filetype[] enums = Filetype.values();
-        String su = name.substring(name.lastIndexOf(SignEnum.DOT.getC()) + 1);
+        String ext = name.substring(name.lastIndexOf(SignEnum.DOT.getC()) + 1);
         for (Filetype anEnum : enums) {
-            if (anEnum.suffix().equalsIgnoreCase(su)) {
+            if (anEnum.suffix().equalsIgnoreCase(ext)) {
                 return anEnum;
             }
         }
-        throw new IllegalArgumentException(String.format("Unknown name %s for %s", name, Filetype.class.getName()));
+        throw new IllegalArgumentException(String.format("Unknown filetype of %s", name));
     }
 
     public static SuffixFileFilter fileFilter(Filetype... types) {

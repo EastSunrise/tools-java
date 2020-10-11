@@ -8,6 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.base.SchemeEnum;
 import wsg.tools.internet.resource.common.ResourceUtil;
@@ -18,10 +19,7 @@ import wsg.tools.internet.resource.entity.title.SimpleTitle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,34 +41,85 @@ public class Y80sSite extends BaseResourceSite<SimpleTitle, IdentifiedDetail> {
 
     /**
      * Search and collect resources based on the given arguments.
+     *
+     * @param season current season, null for movie
      */
-    public Set<AbstractResource> collectMovie(String title, int year, @Nullable Long dbId) {
+    public Set<AbstractResource> collect(String title, int year, @Nullable Integer season, @Nullable Long dbId) {
+        VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
         Set<AbstractResource> resources = new HashSet<>();
         for (SimpleTitle item : search(title)) {
             String itemTitle = item.getTitle();
-            IdentifiedDetail resource = find(item);
-            Long providedId = resource.getDbId();
+            IdentifiedDetail detail = find(item);
+            Long providedId = detail.getDbId();
             if (dbId == null || providedId == null) {
-                if (!validate(itemTitle, item.getType(), VideoTypeEnum.MOVIE)) {
+                // todo classify anime to tv/movie
+                if (type != item.getType()) {
                     continue;
                 }
-                if (!validate(itemTitle, item.getYear(), year)) {
+                if (!Objects.equals(year, item.getYear())) {
                     continue;
                 }
-                if (notPossibleTitle(itemTitle, title, year)) {
+                if (!isPossibleTitle(title, itemTitle, year, season)) {
                     continue;
                 }
-            } else if (!validate(itemTitle, providedId, dbId)) {
+            } else if (!dbId.equals(providedId)) {
                 continue;
             }
+            // may include trailers, bloopers.
             log.info("Chosen title: {}", itemTitle);
-            resources.addAll(resource.getResources());
+            resources.addAll(detail.getResources());
         }
         return resources;
     }
 
+    /**
+     * Validate whether the title is one possible title of the given target.
+     */
+    private boolean isPossibleTitle(String target, String provided, int year, Integer season) {
+        AssertUtils.requireNotBlank(target);
+        if (StringUtils.isBlank(provided)) {
+            return false;
+        }
+
+        if (season == null) {
+            List<String> possibles = Arrays.asList(
+                    target, target + "I", target + "1", target + year, target + "[" + year + "]",
+                    target + " 加长版", target + "[DVD版]", target + " 加长版",
+                    String.format("%s%02d", target, year % 100)
+            );
+            return Arrays.stream(provided.split("/")).anyMatch(possibles::contains);
+        }
+
+        if (season == 1) {
+            List<String> possibles = Arrays.asList(
+                    target, target + "第一季", target + " 第一季", target + "[第一季]", target + "[纪录片]",
+                    target + year, target + "电视版", target + "[DVD]版",
+                    String.format("%02d版%s", year % 100, target)
+            );
+            return Arrays.stream(provided.split("/")).anyMatch(possibles::contains);
+        }
+
+        String seasonStr = String.format("第%s季", StringUtilsExt.chineseNumeric(season));
+        List<String> inits = Arrays.asList(
+                target + season, target + seasonStr, target + " " + seasonStr, target + "[" + seasonStr + "]"
+        );
+        List<String> possibles = new ArrayList<>();
+        inits.forEach(s -> {
+            possibles.add(s);
+            possibles.add(s + "[未删版]");
+        });
+        String[] parts = provided.split("/");
+        if (provided.endsWith(seasonStr)) {
+            for (int i = 0; i < parts.length - 1; i++) {
+                parts[i] = parts[i] + seasonStr;
+            }
+        }
+        return Arrays.stream(parts).anyMatch(possibles::contains);
+    }
+
     @Override
     protected final Set<SimpleTitle> search(@Nonnull String keyword) {
+        AssertUtils.requireNotBlank(keyword);
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
         Elements as;
         try {
@@ -103,7 +152,12 @@ public class Y80sSite extends BaseResourceSite<SimpleTitle, IdentifiedDetail> {
             throw AssertUtils.runtimeException(e);
         }
         String idStr = AssertUtils.find(DOUBAN_REVIEWS_REGEX, document.selectFirst("p.col-xs-6").html()).group(1);
-        detail.setDbId("".equals(idStr) ? null : Long.parseLong(idStr));
+        if ("".equals(idStr)) {
+            detail.setDbId(null);
+        } else {
+            long id = Long.parseLong(idStr);
+            detail.setDbId(id <= 1000000 ? null : id);
+        }
         Set<AbstractResource> resources = new HashSet<>();
         for (Element tr : document.select(TAG_TR)) {
             Element a = tr.selectFirst(TAG_A);

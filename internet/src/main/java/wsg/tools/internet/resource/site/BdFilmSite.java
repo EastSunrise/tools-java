@@ -61,14 +61,21 @@ public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDeta
         Set<AbstractResource> resources = new HashSet<>();
         for (BaseTitle baseTitle : titles) {
             IdentifiedDetail detail = find(baseTitle);
-            if (imdbId != null && !validate(baseTitle.getTitle(), detail.getImdbId(), imdbId)) {
+            if (imdbId != null && detail.getImdbId() != null) {
+                if (imdbId.equals(detail.getImdbId())) {
+                    log.info("Chosen title: {}", baseTitle.getTitle());
+                    resources.addAll(detail.getResources());
+                }
                 continue;
             }
-            if (dbId != null && !validate(baseTitle.getTitle(), detail.getDbId(), dbId)) {
+            if (dbId != null && detail.getDbId() != null) {
+                if (dbId.equals(detail.getDbId())) {
+                    log.info("Chosen title: {}", baseTitle.getTitle());
+                    resources.addAll(detail.getResources());
+                }
                 continue;
             }
-            log.info("Chosen title: {}", baseTitle.getTitle());
-            resources.addAll(detail.getResources());
+            log.error("Excluded title: {}, required: {}.", baseTitle.getTitle(), title);
         }
         return resources;
     }

@@ -1,18 +1,23 @@
 package wsg.tools.common.excel;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.function.GetterFunction;
 import wsg.tools.common.function.SetterBiConsumer;
 
+import java.beans.FeatureDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Utility to create an excel template quickly.
@@ -28,36 +33,41 @@ public class ExcelTemplate<T> {
     }
 
     /**
-     * Create a template including all properties of the given type.
+     * Create a template including specified properties of the given type.
      */
-    public static <T> ExcelTemplate<T> create(Class<T> clazz) throws IntrospectionException {
-        PropertyDescriptor[] descriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
+    public static <T> ExcelTemplate<T> create(Class<T> clazz, String... properties) throws IntrospectionException {
+        Map<String, PropertyDescriptor> descriptors = Arrays.stream(Introspector.getBeanInfo(clazz).getPropertyDescriptors())
+                .collect(Collectors.toMap(FeatureDescriptor::getName, descriptor -> descriptor));
+        if (ArrayUtils.isEmpty(properties)) {
+            properties = descriptors.keySet().toArray(new String[0]);
+        }
         ExcelTemplate<T> builder = ExcelTemplate.builder();
-        for (PropertyDescriptor descriptor : descriptors) {
-            if (descriptor != null) {
-                final String name = descriptor.getName();
-                final Method readMethod = descriptor.getReadMethod();
-                final Method writeMethod = descriptor.getWriteMethod();
-                final Class<?> propertyType = descriptor.getPropertyType();
-                if (readMethod != null) {
-                    builder.putGetter(name, t -> {
-                        try {
-                            return readMethod.invoke(t);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    });
-                }
-                if (writeMethod != null) {
-                    builder.putSetter(name, (t, o) -> {
-                        try {
-                            writeMethod.invoke(t, o);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
-                    }, propertyType);
-                }
+        for (String property : properties) {
+            PropertyDescriptor descriptor = descriptors.get(property);
+            if (descriptor == null) {
+                throw new IllegalArgumentException(String.format("%s doesn't contain a property of '%s'.", clazz, property));
+            }
+            final Method readMethod = descriptor.getReadMethod();
+            final Method writeMethod = descriptor.getWriteMethod();
+            final Class<?> propertyType = descriptor.getPropertyType();
+            if (readMethod != null) {
+                builder.putGetter(property, t -> {
+                    try {
+                        return readMethod.invoke(t);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                });
+            }
+            if (writeMethod != null) {
+                builder.putSetter(property, (t, o) -> {
+                    try {
+                        writeMethod.invoke(t, o);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+                }, propertyType);
             }
         }
         return builder;
