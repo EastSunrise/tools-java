@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import wsg.tools.common.constant.Constants;
@@ -196,12 +197,14 @@ public class ExcelFactory {
      *
      * @param data list of map to write
      */
-    public <V> void writeXlsx(OutputStream stream, List<Map<String, V>> data) throws IOException {
+    public <V> void writeXlsx(OutputStream stream, List<Map<String, V>> data, String... headers) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
-        Set<String> set = new HashSet<>();
-        data.forEach(map -> set.addAll(map.keySet()));
-        String[] headers = set.toArray(new String[0]);
+        if (ArrayUtils.isEmpty(headers)) {
+            Set<String> set = new HashSet<>();
+            data.forEach(map -> set.addAll(map.keySet()));
+            headers = set.toArray(new String[0]);
+        }
         int i = 0;
         Row row = sheet.createRow(i++);
         int j = 0;

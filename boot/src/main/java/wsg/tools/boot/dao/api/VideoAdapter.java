@@ -15,7 +15,9 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.NotFoundException;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.entity.resource.*;
+import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.resource.Ed2kResource;
+import wsg.tools.internet.resource.entity.resource.HttpResource;
 import wsg.tools.internet.resource.site.BdFilmSite;
 import wsg.tools.internet.resource.site.XlcSite;
 import wsg.tools.internet.resource.site.Y80sSite;
@@ -63,7 +65,7 @@ public class VideoAdapter implements InitializingBean {
         resources.addAll(y80sSite.collect(movie.getTitle(), year, null, movie.getDbId()));
         resources.addAll(xlcSite.collect(movie.getTitle(), year, null));
         resources.addAll(bdFilmSite.collectMovie(movie.getTitle(), movie.getImdbId(), movie.getDbId()));
-        return resources.stream().filter(this::filterResource)
+        return resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
                         return downloader.addTask(target, resource);
@@ -84,7 +86,7 @@ public class VideoAdapter implements InitializingBean {
         Set<AbstractResource> resources = new HashSet<>();
         resources.addAll(y80sSite.collect(title, year, season.getCurrentSeason(), season.getDbId()));
         resources.addAll(xlcSite.collect(title, year, season.getCurrentSeason()));
-        long count = resources.stream().filter(this::filterResource)
+        long count = resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
                         return downloader.addTask(target, resource);
@@ -97,13 +99,7 @@ public class VideoAdapter implements InitializingBean {
         return count;
     }
 
-    private boolean filterResource(AbstractResource resource) {
-        if (resource instanceof InvalidResource) {
-            return false;
-        }
-        if (resource instanceof PanResource) {
-            return false;
-        }
+    private boolean filterVideo(AbstractResource resource) {
         if (resource instanceof Ed2kResource || resource instanceof HttpResource) {
             Filetype filetype = Filetype.typeOf(resource.filename());
             return filetype != null && filetype.isVideo();

@@ -1,9 +1,6 @@
 package wsg.tools.boot.service.intf;
 
-import wsg.tools.boot.pojo.entity.EpisodeEntity;
-import wsg.tools.boot.pojo.entity.MovieEntity;
-import wsg.tools.boot.pojo.entity.SeasonEntity;
-import wsg.tools.boot.pojo.entity.SeriesEntity;
+import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.enums.ArchivedStatus;
 
 import java.io.File;
@@ -78,4 +75,12 @@ public interface VideoManager {
      * @return map of season-status
      */
     Map<Integer, ArchivedStatus> archive(SeriesEntity series, Semaphore semaphore);
+
+    /**
+     * Obtains corresponding location of the given entity
+     *
+     * @param entity given entity
+     * @return location of the given entity
+     */
+    String getLocation(SubjectEntity entity);
 }

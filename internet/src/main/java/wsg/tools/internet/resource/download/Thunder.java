@@ -6,6 +6,8 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.util.SystemUtils;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.resource.InvalidResource;
+import wsg.tools.internet.resource.entity.resource.PanResource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -56,6 +58,10 @@ public class Thunder implements Downloader {
 
     @Override
     public boolean addTask(File dir, AbstractResource resource) throws IOException {
+        if (resource instanceof InvalidResource || resource instanceof PanResource) {
+            return false;
+        }
+
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }

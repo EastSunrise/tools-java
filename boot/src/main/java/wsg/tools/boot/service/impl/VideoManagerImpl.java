@@ -59,8 +59,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     /**
      * Permit size of a file mustn't be half smaller nor four bigger than the standard duration.
      */
-    private static final double SIZE_FLOOR = 0.5;
-    private static final int SIZE_CEIL = 4;
+    private static final double SIZE_FLOOR = 0.6;
+    private static final double SIZE_CEIL = 2.5;
     /**
      * Permit errors of durations.
      */
@@ -428,12 +428,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     /**
-     * Obtains corresponding location of the given entity, based on {@link #cdn}.
-     *
-     * @return location of the given entity
+     * Based on {@link #cdn}.
      */
-    @Nonnull
-    private String getLocation(SubjectEntity entity) {
+    @Override
+    public final String getLocation(SubjectEntity entity) {
         Objects.requireNonNull(entity, "Given entity mustn't be null.");
         Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");

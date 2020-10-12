@@ -1,5 +1,7 @@
 package wsg.tools.common.util;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import java.io.File;
@@ -14,6 +16,7 @@ import java.util.function.Consumer;
  * @author Kingen
  * @since 2020/6/29
  */
+@Slf4j
 public class SystemUtils {
 
     /**
@@ -65,5 +68,20 @@ public class SystemUtils {
             consumer.accept(null);
         }
         return System.currentTimeMillis() - start;
+    }
+
+    /**
+     * Executes the commands with the given executable program and arguments.
+     *
+     * @throws IOException If the process call fails.
+     */
+    public Process execute(String executable, String... args) throws IOException {
+        String[] cmd = new String[args.length + 2];
+        cmd[0] = executable;
+        System.arraycopy(args, 0, cmd, 1, args.length);
+        cmd[args.length + 1] = "-hide_banner";
+        log.info("Start to execute '{}'.", StringUtils.join(cmd, ' '));
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.exec(cmd);
     }
 }
