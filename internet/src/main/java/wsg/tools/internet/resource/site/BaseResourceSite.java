@@ -2,7 +2,7 @@ package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.SchemeEnum;
+import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.title.BaseDetail;
 import wsg.tools.internet.resource.entity.title.BaseTitle;

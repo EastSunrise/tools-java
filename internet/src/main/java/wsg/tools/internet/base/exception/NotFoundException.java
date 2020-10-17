@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.base.exception;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;

@@ -8,7 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.internet.base.NotFoundException;
+import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.resource.PanResource;
@@ -75,7 +75,7 @@ public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDeta
                 }
                 continue;
             }
-            log.error("Excluded title: {}, required: {}.", baseTitle.getTitle(), title);
+            log.warn("Excluded title: {}, required: {}.", baseTitle.getTitle(), title);
         }
         return resources;
     }

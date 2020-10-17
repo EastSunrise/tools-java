@@ -12,7 +12,6 @@ import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
 import wsg.tools.boot.dao.api.VideoAdapter;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
-import wsg.tools.boot.dao.jpa.mapper.SeriesRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.enums.ArchivedStatus;
@@ -30,8 +29,9 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.Semaphore;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -50,24 +50,24 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private static final String MOVIE_DIR = "01 Movies";
     private static final String TV_DIR = "02 TV";
     private static final Filetype[] GOOD_VIDEO_SUFFIXES = new Filetype[]{Filetype.MP4, Filetype.MKV};
-    private static final Pattern EPISODE_FILENAME_REGEX = Pattern.compile("[^\\d]+(77ds)?[^\\d]+(?<e>\\d+)[^\\d]*(v2_hd)?[^\\d]*(\\(1\\))?");
 
     /**
-     * standard bps of files of a movie in KB/s.
+     * standard bps of files of a movie in kbps.
      */
-    private static final int STANDARD_BIT_RATE = 250;
+    private static final int MOVIE_BIT_RATE = 2000;
+    private static final int EPISODE_BIT_RATE = 1500;
     /**
      * Permit size of a file mustn't be half smaller nor four bigger than the standard duration.
      */
-    private static final double SIZE_FLOOR = 0.6;
-    private static final double SIZE_CEIL = 2.5;
+    private static final double SIZE_FLOOR = 0.5;
+    private static final double SIZE_CEIL = 2.0;
     /**
      * Permit errors of durations.
      */
-    private static final Duration SINGLE_DURATION_ERROR = Duration.ofSeconds(60);
-    private static final Duration SEASON_DURATION_ERROR = Duration.ofSeconds(300);
+    private static final Duration ACCURATE_DURATION_ERROR = Duration.ofSeconds(60);
+    private static final Duration INACCURATE_DURATION_FLOOR = Duration.ofSeconds(-60);
+    private static final Duration INACCURATE_DURATION_CEIL = Duration.ofSeconds(60);
 
-    private final SeriesRepository seriesRepository;
     private final SeasonRepository seasonRepository;
     private final VideoAdapter adapter;
     @Value("${video.tmpdir}")
@@ -75,8 +75,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     @Value("${video.cdn}")
     private String cdn;
 
-    public VideoManagerImpl(SeriesRepository seriesRepository, SeasonRepository seasonRepository, VideoAdapter adapter) {
-        this.seriesRepository = seriesRepository;
+    public VideoManagerImpl(SeasonRepository seasonRepository, VideoAdapter adapter) {
         this.seasonRepository = seasonRepository;
         this.adapter = adapter;
     }
@@ -105,7 +104,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public Optional<File> getFile(SeasonEntity season) {
-        SeriesEntity series = seriesRepository.findById(season.getSeriesId()).orElseThrow();
+        SeriesEntity series = season.getSeries();
         Optional<File> optional = getFile(series);
         if (series.getSeasonsCount() == 1) {
             return optional;
@@ -163,16 +162,15 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             }
 
             Collection<File> files = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
-            GenericResult<File> chosen = choose(files, movie.getDurations(), SINGLE_DURATION_ERROR);
+            GenericResult<File> chosen = choose(files, movie.getDurations(), ACCURATE_DURATION_ERROR.negated(), ACCURATE_DURATION_ERROR, MOVIE_BIT_RATE);
             if (!chosen.isSuccess()) {
-                ArchivedStatus status = ArchivedStatus.NO_QUALIFIED;
-                status.setMsg(chosen.error());
-                return status;
+                return ArchivedStatus.noQualified(chosen.error());
             }
             File chosenFile = chosen.get();
             File destFile = new File(getLocation(movie) + chosenFile.getName().substring(chosenFile.getName().lastIndexOf(SignEnum.DOT.getC())));
             try {
                 FileUtils.moveFile(chosenFile, destFile);
+                log.info("Archived, deleting {}.", tempDir);
                 FileUtils.deleteDirectory(tempDir);
             } catch (IOException e) {
                 throw AssertUtils.runtimeException(e);
@@ -188,11 +186,11 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     /**
      * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search and download by {@link VideoAdapter#download(String, SeasonEntity, File)}.
+     * If still not found, search and download by {@link VideoAdapter#download(SeasonEntity, File)}.
      */
     @Override
     public ArchivedStatus archive(SeasonEntity season) {
-        SeriesEntity series = seriesRepository.findById(season.getSeriesId()).orElseThrow();
+        SeriesEntity series = season.getSeries();
         File seriesDir = new File(getLocation(series));
         File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
                 : new File(seriesDir, String.format("S%02d", season.getCurrentSeason()));
@@ -212,80 +210,44 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return archiveSeason(tempDir, seasonDir, season);
         }
 
-        long count = adapter.download(series.getTitle(), season, tempDir);
+        long count = adapter.download(season, tempDir);
         if (count == 0) {
             return ArchivedStatus.NONE_FOUND;
         }
         return ArchivedStatus.ADDED;
     }
 
-    /**
-     * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search and download by {@link VideoAdapter#download(String, SeasonEntity, File)}.
-     */
-    @Override
-    public final Map<Integer, ArchivedStatus> archive(SeriesEntity series, Semaphore semaphore) {
-        List<SeasonEntity> seasons = seasonRepository.findAllBySeriesId(series.getId());
-        Map<Integer, ArchivedStatus> statuses = new HashMap<>(series.getSeasonsCount());
-        File seriesDir = new File(getLocation(series));
-
-        for (SeasonEntity season : seasons) {
-            int currentSeason = season.getCurrentSeason();
-            File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
-                    : new File(seriesDir, String.format("S%02d", currentSeason));
-            if (seasonDir.isDirectory()) {
-                statuses.put(currentSeason, ArchivedStatus.ARCHIVED);
-                continue;
-            }
-
-            log.info("Archiving for {}.", season.getTitle());
-            File tempDir = new File(tmpdir, season.getId() + "" + SignEnum.UNDERSCORE + season.getTitle());
-            if (tempDir.isDirectory()) {
-                if (Objects.requireNonNull(tempDir.list()).length == 0) {
-                    statuses.put(currentSeason, ArchivedStatus.NONE_DOWNLOADED);
-                    continue;
-                }
-                if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.downloadingTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
-                    statuses.put(currentSeason, ArchivedStatus.DOWNLOADING);
-                    continue;
-                }
-                statuses.put(currentSeason, archiveSeason(tempDir, seasonDir, season));
-                continue;
-            }
-
-            long count = adapter.download(series.getTitle(), season, tempDir);
-            if (count == 0) {
-                statuses.put(currentSeason, ArchivedStatus.NONE_FOUND);
-                continue;
-            }
-            statuses.put(currentSeason, ArchivedStatus.ADDED);
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                throw AssertUtils.runtimeException(e);
-            }
-        }
-
-        return statuses;
-    }
-
     private ArchivedStatus archiveSeason(File tempDir, File seasonDir, SeasonEntity season) {
-        Collection<File> allFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
-        Map<Integer, List<File>> map = allFiles.stream().collect(Collectors.groupingBy(this::parseEpisode));
+        Map<Integer, List<File>> files = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE)
+                .stream().collect(Collectors.groupingBy(file -> parseEpisode(file, season.getCurrentSeason(), season.getYear().getValue())));
         Integer episodesCount = season.getEpisodesCount();
         Map<Integer, File> chosenFiles = new HashMap<>(episodesCount);
         List<String> fails = new ArrayList<>();
         Map<Integer, EpisodeEntity> episodes = season.getEpisodes().stream()
                 .collect(Collectors.toMap(EpisodeEntity::getCurrentEpisode, episodeEntity -> episodeEntity));
         for (int currentEpisode = 1; currentEpisode <= episodesCount; currentEpisode++) {
-            List<File> episodesFiles = map.get(currentEpisode);
-            if (episodesFiles != null) {
-                EpisodeEntity episode = episodes.get(currentEpisode);
+            List<File> episodeFiles = new ArrayList<>();
+            List<File> byIndex = files.remove(currentEpisode);
+            if (byIndex != null) {
+                episodeFiles.addAll(byIndex);
+            }
+            EpisodeEntity episode = episodes.get(currentEpisode);
+            if (episode != null && episode.getReleased() != null) {
+                List<File> byDate = files.remove(Integer.parseInt(episode.getReleased().format(Constants.YYYYMMDD)));
+                if (byDate != null) {
+                    episodeFiles.addAll(byDate);
+                }
+                byDate = files.remove(Integer.parseInt(episode.getReleased().format(DateTimeFormatter.ofPattern("MMdd"))));
+                if (byDate != null) {
+                    episodeFiles.addAll(byDate);
+                }
+            }
+            if (!episodeFiles.isEmpty()) {
                 GenericResult<File> chosen;
                 if (episode != null && episode.getDurations() != null) {
-                    chosen = choose(episodesFiles, episode.getDurations(), SINGLE_DURATION_ERROR);
+                    chosen = choose(episodeFiles, episode.getDurations(), INACCURATE_DURATION_FLOOR, INACCURATE_DURATION_CEIL, EPISODE_BIT_RATE);
                 } else {
-                    chosen = choose(episodesFiles, season.getDurations(), SEASON_DURATION_ERROR);
+                    chosen = choose(episodeFiles, season.getDurations(), INACCURATE_DURATION_FLOOR, INACCURATE_DURATION_CEIL, EPISODE_BIT_RATE);
                 }
                 if (chosen.isSuccess()) {
                     chosenFiles.put(currentEpisode, chosen.get());
@@ -293,14 +255,21 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
                 }
                 fails.add(chosen.error());
             } else {
-                fails.add("None files for episode " + (currentEpisode + 1));
+                fails.add("None file for episode " + currentEpisode);
             }
         }
 
+        if (!files.isEmpty()) {
+            return ArchivedStatus.noQualified(files.values().stream()
+                    .map(list -> list.stream()
+                            .map(File::toString)
+                            .collect(Collectors.joining(Constants.LINE_SEPARATOR))
+                    )
+                    .collect(Collectors.joining(Constants.LINE_SEPARATOR))
+            );
+        }
         if (!fails.isEmpty()) {
-            ArchivedStatus status = ArchivedStatus.LACKING;
-            status.setMsg(String.join(Constants.LINE_SEPARATOR, fails));
-            return status;
+            return ArchivedStatus.lacking(String.join("," + Constants.LINE_SEPARATOR, fails));
         }
 
         String format = "E%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
@@ -315,6 +284,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             }
         }
         try {
+            log.info("Archived, deleting {}.", tempDir);
             FileUtils.deleteDirectory(tempDir);
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
@@ -322,28 +292,36 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return ArchivedStatus.ARCHIVED;
     }
 
-    private int parseEpisode(File file) {
+    private int parseEpisode(File file, int currentSeason, int year) {
         String name = file.getName();
         if (name.indexOf(SignEnum.DOT.getC()) > 0) {
             name = name.substring(0, name.lastIndexOf(SignEnum.DOT.getC()));
         }
-        try {
-            return Integer.parseInt(AssertUtils.matches(EPISODE_FILENAME_REGEX, name).group("e"));
-        } catch (IllegalArgumentException e) {
-            log.error(name);
+        Pattern pattern = Pattern.compile("[^\\d]+" +
+                "((1080P|www\\.[\\w\\d]+\\.(com|cn))[^\\d]+)?" +
+                "(" + year + "[^\\d]+)?" +
+                "(?<s>0?" + currentSeason + "[^\\d]+|第" + StringUtilsExt.chineseNumeric(currentSeason) + "季[^\\d]*)" + (currentSeason == 1 ? "?" : "") +
+                "(?<e>0[1-9]|[1-9][0-9])" +
+                "([^\\d]+" + year + ")?" +
+                "(([^\\d]*(v2|V2|X264|x264|AC3|Mp4))|([^\\d]+(1024高清|720P|624x336|1024x576|1024X512|720X360)))*" +
+                "[^\\d]*(\\(1\\))?"
+        );
+        Matcher matcher = pattern.matcher(name);
+        if (!matcher.matches()) {
             return -1;
         }
+        return Integer.parseInt(matcher.group("e"));
     }
 
-    private GenericResult<File> choose(Collection<File> files, List<Duration> durations, final Duration error) {
+    private GenericResult<File> choose(Collection<File> files, List<Duration> durations, Duration floor, Duration ceil, int kbps) {
         List<String> fails = new ArrayList<>();
         Optional<DefaultMapEntry<File, GenericResult<Long>>> max = files.stream()
-                .map(file -> new DefaultMapEntry<>(file, this.weight(file, durations, error)))
+                .map(file -> new DefaultMapEntry<>(file, this.weight(file, durations, floor, ceil, kbps)))
                 .filter(entry -> {
                     if (entry.getValue().isSuccess()) {
                         return true;
                     } else {
-                        fails.add(String.format("Reason: %s File: %s", entry.getValue().error(), entry.getKey().getName()));
+                        fails.add(String.format("Reason: %s File: %s", entry.getValue().error(), entry.getKey().getPath()));
                         return false;
                     }
                 })
@@ -359,8 +337,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
      *
      * @param file      file to calculate
      * @param durations standard durations of the subject
+     * @param floor     floor of duration comparing to durations, must be negative
+     * @param ceil      ceil of duration comparing to durations, must be positive
      */
-    private GenericResult<Long> weight(@Nonnull File file, final List<Duration> durations, Duration error) {
+    private GenericResult<Long> weight(@Nonnull File file, final List<Duration> durations, Duration floor, Duration ceil, int kbps) {
+        AssertUtils.requireRange(kbps, 400, null);
+        AssertUtils.requireRange(floor, null, Duration.ZERO);
+        AssertUtils.requireRange(ceil, Duration.ZERO, null);
         Filetype filetype = Filetype.typeOf(file.getName());
         if (filetype == null || !filetype.isVideo()) {
             return new GenericResult<>("Not a video file.");
@@ -381,12 +364,11 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         } catch (EncoderException e) {
             return new GenericResult<>(e);
         }
-
         boolean anyMatch = false;
         int durationIndex = durations.size() - 1;
         while (durationIndex >= 0) {
-            Duration duration = durations.get(durationIndex);
-            if (fileDuration.minus(duration).abs().compareTo(error.abs()) < 0) {
+            Duration error = fileDuration.minus(durations.get(durationIndex));
+            if (error.compareTo(floor) > 0 && error.compareTo(ceil) < 0) {
                 anyMatch = true;
                 break;
             }
@@ -396,13 +378,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return new GenericResult<>("Wrong duration: %d min, required: %s.", fileDuration.toMinutes(),
                     durations.stream().map(duration -> duration.toMinutes() + "min").collect(Collectors.joining("/")));
         }
-        Duration durationError = fileDuration.minus(durations.get(durationIndex)).plus(error.abs());
+        Duration durationError = fileDuration.minus(durations.get(durationIndex).plus(floor));
 
         long length = file.length();
         if (length == 0) {
             return new GenericResult<>("Can't get size.");
         }
-        long targetSize = fileDuration.getSeconds() * STANDARD_BIT_RATE * 1024;
+        long targetSize = fileDuration.getSeconds() * kbps * 128;
         if (length < targetSize * SIZE_FLOOR) {
             return new GenericResult<>("Too small size: %s, standard: %s.", printSize(length), printSize(targetSize));
         }

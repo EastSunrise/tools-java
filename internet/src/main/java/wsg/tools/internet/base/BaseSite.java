@@ -34,6 +34,9 @@ import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.util.AssertUtils;
+import wsg.tools.internet.base.enums.ContentTypeEnum;
+import wsg.tools.internet.base.enums.SchemeEnum;
+import wsg.tools.internet.base.exception.NotFoundException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

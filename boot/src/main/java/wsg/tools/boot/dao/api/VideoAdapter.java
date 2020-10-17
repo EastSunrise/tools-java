@@ -12,7 +12,7 @@ import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.entity.SeasonEntity;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.NotFoundException;
+import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
@@ -81,8 +81,9 @@ public class VideoAdapter implements InitializingBean {
      *
      * @return count of added resources
      */
-    public long download(String title, SeasonEntity season, File target) {
+    public long download(SeasonEntity season, File target) {
         int year = season.getYear().getValue();
+        String title = season.getSeries().getTitle();
         Set<AbstractResource> resources = new HashSet<>();
         resources.addAll(y80sSite.collect(title, year, season.getCurrentSeason(), season.getDbId()));
         resources.addAll(xlcSite.collect(title, year, season.getCurrentSeason()));

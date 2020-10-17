@@ -25,14 +25,18 @@ public class SeasonEntity extends SubjectEntity {
     private String originalTitle;
 
     @Column(nullable = false)
-    private Long seriesId;
-
-    @Column(nullable = false)
     private Integer currentSeason;
 
     @Column(nullable = false)
     private Integer episodesCount;
 
+    @ManyToOne
+    @JoinColumn(name = "series_id", nullable = false)
+    private SeriesEntity series;
+
+    /**
+     * todo fetch lazily
+     */
     @OneToMany(mappedBy = "seasonId", fetch = FetchType.EAGER)
     private List<EpisodeEntity> episodes;
 }

@@ -17,7 +17,7 @@ public final class FileHandler {
     private static final Encoder ENCODER = new Encoder();
 
     /**
-     * Cut a video file.
+     * Cut a video file with 'copy' codec.
      *
      * @param output   it will be overwrote if the output file exists.
      * @param offset   may null
@@ -31,31 +31,13 @@ public final class FileHandler {
         VideoAttributes videoAttributes = new VideoAttributes();
         videoAttributes.setCodec(VideoAttributes.DIRECT_STREAM_COPY);
         encodingAttributes.setVideoAttributes(videoAttributes);
+        AudioAttributes audioAttributes = new AudioAttributes();
+        audioAttributes.setCodec(AudioAttributes.DIRECT_STREAM_COPY);
+        encodingAttributes.setAudioAttributes(audioAttributes);
 
         if (listener == null) {
-            listener = Listener.LISTENER;
+            listener = new DefaultListener();
         }
         ENCODER.encode(new MultimediaObject(input), output, encodingAttributes, listener);
-    }
-
-
-    static class Listener implements EncoderProgressListener {
-
-        private static final EncoderProgressListener LISTENER = new Listener();
-
-        @Override
-        public void sourceInfo(MultimediaInfo info) {
-            log.info("Source info: {}", info);
-        }
-
-        @Override
-        public void progress(int permil) {
-            log.info(String.format("Encoding: %.2f%%", permil / 10F));
-        }
-
-        @Override
-        public void message(String message) {
-            log.error("Msg: {}", message);
-        }
     }
 }

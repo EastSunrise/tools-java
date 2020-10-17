@@ -200,15 +200,15 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 .ifPresentOr(seasons::add, msg -> fails.put(1, msg));
 
         if (allEpisodes.size() > 1) {
-            for (int currentSeason = 2; currentSeason <= allEpisodes.size(); currentSeason++) {
-                String[] episodes = allEpisodes.get(currentSeason);
+            for (int index = 1; index < allEpisodes.size(); index++) {
+                String[] episodes = allEpisodes.get(index);
                 String seasonImdbId = episodes[1];
+                final int currentSeason = index + 1;
                 if (seasonImdbId == null) {
                     fails.put(currentSeason, "None id of IMDb exists.");
                 } else {
-                    final int j = currentSeason;
                     getSeason(seasonImdbId, episodes, currentSeason)
-                            .ifPresentOr(seasons::add, msg -> fails.put(j, msg));
+                            .ifPresentOr(seasons::add, msg -> fails.put(currentSeason, msg));
                 }
             }
         }
@@ -218,16 +218,16 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
         try {
             seriesEntity.setTitle(extractTitle(seasons));
-            long seriesId = seriesRepository.insert(seriesEntity).getId();
+            SeriesEntity series = seriesRepository.insert(seriesEntity);
             for (SeasonEntity season : seasons) {
-                season.setSeriesId(seriesId);
+                season.setSeries(series);
                 long seasonId = seasonRepository.insert(season).getId();
                 for (EpisodeEntity episode : season.getEpisodes()) {
                     episode.setSeasonId(seasonId);
                     episodeRepository.insert(episode);
                 }
             }
-            return GenericResult.of(seriesId);
+            return GenericResult.of(series.getId());
         } catch (DataIntegrityViolationException e) {
             return new GenericResult<>("Data of the series aren't integral: %s.", e.getMessage());
         }

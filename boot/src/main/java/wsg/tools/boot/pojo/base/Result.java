@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 /**
  * Return common result with a message if failed.
+ * todo 多继承实现
  *
  * @author Kingen
  * @since 2020/6/26

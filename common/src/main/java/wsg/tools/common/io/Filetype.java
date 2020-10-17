@@ -61,7 +61,7 @@ public enum Filetype {
     }
 
     public static Filetype[] videoTypes() {
-        return new Filetype[]{MP4, MKV, AVI, RMVB};
+        return new Filetype[]{MP4, MKV, AVI, RMVB, TS};
     }
 
     public boolean isVideo() {

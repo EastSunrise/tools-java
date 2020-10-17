@@ -17,6 +17,31 @@ import java.util.stream.Stream;
 public final class AssertUtils {
 
     /**
+     * Validate range of an object, [from, to)
+     */
+    public static <T extends Comparable<T>> void requireRange(T target, T from, T to) {
+        Objects.requireNonNull(target);
+        if (from == null && to == null) {
+            return;
+        }
+        if (from == null) {
+            if (target.compareTo(to) >= 0) {
+                throw new IllegalArgumentException("Target must be less than " + to);
+            }
+            return;
+        }
+        if (to == null) {
+            if (target.compareTo(from) < 0) {
+                throw new IllegalArgumentException("Target mustn't be less than " + from);
+            }
+            return;
+        }
+        if (target.compareTo(from) < 0 || target.compareTo(to) >= 0) {
+            throw new IllegalArgumentException("Target must be within range from " + from + " to " + to);
+        }
+    }
+
+    /**
      * Validate args to be not blank.
      */
     public static void requireNotBlank(String arg) {

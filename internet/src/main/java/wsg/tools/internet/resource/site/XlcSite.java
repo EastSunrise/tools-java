@@ -8,7 +8,7 @@ import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.common.util.StringUtilsExt;
-import wsg.tools.internet.base.NotFoundException;
+import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.common.VideoTypeEnum;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
@@ -79,8 +79,8 @@ public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
             String[] parts = matcher.group("title").split("/");
             // 2-II
             List<String> possibles = Arrays.asList(
-                    target, target + "国语", target + "(未删减完整版)", target + "完整版", target + "3D",
-                    target + "大电影", target + "3D版", target + "1", target + "国语D", target + "纪录片",
+                    target, target + "(未删减完整版)", target + "完整版", target + "3D",
+                    target + "大电影", target + "3D版", target + "1", target + "纪录片",
                     target + "国粤双语中字", target + year
             );
             return Arrays.stream(parts).anyMatch(possibles::contains);

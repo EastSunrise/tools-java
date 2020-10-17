@@ -4,9 +4,7 @@ import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.enums.ArchivedStatus;
 
 import java.io.File;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 
 /**
  * Management of local videos.
@@ -66,15 +64,6 @@ public interface VideoManager {
      * @return status of archiving
      */
     ArchivedStatus archive(SeasonEntity season);
-
-    /**
-     * Archive the given tv series.
-     *
-     * @param series    given tv series
-     * @param semaphore a semaphore between seasons
-     * @return map of season-status
-     */
-    Map<Integer, ArchivedStatus> archive(SeriesEntity series, Semaphore semaphore);
 
     /**
      * Obtains corresponding location of the given entity

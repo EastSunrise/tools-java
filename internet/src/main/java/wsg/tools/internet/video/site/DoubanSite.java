@@ -22,9 +22,9 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.common.util.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.LoginException;
-import wsg.tools.internet.base.NotFoundException;
-import wsg.tools.internet.base.UnexpectedContentException;
+import wsg.tools.internet.base.exception.LoginException;
+import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.base.BaseSuggestItem;
 import wsg.tools.internet.video.entity.douban.base.LoginResult;
@@ -223,7 +223,7 @@ public class DoubanSite extends BaseSite {
     }
 
     /**
-     * Search items by specified keyword.
+     * Search items by specified keyword under sub module.
      *
      * @param catalog which catalog
      * @param keyword not blank
