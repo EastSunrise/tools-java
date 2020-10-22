@@ -6,14 +6,12 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtilExt;
-import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.common.VideoTypeEnum;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.title.BaseDetail;
-import wsg.tools.internet.resource.entity.title.SimpleTitle;
+import wsg.tools.internet.resource.entity.title.SimpleItem;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,12 +25,34 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
+public class XlcSite extends BaseResourceSite<SimpleItem, BaseDetail> {
 
     private static final Pattern POSSIBLE_TITLE_REGEX =
             Pattern.compile("(\\u005B[^\\u005B\\u005D]+\\u005D)?(?<title>[^\\u005B\\u005D]+)(\\u005B[^\\u005B\\u005D]+\\u005D([^\\u005B\\u005D]+)?)?");
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(/vod-read-id-\\d+.html)");
     private static final int TYPE_INFO_START = "类型: ".length();
+    private static final Map<String, VideoTypeEnum> TYPE_AKA = new HashMap<>(20);
+
+    static {
+        TYPE_AKA.put("国语配音", VideoTypeEnum.UNKNOWN);
+        TYPE_AKA.put("喜剧片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("剧情片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("动作片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("爱情片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("恐怖片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("战争片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("科幻片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("综艺片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("其它片", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("1080P", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("4K", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("3D电影", VideoTypeEnum.MOVIE);
+        TYPE_AKA.put("大陆剧", VideoTypeEnum.TV);
+        TYPE_AKA.put("日韩剧", VideoTypeEnum.TV);
+        TYPE_AKA.put("欧美剧", VideoTypeEnum.TV);
+        TYPE_AKA.put("港台剧", VideoTypeEnum.TV);
+        TYPE_AKA.put("动画片", VideoTypeEnum.ANIME);
+    }
 
     public XlcSite() {
         super("XLC", "www.xunleicang.in", 0.1);
@@ -46,7 +66,7 @@ public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
     public Set<AbstractResource> collect(String title, int year, @Nullable Integer season) {
         VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
         Set<AbstractResource> resources = new HashSet<>();
-        for (SimpleTitle item : search(title)) {
+        for (SimpleItem item : search(title)) {
             String itemTitle = item.getTitle();
             // todo classify anime/unknown to tv/movie
             if (type != item.getType()) {
@@ -76,39 +96,14 @@ public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
 
         if (season == null) {
             Matcher matcher = AssertUtils.matches(POSSIBLE_TITLE_REGEX, provided);
-            String[] parts = matcher.group("title").split("/");
-            // 2-II
-            List<String> possibles = Arrays.asList(
-                    target, target + "(未删减完整版)", target + "完整版", target + "3D",
-                    target + "大电影", target + "3D版", target + "1", target + "纪录片",
-                    target + "国粤双语中字", target + year
-            );
-            return Arrays.stream(parts).anyMatch(possibles::contains);
+            provided = matcher.group("title");
         }
 
-        if (season == 1) {
-            List<String> possibles = Arrays.asList(
-                    target, target + "第一季", target + "[" + year + "]", target + " 第一季", target + year
-            );
-            return Arrays.stream(provided.split("/")).anyMatch(possibles::contains);
-        }
-
-        String chineseNumeric = StringUtilsExt.chineseNumeric(season);
-        String seasonStr = String.format("第%s季", chineseNumeric);
-        List<String> possibles = Arrays.asList(
-                target + chineseNumeric, target + seasonStr, target + " " + seasonStr
-        );
-        String[] parts = provided.split("/");
-        if (provided.endsWith(seasonStr)) {
-            for (int i = 0; i < parts.length - 1; i++) {
-                parts[i] = parts[i] + seasonStr;
-            }
-        }
-        return Arrays.stream(parts).anyMatch(possibles::contains);
+        return isPossibleSeason1(target, provided, year, season);
     }
 
     @Override
-    protected final Set<SimpleTitle> search(@Nonnull String keyword) {
+    protected final Set<SimpleItem> search(@Nonnull String keyword) {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
         Document document;
         try {
@@ -116,42 +111,42 @@ public class XlcSite extends BaseResourceSite<SimpleTitle, BaseDetail> {
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Set<SimpleTitle> titles = new HashSet<>();
+        Set<SimpleItem> items = new HashSet<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {
             Element h3 = div.selectFirst(TAG_H3);
             Element a = h3.selectFirst(TAG_A);
-            String typeInfo = div.selectFirst("li.playactor").nextElementSibling().text();
-            int year = Integer.parseInt(a.nextElementSibling().text());
             Matcher matcher = TITLE_HREF_REGEX.matcher(a.attr(ATTR_HREF));
             if (!matcher.matches()) {
                 continue;
             }
-            SimpleTitle title = new SimpleTitle();
-            title.setPath(matcher.group(3));
-            title.setType(EnumUtilExt.deserializeAka(typeInfo.substring(TYPE_INFO_START), VideoTypeEnum.class));
-            title.setTitle(a.text().strip());
-            title.setYear(year == 0 ? null : year);
-            titles.add(title);
+            SimpleItem item = new SimpleItem();
+            item.setPath(matcher.group(3));
+            String typeInfo = div.selectFirst("li.playactor").nextElementSibling().text();
+            String type = typeInfo.substring(TYPE_INFO_START);
+            item.setType(Objects.requireNonNull(TYPE_AKA.get(type), "Can't recognize type from '" + type + "'"));
+            item.setTitle(a.text().strip());
+            int year = Integer.parseInt(a.nextElementSibling().text());
+            item.setYear(year == 0 ? null : year);
+            items.add(item);
         }
-        return titles;
+        return items;
     }
 
     @Override
-    protected final BaseDetail find(@Nonnull SimpleTitle title) {
+    protected final BaseDetail find(@Nonnull SimpleItem item) {
         BaseDetail detail = new BaseDetail();
         Set<AbstractResource> resources = new HashSet<>();
         String downList = "ul.down-list";
-        String item = "li.item";
+        final String itemCss = "li.item";
         try {
-            for (Element ul : getDocument(builder0(title.getPath()), true).select(downList)) {
-                for (Element li : ul.select(item)) {
-                    Element a = li.selectFirst(TAG_A);
+            for (Element ul : getDocument(builder0(item.getPath()), true).select(downList)) {
+                ul.select(itemCss).stream().map(li -> li.selectFirst(TAG_A)).forEach(a -> {
                     String href = a.attr(ATTR_HREF);
                     AbstractResource resource = ResourceUtil.classifyUrl(href);
                     resource.setTitle(a.text().strip());
                     resources.add(resource);
-                }
+                });
             }
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);

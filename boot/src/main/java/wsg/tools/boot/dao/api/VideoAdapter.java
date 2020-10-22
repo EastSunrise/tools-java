@@ -19,6 +19,7 @@ import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.resource.Ed2kResource;
 import wsg.tools.internet.resource.entity.resource.HttpResource;
 import wsg.tools.internet.resource.site.BdFilmSite;
+import wsg.tools.internet.resource.site.MovieHeavenSite;
 import wsg.tools.internet.resource.site.XlcSite;
 import wsg.tools.internet.resource.site.Y80sSite;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
@@ -49,6 +50,8 @@ public class VideoAdapter implements InitializingBean {
     private final Y80sSite y80sSite = new Y80sSite();
     private final XlcSite xlcSite = new XlcSite();
     private final BdFilmSite bdFilmSite = new BdFilmSite();
+    private final MovieHeavenSite movieHeavenSite = new MovieHeavenSite();
+
     private final ImdbSite imdbSite = new ImdbSite();
     private final DoubanSite doubanSite = new DoubanSite();
     private final Downloader downloader = new Thunder();
@@ -65,6 +68,7 @@ public class VideoAdapter implements InitializingBean {
         resources.addAll(y80sSite.collect(movie.getTitle(), year, null, movie.getDbId()));
         resources.addAll(xlcSite.collect(movie.getTitle(), year, null));
         resources.addAll(bdFilmSite.collectMovie(movie.getTitle(), movie.getImdbId(), movie.getDbId()));
+        resources.addAll(movieHeavenSite.collect(movie.getTitle(), year, null));
         return resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
@@ -87,6 +91,7 @@ public class VideoAdapter implements InitializingBean {
         Set<AbstractResource> resources = new HashSet<>();
         resources.addAll(y80sSite.collect(title, year, season.getCurrentSeason(), season.getDbId()));
         resources.addAll(xlcSite.collect(title, year, season.getCurrentSeason()));
+        resources.addAll(movieHeavenSite.collect(title, year, season.getCurrentSeason()));
         long count = resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
@@ -102,7 +107,7 @@ public class VideoAdapter implements InitializingBean {
 
     private boolean filterVideo(AbstractResource resource) {
         if (resource instanceof Ed2kResource || resource instanceof HttpResource) {
-            Filetype filetype = Filetype.typeOf(resource.filename());
+            Filetype filetype = Filetype.getExternalType(resource.filename());
             return filetype != null && filetype.isVideo();
         }
         return true;

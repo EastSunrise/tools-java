@@ -12,7 +12,7 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.resource.PanResource;
-import wsg.tools.internet.resource.entity.title.BaseTitle;
+import wsg.tools.internet.resource.entity.title.BaseItem;
 import wsg.tools.internet.resource.entity.title.IdentifiedDetail;
 
 import javax.annotation.Nonnull;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDetail> {
+public final class BdFilmSite extends BaseResourceSite<BaseItem, IdentifiedDetail> {
 
     private static final Pattern TITLE_HREF_REGEX =
             Pattern.compile("https?://www\\.bd-film\\.(cc|com)(?<path>/(?<type>[a-z]{2}|hjtj|zuitop)/(?<id>\\d+).htm)");
@@ -48,40 +48,40 @@ public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDeta
         if (imdbId == null && dbId == null) {
             throw new IllegalArgumentException("At least one of the ids is provided.");
         }
-        Set<BaseTitle> titles = new HashSet<>();
+        Set<BaseItem> items = new HashSet<>();
         if (title != null) {
-            titles.addAll(search(title));
+            items.addAll(search(title));
         }
         if (imdbId != null) {
-            titles.addAll(search(imdbId));
+            items.addAll(search(imdbId));
         }
         if (dbId != null) {
-            titles.addAll(search(String.valueOf(dbId)));
+            items.addAll(search(String.valueOf(dbId)));
         }
         Set<AbstractResource> resources = new HashSet<>();
-        for (BaseTitle baseTitle : titles) {
-            IdentifiedDetail detail = find(baseTitle);
+        for (BaseItem item : items) {
+            IdentifiedDetail detail = find(item);
             if (imdbId != null && detail.getImdbId() != null) {
                 if (imdbId.equals(detail.getImdbId())) {
-                    log.info("Chosen title: {}", baseTitle.getTitle());
+                    log.info("Chosen title: {}", item.getTitle());
                     resources.addAll(detail.getResources());
                 }
                 continue;
             }
             if (dbId != null && detail.getDbId() != null) {
                 if (dbId.equals(detail.getDbId())) {
-                    log.info("Chosen title: {}", baseTitle.getTitle());
+                    log.info("Chosen title: {}", item.getTitle());
                     resources.addAll(detail.getResources());
                 }
                 continue;
             }
-            log.warn("Excluded title: {}, required: {}.", baseTitle.getTitle(), title);
+            log.warn("Excluded title: {}, required: {}.", item.getTitle(), title);
         }
         return resources;
     }
 
     @Override
-    protected final Set<BaseTitle> search(@Nonnull String keyword) {
+    protected final Set<BaseItem> search(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
@@ -89,7 +89,7 @@ public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDeta
             throw AssertUtils.runtimeException(e);
         }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<BaseTitle> titles = new HashSet<>();
+        Set<BaseItem> items = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
             Matcher matcher = AssertUtils.matches(TITLE_HREF_REGEX, a.attr(ATTR_HREF));
@@ -97,20 +97,20 @@ public final class BdFilmSite extends BaseResourceSite<BaseTitle, IdentifiedDeta
             if ("hjtj".equals(type) || "zuitop".equals(type)) {
                 continue;
             }
-            BaseTitle title = new BaseTitle();
-            title.setTitle(a.attr(ATTR_TITLE));
-            title.setPath(matcher.group("path"));
-            titles.add(title);
+            BaseItem item = new BaseItem();
+            item.setTitle(a.attr(ATTR_TITLE));
+            item.setPath(matcher.group("path"));
+            items.add(item);
         }
-        return titles;
+        return items;
     }
 
     @Override
-    protected final IdentifiedDetail find(@Nonnull BaseTitle title) {
+    protected final IdentifiedDetail find(@Nonnull BaseItem item) {
         IdentifiedDetail detail = new IdentifiedDetail();
         Document document;
         try {
-            document = getDocument(builder0(title.getPath()), true);
+            document = getDocument(builder0(item.getPath()), true);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }

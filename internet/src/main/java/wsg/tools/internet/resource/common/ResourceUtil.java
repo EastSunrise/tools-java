@@ -18,6 +18,15 @@ public final class ResourceUtil {
     private static final String PAN_HOST = "pan.baidu.com";
 
     /**
+     * Classify a url with a given title.
+     */
+    public static AbstractResource classifyUrl(@NonNull String url, String title) {
+        AbstractResource resource = classifyUrl(url);
+        resource.setTitle(title);
+        return resource;
+    }
+
+    /**
      * Classify a url.
      *
      * @param url source url

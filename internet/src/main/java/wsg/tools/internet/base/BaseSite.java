@@ -88,6 +88,7 @@ public abstract class BaseSite implements Closeable {
     protected static final String TAG_FIELDSET = "fieldset";
     protected static final String TAG_LI = "li";
     protected static final String TAG_SMALL = "small";
+    protected static final String TAG_SPAN = "span";
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_TR = "tr";
     protected static final String TAG_H3 = "h3";

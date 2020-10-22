@@ -12,7 +12,7 @@ import wsg.tools.internet.resource.common.VideoTypeEnum;
  */
 @Getter
 @Setter
-public class SimpleTitle extends BaseTitle {
+public class SimpleItem extends BaseItem {
     private Integer year;
     private VideoTypeEnum type;
 

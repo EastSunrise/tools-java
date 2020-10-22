@@ -54,19 +54,12 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     /**
      * standard bps of files of a movie in kbps.
      */
-    private static final int MOVIE_BIT_RATE = 2000;
-    private static final int EPISODE_BIT_RATE = 1500;
+    private static final int MOVIE_MIN_BIT_RATE = 1000;
+    private static final int EPISODE_MIN_BIT_RATE = 750;
     /**
-     * Permit size of a file mustn't be half smaller nor four bigger than the standard duration.
+     * Maximum size of a file in B.
      */
-    private static final double SIZE_FLOOR = 0.5;
-    private static final double SIZE_CEIL = 2.0;
-    /**
-     * Permit errors of durations.
-     */
-    private static final Duration ACCURATE_DURATION_ERROR = Duration.ofSeconds(60);
-    private static final Duration INACCURATE_DURATION_FLOOR = Duration.ofSeconds(-60);
-    private static final Duration INACCURATE_DURATION_CEIL = Duration.ofSeconds(60);
+    private static final long SIZE_CEIL = 0x100000000L;
 
     private final SeasonRepository seasonRepository;
     private final VideoAdapter adapter;
@@ -157,12 +150,12 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
                 return ArchivedStatus.NONE_DOWNLOADED;
             }
-            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.downloadingTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
+            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
                 return ArchivedStatus.DOWNLOADING;
             }
 
             Collection<File> files = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
-            GenericResult<File> chosen = choose(files, movie.getDurations(), ACCURATE_DURATION_ERROR.negated(), ACCURATE_DURATION_ERROR, MOVIE_BIT_RATE);
+            GenericResult<File> chosen = choose(files, movie.getDurations(), Duration.ofSeconds(-30), Duration.ofSeconds(30), MOVIE_MIN_BIT_RATE);
             if (!chosen.isSuccess()) {
                 return ArchivedStatus.noQualified(chosen.error());
             }
@@ -204,7 +197,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
                 return ArchivedStatus.NONE_DOWNLOADED;
             }
-            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.downloadingTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
+            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
                 return ArchivedStatus.DOWNLOADING;
             }
             return archiveSeason(tempDir, seasonDir, season);
@@ -245,9 +238,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             if (!episodeFiles.isEmpty()) {
                 GenericResult<File> chosen;
                 if (episode != null && episode.getDurations() != null) {
-                    chosen = choose(episodeFiles, episode.getDurations(), INACCURATE_DURATION_FLOOR, INACCURATE_DURATION_CEIL, EPISODE_BIT_RATE);
+                    chosen = choose(episodeFiles, episode.getDurations(), Duration.ofSeconds(-30), Duration.ofSeconds(30), EPISODE_MIN_BIT_RATE);
                 } else {
-                    chosen = choose(episodeFiles, season.getDurations(), INACCURATE_DURATION_FLOOR, INACCURATE_DURATION_CEIL, EPISODE_BIT_RATE);
+                    chosen = choose(episodeFiles, season.getDurations(), Duration.ofSeconds(-60), Duration.ofSeconds(60), EPISODE_MIN_BIT_RATE);
                 }
                 if (chosen.isSuccess()) {
                     chosenFiles.put(currentEpisode, chosen.get());
@@ -313,10 +306,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return Integer.parseInt(matcher.group("e"));
     }
 
-    private GenericResult<File> choose(Collection<File> files, List<Duration> durations, Duration floor, Duration ceil, int kbps) {
+    private GenericResult<File> choose(Collection<File> files, List<Duration> durations, Duration floor, Duration ceil, int minKbps) {
         List<String> fails = new ArrayList<>();
         Optional<DefaultMapEntry<File, GenericResult<Long>>> max = files.stream()
-                .map(file -> new DefaultMapEntry<>(file, this.weight(file, durations, floor, ceil, kbps)))
+                .map(file -> new DefaultMapEntry<>(file, this.weight(file, durations, floor, ceil, minKbps)))
                 .filter(entry -> {
                     if (entry.getValue().isSuccess()) {
                         return true;
@@ -340,11 +333,11 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
      * @param floor     floor of duration comparing to durations, must be negative
      * @param ceil      ceil of duration comparing to durations, must be positive
      */
-    private GenericResult<Long> weight(@Nonnull File file, final List<Duration> durations, Duration floor, Duration ceil, int kbps) {
-        AssertUtils.requireRange(kbps, 400, null);
+    private GenericResult<Long> weight(@Nonnull File file, final List<Duration> durations, Duration floor, Duration ceil, int minKbps) {
+        AssertUtils.requireRange(minKbps, 400, null);
         AssertUtils.requireRange(floor, null, Duration.ZERO);
         AssertUtils.requireRange(ceil, Duration.ZERO, null);
-        Filetype filetype = Filetype.typeOf(file.getName());
+        Filetype filetype = Filetype.getExternalType(file.getName());
         if (filetype == null || !filetype.isVideo()) {
             return new GenericResult<>("Not a video file.");
         }
@@ -384,16 +377,16 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (length == 0) {
             return new GenericResult<>("Can't get size.");
         }
-        long targetSize = fileDuration.getSeconds() * kbps * 128;
-        if (length < targetSize * SIZE_FLOOR) {
-            return new GenericResult<>("Too small size: %s, standard: %s.", printSize(length), printSize(targetSize));
+        long minSize = fileDuration.getSeconds() * minKbps * 128;
+        if (length < minSize) {
+            return new GenericResult<>("Too small size: %s, min: %s.", printSize(length), printSize(minSize));
         }
-        if (length > targetSize * SIZE_CEIL) {
-            return new GenericResult<>("Too big size: %s, standard: %s.", printSize(length), printSize(targetSize));
+        if (length >= SIZE_CEIL) {
+            return new GenericResult<>("Too big size: %s, ceil: %s.", printSize(length), printSize(SIZE_CEIL));
         }
-        double sizeRatio = length < targetSize ? length * 1.0 / targetSize : targetSize * 1.0 / length;
+        double sizeRatio = length * 1.0 / minSize;
 
-        return GenericResult.of(durationIndex * 1000 + durationError.getSeconds() + (goodType ? 30 : 0) + (int) (sizeRatio * 120));
+        return GenericResult.of(durationIndex * 1000 + durationError.getSeconds() + (goodType ? 30 : 0) + (int) (sizeRatio * 20));
     }
 
     /**

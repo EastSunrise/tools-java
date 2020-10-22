@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 @Getter
 @Setter
-public class BaseTitle {
+public class BaseItem {
 
     private String title;
     private String path;
@@ -26,8 +26,8 @@ public class BaseTitle {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        BaseTitle baseTitle = (BaseTitle) o;
-        return path.equals(baseTitle.path);
+        BaseItem baseItem = (BaseItem) o;
+        return path.equals(baseItem.path);
     }
 
     @Override

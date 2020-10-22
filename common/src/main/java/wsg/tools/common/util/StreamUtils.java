@@ -1,6 +1,9 @@
 package wsg.tools.common.util;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -26,5 +29,23 @@ public class StreamUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Execute the given function recursively like traversing a directory.
+     *
+     * @param executable if current object is executable.
+     * @param execution  consume current object if executable.
+     * @param recursion  function to get children recursively.
+     */
+    public static <F> void walk(F f, Predicate<F> executable, Function<F, Collection<F>> recursion, Consumer<F> execution) {
+        if (executable.test(f)) {
+            execution.accept(f);
+        } else {
+            Collection<F> children = recursion.apply(f);
+            for (F child : children) {
+                walk(child, executable, recursion, execution);
+            }
+        }
     }
 }

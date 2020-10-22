@@ -50,8 +50,8 @@ public class Thunder implements Downloader {
         return url.strip();
     }
 
-    public static Filetype[] downloadingTypes() {
-        return new Filetype[]{Filetype.CFG, Filetype.XLTD};
+    public static Filetype[] tmpTypes() {
+        return new Filetype[]{Filetype.XLTD};
     }
 
     @Override
