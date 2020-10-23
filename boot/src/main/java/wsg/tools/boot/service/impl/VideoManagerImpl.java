@@ -337,7 +337,12 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         AssertUtils.requireRange(minKbps, 400, null);
         AssertUtils.requireRange(floor, null, Duration.ZERO);
         AssertUtils.requireRange(ceil, Duration.ZERO, null);
-        Filetype filetype = Filetype.getExternalType(file.getName());
+        Filetype filetype;
+        try {
+            filetype = Filetype.getRealType(file);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
         if (filetype == null || !filetype.isVideo()) {
             return new GenericResult<>("Not a video file.");
         }

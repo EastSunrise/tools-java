@@ -66,6 +66,15 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     @Override
     public GenericResult<Long> insertSubjectByDb(long dbId) throws AppException {
+        Optional<IdView> optional = movieRepository.findByDbId(dbId);
+        if (optional.isPresent()) {
+            return GenericResult.of(optional.get().getId());
+        }
+        optional = seasonRepository.findByDbId(dbId);
+        if (optional.isPresent()) {
+            return GenericResult.of(optional.get().getId());
+        }
+
         GenericResult<BaseDoubanSubject> subjectResult = adapter.doubanSubject(dbId);
         if (!subjectResult.isSuccess()) {
             return new GenericResult<>(subjectResult.error());
@@ -87,16 +96,19 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId) throws AppException {
+    public GenericResult<Long> insertSubjectByImdb(String imdbId) throws AppException {
         GenericResult<BaseImdbTitle> result = adapter.imdbTitle(imdbId);
         if (!result.isSuccess()) {
             return new GenericResult<>(result.error());
         }
         BaseImdbTitle imdbTitle = result.get();
         if (imdbTitle instanceof ImdbMovie) {
-            if (dbId == null) {
-                dbId = adapter.getDbIdByImdbId(imdbId).orElse(null);
+            Optional<IdView> optional = movieRepository.findByImdbId(imdbId);
+            if (optional.isPresent()) {
+                return GenericResult.of(optional.get().getId());
             }
+
+            Long dbId = adapter.getDbIdByImdbId(imdbId).orElse(null);
             return insertMovie(dbId, imdbId);
         }
 
@@ -107,18 +119,6 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      * At least one of the two ids is provided.
      */
     private GenericResult<Long> insertMovie(Long dbId, String imdbId) {
-        if (dbId != null) {
-            Optional<IdView> optional = movieRepository.findByDbId(dbId);
-            if (optional.isPresent()) {
-                return GenericResult.of(optional.get().getId());
-            }
-        }
-        if (imdbId != null) {
-            Optional<IdView> optional = movieRepository.findByImdbId(imdbId);
-            if (optional.isPresent()) {
-                return GenericResult.of(optional.get().getId());
-            }
-        }
         MovieEntity movieEntity = new MovieEntity();
         movieEntity.setDbId(dbId);
         movieEntity.setImdbId(imdbId);
@@ -214,7 +214,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
 
         if (!fails.isEmpty()) {
-            return new GenericResult<>(fails.toString());
+            return new GenericResult<>(fails.entrySet().stream()
+                    .map(entry -> String.format("Season: %d, error: %s", entry.getKey(), entry.getValue()))
+                    .collect(Collectors.joining(Constants.LINE_SEPARATOR)));
         }
         try {
             seriesEntity.setTitle(extractTitle(seasons));
@@ -354,7 +356,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     public BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids) {
         log.info("Start to import subjects manually.");
         return ServiceUtil.batch(
-                ids, entry -> insertSubjectByImdb(entry.getKey(), entry.getValue()),
+                ids, entry -> insertSubjectByImdb(entry.getKey()),
                 AbstractKeyValue::getKey
         );
     }

@@ -85,6 +85,7 @@ public class DoubanSite extends BaseSite {
     }
 
     public final void login(String username, String password) {
+        logout();
         if (getCookies().size() == 0) {
             try {
                 getDocument(builder0(null), false);
@@ -107,18 +108,23 @@ public class DoubanSite extends BaseSite {
             throw new LoginException(loginResult.getMessage());
         }
         updateContext();
-        log.info("Success logging in: {}.", user());
     }
 
     @Override
     public final String user() {
-        for (Cookie cookie : getCookies()) {
-            if ("dbcl2".equals(cookie.getName())) {
-                Matcher matcher = AssertUtils.matches(COOKIE_DBCL2_REGEX, cookie.getValue());
-                return matcher.group("id");
-            }
+        Cookie cookie = getCookie("dbcl2");
+        if (cookie == null) {
+            return null;
         }
-        return null;
+        return AssertUtils.matches(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id");
+    }
+
+    private String ck() {
+        Cookie cookie = getCookie("ck");
+        if (cookie == null) {
+            return null;
+        }
+        return cookie.getValue();
     }
 
     /**
@@ -197,12 +203,15 @@ public class DoubanSite extends BaseSite {
      */
     @Nullable
     public Long getDbIdByImdbId(String imdbId) {
+        if (user() == null) {
+            throw new LoginException("Please log in first.");
+        }
         AssertUtils.requireNotBlank(imdbId);
         Document document;
         try {
             CatalogEnum cat = CatalogEnum.MOVIE;
             document = postDocument(builder(cat.getPath(), "/new_subject"), Arrays.asList(
-                    new BasicNameValuePair("ck", "Fgus"),
+                    new BasicNameValuePair("ck", ck()),
                     new BasicNameValuePair("type", "0"),
                     new BasicNameValuePair("p_title", imdbId),
                     new BasicNameValuePair("p_uid", imdbId),

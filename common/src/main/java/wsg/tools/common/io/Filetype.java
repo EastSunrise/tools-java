@@ -131,19 +131,20 @@ public enum Filetype {
      * @return type
      */
     public static Filetype getRealType(File file) throws IOException {
-        FileInputStream inputStream = new FileInputStream(file);
-        byte[] bytes = inputStream.readNBytes(4);
-        StringBuilder builder = new StringBuilder();
-        for (byte b : bytes) {
-            String hs = Integer.toHexString(b & 0xFF).toUpperCase();
-            if (hs.length() < 2) {
-                builder.append(0);
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            byte[] bytes = inputStream.readNBytes(4);
+            StringBuilder builder = new StringBuilder();
+            for (byte b : bytes) {
+                String hs = Integer.toHexString(b & 0xFF).toUpperCase();
+                if (hs.length() < 2) {
+                    builder.append(0);
+                }
+                builder.append(hs);
             }
-            builder.append(hs);
+            String header = builder.toString();
+            Filetype filetype = FILE_HEADERS.get(header);
+            return Objects.requireNonNull(filetype, String.format("Unknown filetype of %s, file: %s.", header, file.getPath()));
         }
-        String header = builder.toString();
-        Filetype filetype = FILE_HEADERS.get(header);
-        return Objects.requireNonNull(filetype, String.format("Unknown filetype of %s, file: %s.", header, file.getPath()));
     }
 
     /**

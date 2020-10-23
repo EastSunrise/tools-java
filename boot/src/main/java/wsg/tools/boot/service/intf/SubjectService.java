@@ -27,10 +27,9 @@ public interface SubjectService {
      * Insert entity obtained by id of IMDb.
      *
      * @param imdbId id of IMDb, not null
-     * @param dbId   may null
      * @return result with subject id
      */
-    GenericResult<Long> insertSubjectByImdb(String imdbId, Long dbId);
+    GenericResult<Long> insertSubjectByImdb(String imdbId);
 
     /**
      * Collect subjects under the user.

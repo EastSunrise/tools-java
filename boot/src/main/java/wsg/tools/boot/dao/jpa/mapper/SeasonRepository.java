@@ -1,9 +1,11 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
+import wsg.tools.boot.pojo.entity.IdView;
 import wsg.tools.boot.pojo.entity.SeasonEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for seasons of TV series.
@@ -20,4 +22,12 @@ public interface SeasonRepository extends BaseRepository<SeasonEntity, Long> {
      * @return list of seasons
      */
     List<SeasonEntity> findAllBySeriesId(long seriesId);
+
+    /**
+     * Query id by db id.
+     *
+     * @param dbId db id
+     * @return id
+     */
+    Optional<IdView> findByDbId(Long dbId);
 }

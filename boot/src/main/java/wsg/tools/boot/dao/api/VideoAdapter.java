@@ -69,7 +69,7 @@ public class VideoAdapter implements InitializingBean {
         resources.addAll(xlcSite.collect(movie.getTitle(), year, null));
         resources.addAll(bdFilmSite.collectMovie(movie.getTitle(), movie.getImdbId(), movie.getDbId()));
         resources.addAll(movieHeavenSite.collect(movie.getTitle(), year, null));
-        return resources.stream().filter(this::filterVideo)
+        long count = resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
                         return downloader.addTask(target, resource);
@@ -78,6 +78,8 @@ public class VideoAdapter implements InitializingBean {
                         return false;
                     }
                 }).count();
+        log.info("{} resources added to download.", count);
+        return count;
     }
 
     /**

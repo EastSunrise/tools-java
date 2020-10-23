@@ -13,7 +13,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -98,9 +97,6 @@ public abstract class BaseSite implements Closeable {
     protected static final String ATTR_TITLE = "title";
     protected static final String ATTR_DATETIME = "datetime";
 
-    protected static final int CONNECT_TIME_OUT = 30000;
-    protected static final int SOCKET_TIME_OUT = 30000;
-
     /**
      * temporary directory to cache content.
      */
@@ -132,7 +128,6 @@ public abstract class BaseSite implements Closeable {
         this.limiters = new HashMap<>(2);
         this.limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
         this.limiters.put(HttpPost.METHOD_NAME, RateLimiter.create(postPermitsPerSecond));
-        this.context = initContext();
         this.client = HttpClientBuilder.create()
                 .setDefaultHeaders(Collections.singletonList(
                         new BasicHeader(HTTP.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -145,6 +140,17 @@ public abstract class BaseSite implements Closeable {
                 return EntityUtils.toString(entity, Constants.UTF_8);
             }
         };
+        this.context = HttpClientContext.create();
+        File file = cookieFile();
+        if (file.canRead()) {
+            try (ObjectInputStream stream = new ObjectInputStream(FileUtils.openInputStream(file))) {
+                log.info("Read cached cookies: {}.", file.getPath());
+                CookieStore cookieStore = (CookieStore) stream.readObject();
+                this.context.setCookieStore(cookieStore);
+            } catch (IOException | ClassNotFoundException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+        }
     }
 
     /**
@@ -155,6 +161,16 @@ public abstract class BaseSite implements Closeable {
     @Nullable
     public String user() {
         return null;
+    }
+
+    /**
+     * Clear current cookies to log out.
+     */
+    public final void logout() {
+        if (user() != null) {
+            this.context.setCookieStore(null);
+            updateContext();
+        }
     }
 
     /**
@@ -317,27 +333,6 @@ public abstract class BaseSite implements Closeable {
     }
 
     /**
-     * Initialize context of the site. Read cached cookies if any.
-     */
-    private HttpClientContext initContext() {
-        File file = cookieFile();
-        HttpClientContext context = HttpClientContext.create();
-        context.setRequestConfig(RequestConfig.custom()
-                .setConnectTimeout(CONNECT_TIME_OUT).setSocketTimeout(SOCKET_TIME_OUT).build());
-        if (!file.isFile()) {
-            return context;
-        }
-        try (ObjectInputStream stream = new ObjectInputStream(FileUtils.openInputStream(cookieFile()))) {
-            log.info("Read cached cookies: {}.", file.getPath());
-            CookieStore cookieStore = (CookieStore) stream.readObject();
-            context.setCookieStore(cookieStore);
-            return context;
-        } catch (IOException | ClassNotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-    }
-
-    /**
      * Update context of this site.
      * It should be called when logging in the site or the site is going to be closed, as {@link #close()} is called.
      */
@@ -364,6 +359,23 @@ public abstract class BaseSite implements Closeable {
             return new ArrayList<>();
         }
         return cookieStore.getCookies();
+    }
+
+    /**
+     * Obtains cookie of the given name, may null.
+     */
+    @Nullable
+    protected final Cookie getCookie(String name) {
+        CookieStore cookieStore = this.context.getCookieStore();
+        if (cookieStore == null) {
+            return null;
+        }
+        for (Cookie cookie : cookieStore.getCookies()) {
+            if (Objects.equals(cookie.getName(), name)) {
+                return cookie;
+            }
+        }
+        return null;
     }
 
     protected final URIBuilder builder0(String path, Object... pathArgs) {

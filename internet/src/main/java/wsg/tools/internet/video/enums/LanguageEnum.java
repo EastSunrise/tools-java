@@ -63,6 +63,7 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     NAI("North American Indian", "北美印第安语"),
     HUN("Huns", "匈奴语"),
     PAR("Parsee", "帕西语"),
+    SIOUX("Sioux", "苏语"),
 
     /**
      * Other ISO languages
