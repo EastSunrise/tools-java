@@ -11,6 +11,7 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.common.VideoTypeEnum;
+import wsg.tools.internet.resource.entity.CollectResult;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.title.BaseItem;
 import wsg.tools.internet.resource.entity.title.SimpleDetail;
@@ -51,25 +52,19 @@ public class MovieHeavenSite extends BaseResourceSite<BaseItem, SimpleDetail> {
      *
      * @param season current season, null for movie
      */
-    public Set<AbstractResource> collect(String title, int year, @Nullable Integer season) {
+    public CollectResult<BaseItem> collect(String title, int year, @Nullable Integer season) {
         VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
-        Set<AbstractResource> resources = new HashSet<>();
+        CollectResult<BaseItem> result = new CollectResult<>();
         for (BaseItem item : search(title)) {
             SimpleDetail detail = find(item);
-            String itemTitle = item.getTitle();
-            if (type != detail.getType()) {
+            if (type != detail.getType() || !Objects.equals(year, detail.getYear())
+                    || !isPossibleTitle(title, item.getTitle(), year, season)) {
+                result.exclude(item);
                 continue;
             }
-            if (!Objects.equals(year, detail.getYear())) {
-                continue;
-            }
-            if (!isPossibleTitle(title, itemTitle, year, season)) {
-                continue;
-            }
-            log.info("Chosen title: {}", itemTitle);
-            resources.addAll(detail.getResources());
+            result.include(detail.getResources());
         }
-        return resources;
+        return result;
     }
 
     private boolean isPossibleTitle(String target, String provided, int year, Integer season) {

@@ -11,7 +11,7 @@ import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.common.VideoTypeEnum;
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.CollectResult;
 import wsg.tools.internet.resource.entity.title.IdentifiedDetail;
 import wsg.tools.internet.resource.entity.title.SimpleItem;
 
@@ -52,32 +52,33 @@ public class Y80sSite extends BaseResourceSite<SimpleItem, IdentifiedDetail> {
      *
      * @param season current season, null for movie
      */
-    public Set<AbstractResource> collect(String title, int year, @Nullable Integer season, @Nullable Long dbId) {
+    public CollectResult<SimpleItem> collect(String title, int year, @Nullable Integer season, @Nullable Long dbId) {
         VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
-        Set<AbstractResource> resources = new HashSet<>();
+        CollectResult<SimpleItem> result = new CollectResult<>();
+        // may include trailers, bloopers.
         for (SimpleItem item : search(title)) {
-            String itemTitle = item.getTitle();
             IdentifiedDetail detail = find(item);
-            Long providedId = detail.getDbId();
-            if (dbId == null || providedId == null) {
+            if (dbId == null || detail.getDbId() == null) {
                 // todo classify anime to tv/movie
                 if (type != item.getType()) {
+                    result.exclude(item);
                     continue;
                 }
                 if (!Objects.equals(year, item.getYear())) {
+                    result.exclude(item);
                     continue;
                 }
-                if (!isPossibleTitle(title, itemTitle, year, season)) {
+                if (!isPossibleTitle(title, item.getTitle(), year, season)) {
+                    result.exclude(item);
                     continue;
                 }
-            } else if (!dbId.equals(providedId)) {
+            } else if (!dbId.equals(detail.getDbId())) {
+                result.exclude(item);
                 continue;
             }
-            // may include trailers, bloopers.
-            log.info("Chosen title: {}", itemTitle);
-            resources.addAll(detail.getResources());
+            result.include(detail.getResources());
         }
-        return resources;
+        return result;
     }
 
     /**

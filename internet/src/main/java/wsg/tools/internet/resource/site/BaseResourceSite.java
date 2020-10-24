@@ -4,12 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import wsg.tools.common.util.StringUtilsExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.CollectResult;
 import wsg.tools.internet.resource.entity.title.BaseDetail;
 import wsg.tools.internet.resource.entity.title.BaseItem;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Base class of sites of resources of video.
@@ -37,12 +40,12 @@ public abstract class BaseResourceSite<T extends BaseItem, D extends BaseDetail>
      * <p>
      * The resources are not filtered.
      */
-    public Set<AbstractResource> collect(String keyword) {
-        Set<AbstractResource> resources = new HashSet<>();
+    public CollectResult<T> collect(String keyword) {
+        CollectResult<T> result = new CollectResult<>();
         for (T title : search(keyword)) {
-            resources.addAll(find(title).getResources());
+            result.include(find(title).getResources());
         }
-        return resources;
+        return result;
     }
 
     protected final boolean isPossibleSeason1(String target, String provided, int year, Integer season) {

@@ -74,6 +74,11 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
+    public File getCdn() {
+        return new File(cdn);
+    }
+
+    @Override
     public final Optional<File> getFile(MovieEntity movie) {
         String location = getLocation(movie);
         for (Filetype type : Filetype.videoTypes()) {
@@ -373,8 +378,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             durationIndex--;
         }
         if (!anyMatch) {
-            return new GenericResult<>("Wrong duration: %d min, required: %s.", fileDuration.toMinutes(),
-                    durations.stream().map(duration -> duration.toMinutes() + "min").collect(Collectors.joining("/")));
+            return new GenericResult<>("Wrong duration: %d min %d s, required: %s min.",
+                    fileDuration.toMinutes(), fileDuration.toSecondsPart(),
+                    durations.stream().map(Duration::toMinutes).map(String::valueOf).collect(Collectors.joining("/")));
         }
         Duration durationError = fileDuration.minus(durations.get(durationIndex).plus(floor));
 
@@ -410,8 +416,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     /**
      * Based on {@link #cdn}.
      */
-    @Override
-    public final String getLocation(SubjectEntity entity) {
+    private String getLocation(SubjectEntity entity) {
         Objects.requireNonNull(entity, "Given entity mustn't be null.");
         Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");

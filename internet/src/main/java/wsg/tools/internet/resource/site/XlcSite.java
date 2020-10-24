@@ -9,6 +9,7 @@ import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
 import wsg.tools.internet.resource.common.VideoTypeEnum;
+import wsg.tools.internet.resource.entity.CollectResult;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.title.BaseDetail;
 import wsg.tools.internet.resource.entity.title.SimpleItem;
@@ -63,26 +64,20 @@ public class XlcSite extends BaseResourceSite<SimpleItem, BaseDetail> {
      *
      * @param season current season, null for movie
      */
-    public Set<AbstractResource> collect(String title, int year, @Nullable Integer season) {
+    public CollectResult<SimpleItem> collect(String title, int year, @Nullable Integer season) {
         VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
-        Set<AbstractResource> resources = new HashSet<>();
+        CollectResult<SimpleItem> result = new CollectResult<>();
         for (SimpleItem item : search(title)) {
-            String itemTitle = item.getTitle();
             // todo classify anime/unknown to tv/movie
-            if (type != item.getType()) {
-                continue;
-            }
-            if (!Objects.equals(year, item.getYear())) {
-                continue;
-            }
-            if (!isPossibleTitle(title, itemTitle, year, season)) {
+            if (type != item.getType() || !Objects.equals(year, item.getYear())
+                    || !isPossibleTitle(title, item.getTitle(), year, season)) {
+                result.exclude(item);
                 continue;
             }
             BaseDetail detail = find(item);
-            log.info("Chosen title: {}", itemTitle);
-            resources.addAll(detail.getResources());
+            result.include(detail.getResources());
         }
-        return resources;
+        return result;
     }
 
     /**

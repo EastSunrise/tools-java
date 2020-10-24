@@ -1,6 +1,9 @@
 package wsg.tools.boot.service.intf;
 
-import wsg.tools.boot.pojo.entity.*;
+import wsg.tools.boot.pojo.entity.EpisodeEntity;
+import wsg.tools.boot.pojo.entity.MovieEntity;
+import wsg.tools.boot.pojo.entity.SeasonEntity;
+import wsg.tools.boot.pojo.entity.SeriesEntity;
 import wsg.tools.boot.pojo.enums.ArchivedStatus;
 
 import java.io.File;
@@ -13,6 +16,13 @@ import java.util.Optional;
  * @since 2020/10/11
  */
 public interface VideoManager {
+
+    /**
+     * Obtains cdn of all videos.
+     *
+     * @return directory of cdn
+     */
+    File getCdn();
 
     /**
      * Obtains corresponding file of the given movie.
@@ -64,12 +74,4 @@ public interface VideoManager {
      * @return status of archiving
      */
     ArchivedStatus archive(SeasonEntity season);
-
-    /**
-     * Obtains corresponding location of the given entity
-     *
-     * @param entity given entity
-     * @return location of the given entity
-     */
-    String getLocation(SubjectEntity entity);
 }

@@ -65,10 +65,10 @@ public class VideoAdapter implements InitializingBean {
     public long download(MovieEntity movie, File target) {
         int year = movie.getYear().getValue();
         Set<AbstractResource> resources = new HashSet<>();
-        resources.addAll(y80sSite.collect(movie.getTitle(), year, null, movie.getDbId()));
-        resources.addAll(xlcSite.collect(movie.getTitle(), year, null));
-        resources.addAll(bdFilmSite.collectMovie(movie.getTitle(), movie.getImdbId(), movie.getDbId()));
-        resources.addAll(movieHeavenSite.collect(movie.getTitle(), year, null));
+        resources.addAll(y80sSite.collect(movie.getTitle(), year, null, movie.getDbId()).getResources());
+        resources.addAll(xlcSite.collect(movie.getTitle(), year, null).getResources());
+        resources.addAll(bdFilmSite.collectMovie(movie.getTitle(), movie.getImdbId(), movie.getDbId()).getResources());
+        resources.addAll(movieHeavenSite.collect(movie.getTitle(), year, null).getResources());
         long count = resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {
@@ -91,9 +91,9 @@ public class VideoAdapter implements InitializingBean {
         int year = season.getYear().getValue();
         String title = season.getSeries().getTitle();
         Set<AbstractResource> resources = new HashSet<>();
-        resources.addAll(y80sSite.collect(title, year, season.getCurrentSeason(), season.getDbId()));
-        resources.addAll(xlcSite.collect(title, year, season.getCurrentSeason()));
-        resources.addAll(movieHeavenSite.collect(title, year, season.getCurrentSeason()));
+        resources.addAll(y80sSite.collect(title, year, season.getCurrentSeason(), season.getDbId()).getResources());
+        resources.addAll(xlcSite.collect(title, year, season.getCurrentSeason()).getResources());
+        resources.addAll(movieHeavenSite.collect(title, year, season.getCurrentSeason()).getResources());
         long count = resources.stream().filter(this::filterVideo)
                 .filter(resource -> {
                     try {

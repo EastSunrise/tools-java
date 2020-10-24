@@ -10,6 +10,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.AssertUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
+import wsg.tools.internet.resource.entity.CollectResult;
 import wsg.tools.internet.resource.entity.resource.AbstractResource;
 import wsg.tools.internet.resource.entity.resource.PanResource;
 import wsg.tools.internet.resource.entity.title.BaseItem;
@@ -44,7 +45,7 @@ public final class BdFilmSite extends BaseResourceSite<BaseItem, IdentifiedDetai
         super("BD-Film", "bd-film.cc");
     }
 
-    public Set<AbstractResource> collectMovie(String title, String imdbId, Long dbId) {
+    public CollectResult<BaseItem> collectMovie(String title, String imdbId, Long dbId) {
         if (imdbId == null && dbId == null) {
             throw new IllegalArgumentException("At least one of the ids is provided.");
         }
@@ -58,26 +59,26 @@ public final class BdFilmSite extends BaseResourceSite<BaseItem, IdentifiedDetai
         if (dbId != null) {
             items.addAll(search(String.valueOf(dbId)));
         }
-        Set<AbstractResource> resources = new HashSet<>();
+        CollectResult<BaseItem> result = new CollectResult<>();
         for (BaseItem item : items) {
             IdentifiedDetail detail = find(item);
             if (imdbId != null && detail.getImdbId() != null) {
                 if (imdbId.equals(detail.getImdbId())) {
                     log.info("Chosen title: {}", item.getTitle());
-                    resources.addAll(detail.getResources());
+                    result.include(detail.getResources());
                 }
                 continue;
             }
             if (dbId != null && detail.getDbId() != null) {
                 if (dbId.equals(detail.getDbId())) {
                     log.info("Chosen title: {}", item.getTitle());
-                    resources.addAll(detail.getResources());
+                    result.include(detail.getResources());
                 }
                 continue;
             }
-            log.warn("Excluded title: {}, required: {}.", item.getTitle(), title);
+            result.exclude(item);
         }
-        return resources;
+        return result;
     }
 
     @Override
