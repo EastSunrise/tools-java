@@ -12,6 +12,7 @@ import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.entity.SeasonEntity;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.download.Thunder;
@@ -117,7 +118,11 @@ public class VideoAdapter implements InitializingBean {
 
     public GenericResult<BaseDoubanSubject> doubanSubject(long dbId) {
         try {
-            return GenericResult.of(doubanSite.subject(dbId));
+            BaseDoubanSubject subject = doubanSite.subject(dbId);
+            if (subject.getImdbId() != null) {
+                saveIdRelation(dbId, subject.getImdbId());
+            }
+            return GenericResult.of(subject);
         } catch (NotFoundException e) {
             return new GenericResult<>(errorMsg(doubanSite, DOUBAN_SUBJECT, dbId, e));
         }
@@ -128,16 +133,25 @@ public class VideoAdapter implements InitializingBean {
         if (optional.isPresent()) {
             return GenericResult.of(optional.get().getDbId());
         }
-        Long dbId = doubanSite.getDbIdByImdbId(imdbId);
+        Long dbId;
+        try {
+            dbId = doubanSite.getDbIdByImdbId(imdbId);
+        } catch (LoginException e) {
+            return new GenericResult<>("Can't find douban ID by IMDb ID without logging in.");
+        }
         if (dbId != null) {
-            IdRelationEntity entity = new IdRelationEntity();
-            entity.setImdbId(imdbId);
-            entity.setDbId(dbId);
-            relationRepository.insert(entity);
+            saveIdRelation(dbId, imdbId);
             return GenericResult.of(dbId);
         } else {
             return new GenericResult<>("Can't find douban ID by IMDb ID: %s.", imdbId);
         }
+    }
+
+    private void saveIdRelation(long dbId, String imdbId) {
+        IdRelationEntity entity = new IdRelationEntity();
+        entity.setImdbId(imdbId);
+        entity.setDbId(dbId);
+        relationRepository.save(entity);
     }
 
     public GenericResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) {

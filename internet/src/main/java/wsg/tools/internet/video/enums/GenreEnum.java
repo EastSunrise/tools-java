@@ -1,8 +1,8 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.function.AkaPredicate;
-import wsg.tools.common.function.TextSupplier;
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.AkaPredicate;
+import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Enum for genres of subjects, with text as English display name and title as Chinese display name.

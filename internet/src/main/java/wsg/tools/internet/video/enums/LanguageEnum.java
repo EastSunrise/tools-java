@@ -1,10 +1,10 @@
 package wsg.tools.internet.video.enums;
 
 import org.apache.commons.lang3.ArrayUtils;
-import wsg.tools.common.function.AkaPredicate;
-import wsg.tools.common.function.CodeSupplier;
-import wsg.tools.common.function.TextSupplier;
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.AkaPredicate;
+import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Enum for languages.
@@ -46,10 +46,15 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     NDS("Low German", "低地德语", new String[]{"Mende", "门德语"}),
     FA("Persian", "波斯语", new String[]{"Dari"}),
     FUR("Friulian", "弗留利语", new String[]{"Fur"}),
+    SIO("Sioux", "苏语"),
+    NAP("Neapolitan", "那不勒斯语"),
+    PAR("Parsee", "帕西语"),
+    FLE("Flemish", "弗拉芒语"),
 
     /**
      * Manual languages, three-letter abbreviation as code
      */
+    NON("None", "默片"),
     SIN("Sindarin", "辛达林语"),
     QUE("Quenya", "昆雅语"),
     SIL("Sign Languages", "手语"),
@@ -62,8 +67,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     PAW("Pawnee", "波尼语"),
     NAI("North American Indian", "北美印第安语"),
     HUN("Huns", "匈奴语"),
-    PAR("Parsee", "帕西语"),
-    SIOUX("Sioux", "苏语"),
 
     /**
      * Other ISO languages

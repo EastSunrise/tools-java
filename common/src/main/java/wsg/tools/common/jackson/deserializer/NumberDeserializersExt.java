@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import wsg.tools.common.constant.SignEnum;
-import wsg.tools.common.util.StringUtilsExt;
+import wsg.tools.common.lang.StringUtilsExt;
 
 import java.io.IOException;
 

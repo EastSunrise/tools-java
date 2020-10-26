@@ -12,7 +12,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
-import wsg.tools.common.util.StringUtilsExt;
+import wsg.tools.common.lang.StringUtilsExt;
 
 import java.io.File;
 import java.util.List;

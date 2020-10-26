@@ -5,8 +5,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
-import wsg.tools.common.function.GetterFunction;
-import wsg.tools.common.function.SetterBiConsumer;
+import wsg.tools.common.util.function.GetterFunction;
+import wsg.tools.common.util.function.SetterBiConsumer;
 
 import java.beans.FeatureDescriptor;
 import java.beans.IntrospectionException;
@@ -30,6 +30,14 @@ public class ExcelTemplate<T> {
     private final LinkedHashMap<String, BaseCellToSetter<T, ?>> readers = new LinkedHashMap<>(Constants.DEFAULT_MAP_CAPACITY);
 
     private ExcelTemplate() {
+    }
+
+    public static ExcelTemplate<Map<String, Object>> ofMap(String... headers) {
+        ExcelTemplate<Map<String, Object>> template = builder();
+        for (String header : headers) {
+            template.putGetter(header, map -> map.get(header));
+        }
+        return template;
     }
 
     /**

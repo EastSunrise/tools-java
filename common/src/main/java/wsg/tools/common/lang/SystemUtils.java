@@ -1,4 +1,4 @@
-package wsg.tools.common.util;
+package wsg.tools.common.lang;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +75,7 @@ public class SystemUtils {
      *
      * @throws IOException If the process call fails.
      */
-    public Process execute(String executable, String... args) throws IOException {
+    public static Process execute(String executable, String... args) throws IOException {
         String[] cmd = new String[args.length + 2];
         cmd[0] = executable;
         System.arraycopy(args, 0, cmd, 1, args.length);

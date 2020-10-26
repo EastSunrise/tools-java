@@ -13,16 +13,19 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -32,7 +35,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
@@ -101,6 +104,7 @@ public abstract class BaseSite implements Closeable {
      * temporary directory to cache content.
      */
     private static final String TMPDIR = System.getProperty("java.io.tmpdir") + "tools";
+    private static final int TIME_OUT = 30000;
 
     @Getter
     protected final String name;
@@ -141,6 +145,8 @@ public abstract class BaseSite implements Closeable {
             }
         };
         this.context = HttpClientContext.create();
+        this.context.setRequestConfig(RequestConfig.custom()
+                .setConnectTimeout(TIME_OUT).setSocketTimeout(TIME_OUT).build());
         File file = cookieFile();
         if (file.canRead()) {
             try (ObjectInputStream stream = new ObjectInputStream(FileUtils.openInputStream(file))) {
@@ -171,6 +177,31 @@ public abstract class BaseSite implements Closeable {
             this.context.setCookieStore(null);
             updateContext();
         }
+    }
+
+    /**
+     * Add cookie manually.
+     */
+    public final void addCookie(String name, String value) {
+        CookieStore cookieStore = this.context.getCookieStore();
+        if (cookieStore == null) {
+            cookieStore = new BasicCookieStore();
+        }
+        BasicClientCookie cookie = new BasicClientCookie(name, value);
+        String domain = host;
+        String path = "/";
+        Date expiredDate = new Date();
+        if (cookieStore.getCookies().size() > 0) {
+            Cookie cookie0 = cookieStore.getCookies().get(0);
+            path = cookie0.getPath();
+            expiredDate = cookie0.getExpiryDate();
+            domain = cookie0.getDomain();
+        }
+        cookie.setDomain(domain);
+        cookie.setExpiryDate(expiredDate);
+        cookie.setPath(path);
+        cookieStore.addCookie(cookie);
+        this.context.setCookieStore(cookieStore);
     }
 
     /**

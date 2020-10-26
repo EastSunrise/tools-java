@@ -1,4 +1,4 @@
-package wsg.tools.common.function.throwable;
+package wsg.tools.common.util.function.throwable;
 
 /**
  * Represents an operation that accepts a single input argument, throws an

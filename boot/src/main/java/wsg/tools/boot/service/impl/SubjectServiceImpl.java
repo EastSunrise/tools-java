@@ -17,8 +17,8 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.StringUtilsExt;
+import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
@@ -88,7 +88,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
 
         if (imdbId == null) {
-            return new GenericResult<>("Can't save series %d without IMDb id.", dbId);
+            return new GenericResult<>("Can't save series without IMDb id.");
         }
 
         BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId).get();
@@ -232,6 +232,8 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return GenericResult.of(series.getId());
         } catch (DataIntegrityViolationException e) {
             return new GenericResult<>("Data of the series aren't integral: %s.", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return new GenericResult<>(e);
         }
     }
 

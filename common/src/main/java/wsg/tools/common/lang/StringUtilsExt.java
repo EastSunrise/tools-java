@@ -1,4 +1,4 @@
-package wsg.tools.common.util;
+package wsg.tools.common.lang;
 
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.SignEnum;

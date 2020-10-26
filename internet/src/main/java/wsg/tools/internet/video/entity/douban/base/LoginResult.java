@@ -29,5 +29,14 @@ public class LoginResult {
     public static class Payload {
         @JsonProperty("account_info")
         private Account accountInfo;
+
+        /**
+         * When it needs graph validate code.
+         */
+        private Long tcAppId;
+        private String captchaSignatureSample;
+        private String touchCapUrl;
+        private String captchaId;
+        private String captchaImageUrl;
     }
 }

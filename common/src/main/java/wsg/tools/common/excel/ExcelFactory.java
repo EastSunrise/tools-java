@@ -6,15 +6,13 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.reader.CellReader;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
-import wsg.tools.common.excel.writer.BaseCellWriter;
-import wsg.tools.common.function.CreatorSupplier;
+import wsg.tools.common.util.function.CreatorSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -195,47 +193,11 @@ public class ExcelFactory {
     /**
      * Write data to stream.
      *
-     * @param data list of map to write
-     */
-    public <V> void writeXlsx(OutputStream stream, List<Map<String, V>> data, String... headers) throws IOException {
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet();
-        if (ArrayUtils.isEmpty(headers)) {
-            Set<String> set = new HashSet<>();
-            data.forEach(map -> set.addAll(map.keySet()));
-            headers = set.toArray(new String[0]);
-        }
-        int i = 0;
-        Row row = sheet.createRow(i++);
-        int j = 0;
-        for (String header : headers) {
-            Cell cell = row.createCell(j++);
-            cell.setCellValue(header);
-        }
-        BaseCellWriter<V> writer = new BaseCellWriter<>();
-        for (Map<String, V> map : data) {
-            row = sheet.createRow(i++);
-            j = 0;
-            for (String header : headers) {
-                V value = map.get(header);
-                Cell cell = row.createCell(j++);
-                if (value != null) {
-                    writer.setCellValue(cell, value, objectMapper);
-                    writer.setCellStyle(cell, value, workbook);
-                }
-            }
-        }
-        workbook.write(stream);
-        workbook.close();
-    }
-
-    /**
-     * Write data to stream.
-     *
      * @param data    data to write
      * @param writers writers to set cells by column
      */
-    public <T> void writeXlsx(OutputStream stream, Iterable<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
+    public <T> void writeXlsx(OutputStream stream, Iterable<T> data, LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers)
+            throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
         int i = 0;

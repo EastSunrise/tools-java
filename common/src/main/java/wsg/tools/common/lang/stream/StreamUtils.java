@@ -1,4 +1,4 @@
-package wsg.tools.common.util;
+package wsg.tools.common.lang.stream;
 
 import java.util.Collection;
 import java.util.Iterator;

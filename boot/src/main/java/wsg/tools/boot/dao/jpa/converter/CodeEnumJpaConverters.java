@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.jpa.converter;
 
-import wsg.tools.common.function.CodeSupplier;
-import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.persistence.Converter;

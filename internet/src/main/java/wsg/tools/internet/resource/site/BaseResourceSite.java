@@ -1,7 +1,7 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
-import wsg.tools.common.util.StringUtilsExt;
+import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.resource.entity.CollectResult;

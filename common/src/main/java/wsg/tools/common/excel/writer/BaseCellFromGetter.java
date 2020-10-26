@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Workbook;
-import wsg.tools.common.function.GetterFunction;
+import wsg.tools.common.util.function.GetterFunction;
 
 import java.io.IOException;
 

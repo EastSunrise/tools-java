@@ -1,8 +1,8 @@
 package wsg.tools.common.lang;
 
 import lombok.Getter;
-import wsg.tools.common.function.AkaPredicate;
-import wsg.tools.common.util.NumberUtilsExt;
+import wsg.tools.common.lang.math.NumberUtilsExt;
+import wsg.tools.common.util.function.AkaPredicate;
 
 import java.util.Objects;
 

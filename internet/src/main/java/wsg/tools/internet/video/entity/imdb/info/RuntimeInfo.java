@@ -3,7 +3,7 @@ package wsg.tools.internet.video.entity.imdb.info;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.common.constant.SignEnum;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbInfo;
 import wsg.tools.internet.video.enums.RegionEnum;
 

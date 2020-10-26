@@ -1,6 +1,7 @@
-package wsg.tools.common.util;
+package wsg.tools.common.lang;
 
 import org.apache.commons.lang3.StringUtils;
+import wsg.tools.common.lang.stream.StreamUtils;
 
 import java.util.Objects;
 import java.util.function.Predicate;

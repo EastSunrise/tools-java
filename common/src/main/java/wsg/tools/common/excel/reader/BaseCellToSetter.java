@@ -3,7 +3,7 @@ package wsg.tools.common.excel.reader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.poi.ss.usermodel.Cell;
-import wsg.tools.common.function.SetterBiConsumer;
+import wsg.tools.common.util.function.SetterBiConsumer;
 
 /**
  * Read a cell as a property value of target object {@link T}.

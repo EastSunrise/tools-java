@@ -1,9 +1,9 @@
-package wsg.tools.common.util;
+package wsg.tools.common.lang;
 
-import wsg.tools.common.function.AkaPredicate;
-import wsg.tools.common.function.CodeSupplier;
-import wsg.tools.common.function.TextSupplier;
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.AkaPredicate;
+import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 
 import java.util.Arrays;
 

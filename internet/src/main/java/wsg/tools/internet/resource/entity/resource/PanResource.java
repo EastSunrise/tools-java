@@ -1,7 +1,7 @@
 package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 
 import java.util.Objects;
 import java.util.regex.Matcher;

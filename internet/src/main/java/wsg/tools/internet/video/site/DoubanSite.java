@@ -19,8 +19,8 @@ import org.jsoup.nodes.TextNode;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
-import wsg.tools.common.util.AssertUtils;
-import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
@@ -84,7 +84,7 @@ public class DoubanSite extends BaseSite {
                 );
     }
 
-    public final void login(String username, String password) {
+    public final void login(String username, String password) throws LoginException {
         logout();
         if (getCookies().size() == 0) {
             try {
@@ -202,7 +202,7 @@ public class DoubanSite extends BaseSite {
      * Obtains id of Douban by searching id of IMDb.
      */
     @Nullable
-    public Long getDbIdByImdbId(String imdbId) {
+    public Long getDbIdByImdbId(String imdbId) throws LoginException {
         if (user() == null) {
             throw new LoginException("Please log in first.");
         }

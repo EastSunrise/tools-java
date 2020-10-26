@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity.resource;
 import lombok.Getter;
 import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 
 import java.net.URLDecoder;
 import java.util.ArrayList;

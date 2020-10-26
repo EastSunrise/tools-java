@@ -1,4 +1,4 @@
-package wsg.tools.common.function.throwable;
+package wsg.tools.common.util.function.throwable;
 
 /**
  * Represents a function that accepts one argument, produces a result, and throw an exception.

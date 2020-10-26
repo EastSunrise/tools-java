@@ -8,7 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;

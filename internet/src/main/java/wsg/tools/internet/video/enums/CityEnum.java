@@ -1,9 +1,9 @@
 package wsg.tools.internet.video.enums;
 
 import lombok.Getter;
-import wsg.tools.common.function.CodeSupplier;
-import wsg.tools.common.function.TextSupplier;
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
 /**

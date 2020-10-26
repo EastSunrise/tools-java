@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import wsg.tools.common.function.AkaPredicate;
-import wsg.tools.common.function.CodeSupplier;
-import wsg.tools.common.function.TextSupplier;
-import wsg.tools.common.function.TitleSupplier;
-import wsg.tools.common.util.EnumUtilExt;
+import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.AkaPredicate;
+import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 
 import java.io.IOException;
 

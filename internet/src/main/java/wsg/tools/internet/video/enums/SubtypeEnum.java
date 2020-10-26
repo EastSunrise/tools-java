@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.function.AkaPredicate;
+import wsg.tools.common.util.function.AkaPredicate;
 
 /**
  * Subtype of subjects.

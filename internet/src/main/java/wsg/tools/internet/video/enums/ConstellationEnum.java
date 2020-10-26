@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Enum for constellations.

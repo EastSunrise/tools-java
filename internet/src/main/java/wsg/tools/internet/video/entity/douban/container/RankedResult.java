@@ -2,7 +2,7 @@ package wsg.tools.internet.video.entity.douban.container;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.function.TitleSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.video.entity.douban.pojo.SimpleSubject;
 
 import java.util.List;

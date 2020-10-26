@@ -1,4 +1,4 @@
-package wsg.tools.common.function;
+package wsg.tools.common.util.function;
 
 /**
  * Supply a Chinese title, usually used to display.

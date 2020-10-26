@@ -14,9 +14,9 @@ import wsg.tools.common.excel.ExcelFactory;
 import wsg.tools.common.excel.reader.BaseCellToSetter;
 import wsg.tools.common.excel.reader.CellReader;
 import wsg.tools.common.excel.writer.BaseCellFromGetter;
-import wsg.tools.common.function.CreatorSupplier;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
+import wsg.tools.common.util.function.CreatorSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
 import javax.servlet.http.HttpServletResponse;

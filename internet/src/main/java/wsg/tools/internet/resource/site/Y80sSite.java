@@ -6,7 +6,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.common.ResourceUtil;
@@ -32,10 +32,11 @@ public class Y80sSite extends BaseResourceSite<SimpleItem, IdentifiedDetail> {
 
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com(?<path>/(?<type>ju|movie|dm|trailer|mv|video|course|zy)/\\d+)");
     private static final Pattern DOUBAN_REVIEWS_REGEX = Pattern.compile("//movie.douban.com/subject/(\\d*) ?//?reviews");
-    private static final String UNKNOWN_YEAR = "未知";
+    private static final List<String> UNKNOWN_YEARS = Arrays.asList("未知", "5.9");
     private static final Map<String, VideoTypeEnum> TYPE_AKA = Map.of(
             "movie", VideoTypeEnum.MOVIE,
             "ju", VideoTypeEnum.TV,
+            "zy", VideoTypeEnum.TV,
             "dm", VideoTypeEnum.ANIME,
             "trailer", VideoTypeEnum.TRAILER,
             "mv", VideoTypeEnum.MV,
@@ -113,7 +114,7 @@ public class Y80sSite extends BaseResourceSite<SimpleItem, IdentifiedDetail> {
             Element small = a.selectFirst(TAG_SMALL);
             item.setTitle(small.previousSibling().outerHtml().strip());
             String text = small.text();
-            item.setYear((StringUtils.isBlank(text) || UNKNOWN_YEAR.equals(text)) ? null : Integer.parseInt(text));
+            item.setYear((StringUtils.isBlank(text) || UNKNOWN_YEARS.contains(text)) ? null : Integer.parseInt(text));
             items.add(item);
         }
         return items;

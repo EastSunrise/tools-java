@@ -2,7 +2,7 @@ package wsg.tools.internet.resource.entity.resource;
 
 import lombok.Getter;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.AssertUtils;
+import wsg.tools.common.lang.AssertUtils;
 
 import javax.annotation.Nonnull;
 import java.net.URLDecoder;
