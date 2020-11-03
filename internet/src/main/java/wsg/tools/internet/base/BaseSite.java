@@ -89,28 +89,28 @@ public abstract class BaseSite implements Closeable {
     protected static final String TAG_A = "a";
     protected static final String TAG_FIELDSET = "fieldset";
     protected static final String TAG_LI = "li";
-    protected static final String TAG_SMALL = "small";
     protected static final String TAG_SPAN = "span";
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_TR = "tr";
     protected static final String TAG_H3 = "h3";
     protected static final String TAG_H4 = "h4";
     protected static final String TAG_TIME = "time";
+    protected static final String TAG_FONT = "font";
+    protected static final String TAG_SCRIPT = "script";
     protected static final String ATTR_HREF = "href";
-    protected static final String ATTR_TITLE = "title";
     protected static final String ATTR_DATETIME = "datetime";
-
+    protected static final String ATTR_CONTENT = "content";
     /**
-     * temporary directory to cache content.
+     * temporary directory for cached content.
      */
     private static final String TMPDIR = System.getProperty("java.io.tmpdir") + "tools";
     private static final int TIME_OUT = 30000;
 
-    @Getter
-    protected final String name;
-    protected final SchemeEnum scheme;
-    protected final String host;
     protected final ObjectMapper mapper;
+    @Getter
+    private final String name;
+    private final SchemeEnum scheme;
+    private final String host;
     private final ResponseHandler<String> responseHandler;
     private final HttpClientContext context;
     private final Map<String, RateLimiter> limiters;

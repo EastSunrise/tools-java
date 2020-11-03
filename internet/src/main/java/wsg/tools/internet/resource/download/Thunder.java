@@ -1,18 +1,19 @@
 package wsg.tools.internet.resource.download;
 
-import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.SystemUtils;
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
-import wsg.tools.internet.resource.entity.resource.InvalidResource;
-import wsg.tools.internet.resource.entity.resource.PanResource;
+import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.resource.entity.resource.base.BaseResource;
+import wsg.tools.internet.resource.entity.resource.valid.PanResource;
+import wsg.tools.internet.resource.entity.resource.valid.YunResource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.regex.Pattern;
 
 /**
  * Downloader of thunder.
@@ -22,30 +23,29 @@ import java.util.Base64;
  */
 public class Thunder implements Downloader {
 
-    private static final String THUNDER_URL_PREFIX = "thunder";
+    public static final String SCHEME = "thunder";
+    public static final String EMPTY_LINK = "thunder://QUFaWg==";
+    private static final Pattern DECODED_REGEX = Pattern.compile("AA(?<url>.*)ZZ");
 
     /**
      * Encode a url to a thunder url.
      */
-    public static String encodeThunder(String url) {
-        if (url == null) {
-            return null;
-        }
-        if (url.startsWith(THUNDER_URL_PREFIX)) {
+    public static String encodeThunder(@Nonnull String url) {
+        if (url.startsWith(SCHEME)) {
             return url;
         }
         byte[] bytes = ("AA" + url + "ZZ").getBytes(Constants.UTF_8);
-        return String.format("%s://%s", THUNDER_URL_PREFIX, Base64.getEncoder().encodeToString(bytes));
+        return String.format("%s://%s", SCHEME, Base64.getEncoder().encodeToString(bytes));
     }
 
     /**
      * Decode a thunder to a common url.
      */
     public static String decodeThunder(@Nonnull String url) {
-        if (url.startsWith(THUNDER_URL_PREFIX)) {
-            byte[] bytes = Base64.getDecoder().decode(url.substring(10));
-            url = new String(bytes, Constants.UTF_8);
-            url = StringUtils.strip(url, "AAZZ");
+        while (url.startsWith(SCHEME)) {
+            url = url.substring((SCHEME + "://").length());
+            url = new String(Base64.getDecoder().decode(url), Constants.UTF_8);
+            url = RegexUtils.matchesOrElseThrow(DECODED_REGEX, url).group("url");
         }
         return url.strip();
     }
@@ -55,8 +55,8 @@ public class Thunder implements Downloader {
     }
 
     @Override
-    public boolean addTask(File dir, AbstractResource resource) throws IOException {
-        if (resource instanceof InvalidResource || resource instanceof PanResource) {
+    public boolean addTask(File dir, BaseResource resource) throws IOException {
+        if (resource instanceof PanResource || resource instanceof YunResource) {
             return false;
         }
 

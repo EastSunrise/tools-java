@@ -8,23 +8,20 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.common.ResourceUtil;
-import wsg.tools.internet.resource.entity.CollectResult;
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
-import wsg.tools.internet.resource.entity.resource.PanResource;
-import wsg.tools.internet.resource.entity.title.BaseItem;
-import wsg.tools.internet.resource.entity.title.IdentifiedDetail;
+import wsg.tools.internet.resource.entity.item.BdFilmItem;
+import wsg.tools.internet.resource.entity.resource.ResourceFactory;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -32,57 +29,44 @@ import java.util.stream.Collectors;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends BaseResourceSite<BaseItem, IdentifiedDetail> {
+public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
-    private static final Pattern TITLE_HREF_REGEX =
-            Pattern.compile("https?://www\\.bd-film\\.(cc|com)(?<path>/(?<type>[a-z]{2}|hjtj|zuitop)/(?<id>\\d+).htm)");
-    private static final Pattern URLS_REGEX = Pattern.compile("(var urls|adsUrls|diskUrls) = \"(?<urls>[0-9A-z+/=]*)\"");
-    private static final Pattern SCORE_REGEX = Pattern.compile("scoreData = \"(?<imdb>tt\\d+)? ?###(?<db>\\d+)?\"");
-    private static final Pattern IMDB_URL_REGEX = Pattern.compile("http://www\\.imdb\\.com/title/(?<id>tt\\d+)/?");
-    private static final String UC_YUN_HOST = "yun.cn";
+    private static final Pattern ITEM_URL_REGEX =
+            Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+).htm)");
+    private static final Pattern ITEM_TITLE_REGEX =
+            Pattern.compile("(?<title>.*)(迅雷下载)+,百度网盘下载 - BD影视分享 - 最新高清电影资源免费下载");
+    private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
+    private static final Pattern YEAR_INFO_REGEX = Pattern.compile("(年 ?代|上 ?映|首映|出 ?品|发行).{0,4}(?<year>\\d{4})");
+    private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-z+/=]*)\", " +
+            "adsUrls = \"[0-9A-z+/=]*\", " +
+            "diskUrls = \"(?<disk>[0-9A-z+/=]*)\", " +
+            "scoreData = \"(?<imdb>tt\\d+)? ?###(?<db>\\d+)?\"");
+    private static final Pattern DISK_RESOURCE_REGEX = Pattern.compile(
+            "(\\+链接: )?(?<pwd>[0-9A-z]{4})?" +
+                    "(\\|\\|(https?|ttps| https|whttps|\\|https)|\\|?https|\\s+\\|\\|https)" +
+                    "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com)(?<path>/[\\w-./?=&]+)\\s*"
+    );
 
     public BdFilmSite() {
         super("BD-Film", "bd-film.cc");
     }
 
-    public CollectResult<BaseItem> collectMovie(String title, String imdbId, Long dbId) {
-        if (imdbId == null && dbId == null) {
-            throw new IllegalArgumentException("At least one of the ids is provided.");
-        }
-        Set<BaseItem> items = new HashSet<>();
-        if (title != null) {
-            items.addAll(search(title));
-        }
-        if (imdbId != null) {
-            items.addAll(search(imdbId));
-        }
-        if (dbId != null) {
-            items.addAll(search(String.valueOf(dbId)));
-        }
-        CollectResult<BaseItem> result = new CollectResult<>();
-        for (BaseItem item : items) {
-            IdentifiedDetail detail = find(item);
-            if (imdbId != null && detail.getImdbId() != null) {
-                if (imdbId.equals(detail.getImdbId())) {
-                    log.info("Chosen title: {}", item.getTitle());
-                    result.include(detail.getResources());
-                }
-                continue;
+    @Override
+    public Set<BdFilmItem> findAll() {
+        return IntStream.range(359, 31256).mapToObj(id -> {
+            try {
+                return getItem(String.format("/gy/%d.htm", id));
+            } catch (NotFoundException e) {
+                return null;
             }
-            if (dbId != null && detail.getDbId() != null) {
-                if (dbId.equals(detail.getDbId())) {
-                    log.info("Chosen title: {}", item.getTitle());
-                    result.include(detail.getResources());
-                }
-                continue;
-            }
-            result.exclude(item);
-        }
-        return result;
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
+    /**
+     * @param keyword title, id of Douban, or id of IMDb
+     */
     @Override
-    protected final Set<BaseItem> search(@Nonnull String keyword) {
+    protected final Set<String> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
@@ -90,82 +74,80 @@ public final class BdFilmSite extends BaseResourceSite<BaseItem, IdentifiedDetai
             throw AssertUtils.runtimeException(e);
         }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<BaseItem> items = new HashSet<>();
+        Set<String> paths = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
-            Matcher matcher = AssertUtils.matches(TITLE_HREF_REGEX, a.attr(ATTR_HREF));
-            String type = matcher.group("type");
-            if ("hjtj".equals(type) || "zuitop".equals(type)) {
+            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEX, a.attr(ATTR_HREF));
+            if (null == matcher.group("type")) {
                 continue;
             }
-            BaseItem item = new BaseItem();
-            item.setTitle(a.attr(ATTR_TITLE));
-            item.setPath(matcher.group("path"));
-            items.add(item);
+            paths.add(matcher.group("path"));
         }
-        return items;
+        return paths;
     }
 
     @Override
-    protected final IdentifiedDetail find(@Nonnull BaseItem item) {
-        IdentifiedDetail detail = new IdentifiedDetail();
-        Document document;
-        try {
-            document = getDocument(builder0(item.getPath()), true);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected final BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
+        Document document = getDocument(builder0(path), true);
+        BdFilmItem item = new BdFilmItem();
 
-        Element script = document.body().selectFirst("> script[type=text/javascript]");
-        if (script == null) {
-            detail.setResources(new HashSet<>());
-            return detail;
+        String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
+        if (!ITEM_URL_REGEX.matcher(location).matches()) {
+            throw new NotFoundException("Not a film page.");
         }
-        String[] parts = script.html().strip().split(";");
-        String[] data = parts[0].split(",");
-        String urlsStr = decode(AssertUtils.matches(URLS_REGEX, data[0].strip()).group("urls"));
-        urlsStr = StringEscapeUtils.unescapeHtml4(urlsStr)
-                .replace("<p>", "")
-                .replace("</p>", "");
-        String[] urls = StringUtils.split(urlsStr, "#\r\n");
-        Set<AbstractResource> resources = Arrays.stream(urls)
-                .map(ResourceUtil::classifyUrl).collect(Collectors.toSet());
+        item.setUrl(location);
+        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
 
-        String diskStr = decode(AssertUtils.matches(URLS_REGEX, data[2].strip()).group("urls"));
-        if (StringUtils.isNotBlank(diskStr)) {
-            String[] diskUrls = diskStr.split("###");
-            Arrays.stream(diskUrls)
-                    .forEach(url -> {
-                        if (!url.contains(UC_YUN_HOST)) {
-                            String[] strings = StringUtils.splitByWholeSeparator(url, "||");
-                            if (strings.length == 1) {
-                                resources.add(new PanResource(url));
-                            } else {
-                                resources.add(new PanResource(strings[1].strip(), strings[0].strip()));
-                            }
-                        }
-                    });
+        Element script = null;
+        for (Element element : document.body().select(TAG_SCRIPT)) {
+            if (element.html().strip().startsWith("var urls")) {
+                script = element;
+                break;
+            }
         }
-        detail.setResources(resources);
-
-        Matcher matcher = AssertUtils.matches(SCORE_REGEX, data[3].strip());
+        Objects.requireNonNull(script);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(VAR_REGEX, script.html().strip().split(";")[0]);
         String db = matcher.group("db");
-        if (db != null) {
-            detail.setDbId(Long.parseLong(db));
-        }
-        detail.setImdbId(matcher.group("imdb"));
+        item.setDbId(db == null ? null : Long.parseLong(db));
+        item.setImdbId(matcher.group("imdb"));
 
-        if (detail.getImdbId() == null) {
-            Element content = document.selectFirst("dl.content");
-            if (content != null) {
-                Matcher m = IMDB_URL_REGEX.matcher(content.text());
-                if (m.find()) {
-                    detail.setImdbId(m.group("id"));
-                }
+        List<Resource> resources = new LinkedList<>();
+        String urls = decode(matcher.group("urls"));
+        urls = StringEscapeUtils.unescapeHtml4(urls)
+                .replace("<p>", "").replace("</p>", "");
+        for (String url : urls.split("#{3,4}\r\n|#{3,4}")) {
+            if (StringUtils.isNotBlank(url)) {
+                Resource resource = ResourceFactory.create("bd url", url, () -> new UnknownResource(url));
+                resources.add(resource);
             }
         }
 
-        return detail;
+        String diskStr = decode(matcher.group("disk"));
+        if (StringUtils.isNotBlank(diskStr)) {
+            String[] diskUrls = diskStr.split("###?\r\n|###|\r\n");
+            for (String diskUrl : diskUrls) {
+                Matcher m = DISK_RESOURCE_REGEX.matcher(diskUrl);
+                if (m.matches()) {
+                    String url = "https://" + m.group("host") + m.group("path");
+                    resources.add(ResourceFactory.create(m.group("pwd"), url, () -> new UnknownResource(diskUrl)));
+                    continue;
+                }
+                resources.add(new UnknownResource(diskUrl));
+            }
+        }
+        item.setResources(resources);
+
+        Element content = document.selectFirst("dl.content");
+        if (content == null) {
+            content = document.selectFirst("div.dfg-layout");
+        }
+        String text = content.text();
+        if (item.getImdbId() == null) {
+            RegexUtils.ifFind(IMDB_INFO_REGEX, text, m -> item.setImdbId(m.group("id")));
+        }
+        RegexUtils.ifFind(YEAR_INFO_REGEX, text, m -> item.setYear(Integer.parseInt(m.group("year"))));
+
+        return item;
     }
 
     private String decode(String urls) {

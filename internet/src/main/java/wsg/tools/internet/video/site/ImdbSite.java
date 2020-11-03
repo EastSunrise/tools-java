@@ -13,6 +13,7 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
@@ -85,31 +86,31 @@ public final class ImdbSite extends BaseSite {
 
         if (title instanceof ImdbEpisode) {
             String href = document.selectFirst("div.titleParent").selectFirst(TAG_A).attr(ATTR_HREF).split("\\?")[0];
-            String seriesId = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
+            String seriesId = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
             ((ImdbEpisode) title).setSeriesId(seriesId);
         }
 
         if (title instanceof ImdbMovie) {
-            Matcher matcher = AssertUtils.matches(MOVIE_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils.matchesOrElseThrow(MOVIE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
                 ((ImdbMovie) title).setYear(Year.of(Integer.parseInt(year)));
             }
         } else if (title instanceof ImdbSeries) {
-            Matcher matcher = AssertUtils.matches(SERIES_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils.matchesOrElseThrow(SERIES_PAGE_TITLE_REGEX, document.title());
             String end = matcher.group("end");
             ((ImdbSeries) title).setYearInfo(new YearInfo(
                     Year.of(Integer.parseInt(matcher.group("start"))),
                     end == null ? null : Year.of(Integer.parseInt(end))
             ));
         } else if (title instanceof ImdbEpisode) {
-            Matcher matcher = AssertUtils.matches(EPISODE_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
                 ((ImdbEpisode) title).setYear(Year.of(Integer.parseInt(year)));
             }
         } else if (title instanceof ImdbCreativeWork) {
-            Matcher matcher = AssertUtils.matches(WORK_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils.matchesOrElseThrow(WORK_PAGE_TITLE_REGEX, document.title());
             ((ImdbCreativeWork) title).setYear(Year.of(Integer.parseInt(matcher.group("year"))));
         } else {
             throw new UnexpectedContentException("Unknown type of imdb title: " + tt);
@@ -154,7 +155,7 @@ public final class ImdbSite extends BaseSite {
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;
             }
-            Matcher matcher = AssertUtils.matches(SEASON_PAGE_TITLE_REGEX, title);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(SEASON_PAGE_TITLE_REGEX, title);
             if (Integer.parseInt(matcher.group(2)) != currentSeason) {
                 break;
             }
@@ -166,7 +167,7 @@ public final class ImdbSite extends BaseSite {
             for (int i = divs.size() - 1; i >= 0; i--) {
                 Element div = divs.get(i);
                 String href = div.selectFirst(TAG_STRONG).selectFirst(TAG_A).attr(ATTR_HREF).split("\\?")[0];
-                String id = AssertUtils.matches(TITLE_HREF_REGEX, href).group(1);
+                String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
                 if (null != map.put(episode, id)) {
                     throw new UnexpectedContentException("Conflict episodes of " + seriesId);

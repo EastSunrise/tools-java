@@ -10,7 +10,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
-import wsg.tools.boot.dao.api.VideoAdapter;
+import wsg.tools.boot.dao.api.intf.ResourceAdapter;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
 import wsg.tools.boot.pojo.base.GenericResult;
 import wsg.tools.boot.pojo.entity.*;
@@ -62,13 +62,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private static final long SIZE_CEIL = 0x100000000L;
 
     private final SeasonRepository seasonRepository;
-    private final VideoAdapter adapter;
+    private final ResourceAdapter adapter;
     @Value("${video.tmpdir}")
     private String tmpdir;
     @Value("${video.cdn}")
     private String cdn;
 
-    public VideoManagerImpl(SeasonRepository seasonRepository, VideoAdapter adapter) {
+    public VideoManagerImpl(SeasonRepository seasonRepository, ResourceAdapter adapter) {
         this.seasonRepository = seasonRepository;
         this.adapter = adapter;
     }
@@ -139,7 +139,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     /**
      * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search download by {@link VideoAdapter#download(MovieEntity, File)}.
+     * If still not found, search download by {@link ResourceAdapter#download(MovieEntity, File)}.
      */
     @Override
     public final ArchivedStatus archive(MovieEntity movie) {
@@ -169,6 +169,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             try {
                 FileUtils.moveFile(chosenFile, destFile);
                 log.info("Archived, deleting {}.", tempDir);
+                // todo exclude subtitle files
                 FileUtils.deleteDirectory(tempDir);
             } catch (IOException e) {
                 throw AssertUtils.runtimeException(e);
@@ -184,7 +185,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     /**
      * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search and download by {@link VideoAdapter#download(SeasonEntity, File)}.
+     * If still not found, search and download by {@link ResourceAdapter#download(SeasonEntity, File)}.
      */
     @Override
     public ArchivedStatus archive(SeasonEntity season) {

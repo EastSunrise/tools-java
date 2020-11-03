@@ -1,6 +1,6 @@
 package wsg.tools.internet.resource.download;
 
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
+import wsg.tools.internet.resource.entity.resource.base.BaseResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,5 +21,5 @@ public interface Downloader {
      * @return result of adding
      * @throws IOException i/o exception
      */
-    boolean addTask(File dir, AbstractResource resource) throws IOException;
+    boolean addTask(File dir, BaseResource resource) throws IOException;
 }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.video.entity.douban.pojo.SimpleSubject;
 
 import java.time.MonthDay;
@@ -37,7 +37,7 @@ public class BoxResult {
         if (StringUtils.isBlank(date)) {
             return;
         }
-        Matcher matcher = AssertUtils.matches(DATE_REGEX, date);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(DATE_REGEX, date);
         this.setStart(MonthDay.parse(matcher.group(1), DATE_FORMATTER));
         this.setEnd(MonthDay.parse(matcher.group(2), DATE_FORMATTER));
     }

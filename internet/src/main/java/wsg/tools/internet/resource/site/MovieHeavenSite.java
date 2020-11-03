@@ -2,26 +2,32 @@ package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.VideoConstants;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.common.ResourceUtil;
-import wsg.tools.internet.resource.common.VideoTypeEnum;
-import wsg.tools.internet.resource.entity.CollectResult;
-import wsg.tools.internet.resource.entity.resource.AbstractResource;
-import wsg.tools.internet.resource.entity.title.BaseItem;
-import wsg.tools.internet.resource.entity.title.SimpleDetail;
+import wsg.tools.internet.resource.common.VideoType;
+import wsg.tools.internet.resource.download.Thunder;
+import wsg.tools.internet.resource.entity.item.SimpleItem;
+import wsg.tools.internet.resource.entity.resource.ResourceFactory;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -29,60 +35,41 @@ import java.util.stream.Collectors;
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends BaseResourceSite<BaseItem, SimpleDetail> {
+public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
 
-    private static final Pattern POSSIBLE_TITLE_REGEX =
-            Pattern.compile("(\\u005B[^\\u005B\\u005D]+\\u005D)?(?<title>[^\\u005B\\u005D]+)(\\u005B[^\\u005B\\u005D]+\\u005D([^\\u005B\\u005D]+)?)?");
+    private static final String TIP_TITLE = "系统提示";
+    private static final Pattern ITEM_TITLE_REGEX =
+            Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
+    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-type-id-(?<index>\\d+)-pg-1.html");
     private static final String UNKNOWN_YEAR = "未知";
-    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-type-id-(?<id>\\d+)-pg-1.html");
-    private static final VideoTypeEnum[] TYPES = {
-            null, VideoTypeEnum.MOVIE, VideoTypeEnum.TV, VideoTypeEnum.TV, VideoTypeEnum.ANIME, VideoTypeEnum.MOVIE,
-            VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE, VideoTypeEnum.UNKNOWN, VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE,
-            VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE, VideoTypeEnum.MOVIE,
-            VideoTypeEnum.MOVIE, VideoTypeEnum.TV, VideoTypeEnum.TV, VideoTypeEnum.TV, VideoTypeEnum.TV,
-            VideoTypeEnum.TV, VideoTypeEnum.MOVIE
+    private static final Pattern VAR_URL_REGEX = Pattern.compile("var downurls=\"(?<entries>.*)#\";");
+    private static final Pattern RESOURCE_REGEX = Pattern.compile("(?<title>(第\\d+集\\$)?[^$]+)\\$(?<url>[^$]*)");
+
+    private static final VideoType[] TYPES = {
+            null, VideoType.MOVIE, VideoType.TV, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
+            VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
+            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
+            VideoType.MOVIE, VideoType.TV, VideoType.TV, VideoType.TV, VideoType.TV,
+            VideoType.TV, VideoType.FOUR_K
     };
 
     public MovieHeavenSite() {
         super("Movie Heaven", "993dy.com");
     }
 
-    /**
-     * Search and collect resources based on the given arguments.
-     *
-     * @param season current season, null for movie
-     */
-    public CollectResult<BaseItem> collect(String title, int year, @Nullable Integer season) {
-        VideoTypeEnum type = season == null ? VideoTypeEnum.MOVIE : VideoTypeEnum.TV;
-        CollectResult<BaseItem> result = new CollectResult<>();
-        for (BaseItem item : search(title)) {
-            SimpleDetail detail = find(item);
-            if (type != detail.getType() || !Objects.equals(year, detail.getYear())
-                    || !isPossibleTitle(title, item.getTitle(), year, season)) {
-                result.exclude(item);
-                continue;
+    @Override
+    public Set<SimpleItem> findAll() {
+        return IntStream.range(1, 73911).mapToObj(id -> {
+            try {
+                return getItem(String.format("/vod-detail-id-%d.html", id));
+            } catch (NotFoundException e) {
+                return null;
             }
-            result.include(detail.getResources());
-        }
-        return result;
-    }
-
-    private boolean isPossibleTitle(String target, String provided, int year, Integer season) {
-        AssertUtils.requireNotBlank(target);
-        if (StringUtils.isBlank(provided)) {
-            return false;
-        }
-
-        if (season == null) {
-            Matcher matcher = AssertUtils.matches(POSSIBLE_TITLE_REGEX, provided);
-            provided = matcher.group("title");
-        }
-
-        return isPossibleSeason1(target, provided, year, season);
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     @Override
-    protected Set<BaseItem> search(@Nonnull String keyword) {
+    protected Set<String> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/index.php")
@@ -93,45 +80,57 @@ public class MovieHeavenSite extends BaseResourceSite<BaseItem, SimpleDetail> {
             throw AssertUtils.runtimeException(e);
         }
         Element ul = document.selectFirst("ul.img-list");
-        return ul.select(TAG_LI).stream().map(li -> {
-            Element a = li.selectFirst(TAG_A);
-            BaseItem item = new BaseItem();
-            item.setPath(a.attr(ATTR_HREF));
-            item.setTitle(a.attr(ATTR_TITLE));
-            return item;
-        }).collect(Collectors.toSet());
+        return ul.select(TAG_LI).stream()
+                .map(li -> li.selectFirst(TAG_A).attr(ATTR_HREF))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    protected SimpleDetail find(@Nonnull BaseItem item) {
-        SimpleDetail detail = new SimpleDetail();
-        Document document;
-        try {
-            document = getDocument(builder0(item.getPath()), true);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        Element div = document.selectFirst("div.info");
-        Map<String, Node> info = new HashMap<>(6);
-        for (Element span : div.select(TAG_SPAN)) {
-            info.put(span.text(), span.nextSibling());
-        }
-        Node node = info.get("上映年代：");
-        if (node != null) {
-            String text = ((TextNode) node).text();
-            detail.setYear((StringUtils.isBlank(text) || UNKNOWN_YEAR.equals(text)) ? null : Integer.parseInt(text));
-        }
-        node = info.get("类型：");
-        if (node != null) {
-            detail.setType(TYPES[Integer.parseInt(AssertUtils.matches(TYPE_PATH_REGEX, node.attr(ATTR_HREF)).group("id"))]);
+    protected SimpleItem getItem(@Nonnull String path) throws NotFoundException {
+        URIBuilder builder = builder0(path);
+        Document document = getDocument(builder, true);
+        String title = document.title();
+        if (TIP_TITLE.equals(title)) {
+            throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }
 
-        Set<AbstractResource> resources = new HashSet<>(Constants.DEFAULT_MAP_CAPACITY);
+        SimpleItem item = new SimpleItem();
+        item.setUrl(builder.toString());
+        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
+
+        Map<String, Node> infos = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        Element div = document.selectFirst("div.info");
+        for (Element element : div.select(TAG_SPAN)) {
+            infos.put(element.text(), element.nextSibling());
+        }
+        Node node = infos.get("类型：");
+        item.setType(TYPES[Integer.parseInt(RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, node.attr(ATTR_HREF)).group("index"))]);
+        node = infos.get("上映年代：");
+        String text = ((TextNode) node).text();
+        if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
+            int year = Integer.parseInt(text);
+            if (year >= VideoConstants.FILM_START_YEAR && year <= Year.now().getValue()) {
+                item.setYear(year);
+            }
+        }
+
+        List<Resource> resources = new LinkedList<>();
         final String downUl = "ul.downurl";
         for (Element ul : document.select(downUl)) {
-            ul.select(TAG_LI).forEach(li -> resources.add(ResourceUtil.classifyUrl(li.selectFirst("input").val(), li.id())));
+            String varUrls = ul.selectFirst(TAG_SCRIPT).html().strip().split("\n")[0].strip();
+            String entries = RegexUtils.matchesOrElseThrow(VAR_URL_REGEX, varUrls).group("entries");
+            entries = StringEscapeUtils.unescapeHtml4(entries);
+            for (String entry : entries.split(SignEnum.HASH.toString())) {
+                Matcher matcher = RegexUtils.matchesOrElseThrow(RESOURCE_REGEX, entry);
+                String url = matcher.group("url");
+                if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {
+                    continue;
+                }
+                resources.add(ResourceFactory.create(matcher.group("title"), url, () -> new UnknownResource(entry)));
+            }
         }
-        detail.setResources(resources);
-        return detail;
+        item.setResources(resources);
+
+        return item;
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import wsg.tools.boot.pojo.base.Result;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
-import wsg.tools.common.excel.ExcelTemplate;
+import wsg.tools.common.io.excel.ExcelTemplate;
 
 import java.io.IOException;
 import java.time.LocalDate;

@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.util.ServiceUtil;
-import wsg.tools.boot.dao.api.VideoAdapter;
+import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
 import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.boot.pojo.base.GenericResult;
@@ -17,8 +17,8 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 @Service
 public class SubjectServiceImpl extends BaseServiceImpl implements SubjectService {
 
-    private final VideoAdapter adapter;
+    private final SubjectAdapter adapter;
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
     private final SeasonRepository seasonRepository;
@@ -53,7 +53,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     private final UserRecordRepository userRecordRepository;
 
     public SubjectServiceImpl(
-            VideoAdapter adapter, MovieRepository movieRepository, SeriesRepository seriesRepository,
+            SubjectAdapter adapter, MovieRepository movieRepository, SeriesRepository seriesRepository,
             SeasonRepository seasonRepository, EpisodeRepository episodeRepository,
             UserRecordRepository userRecordRepository) {
         this.adapter = adapter;
@@ -252,7 +252,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             }
             String ji = "第" + StringUtilsExt.chineseNumeric(currentSeason) + "季";
             Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
-            AssertUtils.matches(pattern, season.getTitle());
+            RegexUtils.matchesOrElseThrow(pattern, season.getTitle());
         }
         return title;
     }

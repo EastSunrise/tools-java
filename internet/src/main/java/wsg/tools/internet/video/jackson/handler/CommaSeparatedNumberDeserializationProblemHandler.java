@@ -2,7 +2,7 @@ package wsg.tools.internet.video.jackson.handler;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
-import wsg.tools.common.lang.math.NumberUtilsExt;
+import wsg.tools.common.lang.NumberUtilsExt;
 
 import java.io.IOException;
 

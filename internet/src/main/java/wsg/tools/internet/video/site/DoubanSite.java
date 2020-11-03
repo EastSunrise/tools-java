@@ -21,6 +21,7 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
@@ -116,7 +117,7 @@ public class DoubanSite extends BaseSite {
         if (cookie == null) {
             return null;
         }
-        return AssertUtils.matches(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id");
+        return RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id");
     }
 
     private String ck() {
@@ -145,7 +146,7 @@ public class DoubanSite extends BaseSite {
             throw AssertUtils.runtimeException(e);
         }
 
-        String title = AssertUtils.matches(PAGE_TITLE_REGEX, document.title()).group(1);
+        String title = RegexUtils.matchesOrElseThrow(PAGE_TITLE_REGEX, document.title()).group(1);
         subject.setTitle(title);
         String name = subject.getName().replace("  ", " ");
         if (name.startsWith(title)) {
@@ -228,7 +229,7 @@ public class DoubanSite extends BaseSite {
             return null;
         }
         String href = input.nextElementSibling().nextElementSibling().attr(ATTR_HREF);
-        return Long.parseLong(AssertUtils.matches(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
+        return Long.parseLong(RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
     }
 
     /**
@@ -287,7 +288,7 @@ public class DoubanSite extends BaseSite {
                 .map(div -> {
                     Element a = div.selectFirst(TAG_H3).selectFirst(TAG_A);
                     SearchItem item = new SearchItem();
-                    Matcher matcher = AssertUtils.matches(SEARCH_ITEM_HREF_REGEX, a.attr(ATTR_HREF));
+                    Matcher matcher = RegexUtils.matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(ATTR_HREF));
                     item.setTitle(a.text().strip());
                     item.setUrl(URLDecoder.decode(matcher.group("url"), Constants.UTF_8));
                     return item;
@@ -353,7 +354,7 @@ public class DoubanSite extends BaseSite {
             }
 
             String numStr = document.selectFirst("span.subject-num").text().strip();
-            Matcher matcher = AssertUtils.matches(COLLECTIONS_PAGE_REGEX, numStr);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(COLLECTIONS_PAGE_REGEX, numStr);
             if (start >= Integer.parseInt(matcher.group(3)) || done) {
                 break;
             }
@@ -382,7 +383,7 @@ public class DoubanSite extends BaseSite {
                 ids.add(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
                 start++;
             }
-            Matcher matcher = AssertUtils.matches(CREATORS_PAGE_TITLE_REGEX, document.title().strip());
+            Matcher matcher = RegexUtils.matchesOrElseThrow(CREATORS_PAGE_TITLE_REGEX, document.title().strip());
             if (start >= Integer.parseInt(matcher.group(1))) {
                 break;
             }
