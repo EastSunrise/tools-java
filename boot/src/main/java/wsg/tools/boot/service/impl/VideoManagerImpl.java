@@ -65,8 +65,6 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private final ResourceAdapter adapter;
     @Value("${video.tmpdir}")
     private String tmpdir;
-    @Value("${video.cdn}")
-    private String cdn;
 
     public VideoManagerImpl(SeasonRepository seasonRepository, ResourceAdapter adapter) {
         this.seasonRepository = seasonRepository;
@@ -74,13 +72,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public File getCdn() {
-        return new File(cdn);
-    }
-
-    @Override
-    public final Optional<File> getFile(MovieEntity movie) {
-        String location = getLocation(movie);
+    public final Optional<File> getFile(File cdn, MovieEntity movie) {
+        String location = getLocation(cdn, movie);
         for (Filetype type : Filetype.videoTypes()) {
             File file = new File(location + SignEnum.DOT + type.suffix());
             if (file.isFile()) {
@@ -91,8 +84,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public final Optional<File> getFile(SeriesEntity series) {
-        String location = getLocation(series);
+    public final Optional<File> getFile(File cdn, SeriesEntity series) {
+        String location = getLocation(cdn, series);
         File seriesDir = new File(location);
         if (seriesDir.isDirectory()) {
             return Optional.of(seriesDir);
@@ -101,9 +94,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public Optional<File> getFile(SeasonEntity season) {
+    public Optional<File> getFile(File cdn, SeasonEntity season) {
         SeriesEntity series = season.getSeries();
-        Optional<File> optional = getFile(series);
+        Optional<File> optional = getFile(cdn, series);
         if (series.getSeasonsCount() == 1) {
             return optional;
         }
@@ -119,9 +112,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public Optional<File> getFile(EpisodeEntity episode) {
+    public Optional<File> getFile(File cdn, EpisodeEntity episode) {
         SeasonEntity season = seasonRepository.findById(episode.getSeasonId()).orElseThrow();
-        Optional<File> optional = getFile(season);
+        Optional<File> optional = getFile(cdn, season);
         if (optional.isEmpty()) {
             return Optional.empty();
         }
@@ -137,13 +130,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return Optional.empty();
     }
 
-    /**
-     * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search download by {@link ResourceAdapter#download(MovieEntity, File)}.
-     */
+
     @Override
-    public final ArchivedStatus archive(MovieEntity movie) {
-        Optional<File> optional = getFile(movie);
+    public final ArchivedStatus archive(File cdn, MovieEntity movie) {
+        Optional<File> optional = getFile(cdn, movie);
         if (optional.isPresent()) {
             return ArchivedStatus.ARCHIVED;
         }
@@ -165,7 +155,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
                 return ArchivedStatus.noQualified(chosen.error());
             }
             File chosenFile = chosen.get();
-            File destFile = new File(getLocation(movie) + chosenFile.getName().substring(chosenFile.getName().lastIndexOf(SignEnum.DOT.getC())));
+            Filetype realType;
+            try {
+                realType = Filetype.getRealType(chosenFile);
+            } catch (IOException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+            File destFile = new File(getLocation(cdn, movie) + "." + realType.suffix());
             try {
                 FileUtils.moveFile(chosenFile, destFile);
                 log.info("Archived, deleting {}.", tempDir);
@@ -183,14 +179,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return ArchivedStatus.ADDED;
     }
 
-    /**
-     * Firstly, locate the file under {@link #cdn}. Otherwise, find under temporary directory.
-     * If still not found, search and download by {@link ResourceAdapter#download(SeasonEntity, File)}.
-     */
     @Override
-    public ArchivedStatus archive(SeasonEntity season) {
+    public ArchivedStatus archive(File cdn, SeasonEntity season) {
         SeriesEntity series = season.getSeries();
-        File seriesDir = new File(getLocation(series));
+        File seriesDir = new File(getLocation(cdn, series));
         File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
                 : new File(seriesDir, String.format("S%02d", season.getCurrentSeason()));
         if (seasonDir.isDirectory()) {
@@ -274,8 +266,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         String format = "E%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
         for (Map.Entry<Integer, File> entry : chosenFiles.entrySet()) {
             File chosenFile = entry.getValue();
-            String ext = chosenFile.getName().substring(chosenFile.getName().lastIndexOf(SignEnum.DOT.getC()));
-            File destFile = new File(seasonDir, String.format(format, entry.getKey()) + ext);
+            Filetype realType;
+            try {
+                realType = Filetype.getRealType(chosenFile);
+            } catch (IOException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+            File destFile = new File(seasonDir, String.format(format, entry.getKey()) + "." + realType.suffix());
             try {
                 FileUtils.moveFile(chosenFile, destFile);
             } catch (IOException e) {
@@ -313,6 +310,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     private GenericResult<File> choose(Collection<File> files, List<Duration> durations, Duration floor, Duration ceil, int minKbps) {
+        log.info("Choosing file...");
         List<String> fails = new ArrayList<>();
         Optional<DefaultMapEntry<File, GenericResult<Long>>> max = files.stream()
                 .map(file -> new DefaultMapEntry<>(file, this.weight(file, durations, floor, ceil, minKbps)))
@@ -414,18 +412,14 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return String.format("%.2f PB", size);
     }
 
-    /**
-     * Based on {@link #cdn}.
-     */
-    private String getLocation(SubjectEntity entity) {
+    private String getLocation(File cdn, SubjectEntity entity) {
         Objects.requireNonNull(entity, "Given entity mustn't be null.");
         Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");
         Objects.requireNonNull(entity.getTitle(), "Title of subject " + entity.getId() + " mustn't be null.");
 
         StringBuilder builder = new StringBuilder()
-                .append(cdn)
-                .append(File.separator);
+                .append(cdn).append(File.separator);
         if (entity instanceof MovieEntity) {
             builder.append(MOVIE_DIR);
         } else {

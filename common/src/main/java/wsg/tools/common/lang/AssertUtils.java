@@ -82,5 +82,4 @@ public final class AssertUtils {
         Objects.requireNonNull(e, "Can't construct a RuntimeException from a null exception.");
         return new RuntimeException(e.getMessage(), e);
     }
-
 }

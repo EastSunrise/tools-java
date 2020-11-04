@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity.resource.valid;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.resource.entity.resource.base.BaseResource;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/9/18
  */
-public class MagnetResource extends BaseResource {
+public class MagnetResource extends BaseValidResource {
 
     public static final String SCHEME = "magnet";
     private static final String XT = "urn:(btih|tree:tiger|sha1|ed2k|aich|kzhash|md5):([0-9A-z]{32}|[0-9A-z]{40})";

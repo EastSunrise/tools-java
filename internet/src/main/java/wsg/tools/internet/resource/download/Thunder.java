@@ -5,7 +5,7 @@ import wsg.tools.common.io.Filetype;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.SystemUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.resource.entity.resource.base.BaseResource;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.entity.resource.valid.PanResource;
 import wsg.tools.internet.resource.entity.resource.valid.YunResource;
 
@@ -55,7 +55,7 @@ public class Thunder implements Downloader {
     }
 
     @Override
-    public boolean addTask(File dir, BaseResource resource) throws IOException {
+    public boolean addTask(File dir, BaseValidResource resource) throws IOException {
         if (resource instanceof PanResource || resource instanceof YunResource) {
             return false;
         }

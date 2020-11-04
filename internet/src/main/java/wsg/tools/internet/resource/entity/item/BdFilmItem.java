@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.site.BdFilmSite;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
+import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 /**
  * Items of {@link BdFilmSite}.
@@ -13,10 +15,9 @@ import wsg.tools.internet.resource.site.BdFilmSite;
  */
 @Getter
 @Setter
-public class BdFilmItem extends BaseItem {
+public class BdFilmItem extends SimpleItem implements DoubanIdentifier, ImdbIdentifier {
 
     private final VideoType type = VideoType.MOVIE;
-    private Integer year;
     private Long dbId;
     private String imdbId;
 

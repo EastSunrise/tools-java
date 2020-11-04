@@ -1,6 +1,6 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.internet.resource.entity.resource.base.BaseResource;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -11,7 +11,7 @@ import java.net.URL;
  * @author Kingen
  * @since 2020/9/18
  */
-public class HttpResource extends BaseResource {
+public class HttpResource extends BaseValidResource {
 
     public static final String[] PERMIT_SCHEMES = new String[]{"http", "https", "ftp"};
     static final String PAN_HOST = "pan.baidu.com";

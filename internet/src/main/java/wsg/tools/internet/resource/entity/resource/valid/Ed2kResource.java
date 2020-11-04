@@ -1,6 +1,6 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.internet.resource.entity.resource.base.BaseResource;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import javax.annotation.Nonnull;
 import java.util.regex.Matcher;
@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/9/18
  */
-public class Ed2kResource extends BaseResource {
+public class Ed2kResource extends BaseValidResource {
 
     public static final String SCHEME = "ed2k";
 

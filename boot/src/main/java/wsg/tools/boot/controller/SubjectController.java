@@ -12,6 +12,7 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.io.excel.ExcelTemplate;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,9 +34,10 @@ public class SubjectController extends AbstractController {
             .put("Douban", DefaultKeyValue::getValue, DefaultKeyValue::setValue, Long.class);
     private SubjectService subjectService;
 
-    @RequestMapping(value = "/douban", method = RequestMethod.POST)
-    public BatchResult<Long> updateDouban(long user, LocalDate since) {
-        return subjectService.importDouban(user, since);
+    @RequestMapping(value = "/douban/import", method = RequestMethod.POST)
+    public void updateDouban(HttpServletResponse response, long user, LocalDate since) {
+        BatchResult<Long> result = subjectService.importDouban(user, since);
+        exportXlsx(response, result.getFails(), "import_douban", "id", "reason");
     }
 
     @RequestMapping(value = "/relation", method = RequestMethod.POST)

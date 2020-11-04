@@ -11,11 +11,13 @@ import wsg.tools.boot.common.jackson.serializer.ContainerSerializers;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.io.excel.ExcelFactory;
+import wsg.tools.common.io.excel.ExcelTemplate;
 import wsg.tools.common.io.excel.reader.BaseCellToSetter;
 import wsg.tools.common.io.excel.reader.CellReader;
 import wsg.tools.common.io.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.function.CreatorSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
@@ -77,12 +79,26 @@ public abstract class AbstractController {
 
     /**
      * Export an .xlsx file.
+     */
+    protected <K, V> void exportXlsx(HttpServletResponse response, Map<K, V> data, String filename,
+                                     String keyHeader, String valueHeader) {
+        ExcelTemplate<Map.Entry<K, V>> template = ExcelTemplate.<Map.Entry<K, V>>builder()
+                .putGetter(keyHeader, Map.Entry::getKey).putGetter(valueHeader, Map.Entry::getValue);
+        exportXlsx(response, data.entrySet(), filename, template.getWriters());
+    }
+
+    /**
+     * Export an .xlsx file.
      *
      * @see ExcelFactory#writeXlsx(OutputStream, Iterable, LinkedHashMap)
      */
     protected <T> void exportXlsx(HttpServletResponse response, Iterable<T> data, String filename,
-                                  LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) throws IOException {
-        FACTORY.writeXlsx(getOutputStream(response, filename, ContentType.XLSX), data, writers);
+                                  LinkedHashMap<String, BaseCellFromGetter<T, ?>> writers) {
+        try {
+            FACTORY.writeXlsx(getOutputStream(response, filename, ContentType.XLSX), data, writers);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
     }
 
     private InputStream getInputStream(MultipartFile file, ContentType contentType) throws IOException {

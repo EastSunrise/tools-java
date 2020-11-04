@@ -12,12 +12,12 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/11/1
  */
-public abstract class BaseResource implements Resource {
+public abstract class BaseValidResource implements Resource {
 
     @Getter
     private final String title;
 
-    protected BaseResource(String title) {
+    protected BaseValidResource(String title) {
         this.title = title;
     }
 
@@ -47,7 +47,7 @@ public abstract class BaseResource implements Resource {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        BaseResource that = (BaseResource) o;
+        BaseValidResource that = (BaseValidResource) o;
         return Objects.equals(getUrl(), that.getUrl());
     }
 

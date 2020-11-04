@@ -3,6 +3,7 @@ package wsg.tools.internet.resource.entity.item;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.resource.site.Y80sSite;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 
 /**
  * Items of {@link Y80sSite}.
@@ -12,7 +13,7 @@ import wsg.tools.internet.resource.site.Y80sSite;
  */
 @Getter
 @Setter
-public class Y80sItem extends SimpleItem {
+public class Y80sItem extends SimpleItem implements DoubanIdentifier {
 
     private Long dbId;
 }

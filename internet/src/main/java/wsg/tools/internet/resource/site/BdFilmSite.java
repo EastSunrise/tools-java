@@ -77,8 +77,8 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
         Set<String> paths = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
-            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEX, a.attr(ATTR_HREF));
-            if (null == matcher.group("type")) {
+            Matcher matcher = ITEM_URL_REGEX.matcher(a.attr(ATTR_HREF));
+            if (!matcher.matches()) {
                 continue;
             }
             paths.add(matcher.group("path"));
