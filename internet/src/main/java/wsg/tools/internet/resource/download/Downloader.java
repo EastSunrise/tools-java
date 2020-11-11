@@ -8,10 +8,11 @@ import java.io.IOException;
 /**
  * Utility for downloading.
  *
+ * @param <R> type of resources that the downloader can download.
  * @author Kingen
  * @since 2020/9/14
  */
-public interface Downloader {
+public interface Downloader<R extends BaseValidResource> {
 
     /**
      * Download the given resource.
@@ -21,5 +22,5 @@ public interface Downloader {
      * @return result of adding
      * @throws IOException i/o exception
      */
-    boolean addTask(File dir, BaseValidResource resource) throws IOException;
+    boolean addTask(File dir, R resource) throws IOException;
 }

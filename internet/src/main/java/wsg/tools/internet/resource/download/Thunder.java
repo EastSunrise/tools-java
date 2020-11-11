@@ -19,9 +19,10 @@ import java.util.regex.Pattern;
  * Downloader of thunder.
  *
  * @author Kingen
+ * @see <a href="https://www.xunlei.com/">Thunder</a>
  * @since 2020/10/8
  */
-public class Thunder implements Downloader {
+public class Thunder implements Downloader<BaseValidResource> {
 
     public static final String SCHEME = "thunder";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
@@ -54,6 +55,9 @@ public class Thunder implements Downloader {
         return new Filetype[]{Filetype.XLTD};
     }
 
+    /**
+     * @param dir target directory is dependent on the selection of the dialog
+     */
     @Override
     public boolean addTask(File dir, BaseValidResource resource) throws IOException {
         if (resource instanceof PanResource || resource instanceof YunResource) {
@@ -69,6 +73,6 @@ public class Thunder implements Downloader {
         } catch (InterruptedException e) {
             throw AssertUtils.runtimeException(e);
         }
-        return true;
+        return process.exitValue() == 0;
     }
 }

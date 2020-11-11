@@ -3,6 +3,7 @@ package wsg.tools.boot.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -289,10 +290,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     private int parseEpisode(File file, int currentSeason, int year) {
-        String name = file.getName();
-        if (name.indexOf(SignEnum.DOT.getC()) > 0) {
-            name = name.substring(0, name.lastIndexOf(SignEnum.DOT.getC()));
-        }
+        String name = FilenameUtils.getBaseName(file.getName());
         Pattern pattern = Pattern.compile("[^\\d]+" +
                 "((1080P|www\\.[\\w\\d]+\\.(com|cn))[^\\d]+)?" +
                 "(" + year + "[^\\d]+)?" +

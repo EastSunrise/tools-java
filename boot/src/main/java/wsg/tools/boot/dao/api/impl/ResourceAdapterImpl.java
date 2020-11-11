@@ -16,7 +16,6 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.download.Downloader;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.BaseItem;
 import wsg.tools.internet.resource.entity.item.BdFilmItem;
@@ -56,7 +55,7 @@ public class ResourceAdapterImpl implements ResourceAdapter {
     private final XlcSite xlcSite = new XlcSite();
     private final BdFilmSite bdFilmSite = new BdFilmSite();
     private final MovieHeavenSite movieHeavenSite = new MovieHeavenSite();
-    private final Downloader downloader = new Thunder();
+    private final Thunder thunder = new Thunder();
 
     private final ResourceItemRepository itemRepository;
     private final ResourceLinkRepository linkRepository;
@@ -132,7 +131,7 @@ public class ResourceAdapterImpl implements ResourceAdapter {
     private long download(Set<BaseValidResource> resources, File target) {
         long count = resources.stream().filter(resource -> {
             try {
-                return downloader.addTask(target, resource);
+                return thunder.addTask(target, resource);
             } catch (IOException e) {
                 log.error(e.getMessage());
                 return false;

@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
+import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import java.net.MalformedURLException;
@@ -42,5 +43,14 @@ public class HttpResource extends BaseValidResource {
     @Override
     public String getUrl() {
         return this.url.toString();
+    }
+
+    public String filename() {
+        String path = this.url.getPath();
+        if (path == null || path.endsWith(SignEnum.SLASH.toString())) {
+            return "index.html";
+        } else {
+            return path.substring(path.lastIndexOf(SignEnum.SLASH.getC()) + 1);
+        }
     }
 }

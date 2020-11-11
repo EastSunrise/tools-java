@@ -1,6 +1,7 @@
 package wsg.tools.common.io;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import ws.schild.jave.*;
 
 import java.io.File;
@@ -61,7 +62,8 @@ public final class Ffmpeg {
         if (listener == null) {
             listener = new DefaultListener();
         }
-        File output = new File(input.getParent(), input.getName().substring(0, input.getName().lastIndexOf('.') + 1) + targetType.suffix());
+        String outputPath = FilenameUtils.removeExtension(input.getPath()) + FilenameUtils.EXTENSION_SEPARATOR + targetType.suffix();
+        File output = new File(outputPath);
         log.info("Copy from {} to {}.", input, output);
         ENCODER.encode(new MultimediaObject(input), output, defaultEncodingAttributes(), listener);
         return output;

@@ -1,10 +1,9 @@
 package wsg.tools.common.io;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.SignEnum;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -154,13 +153,11 @@ public enum Filetype {
      * @return type
      */
     public static Filetype getExternalType(String name) {
-        name = StringUtils.stripStart(name, null);
-        name = StringUtils.stripEnd(name, " .");
-        if (name.indexOf(SignEnum.DOT.getC()) < 0) {
+        String extension = FilenameUtils.getExtension(name);
+        if ("".equals(extension)) {
             return null;
         }
-        String ext = name.substring(name.lastIndexOf(SignEnum.DOT.getC()) + 1).toUpperCase();
-        Filetype filetype = FILE_SUFFIXES.get(ext);
+        Filetype filetype = FILE_SUFFIXES.get(extension);
         return Objects.requireNonNull(filetype, "Unknown filetype of %s" + name);
     }
 
