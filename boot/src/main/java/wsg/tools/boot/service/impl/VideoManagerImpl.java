@@ -1,13 +1,12 @@
 package wsg.tools.boot.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@PropertySource("classpath:config/private/video.properties")
 public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     private static final SignEnum NAME_SEPARATOR = SignEnum.UNDERSCORE;
@@ -64,8 +62,6 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     private final SeasonRepository seasonRepository;
     private final ResourceAdapter adapter;
-    @Value("${video.tmpdir}")
-    private String tmpdir;
 
     public VideoManagerImpl(SeasonRepository seasonRepository, ResourceAdapter adapter) {
         this.seasonRepository = seasonRepository;
@@ -133,15 +129,15 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
 
     @Override
-    public final ArchivedStatus archive(File cdn, MovieEntity movie) {
+    public final ArchivedStatus archive(File cdn, File tmpdir, MovieEntity movie) {
         Optional<File> optional = getFile(cdn, movie);
         if (optional.isPresent()) {
-            return ArchivedStatus.ARCHIVED;
+            return ArchivedStatus.EXISTED;
         }
 
         log.info("Archiving for {}.", movie.getTitle());
         String tmpName = movie.getId() + "" + SignEnum.UNDERSCORE + movie.getTitle();
-        File tempDir = new File(String.join(File.separator, tmpdir, tmpName));
+        File tempDir = new File(tmpdir, tmpName);
         if (tempDir.isDirectory()) {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
                 return ArchivedStatus.NONE_DOWNLOADED;
@@ -153,7 +149,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             Collection<File> files = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
             GenericResult<File> chosen = choose(files, movie.getDurations(), Duration.ofSeconds(-30), Duration.ofSeconds(30), MOVIE_MIN_BIT_RATE);
             if (!chosen.isSuccess()) {
-                return ArchivedStatus.noQualified(chosen.error());
+                return ArchivedStatus.noneQualified(chosen.error());
             }
             File chosenFile = chosen.get();
             Filetype realType;
@@ -181,13 +177,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public ArchivedStatus archive(File cdn, SeasonEntity season) {
+    public ArchivedStatus archive(File cdn, File tmpdir, SeasonEntity season) {
         SeriesEntity series = season.getSeries();
         File seriesDir = new File(getLocation(cdn, series));
         File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
                 : new File(seriesDir, String.format("S%02d", season.getCurrentSeason()));
         if (seasonDir.isDirectory()) {
-            return ArchivedStatus.ARCHIVED;
+            return ArchivedStatus.EXISTED;
         }
 
         log.info("Archiving for {}.", season.getTitle());
@@ -252,7 +248,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         }
 
         if (!files.isEmpty()) {
-            return ArchivedStatus.noQualified(files.values().stream()
+            return ArchivedStatus.unknown(files.values().stream()
                     .map(list -> list.stream()
                             .map(File::toString)
                             .collect(Collectors.joining(Constants.LINE_SEPARATOR))
@@ -295,9 +291,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
                 "((1080P|www\\.[\\w\\d]+\\.(com|cn))[^\\d]+)?" +
                 "(" + year + "[^\\d]+)?" +
                 "(?<s>0?" + currentSeason + "[^\\d]+|第" + StringUtilsExt.chineseNumeric(currentSeason) + "季[^\\d]*)" + (currentSeason == 1 ? "?" : "") +
-                "(?<e>0[1-9]|[1-9][0-9])" +
+                "(?<e>\\d{1,3})" +
                 "([^\\d]+" + year + ")?" +
-                "(([^\\d]*(v2|V2|X264|x264|AC3|Mp4))|([^\\d]+(1024高清|720P|624x336|1024x576|1024X512|720X360)))*" +
+                "(([^\\d]*(v2|V2|v3|X264|x264|AC3|Mp4))|([^\\d]+(1024高清|720P|624x336|1024x576|1024X512|720X360|1280X720)))*" +
                 "[^\\d]*(\\(1\\))?"
         );
         Matcher matcher = pattern.matcher(name);
@@ -339,6 +335,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         AssertUtils.requireRange(minKbps, 400, null);
         AssertUtils.requireRange(floor, null, Duration.ZERO);
         AssertUtils.requireRange(ceil, Duration.ZERO, null);
+        if (CollectionUtils.isEmpty(durations)) {
+            throw new IllegalArgumentException("Duration mustn't be null.");
+        }
+
         Filetype filetype;
         try {
             filetype = Filetype.getRealType(file);
@@ -350,9 +350,6 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         }
         boolean goodType = ArrayUtils.contains(GOOD_VIDEO_SUFFIXES, filetype);
 
-        if (durations.size() < 1) {
-            throw new IllegalArgumentException("Duration mustn't be null.");
-        }
         durations.sort(Duration::compareTo);
         Duration fileDuration;
         try {

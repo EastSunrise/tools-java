@@ -3,6 +3,7 @@ package wsg.tools.internet.resource.site;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -55,7 +56,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     public Set<BdFilmItem> findAll() {
         return IntStream.range(359, 31256).mapToObj(id -> {
             try {
-                return getItem(String.format("/gy/%d.htm", id));
+                return getItem(builder0("/gy/%d.htm", id));
             } catch (NotFoundException e) {
                 return null;
             }
@@ -66,7 +67,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
      * @param keyword title, id of Douban, or id of IMDb
      */
     @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
+    protected final Set<URIBuilder> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
@@ -74,21 +75,21 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
             throw AssertUtils.runtimeException(e);
         }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<String> paths = new HashSet<>();
+        Set<URIBuilder> paths = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
             Matcher matcher = ITEM_URL_REGEX.matcher(a.attr(ATTR_HREF));
             if (!matcher.matches()) {
                 continue;
             }
-            paths.add(matcher.group("path"));
+            paths.add(builder0(matcher.group("path")));
         }
         return paths;
     }
 
     @Override
-    protected final BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
-        Document document = getDocument(builder0(path), true);
+    protected final BdFilmItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
+        Document document = getDocument(builder, true);
         BdFilmItem item = new BdFilmItem();
 
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);

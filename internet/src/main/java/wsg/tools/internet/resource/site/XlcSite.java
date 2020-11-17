@@ -58,7 +58,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     public Set<SimpleItem> findAll() {
         return IntStream.range(1, 43034).mapToObj(id -> {
             try {
-                return getItem(String.format("/vod-read-id-%d.html", id));
+                return getItem(builder0("/vod-read-id-%d.html", id));
             } catch (NotFoundException e) {
                 return null;
             }
@@ -66,7 +66,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
+    protected final Set<URIBuilder> searchItems(@Nonnull String keyword) {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
         Document document;
         try {
@@ -74,7 +74,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Set<String> paths = new HashSet<>();
+        Set<URIBuilder> paths = new HashSet<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {
             Element h3 = div.selectFirst(TAG_H3);
@@ -83,14 +83,13 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             if (!matcher.matches()) {
                 continue;
             }
-            paths.add(matcher.group("path"));
+            paths.add(builder0(matcher.group("path")));
         }
         return paths;
     }
 
     @Override
-    protected final SimpleItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    protected final SimpleItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
         Document document = getDocument(builder, true);
         SimpleItem item = new SimpleItem();
         item.setUrl(builder.toString());

@@ -21,7 +21,7 @@ public interface VideoManager {
     /**
      * Obtains corresponding file of the given movie.
      * <p>
-     * {@link #archive(File, MovieEntity)} should be called to check the status of the given movie.
+     * {@link #archive(File, File, MovieEntity)} should be called to check the status of the given movie.
      * The file is available when status is {@link ArchivedStatus#ARCHIVED}.
      *
      * @param cdn   cdn
@@ -42,7 +42,7 @@ public interface VideoManager {
     /**
      * Obtains corresponding directory of the given season of tv series.
      * <p>
-     * {@link #archive(File, SeasonEntity)} should be called to check the status of the given season.
+     * {@link #archive(File, File, SeasonEntity)} should be called to check the status of the given season.
      * The file is available when status is {@link ArchivedStatus#ARCHIVED}.
      *
      * @param cdn    cdn
@@ -66,11 +66,12 @@ public interface VideoManager {
      * Firstly, locate the file from cdn. Otherwise, find under temporary directory.
      * If still not found, search download by {@link ResourceAdapter#download(MovieEntity, File)}.
      *
-     * @param cdn   cdn
-     * @param movie given movie
+     * @param cdn    cdn
+     * @param tmpdir temporary directory to store downloading files
+     * @param movie  given movie
      * @return status of archiving
      */
-    ArchivedStatus archive(File cdn, MovieEntity movie);
+    ArchivedStatus archive(File cdn, File tmpdir, MovieEntity movie);
 
     /**
      * Archive the given season from the cdn.
@@ -79,8 +80,9 @@ public interface VideoManager {
      * If still not found, search and download by {@link ResourceAdapter#download(SeasonEntity, File)}.
      *
      * @param cdn    cdn
+     * @param tmpdir temporary directory to store downloading files
      * @param season given season
      * @return status of archiving
      */
-    ArchivedStatus archive(File cdn, SeasonEntity season);
+    ArchivedStatus archive(File cdn, File tmpdir, SeasonEntity season);
 }

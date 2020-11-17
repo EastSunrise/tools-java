@@ -61,7 +61,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     public Set<SimpleItem> findAll() {
         return IntStream.range(1, 73911).mapToObj(id -> {
             try {
-                return getItem(String.format("/vod-detail-id-%d.html", id));
+                return getItem(builder0("/vod-detail-id-%d.html", id));
             } catch (NotFoundException e) {
                 return null;
             }
@@ -69,7 +69,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected Set<String> searchItems(@Nonnull String keyword) {
+    protected Set<URIBuilder> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/index.php")
@@ -81,15 +81,17 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
         }
         Element ul = document.selectFirst("ul.img-list");
         return ul.select(TAG_LI).stream()
-                .map(li -> li.selectFirst(TAG_A).attr(ATTR_HREF))
+                .map(li -> builder0(li.selectFirst(TAG_A).attr(ATTR_HREF)))
                 .collect(Collectors.toSet());
     }
 
     @Override
-    protected SimpleItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    protected SimpleItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
         Document document = getDocument(builder, true);
         String title = document.title();
+        if (StringUtils.isBlank(title)) {
+            throw new NotFoundException("Empty title");
+        }
         if (TIP_TITLE.equals(title)) {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }

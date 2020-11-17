@@ -25,6 +25,5 @@ public enum VideoType {
     COURSE,
     MV,
     TRAILER,
-    UNKNOWN,
     VIDEO
 }

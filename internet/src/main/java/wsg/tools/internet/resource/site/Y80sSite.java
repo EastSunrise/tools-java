@@ -1,6 +1,7 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -52,7 +53,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     public Set<Y80sItem> findAll() {
         return IntStream.range(1, 43034).mapToObj(id -> {
             try {
-                return getItem(String.format("/movie/%d", id));
+                return getItem(builder0("/movie/%d", id));
             } catch (NotFoundException e) {
                 return null;
             }
@@ -60,7 +61,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     }
 
     @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
+    protected final Set<URIBuilder> searchItems(@Nonnull String keyword) {
         AssertUtils.requireNotBlank(keyword);
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
         Elements as;
@@ -71,17 +72,16 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         }
         return as.stream()
                 .map(a -> RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("path"))
+                .map(this::builder0)
                 .collect(Collectors.toSet());
     }
 
     /**
      * todo
-     *
-     * @param path path of target item
      */
     @Override
-    protected final Y80sItem getItem(@Nonnull String path) throws NotFoundException {
-        Document document = getDocument(builder0(path), true);
+    protected final Y80sItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
+        Document document = getDocument(builder, true);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }

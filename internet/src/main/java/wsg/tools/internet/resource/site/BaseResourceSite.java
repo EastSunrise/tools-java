@@ -1,15 +1,15 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
-import wsg.tools.common.lang.AssertUtils;
+import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.BaseItem;
 
 import javax.annotation.Nonnull;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class of sites of resources of video.
@@ -43,29 +43,30 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
      * Search all available items by the given keyword.
      */
     public final Set<I> search(String keyword) {
-        return searchItems(keyword).stream().map(path -> {
+        Set<I> items = new HashSet<>();
+        for (URIBuilder builder : searchItems(keyword)) {
             try {
-                return getItem(path);
-            } catch (NotFoundException e) {
-                throw AssertUtils.runtimeException(e);
+                items.add(getItem(builder));
+            } catch (NotFoundException ignored) {
             }
-        }).collect(Collectors.toSet());
+        }
+        return items;
     }
 
     /**
      * Search items for the given keyword.
      *
      * @param keyword keyword to search
-     * @return set of paths of searched items
+     * @return set of URIBuilders of searched items
      */
-    protected abstract Set<String> searchItems(@Nonnull String keyword);
+    protected abstract Set<URIBuilder> searchItems(@Nonnull String keyword);
 
     /**
      * Obtains the item of the given keyword.
      *
-     * @param path path of target item
+     * @param builder builder of uri of target item
      * @return the item
      * @throws NotFoundException if not found
      */
-    protected abstract I getItem(@Nonnull String path) throws NotFoundException;
+    protected abstract I getItem(@Nonnull URIBuilder builder) throws NotFoundException;
 }
