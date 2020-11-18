@@ -19,7 +19,7 @@ public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGett
         if (address == null) {
             return;
         }
-        Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
+        Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(getType(t));
         hyperlink.setAddress(address);
         cell.setHyperlink(hyperlink);
         cell.setCellStyle(getCellStyle(workbook));
@@ -44,4 +44,12 @@ public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGett
      * @return address
      */
     public abstract String getAddress(T t);
+
+    /**
+     * Obtains type of the link
+     *
+     * @param t the given object
+     * @return {@link HyperlinkType}
+     */
+    public abstract HyperlinkType getType(T t);
 }

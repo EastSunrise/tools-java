@@ -3,9 +3,11 @@ package wsg.tools.boot.dao.api.intf;
 import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.entity.SeasonEntity;
 import wsg.tools.internet.resource.entity.item.BaseItem;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * Adapter for resources to transfer result of resource sites.
@@ -23,20 +25,27 @@ public interface ResourceAdapter {
     <I extends BaseItem> void importAll(BaseResourceSite<I> site);
 
     /**
-     * Download the given movie to target directory.
+     * Search resources of the given movie.
      *
-     * @param movie  entity of the given movie
-     * @param target target directory
-     * @return count of added resources
+     * @param movie entity of the given movie
+     * @return set of searched resources
      */
-    long download(MovieEntity movie, File target);
+    Set<BaseValidResource> search(MovieEntity movie);
 
     /**
-     * Download the given season to target directory.
+     * Search resources of the given season.
      *
      * @param season entity of the given season
-     * @param target target directory
+     * @return set of searched resources
+     */
+    Set<BaseValidResource> search(SeasonEntity season);
+
+    /**
+     * Download the given resources to target directory.
+     *
+     * @param resources set of resources to download
+     * @param target    target directory
      * @return count of added resources
      */
-    long download(SeasonEntity season, File target);
+    long download(Set<BaseValidResource> resources, File target);
 }

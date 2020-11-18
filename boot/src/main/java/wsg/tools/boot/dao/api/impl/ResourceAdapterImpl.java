@@ -20,7 +20,6 @@ import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.BaseItem;
 import wsg.tools.internet.resource.entity.item.BdFilmItem;
 import wsg.tools.internet.resource.entity.item.SimpleItem;
-import wsg.tools.internet.resource.entity.item.Y80sItem;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 import wsg.tools.internet.resource.site.BdFilmSite;
@@ -99,22 +98,20 @@ public class ResourceAdapterImpl implements ResourceAdapter {
     }
 
     @Override
-    public long download(MovieEntity movie, File target) {
+    public Set<BaseValidResource> search(MovieEntity movie) {
         int year = movie.getYear().getValue();
         String title = movie.getTitle();
-
         Set<BaseValidResource> resources = collect(bdFilmItem(movie));
         Predicate<SimpleItem> predicate = testSimpleItem(year, MOVIE_TYPES::contains, simplifyMovieTitle(title, year));
         Stream<SimpleItem> movieHeavenStream = movieHeavenSite.search(title).stream().filter(predicate);
         resources.addAll(collect(movieHeavenStream));
         Stream<SimpleItem> xlcStream = xlcSite.search(title).stream().filter(predicate);
         resources.addAll(collect(xlcStream));
-
-        return download(resources, target);
+        return resources;
     }
 
     @Override
-    public long download(SeasonEntity season, File target) {
+    public Set<BaseValidResource> search(SeasonEntity season) {
         int year = season.getYear().getValue();
         String title = season.getSeries().getTitle();
 
@@ -124,11 +121,11 @@ public class ResourceAdapterImpl implements ResourceAdapter {
         Set<BaseValidResource> resources = new HashSet<>(collect(movieHeavenStream));
         Stream<SimpleItem> xlcStream = xlcSite.search(title).stream().filter(predicate);
         resources.addAll(collect(xlcStream));
-
-        return download(resources, target);
+        return resources;
     }
 
-    private long download(Set<BaseValidResource> resources, File target) {
+    @Override
+    public long download(Set<BaseValidResource> resources, File target) {
         long count = resources.stream().filter(resource -> {
             try {
                 return thunder.addTask(target, resource);
@@ -155,15 +152,6 @@ public class ResourceAdapterImpl implements ResourceAdapter {
             }
             return item.getDbId() != null && Objects.equals(movie.getDbId(), item.getDbId());
         });
-    }
-
-    private Predicate<Y80sItem> testY80sItem(Predicate<SimpleItem> simpleItemPredicate, final Long dbId) {
-        return item -> {
-            if (item.getDbId() == null) {
-                return simpleItemPredicate.test(item);
-            }
-            return Objects.equals(dbId, item.getDbId());
-        };
     }
 
     /**
