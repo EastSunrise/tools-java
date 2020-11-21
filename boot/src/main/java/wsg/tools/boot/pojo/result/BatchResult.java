@@ -11,12 +11,11 @@ import java.util.Map;
  * @author Kingen
  * @since 2020/8/6
  */
+@Getter
 public class BatchResult<T> extends Result {
 
     private final int total;
-    @Getter
     private final int count;
-    @Getter
     private final Map<T, String> fails;
 
     /**

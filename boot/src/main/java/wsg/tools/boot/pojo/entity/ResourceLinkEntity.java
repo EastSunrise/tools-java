@@ -23,8 +23,8 @@ import javax.persistence.Table;
 @Table(name = "resource_link")
 public class ResourceLinkEntity extends IdentityEntity {
 
-    @Column(nullable = false)
-    private Long itemId;
+    @Column(nullable = false, length = 63)
+    private String itemUrl;
 
     @Column(length = 511)
     private String title;

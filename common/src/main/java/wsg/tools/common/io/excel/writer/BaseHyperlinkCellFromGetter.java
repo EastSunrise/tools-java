@@ -11,7 +11,7 @@ import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGetter<T, V> {
+public abstract class BaseHyperlinkCellFromGetter<T> extends BaseCellFromGetter<T, String> {
 
     @Override
     public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {
@@ -37,8 +37,21 @@ public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGett
         return cellStyle;
     }
 
+    @Override
+    public String getValue(T t) {
+        return getLabel(t);
+    }
+
     /**
-     * Obtains address of the hyperlink.
+     * Returns text label for this hyperlink
+     *
+     * @param t given object
+     * @return text to display
+     */
+    public abstract String getLabel(T t);
+
+    /**
+     * Returns address for this hyperlink
      *
      * @param t given object
      * @return address
@@ -46,7 +59,7 @@ public abstract class BaseHyperlinkCellFromGetter<T, V> extends BaseCellFromGett
     public abstract String getAddress(T t);
 
     /**
-     * Obtains type of the link
+     * Returns type for this hyperlink
      *
      * @param t the given object
      * @return {@link HyperlinkType}

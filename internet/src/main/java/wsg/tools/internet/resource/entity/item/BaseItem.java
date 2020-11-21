@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,9 +18,13 @@ import java.util.Objects;
 @Setter
 public class BaseItem {
 
+    private final String url;
     private String title;
-    private String url;
     private List<Resource> resources;
+
+    public BaseItem(@Nonnull String url) {
+        this.url = url;
+    }
 
     @Override
     public boolean equals(Object o) {

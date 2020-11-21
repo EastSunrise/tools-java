@@ -2,17 +2,18 @@ package wsg.tools.boot.pojo.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.BaseDto;
 
 /**
- * Object of id info.
+ * Object for checking a resource.
  *
  * @author Kingen
- * @since 2020/8/7
+ * @since 2020/11/21
  */
 @Getter
 @Setter
-public class SimpleSubjectDto extends BaseDto {
+public class ResourceCheckDto {
+
+    private String url;
     private Long dbId;
     private String imdbId;
 }

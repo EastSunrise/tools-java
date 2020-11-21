@@ -16,6 +16,7 @@ import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -50,18 +51,19 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     }
 
     @Override
-    public Set<Y80sItem> findAll() {
-        return IntStream.range(1, 43034).mapToObj(id -> {
-            try {
-                return getItem(builder0("/movie/%d", id));
-            } catch (NotFoundException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toSet());
+    protected List<URI> getAllUris() {
+        List<URI> uris = new LinkedList<>();
+        IntStream.range(1, 6800)
+                .mapToObj(id -> createUri0("/movie/%d", id))
+                .forEach(uris::add);
+        IntStream.range(6801, 43034)
+                .mapToObj(id -> createUri0("/movie/%d", id))
+                .forEach(uris::add);
+        return uris;
     }
 
     @Override
-    protected final Set<URIBuilder> searchItems(@Nonnull String keyword) {
+    protected final Set<URI> searchItems(@Nonnull String keyword) {
         AssertUtils.requireNotBlank(keyword);
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
         Elements as;
@@ -72,7 +74,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         }
         return as.stream()
                 .map(a -> RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("path"))
-                .map(this::builder0)
+                .map(this::createUri0)
                 .collect(Collectors.toSet());
     }
 
@@ -80,12 +82,12 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
      * todo
      */
     @Override
-    protected final Y80sItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
-        Document document = getDocument(builder, true);
+    protected final Y80sItem getItem(@Nonnull URI uri) throws NotFoundException {
+        Document document = getDocument(new URIBuilder(uri), true);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }
-        Y80sItem item = new Y80sItem();
+        Y80sItem item = new Y80sItem(uri.toString());
 
         String title = document.title();
         Set<Resource> resources = document.select(TAG_TR).stream()

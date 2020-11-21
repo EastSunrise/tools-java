@@ -22,6 +22,7 @@ import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -58,18 +59,12 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    public Set<SimpleItem> findAll() {
-        return IntStream.range(1, 73911).mapToObj(id -> {
-            try {
-                return getItem(builder0("/vod-detail-id-%d.html", id));
-            } catch (NotFoundException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toSet());
+    protected List<URI> getAllUris() {
+        return IntStream.range(1, 73911).mapToObj(id -> createUri0("/vod-detail-id-%d.html", id)).collect(Collectors.toList());
     }
 
     @Override
-    protected Set<URIBuilder> searchItems(@Nonnull String keyword) {
+    protected Set<URI> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/index.php")
@@ -81,13 +76,13 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
         }
         Element ul = document.selectFirst("ul.img-list");
         return ul.select(TAG_LI).stream()
-                .map(li -> builder0(li.selectFirst(TAG_A).attr(ATTR_HREF)))
+                .map(li -> createUri0(li.selectFirst(TAG_A).attr(ATTR_HREF)))
                 .collect(Collectors.toSet());
     }
 
     @Override
-    protected SimpleItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
-        Document document = getDocument(builder, true);
+    protected SimpleItem getItem(@Nonnull URI uri) throws NotFoundException {
+        Document document = getDocument(new URIBuilder(uri), true);
         String title = document.title();
         if (StringUtils.isBlank(title)) {
             throw new NotFoundException("Empty title");
@@ -96,8 +91,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }
 
-        SimpleItem item = new SimpleItem();
-        item.setUrl(builder.toString());
+        SimpleItem item = new SimpleItem(uri.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
 
         Map<String, Node> infos = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);

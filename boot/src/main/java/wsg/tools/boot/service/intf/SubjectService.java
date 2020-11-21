@@ -1,7 +1,10 @@
 package wsg.tools.boot.service.intf;
 
-import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import wsg.tools.boot.pojo.base.GenericResult;
+import wsg.tools.boot.pojo.base.ListResult;
+import wsg.tools.boot.pojo.entity.MovieEntity;
+import wsg.tools.boot.pojo.entity.SeasonEntity;
+import wsg.tools.boot.pojo.entity.SeriesEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 
 import java.time.LocalDate;
@@ -32,7 +35,7 @@ public interface SubjectService {
     GenericResult<Long> insertSubjectByImdb(String imdbId);
 
     /**
-     * Collect subjects under the user.
+     * Import subjects from Douban of the given user.
      *
      * @param userId user id
      * @param since  since when
@@ -41,10 +44,40 @@ public interface SubjectService {
     BatchResult<Long> importDouban(long userId, LocalDate since);
 
     /**
-     * Import subject with doubanId-IMDbId pairs
+     * Obtains all subjects of movies.
      *
-     * @param ids key-values of doubanId-IMDbId
-     * @return result
+     * @return list result of all movies
      */
-    BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids);
+    ListResult<MovieEntity> listMovies();
+
+    /**
+     * Obtains the movie of the given id
+     *
+     * @param id id of movie to get
+     * @return result of movie
+     */
+    GenericResult<MovieEntity> getMovie(Long id);
+
+    /**
+     * Obtains all subjects of series.
+     *
+     * @return list result of all series
+     */
+    ListResult<SeriesEntity> listSeries();
+
+    /**
+     * Obtains the series of the given id
+     *
+     * @param id id of series to get
+     * @return result of series
+     */
+    GenericResult<SeriesEntity> getSeries(Long id);
+
+    /**
+     * Obtains the season of the given series
+     *
+     * @param seriesId seriesId of series
+     * @return result of seasons
+     */
+    List<SeasonEntity> getSeasonsBySeries(Long seriesId);
 }

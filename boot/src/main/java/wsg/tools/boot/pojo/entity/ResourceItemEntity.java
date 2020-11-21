@@ -2,11 +2,14 @@ package wsg.tools.boot.pojo.entity;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.IdentityEntity;
+import wsg.tools.boot.pojo.base.BaseEntity;
 import wsg.tools.internet.resource.common.VideoType;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
+import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Items of resources.
@@ -19,9 +22,10 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "resource_item")
-public class ResourceItemEntity extends IdentityEntity {
+public class ResourceItemEntity extends BaseEntity implements DoubanIdentifier, ImdbIdentifier {
 
-    @Column(unique = true, nullable = false, length = 63)
+    @Id
+    @Column(length = 63)
     private String url;
 
     @Column(nullable = false)
@@ -37,6 +41,26 @@ public class ResourceItemEntity extends IdentityEntity {
     @Column(length = 10)
     private String imdbId;
 
-    @OneToMany(mappedBy = "itemId", fetch = FetchType.EAGER)
+    @Column(nullable = false)
+    private Boolean identified;
+
+    @OneToMany(mappedBy = "itemUrl", fetch = FetchType.EAGER)
     private List<ResourceLinkEntity> links;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ResourceItemEntity that = (ResourceItemEntity) o;
+        return Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url);
+    }
 }

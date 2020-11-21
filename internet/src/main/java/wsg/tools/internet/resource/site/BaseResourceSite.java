@@ -1,15 +1,18 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.utils.URIBuilder;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.BaseItem;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Base class of sites of resources of video.
@@ -37,16 +40,26 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
      *
      * @return set of items
      */
-    public abstract Set<I> findAll();
+    public final Set<I> findAll() {
+        return getAllUris().stream().map(uri -> {
+            try {
+                return getItem(uri);
+            } catch (NotFoundException e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
 
     /**
      * Search all available items by the given keyword.
+     * <p>
+     * Ignore items which are not found.
      */
     public final Set<I> search(String keyword) {
         Set<I> items = new HashSet<>();
-        for (URIBuilder builder : searchItems(keyword)) {
+        for (URI uri : searchItems(keyword)) {
             try {
-                items.add(getItem(builder));
+                items.add(getItem(uri));
             } catch (NotFoundException ignored) {
             }
         }
@@ -54,19 +67,26 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
     }
 
     /**
+     * Obtains uris of all available items
+     *
+     * @return set of uris
+     */
+    protected abstract List<URI> getAllUris();
+
+    /**
      * Search items for the given keyword.
      *
      * @param keyword keyword to search
-     * @return set of URIBuilders of searched items
+     * @return set of uris of searched items
      */
-    protected abstract Set<URIBuilder> searchItems(@Nonnull String keyword);
+    protected abstract Set<URI> searchItems(@Nonnull String keyword);
 
     /**
-     * Obtains the item of the given keyword.
+     * Obtains the item of the given uri.
      *
-     * @param builder builder of uri of target item
+     * @param uri uri of target item
      * @return the item
      * @throws NotFoundException if not found
      */
-    protected abstract I getItem(@Nonnull URIBuilder builder) throws NotFoundException;
+    protected abstract I getItem(@Nonnull URI uri) throws NotFoundException;
 }

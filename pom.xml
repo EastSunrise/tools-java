@@ -41,6 +41,9 @@
         <javacpp.version>1.5.4</javacpp.version>
         <javacv.version>1.5.4</javacv.version>
         <ffmpeg.version>4.3.1-1.5.4</ffmpeg.version>
+        <jquery.version>3.5.1</jquery.version>
+        <layui.version>2.5.6</layui.version>
+        <layer.version>3.1.1</layer.version>
     </properties>
 
     <dependencies>
@@ -133,6 +136,23 @@
                 <version>${jsoup.version}</version>
             </dependency>
 
+            <!--webjars-->
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>jquery</artifactId>
+                <version>${jquery.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>layui</artifactId>
+                <version>${layui.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars.bower</groupId>
+                <artifactId>layer</artifactId>
+                <version>${layer.version}</version>
+            </dependency>
+
             <!--audio & video-->
             <dependency>
                 <groupId>ws.schild</groupId>
@@ -143,36 +163,6 @@
                 <groupId>ws.schild</groupId>
                 <artifactId>jave-native-win64</artifactId>
                 <version>${jave.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>javacpp</artifactId>
-                <version>${javacpp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>javacpp-platform</artifactId>
-                <version>${javacpp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>javacv</artifactId>
-                <version>${javacv.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>javacv-platform</artifactId>
-                <version>${javacv.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>ffmpeg</artifactId>
-                <version>${ffmpeg.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>ffmpeg-platform</artifactId>
-                <version>${ffmpeg.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

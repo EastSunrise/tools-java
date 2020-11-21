@@ -17,11 +17,11 @@ import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -34,8 +34,6 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
     private static final Pattern ITEM_URL_REGEX =
             Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+).htm)");
-    private static final Pattern ITEM_TITLE_REGEX =
-            Pattern.compile("(?<title>.*)(迅雷下载)+,百度网盘下载 - BD影视分享 - 最新高清电影资源免费下载");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
     private static final Pattern YEAR_INFO_REGEX = Pattern.compile("(年 ?代|上 ?映|首映|出 ?品|发行).{0,4}(?<year>\\d{4})");
     private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-z+/=]*)\", " +
@@ -53,21 +51,22 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     }
 
     @Override
-    public Set<BdFilmItem> findAll() {
-        return IntStream.range(359, 31256).mapToObj(id -> {
-            try {
-                return getItem(builder0("/gy/%d.htm", id));
-            } catch (NotFoundException e) {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toSet());
+    protected List<URI> getAllUris() {
+        List<URI> uris = new LinkedList<>();
+        IntStream.range(359, 30508)
+                .mapToObj(id -> createUri0("/gy/%d.htm", id))
+                .forEach(uris::add);
+        IntStream.range(30509, 31256)
+                .mapToObj(id -> createUri0("/gy/%d.htm", id))
+                .forEach(uris::add);
+        return uris;
     }
 
     /**
      * @param keyword title, id of Douban, or id of IMDb
      */
     @Override
-    protected final Set<URIBuilder> searchItems(@Nonnull String keyword) {
+    protected final Set<URI> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
@@ -75,29 +74,29 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
             throw AssertUtils.runtimeException(e);
         }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<URIBuilder> paths = new HashSet<>();
+        Set<URI> uris = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
             Matcher matcher = ITEM_URL_REGEX.matcher(a.attr(ATTR_HREF));
             if (!matcher.matches()) {
                 continue;
             }
-            paths.add(builder0(matcher.group("path")));
+            uris.add(createUri0(matcher.group("path")));
         }
-        return paths;
+        return uris;
     }
 
     @Override
-    protected final BdFilmItem getItem(@Nonnull URIBuilder builder) throws NotFoundException {
-        Document document = getDocument(builder, true);
-        BdFilmItem item = new BdFilmItem();
+    protected final BdFilmItem getItem(@Nonnull URI uri) throws NotFoundException {
+        Document document = getDocument(new URIBuilder(uri), true);
 
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
             throw new NotFoundException("Not a film page.");
         }
-        item.setUrl(location);
-        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
+        BdFilmItem item = new BdFilmItem(location);
+        String[] keywords = document.selectFirst("meta[name=keywords]").attr(ATTR_CONTENT).split(",免费下载");
+        item.setTitle(keywords[0].strip());
 
         Element script = null;
         for (Element element : document.body().select(TAG_SCRIPT)) {

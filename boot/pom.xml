@@ -55,6 +55,24 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
+        </dependency>
+
+        <!--webjars-->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>jquery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>layui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>layer</artifactId>
+        </dependency>
 
         <!--generate jpa models-->
         <dependency>
@@ -90,6 +108,7 @@
             <artifactId>poi-ooxml</artifactId>
         </dependency>
 
+        <!--other modules-->
         <dependency>
             <groupId>ws.schild</groupId>
             <artifactId>jave-native-win64</artifactId>

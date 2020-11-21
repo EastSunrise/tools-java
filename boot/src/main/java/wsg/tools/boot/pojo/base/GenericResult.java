@@ -2,7 +2,7 @@ package wsg.tools.boot.pojo.base;
 
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -17,7 +17,7 @@ public class GenericResult<T> extends Result {
 
     protected GenericResult(T record) {
         super();
-        this.record = record;
+        this.record = Objects.requireNonNull(record);
     }
 
     public GenericResult(String format, Object... formatArgs) {
@@ -33,7 +33,7 @@ public class GenericResult<T> extends Result {
     /**
      * Obtains a successful instance of {@link GenericResult}.
      */
-    public static <T> GenericResult<T> of(@Nonnull T data) {
+    public static <T> GenericResult<T> of(T data) {
         return new GenericResult<>(data);
     }
 

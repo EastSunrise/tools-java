@@ -7,6 +7,8 @@ import wsg.tools.internet.resource.site.BdFilmSite;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
+import javax.annotation.Nonnull;
+
 /**
  * Items of {@link BdFilmSite}.
  *
@@ -20,6 +22,10 @@ public class BdFilmItem extends SimpleItem implements DoubanIdentifier, ImdbIden
     private final VideoType type = VideoType.MOVIE;
     private Long dbId;
     private String imdbId;
+
+    public BdFilmItem(@Nonnull String url) {
+        super(url);
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -13,7 +13,6 @@ import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.io.excel.ExcelFactory;
 import wsg.tools.common.io.excel.ExcelTemplate;
 import wsg.tools.common.io.excel.reader.BaseCellToSetter;
-import wsg.tools.common.io.excel.reader.CellReader;
 import wsg.tools.common.io.excel.writer.BaseCellFromGetter;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
@@ -66,15 +65,6 @@ public abstract class AbstractController {
      */
     protected <T> List<T> readXlsx(MultipartFile file, Map<String, BaseCellToSetter<T, ?>> readers, CreatorSupplier<T> creator) throws IOException {
         return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers, creator);
-    }
-
-    /**
-     * Read an imported .xlsx file.
-     *
-     * @see ExcelFactory#readXlsx(InputStream, Map)
-     */
-    protected <T> List<Map<String, ?>> readXlsx(MultipartFile file, Map<String, CellReader<?>> readers) throws IOException {
-        return FACTORY.readXlsx(getInputStream(file, ContentType.XLSX), readers);
     }
 
     /**

@@ -43,6 +43,8 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -75,6 +77,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Reads and writes caches if caches are used.
  * Otherwise call execution methods to do the request.
  * Overrideable methods are invoked to handle request and response in the process.
+ * <p>
+ * todo concurrency of requests
  *
  * @author Kingen
  * @since 2020/6/15
@@ -407,6 +411,24 @@ public abstract class BaseSite implements Closeable {
             }
         }
         return null;
+    }
+
+    protected final URI createUri0(String path, Object... pathArgs) {
+        return createUri(null, path, pathArgs);
+    }
+
+    /**
+     * Create an unmodified request uri, including scheme, host, and path.
+     */
+    protected final URI createUri(String subHost, String path, Object... pathArgs) {
+        if (StringUtils.isNotBlank(path)) {
+            path = String.format(path, pathArgs);
+        }
+        try {
+            return new URI(scheme.toString(), StringUtils.isBlank(subHost) ? host : subHost + "." + host, path, null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
     }
 
     protected final URIBuilder builder0(String path, Object... pathArgs) {

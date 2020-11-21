@@ -2,16 +2,14 @@ package wsg.tools.boot.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.keyvalue.AbstractKeyValue;
-import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.util.ServiceUtil;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
 import wsg.tools.boot.pojo.base.AppException;
 import wsg.tools.boot.pojo.base.GenericResult;
+import wsg.tools.boot.pojo.base.ListResult;
 import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
@@ -131,7 +129,10 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 movieEntity.setYear(subject.getYear());
                 movieEntity.setLanguages(subject.getLanguages());
                 CollectionUtils.addIgnoreNull(durations, subject.getDuration());
-                addAll(durations, ((DoubanMovie) subject).getExtDurations());
+                List<Duration> extDurations = ((DoubanMovie) subject).getExtDurations();
+                if (extDurations != null) {
+                    durations.addAll(extDurations);
+                }
             }, log);
         }
         if (StringUtils.isNotBlank(imdbId)) {
@@ -143,7 +144,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 if (movieEntity.getLanguages() == null) {
                     movieEntity.setLanguages(imdbTitle.getLanguages());
                 }
-                addAll(durations, imdbTitle.getRuntimes());
+                if (imdbTitle.getRuntimes() != null) {
+                    durations.addAll(imdbTitle.getRuntimes());
+                }
             });
         }
         if (!durations.isEmpty()) {
@@ -315,12 +318,6 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return GenericResult.of(episodeEntity);
     }
 
-    private <T> void addAll(Collection<T> target, Collection<T> added) {
-        if (added != null) {
-            target.addAll(added);
-        }
-    }
-
     @Override
     public BatchResult<Long> importDouban(long userId, LocalDate since) {
         if (since == null) {
@@ -335,7 +332,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         for (MarkEnum mark : MarkEnum.values()) {
             adapter.collectUserSubjects(userId, since, mark).ifPresentOrLog(map -> {
                 for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
-                    insertSubjectByDb(entry.getKey()).ifPresentOr(
+                    this.insertSubjectByDb(entry.getKey()).ifPresentOr(
                             id -> {
                                 count[0]++;
                                 UserRecordEntity entity = new UserRecordEntity();
@@ -355,11 +352,35 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public BatchResult<String> importManually(List<DefaultKeyValue<String, Long>> ids) {
-        log.info("Start to import subjects manually.");
-        return ServiceUtil.batch(
-                ids, entry -> insertSubjectByImdb(entry.getKey()),
-                AbstractKeyValue::getKey
-        );
+    public ListResult<MovieEntity> listMovies() {
+        return new ListResult<>(movieRepository.findAll());
+    }
+
+    @Override
+    public GenericResult<MovieEntity> getMovie(Long id) {
+        Optional<MovieEntity> optional = movieRepository.findById(id);
+        if (optional.isEmpty()) {
+            return new GenericResult<>("Movie of %d doesn't exist.", id);
+        }
+        return GenericResult.of(optional.get());
+    }
+
+    @Override
+    public ListResult<SeriesEntity> listSeries() {
+        return new ListResult<>(seriesRepository.findAll());
+    }
+
+    @Override
+    public GenericResult<SeriesEntity> getSeries(Long id) {
+        Optional<SeriesEntity> optional = seriesRepository.findById(id);
+        if (optional.isEmpty()) {
+            return new GenericResult<>("Series of %d doesn't exist.", id);
+        }
+        return GenericResult.of(optional.get());
+    }
+
+    @Override
+    public List<SeasonEntity> getSeasonsBySeries(Long seriesId) {
+        return seasonRepository.findAllBySeriesId(seriesId);
     }
 }

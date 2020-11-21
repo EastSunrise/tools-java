@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.resource.common.VideoType;
 
+import javax.annotation.Nonnull;
+
 /**
  * Items with year and type.
  *
@@ -16,6 +18,10 @@ public class SimpleItem extends BaseItem {
 
     private Integer year;
     private VideoType type;
+
+    public SimpleItem(@Nonnull String url) {
+        super(url);
+    }
 
     @Override
     public boolean equals(Object o) {

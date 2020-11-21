@@ -1,0 +1,83 @@
+<div class="layui-fluid">
+    <div>
+        <table class="layui-table">
+            <tr>
+                <td>${series.title}</td>
+                <td>SERIES</td>
+                <td>
+                    <#if series.imdbId??>
+                        <a href="https://imdb.com/title/${series.imdbId}/" target="_blank">${series.text}</a>
+                    </#if>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        <table class="layui-table">
+            <tr>
+                <th>Season</th>
+                <#list seasons as season>
+                    <td>${season.currentSeason}</td>
+                </#list>
+            </tr>
+            <tr>
+                <th>Douban</th>
+                <#list seasons as season>
+                    <td>
+                        <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.title}</a>
+                    </td>
+                </#list>
+            </tr>
+            <tr>
+                <th>Year</th>
+                <#list seasons as season>
+                    <td>${season.year}</td>
+                </#list>
+            </tr>
+        </table>
+    </div>
+    <div>
+        <#if items?size gt 0>
+            <table class="layui-table">
+                <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Title</th>
+                    <th>Year</th>
+                    <th>Type</th>
+                    <th lay-data="{type:'checkbox',width:50}">Check</th>
+                </tr>
+                </thead>
+                <tbody>
+                <#list items as item>
+                    <tr>
+                        <td>${item_index+1}</td>
+                        <td>
+                            <a href="${item.url}" target="_blank">${item.title}</a>
+                        </td>
+                        <td>
+                            <#if item.year??>${item.year?c}</#if>
+                        </td>
+                        <td>${item.videoType}</td>
+                        <td>
+                            <#if !item.identified>
+                                <label>
+                                    <select class="resource-choose" data-url="${item.url}" style="width: 100px">
+                                        <option value="">--Choose--</option>
+                                        <#list seasons as season>
+                                            <option value="${season.dbId?c}">${season.currentSeason}</option>
+                                        </#list>
+                                    </select>
+                                </label>
+                            <#else>
+                                <span class="checked">CHECKED</span>
+                            </#if>
+                        </td>
+                    </tr>
+                </#list>
+                </tbody>
+            </table>
+        <#else>
+            <h3 style="text-align: center">None Resources!</h3>
+        </#if>
+    </div>
+</div>
