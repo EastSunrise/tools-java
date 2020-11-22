@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.ResourceItemEntity;
+import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 
 import java.util.List;
 

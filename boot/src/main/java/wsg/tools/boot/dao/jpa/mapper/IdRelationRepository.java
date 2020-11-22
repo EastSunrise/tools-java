@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.IdRelationEntity;
+import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 
 /**
  * Repository for query relations between ids.

@@ -1,4 +1,4 @@
-package wsg.tools.boot.pojo.base;
+package wsg.tools.boot.pojo.result;
 
 import lombok.Getter;
 import org.springframework.data.domain.Page;
@@ -7,6 +7,7 @@ import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
+import wsg.tools.boot.pojo.dto.BaseDto;
 
 import java.util.HashMap;
 import java.util.List;

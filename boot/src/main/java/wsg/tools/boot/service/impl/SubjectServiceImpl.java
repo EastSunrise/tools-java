@@ -7,9 +7,19 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
-import wsg.tools.boot.pojo.base.*;
-import wsg.tools.boot.pojo.entity.*;
+import wsg.tools.boot.pojo.entity.UserRecordEntity;
+import wsg.tools.boot.pojo.entity.base.IdView;
+import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.boot.pojo.error.DataIntegrityException;
+import wsg.tools.boot.pojo.error.SiteException;
+import wsg.tools.boot.pojo.error.UnexpectedException;
 import wsg.tools.boot.pojo.result.BatchResult;
+import wsg.tools.boot.pojo.result.BiResult;
+import wsg.tools.boot.pojo.result.ListResult;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
@@ -64,7 +74,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     @Override
     public SingleResult<Long> insertSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException {
-        Optional<IdView> optional = movieRepository.findByDbId(dbId);
+        Optional<IdView<Long>> optional = movieRepository.findByDbId(dbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getId());
         }
@@ -96,7 +106,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     public SingleResult<Long> insertSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException {
         BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
         if (imdbTitle instanceof ImdbMovie) {
-            Optional<IdView> optional = movieRepository.findByImdbId(imdbId);
+            Optional<IdView<Long>> optional = movieRepository.findByImdbId(imdbId);
             if (optional.isPresent()) {
                 return SingleResult.of(optional.get().getId());
             }
@@ -181,7 +191,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             throw new SiteException("IMDb", String.format("Unexpected type %s for title %s.", title.getClass().getSimpleName(), imdbId));
         }
 
-        Optional<IdView> optional = seriesRepository.findByImdbId(seriesImdbId);
+        Optional<IdView<Long>> optional = seriesRepository.findByImdbId(seriesImdbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getId());
         }

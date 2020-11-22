@@ -3,7 +3,7 @@ package wsg.tools.boot.dao.jpa.base;
 import org.springframework.data.jpa.repository.support.JpaRepositoryImplementation;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.lang.Nullable;
-import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;

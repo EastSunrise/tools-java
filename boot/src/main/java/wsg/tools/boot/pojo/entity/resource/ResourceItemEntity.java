@@ -1,8 +1,8 @@
-package wsg.tools.boot.pojo.entity;
+package wsg.tools.boot.pojo.entity.resource;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;

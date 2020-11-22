@@ -1,4 +1,4 @@
-package wsg.tools.boot.pojo.base;
+package wsg.tools.boot.pojo.error;
 
 /**
  * Exceptions when data is lacking.

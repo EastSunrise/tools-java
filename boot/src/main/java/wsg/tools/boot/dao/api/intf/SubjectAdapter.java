@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.api.intf;
 
-import wsg.tools.boot.pojo.base.SingleResult;
-import wsg.tools.boot.pojo.base.SiteException;
+import wsg.tools.boot.pojo.error.SiteException;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;

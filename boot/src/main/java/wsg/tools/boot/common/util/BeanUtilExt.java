@@ -3,7 +3,7 @@ package wsg.tools.boot.common.util;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
-import wsg.tools.boot.pojo.base.AppException;
+import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.constant.Constants;
 
 import java.beans.PropertyDescriptor;

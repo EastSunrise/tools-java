@@ -1,4 +1,4 @@
-package wsg.tools.boot.pojo.enums;
+package wsg.tools.boot.common.enums;
 
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;

@@ -1,4 +1,4 @@
-package wsg.tools.boot.pojo.entity;
+package wsg.tools.boot.pojo.entity.subject;
 
 import lombok.Getter;
 import lombok.Setter;

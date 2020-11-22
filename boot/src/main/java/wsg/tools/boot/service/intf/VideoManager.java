@@ -1,10 +1,10 @@
 package wsg.tools.boot.service.intf;
 
-import wsg.tools.boot.pojo.entity.EpisodeEntity;
-import wsg.tools.boot.pojo.entity.MovieEntity;
-import wsg.tools.boot.pojo.entity.SeasonEntity;
-import wsg.tools.boot.pojo.entity.SeriesEntity;
-import wsg.tools.boot.pojo.enums.VideoStatus;
+import wsg.tools.boot.common.enums.VideoStatus;
+import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 
 import java.io.File;
 import java.util.Optional;

@@ -1,8 +1,8 @@
-package wsg.tools.boot.pojo.entity;
+package wsg.tools.boot.pojo.entity.subject;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

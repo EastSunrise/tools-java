@@ -1,8 +1,8 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.IdView;
-import wsg.tools.boot.pojo.entity.SeasonEntity;
+import wsg.tools.boot.pojo.entity.base.IdView;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,5 +29,5 @@ public interface SeasonRepository extends BaseRepository<SeasonEntity, Long> {
      * @param dbId db id
      * @return id
      */
-    Optional<IdView> findByDbId(Long dbId);
+    Optional<IdView<Long>> findByDbId(Long dbId);
 }

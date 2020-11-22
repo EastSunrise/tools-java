@@ -1,6 +1,6 @@
 package wsg.tools.boot.dao.jpa.base;
 
-import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 
 import java.util.function.Supplier;
 

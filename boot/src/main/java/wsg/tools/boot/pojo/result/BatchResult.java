@@ -1,7 +1,6 @@
 package wsg.tools.boot.pojo.result;
 
 import lombok.Getter;
-import wsg.tools.boot.pojo.base.BaseResult;
 
 import java.util.Map;
 

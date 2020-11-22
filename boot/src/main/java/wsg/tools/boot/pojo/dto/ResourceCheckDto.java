@@ -2,7 +2,6 @@ package wsg.tools.boot.pojo.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.BaseDto;
 
 /**
  * Object for checking a resource.

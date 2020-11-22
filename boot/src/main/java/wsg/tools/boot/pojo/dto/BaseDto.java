@@ -1,4 +1,4 @@
-package wsg.tools.boot.pojo.base;
+package wsg.tools.boot.pojo.dto;
 
 import java.io.Serializable;
 

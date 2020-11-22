@@ -1,13 +1,13 @@
 package wsg.tools.boot.service.intf;
 
-import wsg.tools.boot.pojo.base.DataIntegrityException;
-import wsg.tools.boot.pojo.base.ListResult;
-import wsg.tools.boot.pojo.base.SingleResult;
-import wsg.tools.boot.pojo.base.SiteException;
-import wsg.tools.boot.pojo.entity.MovieEntity;
-import wsg.tools.boot.pojo.entity.SeasonEntity;
-import wsg.tools.boot.pojo.entity.SeriesEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.boot.pojo.error.DataIntegrityException;
+import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
+import wsg.tools.boot.pojo.result.ListResult;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
 
 import java.time.LocalDate;

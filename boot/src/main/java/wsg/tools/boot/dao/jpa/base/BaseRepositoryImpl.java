@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import wsg.tools.boot.common.util.BeanUtilExt;
-import wsg.tools.boot.pojo.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;

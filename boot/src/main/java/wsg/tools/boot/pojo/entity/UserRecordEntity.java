@@ -2,7 +2,7 @@ package wsg.tools.boot.pojo.entity;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.IdentityEntity;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.persistence.Column;

@@ -1,9 +1,9 @@
-package wsg.tools.boot.pojo.entity;
+package wsg.tools.boot.pojo.entity.resource;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.base.IdentityEntity;
-import wsg.tools.boot.pojo.enums.ResourceType;
+import wsg.tools.boot.common.enums.ResourceType;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import javax.persistence.Column;

@@ -1,8 +1,8 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.IdView;
-import wsg.tools.boot.pojo.entity.SeriesEntity;
+import wsg.tools.boot.pojo.entity.base.IdView;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 
 import java.util.Optional;
 
@@ -20,5 +20,5 @@ public interface SeriesRepository extends BaseRepository<SeriesEntity, Long> {
      * @param imdbId imdb id
      * @return id
      */
-    Optional<IdView> findByImdbId(String imdbId);
+    Optional<IdView<Long>> findByImdbId(String imdbId);
 }
