@@ -11,23 +11,46 @@
 </head>
 <body>
 <div>
-    <table id="series" class="layui-table" lay-even>
+    <table id="series" class="layui-table">
         <thead>
         <tr>
             <th>No.</th>
             <th>Title</th>
-            <th>Search</th>
+            <th>Resources</th>
+            <th>Season</th>
+            <th>Video</th>
         </tr>
         </thead>
         <tbody>
-        <#list entities as entity>
+        <#list tvs as tv>
+            <#assign series=tv.series>
+            <#assign seasons=tv.seasons?sort_by('currentSeason')>
             <tr>
-                <td>${entity_index+1}</td>
-                <td style="width: 50%">${entity.title}</td>
-                <td>
-                    <a href="javascript:void(0);" onclick="searchSeries(${entity.id?c})">Search</a>
+                <#assign rows=(seasons?size)+1>
+                <td rowspan="${rows}">${tv_index+1}</td>
+                <td rowspan="${rows}">
+                    <a href="https://imdb.com/title/${series.imdbId}/" target="_blank">${series.title}</a>
+                </td>
+                <td rowspan="${rows}">
+                    <a href="javascript:void(0);" onclick="searchSeries(${series.id?c})">Search</a>
                 </td>
             </tr>
+            <#list seasons as season>
+                <tr>
+                    <td>
+                        <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.title}</a>
+                    </td>
+                    <td>
+                        <#if season.archived>
+                            Archived
+                        <#else>
+                            <span class="click-tip" hidden="hidden"></span>
+                            <a href="javascript:void(0);" class="season-archive checked" data-id="${season.id?c}"
+                               title="click to archive">Archive</a>
+                        </#if>
+                    </td>
+                </tr>
+            </#list>
         </#list>
         </tbody>
     </table>

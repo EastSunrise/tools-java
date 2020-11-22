@@ -391,17 +391,27 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public ListResult<SeriesEntity> listSeries() {
-        return ListResult.of(seriesRepository.findAll());
+    public Map<SeriesEntity, List<SeasonEntity>> listSeries() {
+        List<SeasonEntity> seasons = seasonRepository.findAll();
+        return seasons.stream().collect(Collectors.groupingBy(SeasonEntity::getSeries));
     }
 
     @Override
-    public Optional<SeriesEntity> getSeries(Long id) {
-        return seriesRepository.findById(id);
+    public BiResult<SeriesEntity, List<SeasonEntity>> getSeries(Long id) {
+        List<SeasonEntity> seasons = seasonRepository.findAllBySeriesId(id);
+        if (seasons.isEmpty()) {
+            Optional<SeriesEntity> optional = seriesRepository.findById(id);
+            if (optional.isEmpty()) {
+                return BiResult.of(null, null);
+            } else {
+                return BiResult.of(optional.get(), seasons);
+            }
+        }
+        return BiResult.of(seasons.get(0).getSeries(), seasons);
     }
 
     @Override
-    public List<SeasonEntity> getSeasonsBySeries(Long seriesId) {
-        return seasonRepository.findAllBySeriesId(seriesId);
+    public Optional<SeasonEntity> getSeason(Long id) {
+        return seasonRepository.findById(id);
     }
 }

@@ -15,5 +15,7 @@ public class SubjectDto extends BaseDto {
 
     private Long id;
     private String title;
+    private Long dbId;
+    private String imdbId;
     private boolean archived;
 }

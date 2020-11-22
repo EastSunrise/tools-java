@@ -6,12 +6,14 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
+import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -71,9 +73,9 @@ public interface SubjectService {
     /**
      * Obtains all subjects of series.
      *
-     * @return list result of all series
+     * @return list result of all series with seasons
      */
-    ListResult<SeriesEntity> listSeries();
+    Map<SeriesEntity, List<SeasonEntity>> listSeries();
 
     /**
      * Obtains the series of the given id
@@ -81,13 +83,13 @@ public interface SubjectService {
      * @param id id of series to get
      * @return result of series
      */
-    Optional<SeriesEntity> getSeries(Long id);
+    BiResult<SeriesEntity, List<SeasonEntity>> getSeries(Long id);
 
     /**
-     * Obtains the season of the given series
+     * Obtains the series of the given id
      *
-     * @param seriesId seriesId of series
-     * @return result of seasons
+     * @param id id of series to get
+     * @return result of series
      */
-    List<SeasonEntity> getSeasonsBySeries(Long seriesId);
+    Optional<SeasonEntity> getSeason(Long id);
 }

@@ -1,38 +1,9 @@
 $(function () {
     $('.movie-archive').on('click', function () {
-        let a = $(this);
-        let tip = a.prev('.click-tip');
-        a.attr('hidden', true);
-        tip.attr('hidden', false);
-
-        let spotCount = 0;
-        let timer = setInterval(function () {
-            let text = 'Archiving.';
-            for (let i = 0; i < spotCount; i++) {
-                text += '.';
-            }
-            tip.text(text);
-            if (spotCount === 2) {
-                spotCount = 0;
-            } else {
-                spotCount++;
-            }
-        }, 500);
-
-        let id = a.data('id');
-        $.post('/video/movie/archive', {
-            id: id
-        }, function (status) {
-            clearInterval(timer);
-            if (status.code === 20) {
-                a.remove();
-                tip.text(status.text);
-            } else {
-                a.text(status.text);
-                tip.attr('hidden', true);
-                a.attr('hidden', false);
-            }
-        });
+        archive($(this), '/video/movie/archive')
+    });
+    $('.season-archive').on('click', function () {
+        archive($(this), '/video/season/archive')
     });
 });
 
@@ -88,6 +59,11 @@ function searchSeries(id) {
     })
 }
 
+/**
+ * Check resources: link resources to specified identifiers.
+ * @param checks
+ * @param index
+ */
 function checkResources(checks, index) {
     if (checks.length === 0) {
         layui.layer.close(index);
@@ -102,4 +78,41 @@ function checkResources(checks, index) {
             layui.layer.close(index);
         }
     })
+}
+
+/**
+ * Archive a subject
+ * @param ele current element
+ * @param url url to post
+ */
+function archive(ele, url) {
+    let tip = ele.prev('.click-tip');
+    ele.attr('hidden', true);
+    tip.attr('hidden', false);
+
+    let spotCount = 0;
+    let timer = setInterval(function () {
+        let text = 'Archiving.';
+        for (let i = 0; i < spotCount; i++) {
+            text += '.';
+        }
+        tip.text(text);
+        if (spotCount === 2) {
+            spotCount = 0;
+        } else {
+            spotCount++;
+        }
+    }, 500);
+
+    $.post(url, {id: ele.data('id')}, function (status) {
+        clearInterval(timer);
+        if (status.code === 20) {
+            ele.remove();
+            tip.text(status.text);
+        } else {
+            ele.text(status.text);
+            tip.attr('hidden', true);
+            ele.attr('hidden', false);
+        }
+    });
 }

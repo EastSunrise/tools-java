@@ -16,25 +16,27 @@
         <tr>
             <th>No.</th>
             <th>Title</th>
-            <th>Search</th>
+            <th>Resources</th>
             <th>Video</th>
         </tr>
         </thead>
         <tbody>
-        <#list subjects as subject>
+        <#list movies?sort_by('archived') as movie>
             <tr>
-                <td>${subject_index+1}</td>
-                <td>${subject.title}</td>
+                <td>${movie_index+1}</td>
                 <td>
-                    <a href="javascript:void(0);"
-                       onclick="searchMovie(${subject.id?c})" title="click to search">Search</a>
+                    <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}</a>
                 </td>
                 <td>
-                    <#if subject.archived>
+                    <a href="javascript:void(0);"
+                       onclick="searchMovie(${movie.id?c})" title="click to search">Search</a>
+                </td>
+                <td>
+                    <#if movie.archived>
                         Archived
                     <#else>
                         <span class="click-tip" hidden="hidden"></span>
-                        <a href="javascript:void(0);" class="movie-archive checked" data-id="${subject.id?c}"
+                        <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
                            title="click to archive">Archive</a>
                     </#if>
                 </td>
