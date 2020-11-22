@@ -5,7 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
-import wsg.tools.boot.pojo.base.GenericResult;
+import wsg.tools.boot.pojo.base.SingleResult;
+import wsg.tools.boot.pojo.base.SiteException;
 import wsg.tools.boot.pojo.entity.IdRelationEntity;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.LoginException;
@@ -40,35 +41,35 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     private IdRelationRepository relationRepository;
 
     @Override
-    public GenericResult<BaseDoubanSubject> doubanSubject(long dbId) {
+    public SingleResult<BaseDoubanSubject> doubanSubject(long dbId) throws NotFoundException {
         try {
             BaseDoubanSubject subject = doubanSite.subject(dbId);
             if (subject.getImdbId() != null) {
                 saveIdRelation(dbId, subject.getImdbId());
             }
-            return GenericResult.of(subject);
+            return SingleResult.of(subject);
         } catch (NotFoundException e) {
-            return new GenericResult<>(errorMsg(doubanSite, DOUBAN_SUBJECT, dbId, e));
+            throw new NotFoundException(errorMsg(doubanSite, DOUBAN_SUBJECT, dbId, e));
         }
     }
 
     @Override
-    public GenericResult<Long> getDbIdByImdbId(String imdbId) {
+    public SingleResult<Long> getDbIdByImdbId(String imdbId) throws SiteException, NotFoundException {
         Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
         if (optional.isPresent()) {
-            return GenericResult.of(optional.get().getDbId());
+            return SingleResult.of(optional.get().getDbId());
         }
         Long dbId;
         try {
             dbId = doubanSite.getDbIdByImdbId(imdbId);
         } catch (LoginException e) {
-            return new GenericResult<>("Can't find douban ID by IMDb ID without logging in.");
+            throw new SiteException(doubanSite.getName(), "Can't find douban ID by IMDb ID without logging in.");
         }
         if (dbId != null) {
             saveIdRelation(dbId, imdbId);
-            return GenericResult.of(dbId);
+            return SingleResult.of(dbId);
         } else {
-            return new GenericResult<>("Can't find douban ID by IMDb ID: %s.", imdbId);
+            throw new NotFoundException("Can't find douban ID by IMDb ID: " + imdbId);
         }
     }
 
@@ -80,31 +81,31 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     }
 
     @Override
-    public GenericResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) {
+    public SingleResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws NotFoundException {
         try {
-            return GenericResult.of(doubanSite.collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark));
+            return SingleResult.of(doubanSite.collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark));
         } catch (NotFoundException e) {
-            return new GenericResult<>(errorMsg(doubanSite, "douban user subjects", userId, e));
+            throw new NotFoundException(errorMsg(doubanSite, "douban user subjects", userId, e));
         }
     }
 
     @Override
-    public GenericResult<BaseImdbTitle> imdbTitle(String imdbId) {
+    public SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
         Objects.requireNonNull(imdbId);
         try {
-            return GenericResult.of(imdbSite.title(imdbId));
+            return SingleResult.of(imdbSite.title(imdbId));
         } catch (NotFoundException e) {
-            return new GenericResult<>(errorMsg(imdbSite, IMDB_TITLE, imdbId, e));
+            throw new NotFoundException(errorMsg(imdbSite, IMDB_TITLE, imdbId, e));
         }
     }
 
     @Override
-    public GenericResult<List<String[]>> episodes(String seriesId) {
+    public SingleResult<List<String[]>> episodes(String seriesId) throws NotFoundException {
         Objects.requireNonNull(seriesId);
         try {
-            return GenericResult.of(imdbSite.episodes(seriesId));
+            return SingleResult.of(imdbSite.episodes(seriesId));
         } catch (NotFoundException e) {
-            return new GenericResult<>(errorMsg(imdbSite, "episodes", seriesId, e));
+            throw new NotFoundException(errorMsg(imdbSite, "episodes", seriesId, e));
         }
     }
 

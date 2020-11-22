@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import wsg.tools.boot.dao.jpa.mapper.EpisodeRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
 import wsg.tools.boot.pojo.entity.*;
@@ -40,11 +41,13 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private static final String TV_DIR = "02 TV";
 
     private final SeasonRepository seasonRepository;
+    private final EpisodeRepository episodeRepository;
     private final ResourceService resourceService;
     private final ResourceLinkRepository linkRepository;
 
-    public VideoManagerImpl(SeasonRepository seasonRepository, ResourceService resourceService, ResourceLinkRepository linkRepository) {
+    public VideoManagerImpl(SeasonRepository seasonRepository, EpisodeRepository episodeRepository, ResourceService resourceService, ResourceLinkRepository linkRepository) {
         this.seasonRepository = seasonRepository;
+        this.episodeRepository = episodeRepository;
         this.resourceService = resourceService;
         this.linkRepository = linkRepository;
     }
@@ -158,7 +161,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             lines.add("Season durations: " + StringUtils.join(season.getDurations(), "/"));
             lines.add("Episodes count: " + season.getEpisodesCount());
             String format = "Ep%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
-            for (EpisodeEntity episode : season.getEpisodes()) {
+            for (EpisodeEntity episode : episodeRepository.findAllBySeasonId(season.getId())) {
                 if (episode != null && episode.getDurations() != null) {
                     lines.add(String.format(format, episode.getCurrentEpisode()) + ": " +
                             StringUtils.join(episode.getDurations(), "/"));

@@ -1,6 +1,8 @@
 package wsg.tools.boot.dao.api.intf;
 
-import wsg.tools.boot.pojo.base.GenericResult;
+import wsg.tools.boot.pojo.base.SingleResult;
+import wsg.tools.boot.pojo.base.SiteException;
+import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.MarkEnum;
@@ -22,16 +24,19 @@ public interface SubjectAdapter {
      *
      * @param dbId id of Douban
      * @return result
+     * @throws NotFoundException if not found
      */
-    GenericResult<BaseDoubanSubject> doubanSubject(long dbId);
+    SingleResult<BaseDoubanSubject> doubanSubject(long dbId) throws NotFoundException;
 
     /**
      * Obtains id of Douban based on id of IMDb.
      *
      * @param imdbId id of IMDb
      * @return result
+     * @throws SiteException     if server error occurs when getting access to the site
+     * @throws NotFoundException if not found
      */
-    GenericResult<Long> getDbIdByImdbId(String imdbId);
+    SingleResult<Long> getDbIdByImdbId(String imdbId) throws SiteException, NotFoundException;
 
     /**
      * Obtains subjects of the given user.
@@ -40,22 +45,25 @@ public interface SubjectAdapter {
      * @param since  start date
      * @param mark   type of marking
      * @return result
+     * @throws NotFoundException if not found
      */
-    GenericResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark);
+    SingleResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws NotFoundException;
 
     /**
      * Obtains title from {@link wsg.tools.internet.video.site.ImdbSite}.
      *
      * @param imdbId id of IMDb
      * @return result
+     * @throws NotFoundException if not found
      */
-    GenericResult<BaseImdbTitle> imdbTitle(String imdbId);
+    SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException;
 
     /**
      * Obtains all episodes of the given series,
      *
      * @param seriesId id to specify series.
      * @return result
+     * @throws NotFoundException if not found
      */
-    GenericResult<List<String[]>> episodes(String seriesId);
+    SingleResult<List<String[]>> episodes(String seriesId) throws NotFoundException;
 }

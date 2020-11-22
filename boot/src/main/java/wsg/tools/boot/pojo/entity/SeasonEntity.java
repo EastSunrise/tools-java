@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.List;
 
 /**
  * Entity of one season of TV series.
@@ -33,10 +32,4 @@ public class SeasonEntity extends SubjectEntity {
     @ManyToOne
     @JoinColumn(name = "series_id", nullable = false)
     private SeriesEntity series;
-
-    /**
-     * todo fetch lazily
-     */
-    @OneToMany(mappedBy = "seasonId", fetch = FetchType.EAGER)
-    private List<EpisodeEntity> episodes;
 }

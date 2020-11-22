@@ -1,7 +1,7 @@
 package wsg.tools.boot.pojo.result;
 
 import lombok.Getter;
-import wsg.tools.boot.pojo.base.Result;
+import wsg.tools.boot.pojo.base.BaseResult;
 
 import java.util.Map;
 
@@ -12,7 +12,7 @@ import java.util.Map;
  * @since 2020/8/6
  */
 @Getter
-public class BatchResult<T> extends Result {
+public class BatchResult<T> extends BaseResult {
 
     private final int total;
     private final int count;
