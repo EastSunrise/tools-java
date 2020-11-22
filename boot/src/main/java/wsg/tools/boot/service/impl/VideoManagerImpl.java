@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
 import wsg.tools.boot.pojo.entity.*;
 import wsg.tools.boot.pojo.enums.VideoArchivedStatus;
@@ -22,10 +23,7 @@ import wsg.tools.internet.video.enums.LanguageEnum;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Management of local videos.
@@ -43,10 +41,12 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     private final SeasonRepository seasonRepository;
     private final ResourceService resourceService;
+    private final ResourceLinkRepository linkRepository;
 
-    public VideoManagerImpl(SeasonRepository seasonRepository, ResourceService resourceService) {
+    public VideoManagerImpl(SeasonRepository seasonRepository, ResourceService resourceService, ResourceLinkRepository linkRepository) {
         this.seasonRepository = seasonRepository;
         this.resourceService = resourceService;
+        this.linkRepository = linkRepository;
     }
 
     @Override
@@ -130,16 +130,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.TO_ARCHIVE;
         }
 
-        List<ResourceLinkEntity> links = new LinkedList<>();
-        resourceService.search(null, movie.getDbId(), movie.getImdbId())
-                .stream().filter(ResourceItemEntity::getIdentified).forEach(item -> links.addAll(item.getLinks()));
-        if (links.isEmpty()) {
-            return VideoStatus.NONE_FOUND;
-        }
-        if (resourceService.download(links, tempDir) == 0) {
-            return VideoStatus.NONE_DOWNLOADED;
-        }
-        return VideoStatus.TO_DOWNLOAD;
+        return downloadItems(resourceService.search(null, movie.getDbId(), movie.getImdbId()), tempDir);
     }
 
     @Override
@@ -181,13 +172,17 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.TO_ARCHIVE;
         }
 
+        return downloadItems(resourceService.search(null, season.getDbId(), null), tempDir);
+    }
+
+    private VideoStatus downloadItems(Set<ResourceItemEntity> items, File tmpdir) {
         List<ResourceLinkEntity> links = new LinkedList<>();
-        resourceService.search(null, season.getDbId(), null)
-                .stream().filter(ResourceItemEntity::getIdentified).forEach(item -> links.addAll(item.getLinks()));
+        items.stream().filter(ResourceItemEntity::getIdentified)
+                .forEach(item -> links.addAll(linkRepository.findAllByItemUrl(item.getUrl())));
         if (links.isEmpty()) {
             return VideoStatus.NONE_FOUND;
         }
-        if (resourceService.download(links, tempDir) == 0) {
+        if (resourceService.download(links, tmpdir) == 0) {
             return VideoStatus.NONE_DOWNLOADED;
         }
         return VideoStatus.TO_DOWNLOAD;

@@ -53,12 +53,9 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     @Override
     protected List<URI> getAllUris() {
         List<URI> uris = new LinkedList<>();
-        IntStream.range(1, 6800)
-                .mapToObj(id -> createUri0("/movie/%d", id))
-                .forEach(uris::add);
-        IntStream.range(6801, 43034)
-                .mapToObj(id -> createUri0("/movie/%d", id))
-                .forEach(uris::add);
+        IntStream.range(1, 6800).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
+        IntStream.range(6801, 10705).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
+        IntStream.range(10706, 43034).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
         return uris;
     }
 

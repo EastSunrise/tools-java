@@ -7,8 +7,10 @@ import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.util.Objects;
 
 /**
@@ -43,9 +45,6 @@ public class ResourceItemEntity extends BaseEntity implements DoubanIdentifier, 
 
     @Column(nullable = false)
     private Boolean identified;
-
-    @OneToMany(mappedBy = "itemUrl", fetch = FetchType.EAGER)
-    private List<ResourceLinkEntity> links;
 
     @Override
     public boolean equals(Object o) {
