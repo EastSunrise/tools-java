@@ -17,16 +17,26 @@
             <th>No.</th>
             <th>Title</th>
             <th>Search</th>
+            <th>Video</th>
         </tr>
         </thead>
         <tbody>
-        <#list entities as entity>
+        <#list subjects as subject>
             <tr>
-                <td>${entity_index+1}</td>
-                <td style="width: 50%">${entity.title}</td>
+                <td>${subject_index+1}</td>
+                <td>${subject.title}</td>
                 <td>
                     <a href="javascript:void(0);"
-                       onclick="searchMovie(${entity.id?c})">Search</a>
+                       onclick="searchMovie(${subject.id?c})" title="click to search">Search</a>
+                </td>
+                <td>
+                    <#if subject.archived>
+                        Archived
+                    <#else>
+                        <span class="click-tip" hidden="hidden"></span>
+                        <a href="javascript:void(0);" class="movie-archive checked" data-id="${subject.id?c}"
+                           title="click to archive">Archive</a>
+                    </#if>
                 </td>
             </tr>
         </#list>

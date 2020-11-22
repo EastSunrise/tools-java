@@ -3,13 +3,11 @@
         <table class="layui-table">
             <tr>
                 <td>${series.title}</td>
-                <td>SERIES</td>
-                <td>
-                    <#if series.imdbId??>
+                <#if series.imdbId??>
+                    <td>
                         <a href="https://imdb.com/title/${series.imdbId}/" target="_blank">${series.text}</a>
-                    </#if>
-                </td>
-                <td></td>
+                    </td>
+                </#if>
             </tr>
         </table>
         <table class="layui-table">

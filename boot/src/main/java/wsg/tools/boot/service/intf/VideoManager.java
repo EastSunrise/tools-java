@@ -4,7 +4,7 @@ import wsg.tools.boot.pojo.entity.EpisodeEntity;
 import wsg.tools.boot.pojo.entity.MovieEntity;
 import wsg.tools.boot.pojo.entity.SeasonEntity;
 import wsg.tools.boot.pojo.entity.SeriesEntity;
-import wsg.tools.boot.pojo.enums.ArchivedStatus;
+import wsg.tools.boot.pojo.enums.VideoStatus;
 
 import java.io.File;
 import java.util.Optional;
@@ -19,9 +19,6 @@ public interface VideoManager {
 
     /**
      * Obtains corresponding file of the given movie.
-     * <p>
-     * {@link #archive(File, File, MovieEntity)} should be called to check the status of the given movie.
-     * The file is available when status is {@link ArchivedStatus#archived()}.
      *
      * @param cdn   cdn
      * @param movie given movie
@@ -40,9 +37,6 @@ public interface VideoManager {
 
     /**
      * Obtains corresponding directory of the given season of tv series.
-     * <p>
-     * {@link #archive(File, File, SeasonEntity)} should be called to check the status of the given season.
-     * The file is available when status is {@link ArchivedStatus#archived()}.
      *
      * @param cdn    cdn
      * @param season given tv season
@@ -70,7 +64,7 @@ public interface VideoManager {
      * @param movie  given movie
      * @return status of archiving
      */
-    ArchivedStatus archive(File cdn, File tmpdir, MovieEntity movie);
+    VideoStatus archive(File cdn, File tmpdir, MovieEntity movie);
 
     /**
      * Archive the given season from the cdn.
@@ -83,5 +77,5 @@ public interface VideoManager {
      * @param season given season
      * @return status of archiving
      */
-    ArchivedStatus archive(File cdn, File tmpdir, SeasonEntity season);
+    VideoStatus archive(File cdn, File tmpdir, SeasonEntity season);
 }

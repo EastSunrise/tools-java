@@ -7,7 +7,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
 import wsg.tools.boot.pojo.entity.*;
-import wsg.tools.boot.pojo.enums.ArchivedStatus;
+import wsg.tools.boot.pojo.enums.VideoArchivedStatus;
+import wsg.tools.boot.pojo.enums.VideoStatus;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.VideoManager;
@@ -101,10 +102,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
 
     @Override
-    public final ArchivedStatus archive(File cdn, File tmpdir, MovieEntity movie) {
+    public final VideoStatus archive(File cdn, File tmpdir, MovieEntity movie) {
         Optional<File> optional = getFile(cdn, movie);
         if (optional.isPresent()) {
-            return ArchivedStatus.archived(optional.get());
+            return VideoArchivedStatus.archived(optional.get());
         }
 
         log.info("Archiving for {}.", movie.getTitle());
@@ -112,10 +113,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         File tempDir = new File(tmpdir, tmpName);
         if (tempDir.isDirectory()) {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
-                return ArchivedStatus.NONE_DOWNLOADED;
+                return VideoStatus.NONE_DOWNLOADED;
             }
             if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
-                return ArchivedStatus.DOWNLOADING;
+                return VideoStatus.DOWNLOADING;
             }
 
             StringBuilder builder = new StringBuilder();
@@ -126,39 +127,39 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             } catch (IOException e) {
                 throw AssertUtils.runtimeException(e);
             }
-            return ArchivedStatus.toArchive(tempDir);
+            return VideoStatus.TO_ARCHIVE;
         }
 
         List<ResourceLinkEntity> links = new LinkedList<>();
         resourceService.search(null, movie.getDbId(), movie.getImdbId())
                 .stream().filter(ResourceItemEntity::getIdentified).forEach(item -> links.addAll(item.getLinks()));
         if (links.isEmpty()) {
-            return ArchivedStatus.NONE_FOUND;
+            return VideoStatus.NONE_FOUND;
         }
         if (resourceService.download(links, tempDir) == 0) {
-            return ArchivedStatus.NONE_DOWNLOADED;
+            return VideoStatus.NONE_DOWNLOADED;
         }
-        return ArchivedStatus.TO_DOWNLOAD;
+        return VideoStatus.TO_DOWNLOAD;
     }
 
     @Override
-    public ArchivedStatus archive(File cdn, File tmpdir, SeasonEntity season) {
+    public VideoStatus archive(File cdn, File tmpdir, SeasonEntity season) {
         SeriesEntity series = season.getSeries();
         File seriesDir = new File(getLocation(cdn, series));
         File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
                 : new File(seriesDir, String.format("S%02d", season.getCurrentSeason()));
         if (seasonDir.isDirectory()) {
-            return ArchivedStatus.archived(seasonDir);
+            return VideoArchivedStatus.archived(seasonDir);
         }
 
         log.info("Archiving for {}.", season.getTitle());
         File tempDir = new File(tmpdir, season.getId() + "" + SignEnum.UNDERSCORE + season.getTitle());
         if (tempDir.isDirectory()) {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
-                return ArchivedStatus.NONE_DOWNLOADED;
+                return VideoStatus.NONE_DOWNLOADED;
             }
             if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
-                return ArchivedStatus.DOWNLOADING;
+                return VideoStatus.DOWNLOADING;
             }
 
             List<String> lines = new LinkedList<>();
@@ -177,19 +178,19 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             } catch (IOException e) {
                 throw AssertUtils.runtimeException(e);
             }
-            return ArchivedStatus.toArchive(tempDir);
+            return VideoStatus.TO_ARCHIVE;
         }
 
         List<ResourceLinkEntity> links = new LinkedList<>();
         resourceService.search(null, season.getDbId(), null)
                 .stream().filter(ResourceItemEntity::getIdentified).forEach(item -> links.addAll(item.getLinks()));
         if (links.isEmpty()) {
-            return ArchivedStatus.NONE_FOUND;
+            return VideoStatus.NONE_FOUND;
         }
         if (resourceService.download(links, tempDir) == 0) {
-            return ArchivedStatus.NONE_DOWNLOADED;
+            return VideoStatus.NONE_DOWNLOADED;
         }
-        return ArchivedStatus.TO_DOWNLOAD;
+        return VideoStatus.TO_DOWNLOAD;
     }
 
     /**

@@ -1,3 +1,41 @@
+$(function () {
+    $('.movie-archive').on('click', function () {
+        let a = $(this);
+        let tip = a.prev('.click-tip');
+        a.attr('hidden', true);
+        tip.attr('hidden', false);
+
+        let spotCount = 0;
+        let timer = setInterval(function () {
+            let text = 'Archiving.';
+            for (let i = 0; i < spotCount; i++) {
+                text += '.';
+            }
+            tip.text(text);
+            if (spotCount === 2) {
+                spotCount = 0;
+            } else {
+                spotCount++;
+            }
+        }, 500);
+
+        let id = a.data('id');
+        $.post('/video/movie/archive', {
+            id: id
+        }, function (status) {
+            clearInterval(timer);
+            if (status.code === 20) {
+                a.remove();
+                tip.text(status.text);
+            } else {
+                a.text(status.text);
+                tip.attr('hidden', true);
+                a.attr('hidden', false);
+            }
+        });
+    });
+});
+
 /**
  * Search resources of the movie of the given id
  * @param id
@@ -52,7 +90,6 @@ function searchSeries(id) {
 
 function checkResources(checks, index) {
     if (checks.length === 0) {
-        layui.layer.alert("None checked!");
         layui.layer.close(index);
         return;
     }

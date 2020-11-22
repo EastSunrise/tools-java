@@ -4,17 +4,16 @@
             <tr>
                 <td>${movie.title}</td>
                 <td>${movie.year}</td>
-                <td>MOVIE</td>
-                <td>
-                    <#if movie.dbId??>
+                <#if movie.dbId??>
+                    <td>
                         <a href="https://movie.douban.com/subject/${movie.dbId?c}/" target="_blank">${movie.title}</a>
-                    </#if>
-                </td>
-                <td>
-                    <#if movie.imdbId??>
+                    </td>
+                </#if>
+                <#if movie.imdbId??>
+                    <td>
                         <a href="https://imdb.com/title/${movie.imdbId}/" target="_blank">${movie.text}</a>
-                    </#if>
-                </td>
+                    </td>
+                </#if>
             </tr>
         </table>
     </div>
@@ -68,7 +67,7 @@
                             <#if !item.identified>
                                 <label>
                                     <input type="checkbox" class="resource-choose" data-url="${item.url}"
-                                           data-dbId="${(movie.dbId?c)!''}" data-imdbId="${movie.imdbId!''}">
+                                           data-db-id="${(movie.dbId?c)!''}" data-imdb-id="${movie.imdbId!''}">
                                 </label>
                             <#else>
                                 <span class="checked">CHECKED</span>
