@@ -1,10 +1,11 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.entity.item.BaseItem;
+import wsg.tools.internet.resource.entity.item.base.BaseItem;
 
 import javax.annotation.Nonnull;
 import java.net.URI;
@@ -12,7 +13,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Base class of sites of resources of video.
@@ -89,4 +92,15 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
      * @throws NotFoundException if not found
      */
     protected abstract I getItem(@Nonnull URI uri) throws NotFoundException;
+
+    /**
+     * Create uris based on ids.
+     */
+    protected final List<URI> getUrisById(int startInclusive, int endExclusive, IntFunction<URI> creator, int... excepts) {
+        if (ArrayUtils.isEmpty(excepts)) {
+            return IntStream.range(startInclusive, endExclusive).mapToObj(creator).collect(Collectors.toList());
+        }
+        return IntStream.range(startInclusive, endExclusive).filter(i -> !ArrayUtils.contains(excepts, i))
+                .mapToObj(creator).collect(Collectors.toList());
+    }
 }

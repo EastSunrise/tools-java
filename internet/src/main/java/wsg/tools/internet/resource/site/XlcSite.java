@@ -11,9 +11,9 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.VideoConstants;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.entity.item.SimpleItem;
+import wsg.tools.internet.resource.entity.item.base.VideoType;
+import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
@@ -24,8 +24,6 @@ import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -38,8 +36,6 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
     private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<index>\\d+).html");
-    private static final Pattern YEAR_INFO_REGEX =
-            Pattern.compile("(年.{0,2}代|年.{0,2}份|上.{0,2}映|出.{0,2}品|播出|发行|首映|推出|首播).{0,3}(</b>|</font>|</span>|<span [^<>]+>)?.{0,2}(?<year>\\d{4})");
 
     private static final Pattern ITEM_HREF_REGEX =
             Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(?<path>/vod-read-id-\\d+.html)");
@@ -57,7 +53,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
 
     @Override
     protected List<URI> getAllUris() {
-        return IntStream.range(1, 43034).mapToObj(id -> createUri0("/vod-read-id-%d.html", id)).collect(Collectors.toList());
+        return getUrisById(1, 43238, id -> createUri0("/vod-read-id-%d.html", id));
     }
 
     @Override
@@ -99,22 +95,16 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
                 item.setYear(year);
             }
         }
-        if (item.getYear() == null) {
-            String text = document.selectFirst("div.movie_story3").text();
-            RegexUtils.ifFind(YEAR_INFO_REGEX, text, m -> item.setYear(Integer.parseInt(m.group("year"))));
-        }
 
-        final String downList = "ul.down-list";
-        final String itemCss = "li.item";
         List<Resource> resources = new LinkedList<>();
-        for (Element ul : document.select(downList)) {
-            for (Element li : ul.select(itemCss)) {
-                Element a = li.selectFirst(TAG_A);
-                String href = a.attr(ATTR_HREF);
-                if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
-                    resources.add(ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href)));
-                }
+        Elements lis = document.select("ul.down-list").select("li.item");
+        for (Element li : lis) {
+            Element a = li.selectFirst(TAG_A);
+            String href = a.attr(ATTR_HREF);
+            if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
+                continue;
             }
+            resources.add(ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href)));
         }
         item.setResources(resources);
 

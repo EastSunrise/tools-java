@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity.item;
+package wsg.tools.internet.resource.entity.item.impl;
 
 import lombok.Getter;
 import lombok.Setter;

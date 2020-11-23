@@ -14,9 +14,9 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.VideoConstants;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.entity.item.SimpleItem;
+import wsg.tools.internet.resource.entity.item.base.VideoType;
+import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
@@ -28,7 +28,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -60,7 +59,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
 
     @Override
     protected List<URI> getAllUris() {
-        return IntStream.range(1, 73911).mapToObj(id -> createUri0("/vod-detail-id-%d.html", id)).collect(Collectors.toList());
+        return getUrisById(1, 73911, id -> createUri0("/vod-detail-id-%d.html", id));
     }
 
     @Override
@@ -84,9 +83,6 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     protected SimpleItem getItem(@Nonnull URI uri) throws NotFoundException {
         Document document = getDocument(new URIBuilder(uri), true);
         String title = document.title();
-        if (StringUtils.isBlank(title)) {
-            throw new NotFoundException("Empty title");
-        }
         if (TIP_TITLE.equals(title)) {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }

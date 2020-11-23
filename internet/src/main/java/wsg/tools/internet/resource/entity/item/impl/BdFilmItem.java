@@ -1,8 +1,9 @@
-package wsg.tools.internet.resource.entity.item;
+package wsg.tools.internet.resource.entity.item.impl;
 
-import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.internet.resource.common.VideoType;
+import wsg.tools.internet.resource.entity.item.base.BaseItem;
+import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
+import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.site.BdFilmSite;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
@@ -15,11 +16,9 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2020/10/27
  */
-@Getter
 @Setter
-public class BdFilmItem extends SimpleItem implements DoubanIdentifier, ImdbIdentifier {
+public class BdFilmItem extends BaseItem implements DoubanIdentifier, ImdbIdentifier, TypeSupplier {
 
-    private final VideoType type = VideoType.MOVIE;
     private Long dbId;
     private String imdbId;
 
@@ -35,5 +34,20 @@ public class BdFilmItem extends SimpleItem implements DoubanIdentifier, ImdbIden
     @Override
     public int hashCode() {
         return super.hashCode();
+    }
+
+    @Override
+    public VideoType getType() {
+        return VideoType.MOVIE;
+    }
+
+    @Override
+    public Long getDbId() {
+        return dbId;
+    }
+
+    @Override
+    public String getImdbId() {
+        return imdbId;
     }
 }

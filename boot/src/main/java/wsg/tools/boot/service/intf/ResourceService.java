@@ -3,7 +3,7 @@ package wsg.tools.boot.service.intf;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
-import wsg.tools.internet.resource.entity.item.BaseItem;
+import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 
 import javax.annotation.Nullable;

@@ -4,13 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.entity.item.Y80sItem;
+import wsg.tools.internet.resource.entity.item.base.VideoType;
+import wsg.tools.internet.resource.entity.item.impl.Y80sItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
@@ -18,9 +20,9 @@ import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 import javax.annotation.Nonnull;
 import java.net.URI;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -38,13 +40,18 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
             "trailer", VideoType.TRAILER,
             "mv", VideoType.MV,
             "video", VideoType.VIDEO,
-            "course", VideoType.COURSE
+            "course", VideoType.COURSE,
+            "weidianying", VideoType.MOVIE
     );
     private static final Pattern ITEM_PATH_REGEX =
             Pattern.compile("(?<path>/(?<type>" + String.join("|", TYPE_AKA.keySet()) + ")/\\d+)");
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com" + ITEM_PATH_REGEX.pattern());
-    private static final Pattern DOUBAN_REVIEWS_REGEX = Pattern.compile("//movie.douban.com/subject/(\\d*)");
-    private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>[^()]+)\\((?<year>\\d{4})\\)[^()]+");
+    private static final Pattern TYPE_HREF_REGEX =
+            Pattern.compile("//m\\.y80s\\.com/(?<type>movie|ju|zy|dm|trailer|mv|video|course|weidianying)/\\d+(-\\d){6}");
+    private static final Pattern YEAR_REGEX =
+            Pattern.compile("-?(?<year>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
+    private static final Pattern DOUBAN_HREF_REGEX =
+            Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
     public Y80sSite() {
         super("80s", SchemeEnum.HTTP, "m.y80s.com", 0.1);
@@ -52,11 +59,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
 
     @Override
     protected List<URI> getAllUris() {
-        List<URI> uris = new LinkedList<>();
-        IntStream.range(1, 6800).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
-        IntStream.range(6801, 10705).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
-        IntStream.range(10706, 43034).mapToObj(id -> createUri0("/movie/%d", id)).forEach(uris::add);
-        return uris;
+        return getUrisById(1, 43708, id -> createUri0("/movie/%d", id), 6800, 10705, 21147, 24926);
     }
 
     @Override
@@ -75,9 +78,6 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * todo
-     */
     @Override
     protected final Y80sItem getItem(@Nonnull URI uri) throws NotFoundException {
         Document document = getDocument(new URIBuilder(uri), true);
@@ -86,22 +86,41 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         }
         Y80sItem item = new Y80sItem(uri.toString());
 
-        String title = document.title();
-        Set<Resource> resources = document.select(TAG_TR).stream()
-                .map(tr -> tr.selectFirst(TAG_A))
-                .map(a -> {
-                    String href = a.attr(ATTR_HREF);
-                    return ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href));
-                })
-                .collect(Collectors.toSet());
+        Element path = document.selectFirst("#path");
+        Elements lis = path.select(TAG_LI);
+        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, lis.get(1).selectFirst(TAG_A).attr(ATTR_HREF));
+        item.setType(Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("type"))));
+        item.setTitle(lis.last().text().strip());
 
-        String idStr = RegexUtils.findOrElseThrow(DOUBAN_REVIEWS_REGEX, document.selectFirst("p.col-xs-6").html()).group(1);
-        if ("".equals(idStr)) {
-            item.setDbId(null);
-        } else {
-            long id = Long.parseLong(idStr);
-            item.setDbId(id <= 1000000 ? null : id);
+        Element main = document.selectFirst("#mainbody");
+        Elements spans = main.select(".movie_attr");
+        Map<String, Element> attributes = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        for (Element span : spans) {
+            attributes.put(span.text().strip(), span);
         }
+        Element span = attributes.get("年代：");
+        if (span != null) {
+            String year = RegexUtils.matchesOrElseThrow(YEAR_REGEX, span.nextElementSibling().text()).group("year");
+            if (year != null) {
+                item.setYear(Integer.parseInt(year));
+            }
+        }
+        span = attributes.get("豆瓣评分：");
+        if (span != null) {
+            String doubanHref = span.nextElementSibling().nextElementSibling().attr(ATTR_HREF);
+            String id = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
+            if (id != null) {
+                item.setDbId(Long.parseLong(id));
+            }
+        }
+
+        List<Resource> resources = new LinkedList<>();
+        Elements dls = main.select("#dl-tab-panes").select("a.btn_dl");
+        for (Element a : dls) {
+            String href = a.attr(ATTR_HREF);
+            resources.add(ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href)));
+        }
+        item.setResources(resources);
 
         return item;
     }

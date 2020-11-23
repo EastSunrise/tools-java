@@ -16,9 +16,11 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.entity.item.BaseItem;
-import wsg.tools.internet.resource.entity.item.SimpleItem;
+import wsg.tools.internet.resource.entity.item.base.BaseItem;
+import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
+import wsg.tools.internet.resource.entity.item.base.YearSupplier;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.valid.*;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
@@ -55,6 +57,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Transactional(rollbackFor = Exception.class)
     public <I extends BaseItem> void importAll(BaseResourceSite<I> site) {
         Set<I> items = site.findAll();
+        int itemsCount = 0, linksCount = 0;
         for (I item : items) {
             if (CollectionUtils.isEmpty(item.getResources())) {
                 continue;
@@ -64,9 +67,11 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             itemEntity.setUrl(item.getUrl());
             itemEntity.setTitle(item.getTitle());
             itemEntity.setIdentified(false);
-            if (item instanceof SimpleItem) {
-                itemEntity.setVideoType(((SimpleItem) item).getType());
-                itemEntity.setYear(((SimpleItem) item).getYear());
+            if (item instanceof TypeSupplier) {
+                itemEntity.setVideoType(((TypeSupplier) item).getType());
+            }
+            if (item instanceof YearSupplier) {
+                itemEntity.setYear(((YearSupplier) item).getYear());
             }
             if (item instanceof DoubanIdentifier) {
                 itemEntity.setDbId(((DoubanIdentifier) item).getDbId());
@@ -75,17 +80,22 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                 itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
             }
             String itemUrl = itemRepository.insert(itemEntity).getUrl();
+            itemsCount++;
 
-            item.getResources().stream().filter(resource -> resource instanceof BaseValidResource)
-                    .map(resource -> (BaseValidResource) resource).forEach(resource -> {
-                ResourceLinkEntity linkEntity = new ResourceLinkEntity();
-                linkEntity.setItemUrl(itemUrl);
-                linkEntity.setTitle(resource.getTitle());
-                linkEntity.setUrl(resource.getUrl());
-                linkEntity.setType(EnumUtilExt.deserializeAka(resource.getClass(), ResourceType.class));
-                linkRepository.insert(linkEntity);
-            });
+            for (Resource resource : item.getResources()) {
+                if (resource instanceof BaseValidResource) {
+                    BaseValidResource baseValidResource = (BaseValidResource) resource;
+                    ResourceLinkEntity linkEntity = new ResourceLinkEntity();
+                    linkEntity.setItemUrl(itemUrl);
+                    linkEntity.setTitle(baseValidResource.getTitle());
+                    linkEntity.setUrl(baseValidResource.getUrl());
+                    linkEntity.setType(EnumUtilExt.deserializeAka(baseValidResource.getClass(), ResourceType.class));
+                    linkRepository.insert(linkEntity);
+                    linksCount++;
+                }
+            }
         }
+        log.info("Finished importing: {} items, {} links.", itemsCount, linksCount);
     }
 
     @Override

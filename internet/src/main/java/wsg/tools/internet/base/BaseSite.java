@@ -95,7 +95,6 @@ public abstract class BaseSite implements Closeable {
     protected static final String TAG_LI = "li";
     protected static final String TAG_SPAN = "span";
     protected static final String TAG_STRONG = "strong";
-    protected static final String TAG_TR = "tr";
     protected static final String TAG_H3 = "h3";
     protected static final String TAG_H4 = "h4";
     protected static final String TAG_TIME = "time";
@@ -332,7 +331,7 @@ public abstract class BaseSite implements Closeable {
     private String execute(RequestBuilder builder) throws NotFoundException {
         handleRequest(builder, context);
         log.info("{} from {}", builder.getMethod(), builder.displayUrl());
-        log.info("Slept for {}s.", limiters.get(builder.getMethod()).acquire());
+        limiters.get(builder.getMethod()).acquire();
         try {
             return client.execute(builder.build(), responseHandler, context);
         } catch (HttpResponseException e) {

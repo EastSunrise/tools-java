@@ -11,7 +11,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.resource.entity.item.BdFilmItem;
+import wsg.tools.internet.resource.entity.item.impl.BdFilmItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 /**
  * @author Kingen
@@ -35,7 +34,6 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     private static final Pattern ITEM_URL_REGEX =
             Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+).htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
-    private static final Pattern YEAR_INFO_REGEX = Pattern.compile("(年 ?代|上 ?映|首映|出 ?品|发行).{0,4}(?<year>\\d{4})");
     private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-z+/=]*)\", " +
             "adsUrls = \"[0-9A-z+/=]*\", " +
             "diskUrls = \"(?<disk>[0-9A-z+/=]*)\", " +
@@ -52,14 +50,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
     @Override
     protected List<URI> getAllUris() {
-        List<URI> uris = new LinkedList<>();
-        IntStream.range(359, 30508)
-                .mapToObj(id -> createUri0("/gy/%d.htm", id))
-                .forEach(uris::add);
-        IntStream.range(30509, 31256)
-                .mapToObj(id -> createUri0("/gy/%d.htm", id))
-                .forEach(uris::add);
-        return uris;
+        return getUrisById(359, 31256, id -> createUri0("/gy/%d.htm", id), 30508);
     }
 
     /**
@@ -92,7 +83,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
-            throw new NotFoundException("Not a film page.");
+            throw new NotFoundException("Not a film page: " + location);
         }
         BdFilmItem item = new BdFilmItem(location);
         String[] keywords = document.selectFirst("meta[name=keywords]").attr(ATTR_CONTENT).split(",免费下载");
@@ -145,7 +136,6 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
         if (item.getImdbId() == null) {
             RegexUtils.ifFind(IMDB_INFO_REGEX, text, m -> item.setImdbId(m.group("id")));
         }
-        RegexUtils.ifFind(YEAR_INFO_REGEX, text, m -> item.setYear(Integer.parseInt(m.group("year"))));
 
         return item;
     }

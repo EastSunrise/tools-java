@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.common;
+package wsg.tools.internet.resource.entity.item.base;
 
 /**
  * Video types of resources.
