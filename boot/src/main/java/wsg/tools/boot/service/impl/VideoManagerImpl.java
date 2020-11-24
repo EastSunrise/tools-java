@@ -7,12 +7,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.enums.VideoArchivedStatus;
 import wsg.tools.boot.common.enums.VideoStatus;
+import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.dao.jpa.mapper.EpisodeRepository;
-import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
-import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
-import wsg.tools.boot.pojo.entity.subject.*;
+import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.VideoManager;
@@ -20,13 +21,15 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.video.enums.LanguageEnum;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Management of local videos.
@@ -38,25 +41,22 @@ import java.util.*;
 @Service
 public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
-    private static final SignEnum NAME_SEPARATOR = SignEnum.UNDERSCORE;
-    private static final String MOVIE_DIR = "01 Movies";
-    private static final String TV_DIR = "02 TV";
-
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
     private final ResourceService resourceService;
-    private final ResourceLinkRepository linkRepository;
+    private final PathConfiguration pathConfig;
 
-    public VideoManagerImpl(SeasonRepository seasonRepository, EpisodeRepository episodeRepository, ResourceService resourceService, ResourceLinkRepository linkRepository) {
+    public VideoManagerImpl(
+            SeasonRepository seasonRepository, EpisodeRepository episodeRepository, ResourceService resourceService, PathConfiguration pathConfig) {
         this.seasonRepository = seasonRepository;
         this.episodeRepository = episodeRepository;
         this.resourceService = resourceService;
-        this.linkRepository = linkRepository;
+        this.pathConfig = pathConfig;
     }
 
     @Override
-    public final Optional<File> getFile(File cdn, MovieEntity movie) {
-        String location = getLocation(cdn, movie);
+    public final Optional<File> getFile(MovieEntity movie) {
+        String location = pathConfig.getLocation(movie);
         for (Filetype type : Filetype.videoTypes()) {
             File file = new File(location + SignEnum.DOT + type.suffix());
             if (file.isFile()) {
@@ -67,8 +67,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public final Optional<File> getFile(File cdn, SeriesEntity series) {
-        String location = getLocation(cdn, series);
+    public final Optional<File> getFile(SeriesEntity series) {
+        String location = pathConfig.getLocation(series);
         File seriesDir = new File(location);
         if (seriesDir.isDirectory()) {
             return Optional.of(seriesDir);
@@ -77,8 +77,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public Optional<File> getFile(File cdn, SeasonEntity season) {
-        String location = getSeasonLocation(cdn, season);
+    public Optional<File> getFile(SeasonEntity season) {
+        String location = pathConfig.getLocation(season);
         File seasonDir = new File(location);
         if (seasonDir.isDirectory()) {
             return Optional.of(seasonDir);
@@ -87,9 +87,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public Optional<File> getFile(File cdn, EpisodeEntity episode) {
+    public Optional<File> getFile(EpisodeEntity episode) {
         SeasonEntity season = seasonRepository.findById(episode.getSeasonId()).orElseThrow();
-        Optional<File> optional = getFile(cdn, season);
+        Optional<File> optional = getFile(season);
         if (optional.isEmpty()) {
             return Optional.empty();
         }
@@ -105,17 +105,14 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         return Optional.empty();
     }
 
-
     @Override
-    public final VideoStatus archive(File cdn, File tmpdir, MovieEntity movie) {
-        Optional<File> optional = getFile(cdn, movie);
+    public final VideoStatus archive(MovieEntity movie) {
+        Optional<File> optional = getFile(movie);
         if (optional.isPresent()) {
             return VideoArchivedStatus.archived(optional.get());
         }
 
-        log.info("Archiving for {}.", movie.getTitle());
-        String tmpName = movie.getId() + "" + SignEnum.UNDERSCORE + movie.getTitle();
-        File tempDir = new File(tmpdir, tmpName);
+        File tempDir = pathConfig.tmpdir(movie);
         if (tempDir.isDirectory()) {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
                 return VideoStatus.NONE_DOWNLOADED;
@@ -125,7 +122,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             }
 
             StringBuilder builder = new StringBuilder();
-            builder.append("Target: ").append(getLocation(cdn, movie)).append(Constants.LINE_SEPARATOR);
+            builder.append("Target: ").append(pathConfig.getLocation(movie)).append(Constants.LINE_SEPARATOR);
             builder.append("Durations: ").append(StringUtils.join(movie.getDurations(), "/"));
             try {
                 FileUtils.write(new File(tempDir, "info.txt"), builder.toString());
@@ -135,21 +132,20 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.TO_ARCHIVE;
         }
 
-        return downloadItems(resourceService.search(null, movie.getDbId(), movie.getImdbId()), tempDir);
+        return download(tempDir, movie.getDbId(), movie.getImdbId());
     }
 
     @Override
-    public VideoStatus archive(File cdn, File tmpdir, SeasonEntity season) {
+    public VideoStatus archive(SeasonEntity season) {
         SeriesEntity series = season.getSeries();
-        File seriesDir = new File(getLocation(cdn, series));
+        File seriesDir = new File(pathConfig.getLocation(series));
         File seasonDir = series.getSeasonsCount() == 1 ? seriesDir
                 : new File(seriesDir, String.format("S%02d", season.getCurrentSeason()));
         if (seasonDir.isDirectory()) {
             return VideoArchivedStatus.archived(seasonDir);
         }
 
-        log.info("Archiving for {}.", season.getTitle());
-        File tempDir = new File(tmpdir, season.getId() + "" + SignEnum.UNDERSCORE + season.getTitle());
+        File tempDir = pathConfig.tmpdir(season);
         if (tempDir.isDirectory()) {
             if (Objects.requireNonNull(tempDir.list()).length == 0) {
                 return VideoStatus.NONE_DOWNLOADED;
@@ -159,7 +155,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             }
 
             List<String> lines = new LinkedList<>();
-            lines.add("Target: " + getSeasonLocation(cdn, season));
+            lines.add("Target: " + pathConfig.getLocation(season));
             lines.add("Season durations: " + StringUtils.join(season.getDurations(), "/"));
             lines.add("Episodes count: " + season.getEpisodesCount());
             String format = "Ep%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
@@ -177,65 +173,17 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.TO_ARCHIVE;
         }
 
-        return downloadItems(resourceService.search(null, season.getDbId(), null), tempDir);
+        return download(tempDir, season.getDbId(), null);
     }
 
-    private VideoStatus downloadItems(Set<ResourceItemEntity> items, File tmpdir) {
-        List<ResourceLinkEntity> links = new LinkedList<>();
-        items.stream().filter(ResourceItemEntity::getIdentified)
-                .forEach(item -> links.addAll(linkRepository.findAllByItemUrl(item.getUrl())));
-        if (links.isEmpty()) {
+    private VideoStatus download(File tmpdir, @Nullable Long dbId, @Nullable String imdbId) {
+        Long count = resourceService.download(tmpdir, dbId, imdbId).getRecord();
+        if (count == -1) {
             return VideoStatus.NONE_FOUND;
         }
-        if (resourceService.download(links, tmpdir) == 0) {
+        if (count == 0) {
             return VideoStatus.NONE_DOWNLOADED;
         }
         return VideoStatus.TO_DOWNLOAD;
-    }
-
-    /**
-     * For {@link SeasonEntity}.
-     */
-    private String getSeasonLocation(File cdn, SeasonEntity season) {
-        SeriesEntity series = season.getSeries();
-        String location = getLocation(cdn, series);
-        if (series.getSeasonsCount() > 1) {
-            location += File.separator + String.format("S%02d", season.getCurrentSeason());
-        }
-        return location;
-    }
-
-    /**
-     * Only for {@link MovieEntity} and {@link SeriesEntity}.
-     */
-    private String getLocation(File cdn, SubjectEntity entity) {
-        Objects.requireNonNull(entity, "Given entity mustn't be null.");
-        Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
-        Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");
-        Objects.requireNonNull(entity.getTitle(), "Title of subject " + entity.getId() + " mustn't be null.");
-
-        StringBuilder builder = new StringBuilder()
-                .append(cdn).append(File.separator);
-        if (entity instanceof MovieEntity) {
-            builder.append(MOVIE_DIR);
-        } else if (entity instanceof SeriesEntity) {
-            builder.append(TV_DIR);
-        } else {
-            throw new IllegalArgumentException("Unsupported entity of subject: " + entity.getClass().getName());
-        }
-        builder.append(File.separator);
-
-        LanguageEnum language = entity.getLanguages().get(0);
-        if (language.ordinal() <= LanguageEnum.TH.ordinal()) {
-            builder.append(String.format("%02d", language.ordinal()))
-                    .append(SignEnum.SPACE)
-                    .append(language.getTitle());
-        } else {
-            builder.append("99")
-                    .append(SignEnum.SPACE)
-                    .append("其他");
-        }
-        builder.append(File.separator).append(entity.getYear());
-        return builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getTitle())).toString();
     }
 }

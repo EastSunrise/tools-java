@@ -2,6 +2,7 @@ package wsg.tools.boot.pojo.entity.subject;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 
 import javax.persistence.*;
 
@@ -15,7 +16,7 @@ import javax.persistence.*;
 @Getter
 @Entity
 @Table(name = "video_season")
-public class SeasonEntity extends SubjectEntity {
+public class SeasonEntity extends SubjectEntity implements DoubanIdentifier {
 
     @Column(nullable = false, unique = true)
     private Long dbId;

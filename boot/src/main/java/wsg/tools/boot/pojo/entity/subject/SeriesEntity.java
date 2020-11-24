@@ -2,6 +2,7 @@ package wsg.tools.boot.pojo.entity.subject;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,7 +19,7 @@ import java.util.Objects;
 @Getter
 @Entity
 @Table(name = "video_series")
-public class SeriesEntity extends SubjectEntity {
+public class SeriesEntity extends SubjectEntity implements ImdbIdentifier {
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;

@@ -2,13 +2,12 @@ package wsg.tools.boot.service.intf;
 
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -46,11 +45,12 @@ public interface ResourceService {
     long check(List<ResourceCheckDto> checkDtoList);
 
     /**
-     * Download the given resources to target directory.
+     * Download all resources matched by the given identifiers to the target directory.
      *
-     * @param links  links of resources to download
      * @param target target directory
-     * @return count of resources added to download
+     * @param dbId   id of Douban
+     * @param imdbId id of IMDb
+     * @return -1 if none resource found, otherwise, count of links added to download.
      */
-    long download(Collection<ResourceLinkEntity> links, File target);
+    SingleResult<Long> download(File target, @Nullable Long dbId, @Nullable String imdbId);
 }

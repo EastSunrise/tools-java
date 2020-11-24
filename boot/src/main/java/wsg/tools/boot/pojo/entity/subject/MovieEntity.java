@@ -2,6 +2,8 @@ package wsg.tools.boot.pojo.entity.subject;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
+import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,7 +19,7 @@ import javax.persistence.Table;
 @Setter
 @Entity
 @Table(name = "video_movie")
-public class MovieEntity extends SubjectEntity {
+public class MovieEntity extends SubjectEntity implements DoubanIdentifier, ImdbIdentifier {
 
     @Column(unique = true)
     private Long dbId;

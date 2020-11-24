@@ -12,6 +12,7 @@ import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
@@ -29,11 +30,9 @@ import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Kingen
@@ -136,34 +135,45 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public long download(Collection<ResourceLinkEntity> links, File target) {
-        Set<BaseValidResource> resources = links.stream().map(link -> {
-            switch (link.getType()) {
-                case ED2K:
-                    return Ed2kResource.of(link.getTitle(), link.getUrl());
-                case HTTP:
-                    return HttpResource.of(link.getTitle(), link.getUrl());
-                case MAGNET:
-                    return MagnetResource.of(link.getTitle(), link.getUrl());
-                case UC_DISK:
-                    return YunResource.of(link.getTitle(), link.getUrl());
-                case BAIDU_DISK:
-                    return PanResource.of(link.getTitle(), link.getUrl());
-                default:
-                    throw new IllegalArgumentException("Unknown type of resources: " + link.getType());
+    public SingleResult<Long> download(File target, @Nullable Long dbId, @Nullable String imdbId) {
+        Set<ResourceItemEntity> items = search(null, dbId, imdbId);
+        if (items.isEmpty()) {
+            return SingleResult.of(-1L);
+        }
+        long count = 0;
+        for (ResourceItemEntity item : items) {
+            if (!item.getIdentified()) {
+                continue;
             }
-        }).collect(Collectors.toSet());
-        long count = resources.stream().filter(resource -> {
-            try {
-                return thunder.addTask(target, resource);
-            } catch (IOException e) {
-                log.error(e.getMessage());
-                return false;
-            }
-        }).count();
+            List<ResourceLinkEntity> links = linkRepository.findAllByItemUrl(item.getUrl());
+            count += links.stream().map(link -> {
+                switch (link.getType()) {
+                    case ED2K:
+                        return Ed2kResource.of(link.getTitle(), link.getUrl());
+                    case HTTP:
+                        return HttpResource.of(link.getTitle(), link.getUrl());
+                    case MAGNET:
+                        return MagnetResource.of(link.getTitle(), link.getUrl());
+                    case UC_DISK:
+                        return YunResource.of(link.getTitle(), link.getUrl());
+                    case BAIDU_DISK:
+                        return PanResource.of(link.getTitle(), link.getUrl());
+                    default:
+                        throw new IllegalArgumentException("Unknown type of resources: " + link.getType());
+                }
+            }).filter(resource -> {
+                try {
+                    return thunder.addTask(target, resource);
+                } catch (IOException e) {
+                    log.error(e.getMessage());
+                    return false;
+                }
+            }).count();
+        }
+
         if (count > 0) {
             log.info("{} resources added to download.", count);
         }
-        return count;
+        return SingleResult.of(count);
     }
 }

@@ -2,9 +2,21 @@ $(function () {
     $('.movie-archive').on('click', function () {
         archive($(this), '/video/movie/archive')
     });
+    $('.movie-search').on('click', function () {
+        searchMovie($(this).data('id'));
+    });
+    $('.movie-download').on('click', function () {
+        download($(this), '/video/movie/download')
+    })
     $('.season-archive').on('click', function () {
         archive($(this), '/video/season/archive')
     });
+    $('.series-search').on('click', function () {
+        searchSeries($(this).data('id'));
+    });
+    $('.season-download').on('click', function () {
+        download($(this), '/video/season/download')
+    })
 });
 
 /**
@@ -16,6 +28,7 @@ function searchMovie(id) {
         layui.layer.confirm(result, {
             title: "Resources",
             area: '1200px',
+            scrollbar: false
         }, function (index) {
             let checks = [];
             $.each($('input.resource-choose'), function () {
@@ -43,6 +56,7 @@ function searchSeries(id) {
         layui.layer.confirm(result, {
             title: "Resources",
             area: '1200px',
+            scrollbar: false
         }, function (index) {
             let checks = [];
             $.each($('select.resource-choose'), function () {
@@ -115,4 +129,20 @@ function archive(ele, url) {
             ele.attr('hidden', false);
         }
     });
+}
+
+/**
+ * Download the given subject.
+ * @param ele
+ * @param url
+ */
+function download(ele, url) {
+    let id = ele.data('id');
+    $.post(url, {id: id}, function (count) {
+        if (count === 0) {
+            layui.layer.alert("None added.");
+        } else {
+            layui.layer.alert(count + ' added to download.');
+        }
+    })
 }

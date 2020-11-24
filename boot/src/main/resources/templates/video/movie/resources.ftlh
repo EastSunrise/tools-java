@@ -32,7 +32,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <#list items as item>
+                <#list items?sort_by('gmtModified')?reverse as item>
                     <tr>
                         <td>${item_index+1}</td>
                         <td>

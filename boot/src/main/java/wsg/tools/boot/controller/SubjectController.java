@@ -7,7 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import wsg.tools.boot.common.enums.VideoStatus;
-import wsg.tools.boot.config.VideoConfiguration;
+import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
 import wsg.tools.boot.pojo.dto.SubjectDto;
@@ -17,6 +17,7 @@ import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.BiResult;
+import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
@@ -42,14 +43,14 @@ public class SubjectController extends AbstractController {
     private final SubjectService subjectService;
     private final ResourceService resourceService;
     private final VideoManager videoManager;
-    private final VideoConfiguration config;
+    private final PathConfiguration pathConfig;
 
     @Autowired
-    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager, VideoConfiguration config) {
+    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager, PathConfiguration pathConfig) {
         this.subjectService = subjectService;
         this.resourceService = resourceService;
         this.videoManager = videoManager;
-        this.config = config;
+        this.pathConfig = pathConfig;
     }
 
     /**
@@ -61,8 +62,8 @@ public class SubjectController extends AbstractController {
         return subjectService.importDouban(user, since);
     }
 
-    @GetMapping(path = "/movie/index")
-    public String movies(Model model) {
+    @GetMapping(path = "/subject/index")
+    public String subjects(Model model) {
         List<MovieEntity> movies = subjectService.listMovies().getRecords();
         List<SubjectDto> subjects = movies.stream().map(movie -> {
             SubjectDto subjectDto = new SubjectDto();
@@ -70,11 +71,28 @@ public class SubjectController extends AbstractController {
             subjectDto.setTitle(movie.getTitle());
             subjectDto.setDbId(movie.getDbId());
             subjectDto.setImdbId(movie.getImdbId());
-            subjectDto.setArchived(videoManager.getFile(config.cdn(), movie).isPresent());
+            subjectDto.setArchived(videoManager.getFile(movie).isPresent());
             return subjectDto;
         }).collect(Collectors.toList());
         model.addAttribute("movies", subjects);
-        return "video/movie/index";
+        Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
+        List<SeriesDto> tvs = map.entrySet().stream().map(entry -> {
+            SeriesDto seriesDto = new SeriesDto();
+            seriesDto.setSeries(entry.getKey());
+            List<SeasonDto> seasons = entry.getValue().stream().map(season -> {
+                SeasonDto seasonDto = new SeasonDto();
+                seasonDto.setId(season.getId());
+                seasonDto.setTitle(season.getTitle());
+                seasonDto.setDbId(season.getDbId());
+                seasonDto.setCurrentSeason(season.getCurrentSeason());
+                seasonDto.setArchived(videoManager.getFile(season).isPresent());
+                return seasonDto;
+            }).collect(Collectors.toList());
+            seriesDto.setSeasons(seasons);
+            return seriesDto;
+        }).collect(Collectors.toList());
+        model.addAttribute("tvs", tvs);
+        return "video/subject/index";
     }
 
     @GetMapping(path = "/movie/{id}/resources")
@@ -96,30 +114,20 @@ public class SubjectController extends AbstractController {
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        VideoStatus status = videoManager.archive(config.cdn(), config.tmpdir(), optional.get());
+        VideoStatus status = videoManager.archive(optional.get());
         return ResponseEntity.ok(status);
     }
 
-    @RequestMapping("/series/index")
-    public String series(Model model) {
-        Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
-        List<SeriesDto> tvs = map.entrySet().stream().map(entry -> {
-            SeriesDto seriesDto = new SeriesDto();
-            seriesDto.setSeries(entry.getKey());
-            List<SeasonDto> seasons = entry.getValue().stream().map(season -> {
-                SeasonDto seasonDto = new SeasonDto();
-                seasonDto.setId(season.getId());
-                seasonDto.setTitle(season.getTitle());
-                seasonDto.setDbId(season.getDbId());
-                seasonDto.setCurrentSeason(season.getCurrentSeason());
-                seasonDto.setArchived(videoManager.getFile(config.cdn(), season).isPresent());
-                return seasonDto;
-            }).collect(Collectors.toList());
-            seriesDto.setSeasons(seasons);
-            return seriesDto;
-        }).collect(Collectors.toList());
-        model.addAttribute("tvs", tvs);
-        return "video/series/index";
+    @PostMapping(path = "/movie/download")
+    @ResponseBody
+    public ResponseEntity<Long> downloadMovie(Long id) {
+        Optional<MovieEntity> optional = subjectService.getMovie(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        MovieEntity entity = optional.get();
+        SingleResult<Long> result = resourceService.download(pathConfig.tmpdir(entity), entity.getDbId(), entity.getImdbId());
+        return ResponseEntity.ok(result.getRecord());
     }
 
     @GetMapping(path = "/series/{id}/resources")
@@ -145,7 +153,19 @@ public class SubjectController extends AbstractController {
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        VideoStatus status = videoManager.archive(config.cdn(), config.tmpdir(), optional.get());
+        VideoStatus status = videoManager.archive(optional.get());
         return ResponseEntity.ok(status);
+    }
+
+    @PostMapping(path = "/season/download")
+    @ResponseBody
+    public ResponseEntity<Long> downloadSeason(Long id) {
+        Optional<SeasonEntity> optional = subjectService.getSeason(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        SeasonEntity entity = optional.get();
+        SingleResult<Long> result = resourceService.download(pathConfig.tmpdir(entity), entity.getDbId(), null);
+        return ResponseEntity.ok(result.getRecord());
     }
 }

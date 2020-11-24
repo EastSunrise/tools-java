@@ -3,6 +3,8 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
+import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
+import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,7 +21,7 @@ import javax.persistence.Table;
 @Setter
 @Entity
 @Table(name = "video_id_relation")
-public class IdRelationEntity extends BaseEntity {
+public class IdRelationEntity extends BaseEntity implements DoubanIdentifier, ImdbIdentifier {
 
     @Id
     @Column(length = 10)
