@@ -11,7 +11,7 @@
                 </#if>
                 <#if movie.imdbId??>
                     <td>
-                        <a href="https://imdb.com/title/${movie.imdbId}/" target="_blank">${movie.text}</a>
+                        <a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">${movie.text}</a>
                     </td>
                 </#if>
             </tr>
@@ -56,9 +56,9 @@
                         <td>
                             <#if item.imdbId??>
                                 <#if movie.imdbId?? && item.imdbId==movie.imdbId>
-                                    <a href="https://imdb.com/title/${movie.imdbId}/" target="_blank">Matched</a>
+                                    <a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">Matched</a>
                                 <#else>
-                                    <a href="https://imdb.com/title/${item.imdbId}/" target="_blank"
+                                    <a href="https://imdb.cn/title/${item.imdbId}/" target="_blank"
                                        class="conflict">Conflict</a>
                                 </#if>
                             </#if>

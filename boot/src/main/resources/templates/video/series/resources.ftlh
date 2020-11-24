@@ -5,7 +5,7 @@
                 <td>${series.title}</td>
                 <#if series.imdbId??>
                     <td>
-                        <a href="https://imdb.com/title/${series.imdbId}/" target="_blank">${series.text}</a>
+                        <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.text}</a>
                     </td>
                 </#if>
             </tr>

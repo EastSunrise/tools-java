@@ -5,6 +5,13 @@ $(function () {
     $('.movie-search').on('click', function () {
         searchMovie($(this).data('id'));
     });
+    $('.movie-input').on('click', function () {
+        let id = $(this).data('id');
+        layui.layer.prompt(function (value, index) {
+            layui.layer.close(index);
+            searchMovie(id, value);
+        })
+    });
     $('.movie-download').on('click', function () {
         download($(this), '/video/movie/download')
     })
@@ -14,6 +21,13 @@ $(function () {
     $('.series-search').on('click', function () {
         searchSeries($(this).data('id'));
     });
+    $('.series-input').on('click', function () {
+        let id = $(this).data('id');
+        layui.layer.prompt(function (value, index) {
+            layui.layer.close(index);
+            searchSeries(id, value);
+        })
+    });
     $('.season-download').on('click', function () {
         download($(this), '/video/season/download')
     })
@@ -22,9 +36,13 @@ $(function () {
 /**
  * Search resources of the movie of the given id
  * @param id
+ * @param key
  */
-function searchMovie(id) {
-    $.get("/video/movie/" + id + "/resources", function (result) {
+function searchMovie(id, key) {
+    $.post("/video/movie/resources", {
+        id: id,
+        key: key
+    }, function (result) {
         layui.layer.confirm(result, {
             title: "Resources",
             area: '1200px',
@@ -50,9 +68,13 @@ function searchMovie(id) {
 /**
  * Search resources of the series of the given id
  * @param id
+ * @param key
  */
-function searchSeries(id) {
-    $.get("/video/series/" + id + "/resources", function (result) {
+function searchSeries(id, key) {
+    $.post("/video/series/resources", {
+        id: id,
+        key: key
+    }, function (result) {
         layui.layer.confirm(result, {
             title: "Resources",
             area: '1200px',
@@ -87,7 +109,7 @@ function checkResources(checks, index) {
         type: 'post',
         contentType: 'application/json',
         data: JSON.stringify(checks),
-        success: function (count) {
+        'success': function (count) {
             layui.layer.alert("Checked: " + count);
             layui.layer.close(index);
         }

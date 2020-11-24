@@ -38,17 +38,20 @@
                             <td>
                                 <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
                                    title="click to search">Search</a>
+                                /
+                                <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
+                                   title="click to search with a key">Input</a>
                             </td>
                             <td>
                                 <#if movie.archived>
                                     Archived
                                 <#else>
                                     <span class="click-tip" hidden="hidden"></span>
-                                    <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
-                                       title="click to archive"> Archive </a>
-                                    /
                                     <a href="javascript:void(0);" class="movie-download" data-id="${movie.id?c}"
                                        title="click to download"> Download </a>
+                                    /
+                                    <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
+                                       title="click to archive"> Archive </a>
                                 </#if>
                             </td>
                         </tr>
@@ -77,11 +80,14 @@
                             <#assign rows=(seasons?size)+1>
                             <td rowspan="${rows}">${tv_index+1}</td>
                             <td rowspan="${rows}">
-                                <a href="https://imdb.com/title/${series.imdbId}/" target="_blank">${series.title}</a>
+                                <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.title}</a>
                             </td>
                             <td rowspan="${rows}">
                                 <a href="javascript:void(0);" class="series-search" data-id="${series.id?c}"
                                    title="click to search">Search</a>
+                                /
+                                <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}"
+                                   title="click to search with a key">Input</a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -95,12 +101,11 @@
                                         Archived
                                     <#else>
                                         <span class="click-tip" hidden="hidden"></span>
-                                        <a href="javascript:void(0);" class="season-archive checked"
-                                           data-id="${season.id?c}"
-                                           title="click to archive">Archive</a>
-                                        /
                                         <a href="javascript:void(0);" class="season-download" data-id="${season.id?c}"
                                            title="click to download"> Download </a>
+                                        /
+                                        <a href="javascript:void(0);" class="season-archive checked"
+                                           data-id="${season.id?c}" title="click to archive">Archive</a>
                                     </#if>
                                 </td>
                             </tr>

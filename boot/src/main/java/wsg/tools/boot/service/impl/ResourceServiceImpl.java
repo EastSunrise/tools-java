@@ -140,13 +140,13 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (items.isEmpty()) {
             return SingleResult.of(-1L);
         }
-        long count = 0;
+        Set<BaseValidResource> resources = new HashSet<>();
         for (ResourceItemEntity item : items) {
             if (!item.getIdentified()) {
                 continue;
             }
             List<ResourceLinkEntity> links = linkRepository.findAllByItemUrl(item.getUrl());
-            count += links.stream().map(link -> {
+            links.stream().map(link -> {
                 switch (link.getType()) {
                     case ED2K:
                         return Ed2kResource.of(link.getTitle(), link.getUrl());
@@ -161,16 +161,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                     default:
                         throw new IllegalArgumentException("Unknown type of resources: " + link.getType());
                 }
-            }).filter(resource -> {
-                try {
-                    return thunder.addTask(target, resource);
-                } catch (IOException e) {
-                    log.error(e.getMessage());
-                    return false;
-                }
-            }).count();
+            }).forEach(resources::add);
         }
 
+        long count = resources.stream().filter(resource -> {
+            try {
+                return thunder.addTask(target, resource);
+            } catch (IOException e) {
+                log.error(e.getMessage());
+                return false;
+            }
+        }).count();
         if (count > 0) {
             log.info("{} resources added to download.", count);
         }

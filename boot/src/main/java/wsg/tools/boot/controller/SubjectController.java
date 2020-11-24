@@ -1,11 +1,15 @@
 package wsg.tools.boot.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.dto.SeasonDto;
@@ -70,7 +74,6 @@ public class SubjectController extends AbstractController {
             subjectDto.setId(movie.getId());
             subjectDto.setTitle(movie.getTitle());
             subjectDto.setDbId(movie.getDbId());
-            subjectDto.setImdbId(movie.getImdbId());
             subjectDto.setArchived(videoManager.getFile(movie).isPresent());
             return subjectDto;
         }).collect(Collectors.toList());
@@ -95,15 +98,18 @@ public class SubjectController extends AbstractController {
         return "video/subject/index";
     }
 
-    @GetMapping(path = "/movie/{id}/resources")
-    public String movieResources(@PathVariable Long id, Model model) {
+    @PostMapping(path = "/movie/resources")
+    public String movieResources(Long id, String key, Model model) {
         Optional<MovieEntity> optional = subjectService.getMovie(id);
         if (optional.isEmpty()) {
             return "error/notFound";
         }
         MovieEntity movieEntity = optional.get();
         model.addAttribute("movie", movieEntity);
-        model.addAttribute("items", resourceService.search(movieEntity.getTitle(), movieEntity.getDbId(), movieEntity.getImdbId()));
+        if (StringUtils.isBlank(key)) {
+            key = movieEntity.getTitle();
+        }
+        model.addAttribute("items", resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
         return "video/movie/resources";
     }
 
@@ -130,8 +136,8 @@ public class SubjectController extends AbstractController {
         return ResponseEntity.ok(result.getRecord());
     }
 
-    @GetMapping(path = "/series/{id}/resources")
-    public String seriesResources(@PathVariable Long id, Model model) {
+    @PostMapping(path = "/series/resources")
+    public String seriesResources(Long id, String key, Model model) {
         BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
         if (result.getLeft() == null) {
             return "error/notFound";
@@ -140,7 +146,10 @@ public class SubjectController extends AbstractController {
         model.addAttribute("series", seriesEntity);
         List<SeasonEntity> seasons = result.getRight();
         model.addAttribute("seasons", seasons);
-        Set<ResourceItemEntity> items = resourceService.search(seriesEntity.getTitle(), null, seriesEntity.getImdbId());
+        if (StringUtils.isBlank(key)) {
+            key = seriesEntity.getTitle();
+        }
+        Set<ResourceItemEntity> items = resourceService.search(key, null, seriesEntity.getImdbId());
         seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
         model.addAttribute("items", items);
         return "video/series/resources";
