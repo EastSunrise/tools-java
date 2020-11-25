@@ -14,27 +14,27 @@ import java.util.function.Predicate;
 public final class AssertUtils {
 
     /**
-     * Validate range of an object, [from, to)
+     * Validate range of an object, [fromInclusive, toExclusive)
      */
-    public static <T extends Comparable<T>> void requireRange(T target, T from, T to) {
+    public static <T extends Comparable<T>> void requireRange(T target, T fromInclusive, T toExclusive) {
         Objects.requireNonNull(target);
-        if (from == null && to == null) {
+        if (fromInclusive == null && toExclusive == null) {
             return;
         }
-        if (from == null) {
-            if (target.compareTo(to) >= 0) {
-                throw new IllegalArgumentException("Target must be less than " + to);
+        if (fromInclusive == null) {
+            if (target.compareTo(toExclusive) >= 0) {
+                throw new IllegalArgumentException("Target must be less than " + toExclusive);
             }
             return;
         }
-        if (to == null) {
-            if (target.compareTo(from) < 0) {
-                throw new IllegalArgumentException("Target mustn't be less than " + from);
+        if (toExclusive == null) {
+            if (target.compareTo(fromInclusive) < 0) {
+                throw new IllegalArgumentException("Target mustn't be less than " + fromInclusive);
             }
             return;
         }
-        if (target.compareTo(from) < 0 || target.compareTo(to) >= 0) {
-            throw new IllegalArgumentException("Target must be within range from " + from + " to " + to);
+        if (target.compareTo(fromInclusive) < 0 || target.compareTo(toExclusive) >= 0) {
+            throw new IllegalArgumentException("Target must be within range fromInclusive " + fromInclusive + " toExclusive " + toExclusive);
         }
     }
 

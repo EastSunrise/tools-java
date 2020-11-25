@@ -17,7 +17,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
@@ -166,7 +165,7 @@ public class DoubanSite extends BaseSite {
 
         final String plLanguage = "语言:";
         if ((span = spans.get(plLanguage)) != null) {
-            String[] languages = StringUtils.split(((TextNode) span.nextSibling()).text(), SignEnum.SLASH.getC());
+            String[] languages = StringUtils.split(((TextNode) span.nextSibling()).text(), "/");
             subject.setLanguages(Arrays.stream(languages).map(
                     language -> EnumUtilExt.deserializeAka(language.strip(), LanguageEnum.class)
             ).collect(Collectors.toList()));

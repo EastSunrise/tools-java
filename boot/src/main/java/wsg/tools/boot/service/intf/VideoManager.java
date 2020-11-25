@@ -1,12 +1,12 @@
 package wsg.tools.boot.service.intf;
 
 import wsg.tools.boot.common.enums.VideoStatus;
-import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -42,23 +42,17 @@ public interface VideoManager {
     Optional<File> getFile(SeasonEntity season);
 
     /**
-     * Obtains corresponding directory of the given episode of tv series.
-     *
-     * @param episode given tv episode
-     * @return optional file of the episode
-     */
-    Optional<File> getFile(EpisodeEntity episode);
-
-    /**
      * Archive the given movie.
      * <p>
      * Firstly, locate the file from cdn. Otherwise, find under temporary directory.
      * If still not found, search download by {@link ResourceService#search(String, Long, String)}.
      *
-     * @param movie given movie
+     * @param movie  given movie
+     * @param chosen if downloaded files have been chosen
      * @return status of archiving
+     * @throws IOException if an error occurs when edit files.
      */
-    VideoStatus archive(MovieEntity movie);
+    VideoStatus archive(MovieEntity movie, boolean chosen) throws IOException;
 
     /**
      * Archive the given season from the cdn.
@@ -67,7 +61,9 @@ public interface VideoManager {
      * If still not found, search and download by {@link ResourceService#search(String, Long, String)}.
      *
      * @param season given season
+     * @param chosen if downloaded files have been chosen
      * @return status of archiving
+     * @throws IOException if an error occurs when edit files.
      */
-    VideoStatus archive(SeasonEntity season);
+    VideoStatus archive(SeasonEntity season, boolean chosen) throws IOException;
 }

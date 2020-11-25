@@ -2,7 +2,7 @@ package wsg.tools.internet.video.entity.imdb.info;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.lang.NumberUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbInfo;
 import wsg.tools.internet.video.enums.RegionEnum;
@@ -36,6 +36,6 @@ public class RuntimeInfo extends BaseImdbInfo {
 
     public RuntimeInfo(String text) {
         Matcher matcher = RegexUtils.matchesOrElseThrow(RUNTIME_REGEX, text);
-        this.duration = Duration.ofMinutes(Integer.parseInt(matcher.group(1).replace(SignEnum.COMMA.toString(), "")));
+        this.duration = Duration.ofMinutes(NumberUtilsExt.parseCommaSeparatedNumber(matcher.group(1)));
     }
 }

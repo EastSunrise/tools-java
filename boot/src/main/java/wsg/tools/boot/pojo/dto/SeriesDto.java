@@ -18,4 +18,5 @@ public class SeriesDto {
 
     private SeriesEntity series;
     private List<SeasonDto> seasons;
+    private boolean archived;
 }

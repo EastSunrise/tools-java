@@ -59,12 +59,17 @@
                         <td>
                             <#if !item.identified>
                                 <label>
-                                    <select class="resource-choose" data-url="${item.url}" style="width: 100px">
-                                        <option value="">--Choose--</option>
-                                        <#list seasons as season>
-                                            <option value="${season.dbId?c}">${season.currentSeason}</option>
-                                        </#list>
-                                    </select>
+                                    <#if seasons?size==1>
+                                        <input type="checkbox" class="resource-choose" data-url="${item.url}"
+                                               data-db-id="${seasons?first.dbId?c}">
+                                    <#else>
+                                        <select class="resource-choose" data-url="${item.url}" style="width: 100px">
+                                            <option value="">--Choose--</option>
+                                            <#list seasons as season>
+                                                <option value="${season.dbId?c}">${season.currentSeason}</option>
+                                            </#list>
+                                        </select>
+                                    </#if>
                                 </label>
                             <#else>
                                 <span class="checked">CHECKED</span>

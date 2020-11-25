@@ -3,6 +3,7 @@ package wsg.tools.boot.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
@@ -26,6 +26,8 @@ import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,8 @@ public class SubjectController extends AbstractController {
             subjectDto.setId(movie.getId());
             subjectDto.setTitle(movie.getTitle());
             subjectDto.setDbId(movie.getDbId());
+            subjectDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
+                    .collect(Collectors.joining("/")));
             subjectDto.setArchived(videoManager.getFile(movie).isPresent());
             return subjectDto;
         }).collect(Collectors.toList());
@@ -87,11 +91,15 @@ public class SubjectController extends AbstractController {
                 seasonDto.setId(season.getId());
                 seasonDto.setTitle(season.getTitle());
                 seasonDto.setDbId(season.getDbId());
+                seasonDto.setDurations(season.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
+                        .collect(Collectors.joining("/")));
                 seasonDto.setCurrentSeason(season.getCurrentSeason());
+                seasonDto.setEpisodesCount(season.getEpisodesCount());
                 seasonDto.setArchived(videoManager.getFile(season).isPresent());
                 return seasonDto;
             }).collect(Collectors.toList());
             seriesDto.setSeasons(seasons);
+            seriesDto.setArchived(seasons.stream().allMatch(SeasonDto::isArchived));
             return seriesDto;
         }).collect(Collectors.toList());
         model.addAttribute("tvs", tvs);
@@ -115,13 +123,16 @@ public class SubjectController extends AbstractController {
 
     @PostMapping(path = "/movie/archive")
     @ResponseBody
-    public ResponseEntity<VideoStatus> archiveMovie(Long id) {
+    public ResponseEntity<?> archiveMovie(Long id, boolean chosen) {
         Optional<MovieEntity> optional = subjectService.getMovie(id);
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        VideoStatus status = videoManager.archive(optional.get());
-        return ResponseEntity.ok(status);
+        try {
+            return ResponseEntity.ok(videoManager.archive(optional.get(), chosen));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PostMapping(path = "/movie/download")
@@ -157,13 +168,16 @@ public class SubjectController extends AbstractController {
 
     @PostMapping(path = "/season/archive")
     @ResponseBody
-    public ResponseEntity<VideoStatus> archiveSeason(Long id) {
+    public ResponseEntity<?> archiveSeason(Long id, boolean chosen) {
         Optional<SeasonEntity> optional = subjectService.getSeason(id);
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        VideoStatus status = videoManager.archive(optional.get());
-        return ResponseEntity.ok(status);
+        try {
+            return ResponseEntity.ok(videoManager.archive(optional.get(), chosen));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PostMapping(path = "/season/download")

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.video.entity.imdb.info.RuntimeInfo;
 import wsg.tools.internet.video.entity.omdb.object.OmdbEpisode;
 import wsg.tools.internet.video.entity.omdb.object.OmdbMovie;
@@ -36,6 +35,8 @@ import java.util.List;
 })
 public abstract class BaseOmdbTitle extends BaseOmdbResponse {
 
+    private static final String LIST_SEPARATOR = ",";
+
     @JsonProperty("title")
     private String text;
     private RatingEnum rated;
@@ -44,23 +45,23 @@ public abstract class BaseOmdbTitle extends BaseOmdbResponse {
     private LocalDate release;
     private RuntimeInfo runtime;
     @JsonProperty("Genre")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<GenreEnum> genres;
     @JsonProperty("Director")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<String> directors;
     @JsonProperty("Writer")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<String> writers;
     @JsonProperty("Actors")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<String> actors;
     private String plot;
     @JsonProperty("Language")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<LanguageEnum> languages;
     @JsonProperty("Country")
-    @JoinedValue(separator = SignEnum.COMMA)
+    @JoinedValue(separator = LIST_SEPARATOR)
     private List<RegionEnum> regions;
     private String awards;
     @JsonProperty("poster")

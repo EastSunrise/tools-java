@@ -85,7 +85,7 @@ public class RequestBuilder extends HttpRequestBase {
         }
 
         if (params != null) {
-            sb.append(File.separator).append(StringUtils.join(params, SignEnum.AND.getC()));
+            sb.append(File.separator).append(StringUtils.join(params, SignEnum.PARAMETER_SEPARATOR));
         }
 
         return StringUtilsExt.toFilename(sb.toString());
@@ -97,7 +97,7 @@ public class RequestBuilder extends HttpRequestBase {
     public String displayUrl() {
         String url = builder.toString();
         if (params != null) {
-            url += ", params: " + StringUtils.join(params, SignEnum.AND.getC());
+            url += ", params: " + StringUtils.join(params, SignEnum.PARAMETER_SEPARATOR);
         }
         return url;
     }

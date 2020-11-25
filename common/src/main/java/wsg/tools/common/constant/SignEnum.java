@@ -11,7 +11,6 @@ public enum SignEnum {
     /**
      * Printable characters
      */
-    SPACE(' '),
     EXCLAMATION('!'),
     QUOTES('"'),
     HASH('#'),
@@ -46,8 +45,12 @@ public enum SignEnum {
     TILDE('~'),
     ;
 
-    public static final SignEnum[] NOT_PERMIT_SIGNS_FOR_FILENAME = new SignEnum[]{
-            COLON, ASTERISK, QUESTION, QUOTES, LT, GT, BAR
+    public static final String FILE_EXTENSION_SEPARATOR = DOT.toString();
+    public static final String PARAMETER_SEPARATOR = AND.toString();
+    public static final String URL_PATH_SEPARATOR = SLASH.toString();
+
+    public static final char[] NOT_PERMIT_CHARS_FOR_FILENAME = new char[]{
+            ':', '*', '?', '"', '<', '>', '|'
     };
 
     private final char c;

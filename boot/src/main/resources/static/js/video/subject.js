@@ -1,31 +1,31 @@
 $(function () {
     $('.movie-archive').on('click', function () {
-        archive($(this), '/video/movie/archive')
+        archive($(this), '/video/movie/archive');
     });
     $('.movie-search').on('click', function () {
-        searchMovie($(this).data('id'));
+        search("/video/movie/resources", $(this).data('id'));
     });
     $('.movie-input').on('click', function () {
         let id = $(this).data('id');
         layui.layer.prompt(function (value, index) {
             layui.layer.close(index);
-            searchMovie(id, value);
+            search("/video/movie/resources", id, value);
         })
     });
     $('.movie-download').on('click', function () {
         download($(this), '/video/movie/download')
     })
     $('.season-archive').on('click', function () {
-        archive($(this), '/video/season/archive')
+        archive($(this), '/video/season/archive');
     });
     $('.series-search').on('click', function () {
-        searchSeries($(this).data('id'));
+        search("/video/series/resources", $(this).data('id'));
     });
     $('.series-input').on('click', function () {
         let id = $(this).data('id');
         layui.layer.prompt(function (value, index) {
             layui.layer.close(index);
-            searchSeries(id, value);
+            search("/video/series/resources", id, value);
         })
     });
     $('.season-download').on('click', function () {
@@ -34,12 +34,13 @@ $(function () {
 });
 
 /**
- * Search resources of the movie of the given id
+ * Search resources of the series of the given id
+ * @param url
  * @param id
  * @param key
  */
-function searchMovie(id, key) {
-    $.post("/video/movie/resources", {
+function search(url, id, key) {
+    $.post(url, {
         id: id,
         key: key
     }, function (result) {
@@ -60,27 +61,6 @@ function searchMovie(id, key) {
                     });
                 }
             })
-            checkResources(checks, index);
-        })
-    })
-}
-
-/**
- * Search resources of the series of the given id
- * @param id
- * @param key
- */
-function searchSeries(id, key) {
-    $.post("/video/series/resources", {
-        id: id,
-        key: key
-    }, function (result) {
-        layui.layer.confirm(result, {
-            title: "Resources",
-            area: '1200px',
-            scrollbar: false
-        }, function (index) {
-            let checks = [];
             $.each($('select.resource-choose'), function () {
                 let value = $(this).val() || "";
                 if (value !== "") {
@@ -90,31 +70,25 @@ function searchSeries(id, key) {
                     });
                 }
             })
-            checkResources(checks, index);
+            if (checks.length === 0) {
+                layui.layer.close(index);
+                return;
+            }
+            $.ajax('/video/resource/check', {
+                type: 'post',
+                contentType: 'application/json',
+                data: JSON.stringify(checks),
+                'success': function (count) {
+                    layui.layer.alert("Checked: " + count);
+                    layui.layer.close(index);
+                }
+            })
         })
     })
 }
 
-/**
- * Check resources: link resources to specified identifiers.
- * @param checks
- * @param index
- */
-function checkResources(checks, index) {
-    if (checks.length === 0) {
-        layui.layer.close(index);
-        return;
-    }
-    $.ajax('/video/resource/check', {
-        type: 'post',
-        contentType: 'application/json',
-        data: JSON.stringify(checks),
-        'success': function (count) {
-            layui.layer.alert("Checked: " + count);
-            layui.layer.close(index);
-        }
-    })
-}
+const ARCHIVED_CODE = 20;
+const TO_ARCHIVE_CODE = 32;
 
 /**
  * Archive a subject
@@ -122,10 +96,16 @@ function checkResources(checks, index) {
  * @param url url to post
  */
 function archive(ele, url) {
-    let tip = ele.prev('.click-tip');
-    ele.attr('hidden', true);
-    tip.attr('hidden', false);
+    let chosen = false;
+    if (ele.data('toArchive')) {
+        if (!confirm('Are files chosen?')) {
+            return;
+        } else {
+            chosen = true;
+        }
+    }
 
+    let tip = ele.prev('.click-tip');
     let spotCount = 0;
     let timer = setInterval(function () {
         let text = 'Archiving.';
@@ -139,16 +119,31 @@ function archive(ele, url) {
             spotCount++;
         }
     }, 500);
+    ele.attr('hidden', true);
+    tip.attr('hidden', false);
 
-    $.post(url, {id: ele.data('id')}, function (status) {
-        clearInterval(timer);
-        if (status.code === 20) {
-            ele.remove();
-            tip.text(status.text);
-        } else {
-            ele.text(status.text);
-            tip.attr('hidden', true);
-            ele.attr('hidden', false);
+    $.ajax(url, {
+        type: 'POST',
+        data: {
+            id: ele.data('id'),
+            chosen: chosen
+        },
+        'success': function (status) {
+            clearInterval(timer);
+            if (status.code === ARCHIVED_CODE) {
+                ele.remove();
+                tip.text(status.text);
+            } else {
+                if (status.code === TO_ARCHIVE_CODE) {
+                    ele.data('toArchive', true);
+                }
+                ele.text(status.text);
+                tip.attr('hidden', true);
+                ele.attr('hidden', false);
+            }
+        },
+        error: function (xhr, status, msg) {
+            layui.layer.alert(msg);
         }
     });
 }

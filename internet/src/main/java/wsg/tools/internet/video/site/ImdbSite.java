@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
@@ -130,7 +129,7 @@ public final class ImdbSite extends BaseSite {
         final String runtime = "Runtime";
         if ((block = details.get(runtime)) != null) {
             List<Duration> runtimes = block.select(TAG_TIME).stream()
-                    .map(e -> Duration.parse(StringUtils.remove(e.attr(ATTR_DATETIME), SignEnum.COMMA.getC())))
+                    .map(e -> Duration.parse(StringUtils.remove(e.attr(ATTR_DATETIME), ",")))
                     .collect(Collectors.toList());
             title.setRuntimes(runtimes);
         }

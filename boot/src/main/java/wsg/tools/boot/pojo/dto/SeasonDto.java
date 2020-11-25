@@ -14,4 +14,5 @@ import lombok.Setter;
 public class SeasonDto extends SubjectDto {
 
     private Integer currentSeason;
+    private Integer episodesCount;
 }

@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import wsg.tools.boot.common.jackson.handler.ExcelDeserializationProblemHandlers;
 import wsg.tools.boot.common.jackson.serializer.ContainerSerializers;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.io.excel.ExcelFactory;
 import wsg.tools.common.io.excel.ExcelTemplate;
 import wsg.tools.common.io.excel.reader.BaseCellToSetter;
@@ -39,12 +38,14 @@ import java.util.Objects;
  */
 public abstract class AbstractController {
 
+    private static final String COLLECTION_SEPARATOR = "/";
+
     private static final ExcelFactory FACTORY = new ExcelFactory(new ObjectMapper()
             .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
             .registerModule(new SimpleModule()
                     .addSerializer(TitleSerializer.getInstance(LanguageEnum.class))
                     .addDeserializer(LanguageEnum.class, EnumDeserializers.getTitleDeserializer(LanguageEnum.class))
-                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(SignEnum.SLASH))
+                    .addSerializer(ContainerSerializers.CollectionToStringSerializer.getInstance(COLLECTION_SEPARATOR))
             ).registerModule(new JavaTimeModule())
             .addHandler(ExcelDeserializationProblemHandlers.FloatToYearDeserializationProblemHandler.INSTANCE)
     );

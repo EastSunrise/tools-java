@@ -9,7 +9,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.VideoConstants;
@@ -112,7 +111,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             String varUrls = ul.selectFirst(TAG_SCRIPT).html().strip().split("\n")[0].strip();
             String entries = RegexUtils.matchesOrElseThrow(VAR_URL_REGEX, varUrls).group("entries");
             entries = StringEscapeUtils.unescapeHtml4(entries);
-            for (String entry : entries.split(SignEnum.HASH.toString())) {
+            for (String entry : entries.split("#")) {
                 Matcher matcher = RegexUtils.matchesOrElseThrow(RESOURCE_REGEX, entry);
                 String url = matcher.group("url");
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {

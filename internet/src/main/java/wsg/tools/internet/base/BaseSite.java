@@ -34,7 +34,6 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.enums.SchemeEnum;
@@ -290,7 +289,7 @@ public abstract class BaseSite implements Closeable {
             String filepath = builder.filepath();
             String user = user();
             if (user != null) {
-                filepath += SignEnum.HASH.toString() + user;
+                filepath += "#" + user;
             }
             if (contentType != null) {
                 filepath += contentType.getSuffix();

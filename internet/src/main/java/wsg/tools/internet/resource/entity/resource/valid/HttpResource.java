@@ -47,10 +47,10 @@ public class HttpResource extends BaseValidResource {
 
     public String filename() {
         String path = this.url.getPath();
-        if (path == null || path.endsWith(SignEnum.SLASH.toString())) {
+        if (path == null || path.endsWith(SignEnum.URL_PATH_SEPARATOR)) {
             return "index.html";
         } else {
-            return path.substring(path.lastIndexOf(SignEnum.SLASH.getC()) + 1);
+            return path.substring(path.lastIndexOf(SignEnum.URL_PATH_SEPARATOR) + 1);
         }
     }
 }

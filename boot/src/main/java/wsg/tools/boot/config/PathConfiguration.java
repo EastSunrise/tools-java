@@ -10,7 +10,7 @@ import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.entity.subject.SubjectEntity;
-import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.video.enums.LanguageEnum;
 
@@ -27,7 +27,7 @@ import java.util.Objects;
 @PropertySource("classpath:config/private/video.properties")
 public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
-    private static final SignEnum NAME_SEPARATOR = SignEnum.UNDERSCORE;
+    private static final String NAME_SEPARATOR = "_";
     private static final String MOVIE_DIR = "01 Movies";
     private static final String TV_DIR = "02 TV";
 
@@ -54,6 +54,12 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         return location;
     }
 
+    public String getLocation(SeasonEntity season, int currentEpisode) {
+        AssertUtils.requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
+        String format = "E%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
+        return getLocation(season) + File.separator + String.format(format, currentEpisode);
+    }
+
     public File tmpdir(SubjectEntity entity) {
         return new File(tmpdir, entity.getId() + "_" + entity.getTitle());
     }
@@ -70,13 +76,9 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         StringBuilder builder = new StringBuilder().append(cdn).append(File.separator).append(dir).append(File.separator);
         LanguageEnum language = entity.getLanguages().get(0);
         if (language.ordinal() <= LanguageEnum.TH.ordinal()) {
-            builder.append(String.format("%02d", language.ordinal()))
-                    .append(SignEnum.SPACE)
-                    .append(language.getTitle());
+            builder.append(String.format("%02d", language.ordinal())).append(" ").append(language.getTitle());
         } else {
-            builder.append("99")
-                    .append(SignEnum.SPACE)
-                    .append("其他");
+            builder.append("99").append(" ").append("其他");
         }
         builder.append(File.separator).append(entity.getYear());
         return builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getTitle())).toString();

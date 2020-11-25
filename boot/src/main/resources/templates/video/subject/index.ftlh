@@ -23,6 +23,7 @@
                     <tr>
                         <th>No.</th>
                         <th>Title</th>
+                        <th>Durations</th>
                         <th>Resources</th>
                         <th>Video</th>
                     </tr>
@@ -35,6 +36,7 @@
                                 <a href="https://movie.douban.com/subject/${movie.dbId?c}"
                                    target="_blank">${movie.title}</a>
                             </td>
+                            <td>${movie.durations}</td>
                             <td>
                                 <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
                                    title="click to search">Search</a>
@@ -42,14 +44,14 @@
                                 <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
                                    title="click to search with a key">Input</a>
                             </td>
-                            <td>
+                            <td style="width: 200px">
                                 <#if movie.archived>
                                     Archived
                                 <#else>
-                                    <span class="click-tip" hidden="hidden"></span>
                                     <a href="javascript:void(0);" class="movie-download" data-id="${movie.id?c}"
                                        title="click to download"> Download </a>
                                     /
+                                    <span class="click-tip" hidden="hidden"></span>
                                     <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
                                        title="click to archive"> Archive </a>
                                 </#if>
@@ -69,11 +71,13 @@
                         <th>Title</th>
                         <th>Resources</th>
                         <th>Season</th>
+                        <th>Episodes</th>
+                        <th>Durations</th>
                         <th>Video</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <#list tvs as tv>
+                    <#list tvs?sort_by('archived') as tv>
                         <#assign series=tv.series>
                         <#assign seasons=tv.seasons?sort_by('currentSeason')>
                         <tr>
@@ -96,14 +100,16 @@
                                     <a href="https://movie.douban.com/subject/${season.dbId?c}/"
                                        target="_blank">${season.title}</a>
                                 </td>
-                                <td>
+                                <td>${season.episodesCount?c}</td>
+                                <td>${season.durations}</td>
+                                <td style="width: 200px">
                                     <#if season.archived>
                                         Archived
                                     <#else>
-                                        <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-download" data-id="${season.id?c}"
                                            title="click to download"> Download </a>
                                         /
+                                        <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-archive checked"
                                            data-id="${season.id?c}" title="click to archive">Archive</a>
                                     </#if>
