@@ -131,20 +131,30 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
                 return VideoStatus.TO_ARCHIVE;
             }
 
-            Map<File, File> movedFiles = new HashMap<>(season.getEpisodesCount());
+            Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
             for (File srcFile : videoFiles) {
                 Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
                 if (!matcher.matches()) {
                     return VideoStatus.TO_ARCHIVE;
                 }
-                String location = pathConfig.getLocation(season, Integer.parseInt(matcher.group("e")));
+                int currentEpisode = Integer.parseInt(matcher.group("e"));
+                if (currentEpisode < 1 || currentEpisode > season.getEpisodesCount()) {
+                    return VideoStatus.TO_ARCHIVE;
+                }
+                String location = pathConfig.getLocation(season, currentEpisode);
+                if (movedFiles.containsKey(location)) {
+                    return VideoStatus.TO_ARCHIVE;
+                }
+                movedFiles.put(location, srcFile);
+            }
+            for (Map.Entry<String, File> entry : movedFiles.entrySet()) {
+                File srcFile = entry.getValue();
+                log.info("Moving {} as {}.", srcFile, entry.getKey());
                 String suffix = Filetype.getRealType(srcFile).suffix();
-                File destFile = new File(location + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
-                movedFiles.put(srcFile, destFile);
+                File destFile = new File(entry.getKey() + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
+                FileUtils.moveFile(srcFile, destFile);
             }
-            for (Map.Entry<File, File> entry : movedFiles.entrySet()) {
-                FileUtils.moveFile(entry.getKey(), entry.getValue());
-            }
+            log.info("Deleting {}.", tempDir);
             FileUtils.deleteDirectory(tempDir);
             return VideoArchivedStatus.archived(new File(pathConfig.getLocation(season)));
         }

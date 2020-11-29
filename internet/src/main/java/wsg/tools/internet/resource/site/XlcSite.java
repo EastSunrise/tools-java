@@ -40,11 +40,11 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     private static final Pattern ITEM_HREF_REGEX =
             Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(?<path>/vod-read-id-\\d+.html)");
     private static final VideoType[] TYPES = {
-            null, VideoType.MOVIE, VideoType.TV, VideoType.ANIME, VideoType.TV, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
+            null, VideoType.MOVIE, VideoType.TV, VideoType.ANIME, VideoType.VARIETY, VideoType.FOUR_K,
+            VideoType.FHD, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
             VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.TV,
-            VideoType.TV, VideoType.TV, VideoType.TV, VideoType.TV, VideoType.MOVIE,
-            VideoType.MOVIE
+            VideoType.TV, VideoType.TV, VideoType.TV, VideoType.TV, VideoType.THREE_D,
+            VideoType.MANDARIN
     };
 
     public XlcSite() {

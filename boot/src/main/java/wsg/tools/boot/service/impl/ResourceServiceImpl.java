@@ -30,6 +30,7 @@ import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -176,5 +177,10 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             log.info("{} resources added to download.", count);
         }
         return SingleResult.of(count);
+    }
+
+    @Override
+    public List<ResourceLinkEntity> getLinks(Collection<String> itemUrls) {
+        return linkRepository.findAllByItemUrlIsIn(itemUrls);
     }
 }

@@ -65,6 +65,7 @@
                                     <#else>
                                         <select class="resource-choose" data-url="${item.url}" style="width: 100px">
                                             <option value="">--Choose--</option>
+                                            <option value="${series.imdbId}">mixed</option>
                                             <#list seasons as season>
                                                 <option value="${season.dbId?c}">${season.currentSeason}</option>
                                             </#list>

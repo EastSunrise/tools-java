@@ -2,12 +2,14 @@ package wsg.tools.boot.service.intf;
 
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
+import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -53,4 +55,12 @@ public interface ResourceService {
      * @return -1 if none resource found, otherwise, count of links added to download.
      */
     SingleResult<Long> download(File target, @Nullable Long dbId, @Nullable String imdbId);
+
+    /**
+     * Obtains links of the given items.
+     *
+     * @param itemUrls urls of items
+     * @return map of item-links
+     */
+    List<ResourceLinkEntity> getLinks(Collection<String> itemUrls);
 }

@@ -6,8 +6,8 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
 import javax.annotation.Nonnull;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class MagnetResource extends BaseValidResource {
 
     public static final String SCHEME = "magnet";
-    private static final String XT = "urn:(btih|tree:tiger|sha1|ed2k|aich|kzhash|md5):([0-9A-z]{32}|[0-9A-z]{40})";
+    private static final String XT = "urn:(btih|tree:tiger|sha1|ed2k|aich|kzhash|md5):([0-9A-z]{40}|[0-9A-z]{32})";
     private static final String VAR = "[^&]*(&(?!xl|tr|dn|xt)[^&]*)*";
     private static final String XL = "\\d+";
     private static final Pattern XT_REGEX = Pattern.compile("(\\?1?|&)xt(\\.\\d+)?=(?<xt>" + XT + ")");
@@ -35,15 +35,15 @@ public class MagnetResource extends BaseValidResource {
                     "(&+(?!xl|tr|dn|xt)[^&]*)?"
     );
 
-    private final List<String> topics;
+    private final Set<String> topics;
     /**
      * may empty
      */
-    private final List<String> names;
-    private final List<String> trackers;
-    private final List<Long> sizes;
+    private final Set<String> names;
+    private final Set<String> trackers;
+    private final Set<Long> sizes;
 
-    private MagnetResource(String title, List<String> topics, List<String> names, List<String> trackers, List<Long> sizes) {
+    private MagnetResource(String title, Set<String> topics, Set<String> names, Set<String> trackers, Set<Long> sizes) {
         super(title);
         AssertUtils.test(topics, CollectionUtils::isNotEmpty, "Magnet resource must contain at least one exact topic.");
         this.topics = topics;
@@ -59,12 +59,12 @@ public class MagnetResource extends BaseValidResource {
             throw new IllegalArgumentException(String.format("Not a valid %s url.", SCHEME));
         }
         Matcher matcher = XT_REGEX.matcher(url);
-        List<String> topics = new LinkedList<>();
+        Set<String> topics = new HashSet<>();
         while (matcher.find()) {
             topics.add(matcher.group("xt"));
         }
         matcher = DN_REGEX.matcher(url);
-        List<String> names = new LinkedList<>();
+        Set<String> names = new HashSet<>();
         while (matcher.find()) {
             String dn = matcher.group("dn");
             if (dn != null) {
@@ -72,7 +72,7 @@ public class MagnetResource extends BaseValidResource {
             }
         }
         matcher = TR_REGEX.matcher(url);
-        List<String> trackers = new LinkedList<>();
+        Set<String> trackers = new HashSet<>();
         while (matcher.find()) {
             String tr = matcher.group("tr");
             if (tr != null) {
@@ -80,7 +80,7 @@ public class MagnetResource extends BaseValidResource {
             }
         }
         matcher = XL_REGEX.matcher(url);
-        List<Long> sizes = new LinkedList<>();
+        Set<Long> sizes = new HashSet<>();
         while (matcher.find()) {
             sizes.add(Long.valueOf(matcher.group("xl")));
         }

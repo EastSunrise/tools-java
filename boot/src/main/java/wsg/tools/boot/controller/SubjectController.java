@@ -75,6 +75,7 @@ public class SubjectController extends AbstractController {
             SubjectDto subjectDto = new SubjectDto();
             subjectDto.setId(movie.getId());
             subjectDto.setTitle(movie.getTitle());
+            subjectDto.setYear(movie.getYear().getValue());
             subjectDto.setDbId(movie.getDbId());
             subjectDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));
@@ -90,6 +91,7 @@ public class SubjectController extends AbstractController {
                 SeasonDto seasonDto = new SeasonDto();
                 seasonDto.setId(season.getId());
                 seasonDto.setTitle(season.getTitle());
+                seasonDto.setYear(season.getYear().getValue());
                 seasonDto.setDbId(season.getDbId());
                 seasonDto.setDurations(season.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                         .collect(Collectors.joining("/")));
@@ -99,7 +101,7 @@ public class SubjectController extends AbstractController {
                 return seasonDto;
             }).collect(Collectors.toList());
             seriesDto.setSeasons(seasons);
-            seriesDto.setArchived(seasons.stream().allMatch(SeasonDto::isArchived));
+            seriesDto.setUnarchived((int) seasons.stream().filter(season -> !season.isArchived()).count());
             return seriesDto;
         }).collect(Collectors.toList());
         model.addAttribute("tvs", tvs);

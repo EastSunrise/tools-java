@@ -16,6 +16,7 @@ public class SubjectDto extends BaseDto implements DoubanIdentifier {
 
     private Long id;
     private String title;
+    private Integer year;
     private Long dbId;
     private String durations;
     private boolean archived;

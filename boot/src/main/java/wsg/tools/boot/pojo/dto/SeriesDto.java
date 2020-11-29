@@ -14,9 +14,9 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class SeriesDto {
+public class SeriesDto extends BaseDto {
 
     private SeriesEntity series;
     private List<SeasonDto> seasons;
-    private boolean archived;
+    private int unarchived;
 }

@@ -64,10 +64,17 @@ function search(url, id, key) {
             $.each($('select.resource-choose'), function () {
                 let value = $(this).val() || "";
                 if (value !== "") {
-                    checks.push({
-                        url: $(this).data('url'),
-                        dbId: value
-                    });
+                    if (value.startsWith("tt")) {
+                        checks.push({
+                            url: $(this).data('url'),
+                            imdbId: value
+                        })
+                    } else {
+                        checks.push({
+                            url: $(this).data('url'),
+                            dbId: value
+                        });
+                    }
                 }
             })
             if (checks.length === 0) {

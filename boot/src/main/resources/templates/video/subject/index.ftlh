@@ -23,6 +23,7 @@
                     <tr>
                         <th>No.</th>
                         <th>Title</th>
+                        <th>Year</th>
                         <th>Durations</th>
                         <th>Resources</th>
                         <th>Video</th>
@@ -36,6 +37,7 @@
                                 <a href="https://movie.douban.com/subject/${movie.dbId?c}"
                                    target="_blank">${movie.title}</a>
                             </td>
+                            <td>${movie.year?c}</td>
                             <td>${movie.durations}</td>
                             <td>
                                 <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
@@ -71,13 +73,14 @@
                         <th>Title</th>
                         <th>Resources</th>
                         <th>Season</th>
+                        <th>Year</th>
                         <th>Episodes</th>
                         <th>Durations</th>
                         <th>Video</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <#list tvs?sort_by('archived') as tv>
+                    <#list tvs?sort_by('unarchived')?reverse as tv>
                         <#assign series=tv.series>
                         <#assign seasons=tv.seasons?sort_by('currentSeason')>
                         <tr>
@@ -100,12 +103,16 @@
                                     <a href="https://movie.douban.com/subject/${season.dbId?c}/"
                                        target="_blank">${season.title}</a>
                                 </td>
+                                <td>${season.year?c}</td>
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
-                                <td style="width: 200px">
+                                <td style="width: 300px">
                                     <#if season.archived>
                                         Archived
                                     <#else>
+                                        <a href="/video/resource/index?dbId=${season.dbId?c}" target="_blank"
+                                           title="show all links">Links</a>
+                                        /
                                         <a href="javascript:void(0);" class="season-download" data-id="${season.id?c}"
                                            title="click to download"> Download </a>
                                         /
