@@ -1,9 +1,8 @@
 package wsg.tools.internet.resource.download;
 
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.io.FileProtocolHandler;
 import wsg.tools.common.io.Filetype;
-import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.lang.SystemUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.entity.resource.valid.PanResource;
@@ -67,12 +66,6 @@ public class Thunder implements Downloader<BaseValidResource> {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
-        Process process = SystemUtils.openUrl(encodeThunder(resource.getUrl()));
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        return process.exitValue() == 0;
+        return FileProtocolHandler.open(encodeThunder(resource.getUrl())) == 0;
     }
 }

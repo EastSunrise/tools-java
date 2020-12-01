@@ -1,8 +1,7 @@
 package wsg.tools.internet.resource.download;
 
 import org.apache.commons.io.FilenameUtils;
-import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.lang.SystemUtils;
+import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.internet.resource.entity.resource.valid.HttpResource;
 import wsg.tools.internet.resource.entity.resource.valid.PanResource;
 import wsg.tools.internet.resource.entity.resource.valid.YunResource;
@@ -19,9 +18,8 @@ import java.util.List;
  * @see <a href="http://www.internetdownloadmanager.com/">IDM</a>
  * @since 2020/11/5
  */
-public class InternetDownloadManager implements Downloader<HttpResource> {
+public class InternetDownloadManager extends CommandExecutor implements Downloader<HttpResource> {
 
-    private final String idman;
     private boolean quitAfter;
     private boolean hangupAfter;
     private boolean silent;
@@ -29,24 +27,14 @@ public class InternetDownloadManager implements Downloader<HttpResource> {
     private boolean ignored;
 
     public InternetDownloadManager(String idman) {
-        try {
-            SystemUtils.execute(idman);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-        this.idman = idman;
+        super(idman);
     }
 
     /**
      * Start queue in scheduler.
      */
     public void startQueue() throws IOException {
-        Process process = SystemUtils.execute(idman, "/s");
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        execute("/s");
     }
 
     /**
@@ -101,13 +89,7 @@ public class InternetDownloadManager implements Downloader<HttpResource> {
         if (manual) {
             args.add("/a");
         }
-        Process process = SystemUtils.execute(idman, args.toArray(new String[0]));
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        return process.exitValue() == 0;
+        return execute(args.toArray(new String[0])) == 0;
     }
 
     /**
