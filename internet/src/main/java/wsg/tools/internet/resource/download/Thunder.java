@@ -1,8 +1,8 @@
 package wsg.tools.internet.resource.download;
 
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.io.FileProtocolHandler;
 import wsg.tools.common.io.Filetype;
+import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.entity.resource.valid.PanResource;
@@ -11,6 +11,7 @@ import wsg.tools.internet.resource.entity.resource.valid.YunResource;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.regex.Pattern;
 
@@ -38,13 +39,17 @@ public class Thunder implements Downloader<BaseValidResource> {
         return String.format("%s://%s", SCHEME, Base64.getEncoder().encodeToString(bytes));
     }
 
+    public static String decodeThunder(@Nonnull String url) {
+        return decodeThunder(url, Constants.UTF_8);
+    }
+
     /**
      * Decode a thunder to a common url.
      */
-    public static String decodeThunder(@Nonnull String url) {
+    public static String decodeThunder(@Nonnull String url, Charset charset) {
         while (url.startsWith(SCHEME)) {
             url = url.substring((SCHEME + "://").length());
-            url = new String(Base64.getDecoder().decode(url), Constants.UTF_8);
+            url = new String(Base64.getDecoder().decode(url), charset);
             url = RegexUtils.matchesOrElseThrow(DECODED_REGEX, url).group("url");
         }
         return url.strip();
@@ -66,6 +71,6 @@ public class Thunder implements Downloader<BaseValidResource> {
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
-        return FileProtocolHandler.open(encodeThunder(resource.getUrl())) == 0;
+        return Rundll32.open(encodeThunder(resource.getUrl())) == 0;
     }
 }

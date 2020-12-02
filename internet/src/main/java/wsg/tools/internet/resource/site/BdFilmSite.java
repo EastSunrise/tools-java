@@ -3,7 +3,6 @@ package wsg.tools.internet.resource.site;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,7 +16,6 @@ import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -49,15 +47,15 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     }
 
     @Override
-    protected List<URI> getAllUris() {
-        return getUrisById(359, 31256, id -> createUri0("/gy/%d.htm", id), 30508);
+    protected List<String> getAllPaths() {
+        return getPathsById(359, 31256, id -> String.format("/gy/%d.htm", id), 30508);
     }
 
     /**
      * @param keyword title, id of Douban, or id of IMDb
      */
     @Override
-    protected final Set<URI> searchItems(@Nonnull String keyword) {
+    protected final Set<String> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
@@ -65,21 +63,21 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
             throw AssertUtils.runtimeException(e);
         }
         Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<URI> uris = new HashSet<>();
+        Set<String> paths = new HashSet<>();
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
             Matcher matcher = ITEM_URL_REGEX.matcher(a.attr(ATTR_HREF));
             if (!matcher.matches()) {
                 continue;
             }
-            uris.add(createUri0(matcher.group("path")));
+            paths.add(matcher.group("path"));
         }
-        return uris;
+        return paths;
     }
 
     @Override
-    protected final BdFilmItem getItem(@Nonnull URI uri) throws NotFoundException {
-        Document document = getDocument(new URIBuilder(uri), true);
+    protected final BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
+        Document document = getDocument(builder0(path), true);
 
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
@@ -108,7 +106,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                 .replace("<p>", "").replace("</p>", "");
         for (String url : urls.split("#{3,4}\r\n|#{3,4}")) {
             if (StringUtils.isNotBlank(url)) {
-                Resource resource = ResourceFactory.create("bd url", url, () -> new UnknownResource(url));
+                Resource resource = ResourceFactory.create("bd url", url);
                 resources.add(resource);
             }
         }
@@ -120,10 +118,10 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                 Matcher m = DISK_RESOURCE_REGEX.matcher(diskUrl);
                 if (m.matches()) {
                     String url = "https://" + m.group("host") + m.group("path");
-                    resources.add(ResourceFactory.create(m.group("pwd"), url, () -> new UnknownResource(diskUrl)));
+                    resources.add(ResourceFactory.create(m.group("pwd"), url));
                     continue;
                 }
-                resources.add(new UnknownResource(diskUrl));
+                resources.add(new UnknownResource(null, diskUrl));
             }
         }
         item.setResources(resources);

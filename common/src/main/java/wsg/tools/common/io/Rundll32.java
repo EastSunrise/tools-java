@@ -11,12 +11,12 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/12/2
  */
-public class FileProtocolHandler extends CommandExecutor {
+public class Rundll32 extends CommandExecutor {
 
-    public static final FileProtocolHandler INSTANCE = new FileProtocolHandler();
+    public static final Rundll32 INSTANCE = new Rundll32();
 
-    private FileProtocolHandler() {
-        super("rundll32 url.dll FileProtocolHandler");
+    private Rundll32() {
+        super("rundll32");
     }
 
     /**
@@ -38,6 +38,6 @@ public class FileProtocolHandler extends CommandExecutor {
      * @return exit value
      */
     public static int open(String path) throws IOException {
-        return INSTANCE.execute(path);
+        return INSTANCE.execute("url.dll", "FileProtocolHandler", path);
     }
 }

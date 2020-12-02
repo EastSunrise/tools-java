@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
@@ -21,7 +23,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -42,8 +43,6 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -84,7 +83,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @Slf4j
 @SuppressWarnings("UnstableApiUsage")
-public abstract class BaseSite implements Closeable {
+public abstract class BaseSite implements Closeable, ResponseHandler<String> {
 
     /**
      * Common HTML tags and attributes.
@@ -113,7 +112,6 @@ public abstract class BaseSite implements Closeable {
     private final String name;
     private final SchemeEnum scheme;
     private final String host;
-    private final ResponseHandler<String> responseHandler;
     private final HttpClientContext context;
     private final Map<String, RateLimiter> limiters;
     private final CloseableHttpClient client;
@@ -140,12 +138,6 @@ public abstract class BaseSite implements Closeable {
                                 "(KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36")))
                 .setConnectionManager(new PoolingHttpClientConnectionManager())
                 .build();
-        this.responseHandler = new BasicResponseHandler() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                return EntityUtils.toString(entity, Constants.UTF_8);
-            }
-        };
         this.context = HttpClientContext.create();
         this.context.setRequestConfig(RequestConfig.custom()
                 .setConnectTimeout(TIME_OUT).setSocketTimeout(TIME_OUT).build());
@@ -332,7 +324,7 @@ public abstract class BaseSite implements Closeable {
         log.info("{} from {}", builder.getMethod(), builder.displayUrl());
         limiters.get(builder.getMethod()).acquire();
         try {
-            return client.execute(builder.build(), responseHandler, context);
+            return client.execute(builder.build(), this, context);
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 throw new NotFoundException(e.getReasonPhrase());
@@ -353,6 +345,25 @@ public abstract class BaseSite implements Closeable {
      * @param context the context for the request
      */
     protected void handleRequest(RequestBuilder builder, HttpContext context) { }
+
+    @Override
+    public String handleResponse(HttpResponse response) throws IOException {
+        final StatusLine statusLine = response.getStatusLine();
+        final HttpEntity entity = response.getEntity();
+        if (statusLine.getStatusCode() >= 300) {
+            EntityUtils.consume(entity);
+            throw new HttpResponseException(statusLine.getStatusCode(),
+                    statusLine.getReasonPhrase());
+        }
+        return entity == null ? null : handleEntity(entity);
+    }
+
+    /**
+     * Handle the response entity and transform it into string.
+     */
+    protected String handleEntity(HttpEntity entity) throws IOException {
+        return EntityUtils.toString(entity, Constants.UTF_8);
+    }
 
     /**
      * Handle content before returning as an object or a document.
@@ -409,24 +420,6 @@ public abstract class BaseSite implements Closeable {
             }
         }
         return null;
-    }
-
-    protected final URI createUri0(String path, Object... pathArgs) {
-        return createUri(null, path, pathArgs);
-    }
-
-    /**
-     * Create an unmodified request uri, including scheme, host, and path.
-     */
-    protected final URI createUri(String subHost, String path, Object... pathArgs) {
-        if (StringUtils.isNotBlank(path)) {
-            path = String.format(path, pathArgs);
-        }
-        try {
-            return new URI(scheme.toString(), StringUtils.isBlank(subHost) ? host : subHost + "." + host, path, null);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
     }
 
     protected final URIBuilder builder0(String path, Object... pathArgs) {

@@ -30,7 +30,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <#list movies?sort_by('archived') as movie>
+                    <#list movies as movie>
                         <tr>
                             <td>${movie_index+1}</td>
                             <td>
@@ -45,17 +45,17 @@
                                 /
                                 <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
                                    title="click to search with a key">Input</a>
+                                /
+                                <a href="javascript:void(0);" class="movie-download" data-id="${movie.id?c}"
+                                   title="click to download"> Download </a>
                             </td>
                             <td style="width: 200px">
                                 <#if movie.archived>
                                     Archived
                                 <#else>
-                                    <a href="javascript:void(0);" class="movie-download" data-id="${movie.id?c}"
-                                       title="click to download"> Download </a>
-                                    /
                                     <span class="click-tip" hidden="hidden"></span>
                                     <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
-                                       title="click to archive"> Archive </a>
+                                       title="click to archive"> ${movie.status.text} </a>
                                 </#if>
                             </td>
                         </tr>
@@ -95,6 +95,9 @@
                                 /
                                 <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}"
                                    title="click to search with a key">Input</a>
+                                /
+                                <a href="javascript:void(0);" class="series-download" data-id="${series.id?c}"
+                                   title="click to download"> Download </a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -118,7 +121,7 @@
                                         /
                                         <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-archive checked"
-                                           data-id="${season.id?c}" title="click to archive">Archive</a>
+                                           data-id="${season.id?c}" title="click to archive"> ${season.status.text} </a>
                                     </#if>
                                 </td>
                             </tr>

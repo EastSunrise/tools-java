@@ -3,14 +3,16 @@ package wsg.tools.internet.resource.entity.resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResource;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 import wsg.tools.internet.resource.entity.resource.valid.Ed2kResource;
 import wsg.tools.internet.resource.entity.resource.valid.HttpResource;
 import wsg.tools.internet.resource.entity.resource.valid.MagnetResource;
 
-import java.util.function.Supplier;
+import java.nio.charset.Charset;
 
 /**
  * Factory of resources.
@@ -21,14 +23,16 @@ import java.util.function.Supplier;
 @Slf4j
 public final class ResourceFactory {
 
+    public static Resource create(String title, @NonNull String url) {
+        return create(title, url, Constants.UTF_8);
+    }
+
     /**
      * Create a resource based on the given url and title.
-     *
-     * @param supplier if failed to create a resource with the given arguments
      */
-    public static Resource create(String title, @NonNull String url, Supplier<Resource> supplier) {
+    public static Resource create(String title, @NonNull String url, Charset charset) {
         try {
-            url = Thunder.decodeThunder(url.strip());
+            url = Thunder.decodeThunder(url.strip(), charset);
         } catch (IllegalArgumentException e) {
             return new InvalidResource(title, url, e.getMessage());
         }
@@ -43,9 +47,9 @@ public final class ResourceFactory {
             if (StringUtils.startsWithAny(url, HttpResource.PERMIT_SCHEMES)) {
                 return HttpResource.of(title, url);
             }
+            return new UnknownResource(title, url);
         } catch (IllegalArgumentException e) {
             return new InvalidResource(title, url, e.getMessage());
         }
-        return supplier.get();
     }
 }

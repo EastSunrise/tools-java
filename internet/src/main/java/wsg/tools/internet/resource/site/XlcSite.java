@@ -16,10 +16,8 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
-import java.net.URI;
 import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -52,12 +50,12 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected List<URI> getAllUris() {
-        return getUrisById(1, 43238, id -> createUri0("/vod-read-id-%d.html", id));
+    protected List<String> getAllPaths() {
+        return getPathsById(1, 43238, id -> String.format("/vod-read-id-%d.html", id));
     }
 
     @Override
-    protected final Set<URI> searchItems(@Nonnull String keyword) {
+    protected final Set<String> searchItems(@Nonnull String keyword) {
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
         Document document;
         try {
@@ -65,7 +63,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Set<URI> uris = new HashSet<>();
+        Set<String> paths = new HashSet<>();
         String movList = "div.movList4";
         for (Element div : document.select(movList)) {
             Element h3 = div.selectFirst(TAG_H3);
@@ -74,15 +72,16 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             if (!matcher.matches()) {
                 continue;
             }
-            uris.add(createUri0(matcher.group("path")));
+            paths.add(matcher.group("path"));
         }
-        return uris;
+        return paths;
     }
 
     @Override
-    protected final SimpleItem getItem(@Nonnull URI uri) throws NotFoundException {
-        Document document = getDocument(new URIBuilder(uri), true);
-        SimpleItem item = new SimpleItem(uri.toString());
+    protected final SimpleItem getItem(@Nonnull String path) throws NotFoundException {
+        URIBuilder builder = builder0(path);
+        Document document = getDocument(builder, true);
+        SimpleItem item = new SimpleItem(builder.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
 
         Elements as = document.selectFirst("div.pleft").selectFirst(TAG_H3).select(TAG_A);
@@ -104,7 +103,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
-            resources.add(ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href)));
+            resources.add(ResourceFactory.create(a.text().strip(), href));
         }
         item.setResources(resources);
 

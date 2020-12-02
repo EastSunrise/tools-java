@@ -22,4 +22,12 @@ public class BiResult<L, R> extends BaseResult {
     public static <L, R> BiResult<L, R> of(L left, R right) {
         return new BiResult<>(left, right);
     }
+
+    public boolean hasLeft() {
+        return left != null;
+    }
+
+    public boolean hasRight() {
+        return right != null;
+    }
 }

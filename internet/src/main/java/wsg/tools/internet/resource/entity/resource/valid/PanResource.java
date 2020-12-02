@@ -20,7 +20,7 @@ public class PanResource extends HttpResource {
     );
     private static final Pattern URI_REGEX_SHARE = Pattern.compile(
             "https?://pan\\.baidu\\.com(?<path>/share/" +
-                    "(init\\?surl=(?<surl>[0-9A-z]{5,7}|[\\w-]{22})|(link|init)\\?shareid=\\d+&uk=\\d+(&fid=\\d+)?))");
+                    "(init\\?surl=(?<surl>[0-9A-z]{4,7}|[\\w-]{22})|(link|init)\\?shareid=\\d+&uk=\\d+(&fid=\\d+)?))");
 
     private PanResource(String title, URL url) {
         super(title, url);

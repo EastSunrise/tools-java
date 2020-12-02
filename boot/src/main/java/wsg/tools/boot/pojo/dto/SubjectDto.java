@@ -2,6 +2,8 @@ package wsg.tools.boot.pojo.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.boot.common.enums.VideoArchivedStatus;
+import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 
 /**
@@ -19,5 +21,9 @@ public class SubjectDto extends BaseDto implements DoubanIdentifier {
     private Integer year;
     private Long dbId;
     private String durations;
-    private boolean archived;
+    private VideoStatus status;
+
+    public boolean isArchived() {
+        return status instanceof VideoArchivedStatus;
+    }
 }

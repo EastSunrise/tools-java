@@ -43,9 +43,9 @@
                         <ul>
                             <#list links[type]?sort_by("url") as link>
                                 <li>
-                                    ${link_index+1}. <a href="${link.url}" target="_blank">${link.title}</a>
+                                    ${link_index+1}. <a href="${link.url}">${link.title}</a>
                                     /
-                                    <a href="${link.thunder}" target="_blank">Thunder</a>
+                                    <a href="${link.thunder}">Thunder</a>
                                 </li>
                             </#list>
                         </ul>

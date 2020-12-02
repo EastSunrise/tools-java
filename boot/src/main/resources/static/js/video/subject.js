@@ -21,6 +21,9 @@ $(function () {
     $('.series-search').on('click', function () {
         search("/video/series/resources", $(this).data('id'));
     });
+    $('.series-download').on('click', function () {
+        download($(this), '/video/series/download')
+    })
     $('.series-input').on('click', function () {
         let id = $(this).data('id');
         layui.layer.prompt(function (value, index) {

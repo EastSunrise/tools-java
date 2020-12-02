@@ -11,11 +11,11 @@ import wsg.tools.common.util.function.TextSupplier;
  */
 public class VideoStatus implements TextSupplier, CodeSupplier<Integer> {
 
-    public static final VideoStatus NONE_FOUND = new VideoStatus(40, "None found");
+    public static final VideoStatus SERVER_ERROR = new VideoStatus(50, "I/O error");
     public static final VideoStatus TO_DOWNLOAD = new VideoStatus(30, "To download");
     public static final VideoStatus DOWNLOADING = new VideoStatus(31, "Downloading");
-    public static final VideoStatus NONE_DOWNLOADED = new VideoStatus(41, "None downloaded");
-    public static final VideoStatus TO_ARCHIVE = new VideoStatus(32, "To archive");
+    public static final VideoStatus LACKING = new VideoStatus(41, "Lacking");
+    public static final VideoStatus TO_CHOOSE = new VideoStatus(32, "To choose");
 
     private final int code;
     private final String text;

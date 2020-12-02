@@ -8,7 +8,6 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 
 import javax.annotation.Nonnull;
-import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -44,9 +43,9 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
      * @return set of items
      */
     public final Set<I> findAll() {
-        return getAllUris().stream().map(uri -> {
+        return getAllPaths().stream().map(path -> {
             try {
-                return getItem(uri);
+                return getItem(path);
             } catch (NotFoundException e) {
                 return null;
             }
@@ -60,9 +59,9 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
      */
     public final Set<I> search(String keyword) {
         Set<I> items = new HashSet<>();
-        for (URI uri : searchItems(keyword)) {
+        for (String path : searchItems(keyword)) {
             try {
-                items.add(getItem(uri));
+                items.add(getItem(path));
             } catch (NotFoundException ignored) {
             }
         }
@@ -70,33 +69,33 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
     }
 
     /**
-     * Obtains uris of all available items
+     * Obtains paths of all available items
      *
-     * @return set of uris
+     * @return set of paths
      */
-    protected abstract List<URI> getAllUris();
+    protected abstract List<String> getAllPaths();
 
     /**
      * Search items for the given keyword.
      *
      * @param keyword keyword to search
-     * @return set of uris of searched items
+     * @return set of paths of searched items
      */
-    protected abstract Set<URI> searchItems(@Nonnull String keyword);
+    protected abstract Set<String> searchItems(@Nonnull String keyword);
 
     /**
-     * Obtains the item of the given uri.
+     * Obtains the item of the given path.
      *
-     * @param uri uri of target item
+     * @param path path to target item
      * @return the item
      * @throws NotFoundException if not found
      */
-    protected abstract I getItem(@Nonnull URI uri) throws NotFoundException;
+    protected abstract I getItem(@Nonnull String path) throws NotFoundException;
 
     /**
-     * Create uris based on ids.
+     * Create paths based on ids.
      */
-    protected final List<URI> getUrisById(int startInclusive, int endExclusive, IntFunction<URI> creator, int... excepts) {
+    protected final List<String> getPathsById(int startInclusive, int endExclusive, IntFunction<String> creator, int... excepts) {
         if (ArrayUtils.isEmpty(excepts)) {
             return IntStream.range(startInclusive, endExclusive).mapToObj(creator).collect(Collectors.toList());
         }

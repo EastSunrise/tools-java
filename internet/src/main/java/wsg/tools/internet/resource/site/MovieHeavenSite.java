@@ -18,10 +18,8 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
-import java.net.URI;
 import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -57,12 +55,12 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected List<URI> getAllUris() {
-        return getUrisById(1, 73911, id -> createUri0("/vod-detail-id-%d.html", id));
+    protected List<String> getAllPaths() {
+        return getPathsById(1, 73911, id -> String.format("/vod-detail-id-%d.html", id));
     }
 
     @Override
-    protected Set<URI> searchItems(@Nonnull String keyword) {
+    protected Set<String> searchItems(@Nonnull String keyword) {
         Document document;
         try {
             document = getDocument(builder0("/index.php")
@@ -73,20 +71,19 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             throw AssertUtils.runtimeException(e);
         }
         Element ul = document.selectFirst("ul.img-list");
-        return ul.select(TAG_LI).stream()
-                .map(li -> createUri0(li.selectFirst(TAG_A).attr(ATTR_HREF)))
-                .collect(Collectors.toSet());
+        return ul.select(TAG_LI).stream().map(li -> li.selectFirst(TAG_A).attr(ATTR_HREF)).collect(Collectors.toSet());
     }
 
     @Override
-    protected SimpleItem getItem(@Nonnull URI uri) throws NotFoundException {
-        Document document = getDocument(new URIBuilder(uri), true);
+    protected SimpleItem getItem(@Nonnull String path) throws NotFoundException {
+        URIBuilder builder = builder0(path);
+        Document document = getDocument(builder, true);
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }
 
-        SimpleItem item = new SimpleItem(uri.toString());
+        SimpleItem item = new SimpleItem(builder.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
 
         Map<String, Node> infos = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
@@ -117,7 +114,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {
                     continue;
                 }
-                resources.add(ResourceFactory.create(matcher.group("title"), url, () -> new UnknownResource(entry)));
+                resources.add(ResourceFactory.create(matcher.group("title"), url));
             }
         }
         item.setResources(resources);

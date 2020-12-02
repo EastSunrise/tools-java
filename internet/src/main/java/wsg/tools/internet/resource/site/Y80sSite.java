@@ -15,10 +15,8 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.Y80sItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
 
 import javax.annotation.Nonnull;
-import java.net.URI;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,12 +56,12 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     }
 
     @Override
-    protected List<URI> getAllUris() {
-        return getUrisById(1, 43708, id -> createUri0("/movie/%d", id), 6800, 10705, 21147, 24926);
+    protected List<String> getAllPaths() {
+        return getPathsById(1, 43708, id -> String.format("/movie/%d", id), 6800, 10705, 21147, 24926);
     }
 
     @Override
-    protected final Set<URI> searchItems(@Nonnull String keyword) {
+    protected final Set<String> searchItems(@Nonnull String keyword) {
         AssertUtils.requireNotBlank(keyword);
         List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
         Elements as;
@@ -72,22 +70,19 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        return as.stream()
-                .map(a -> RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("path"))
-                .map(this::createUri0)
-                .collect(Collectors.toSet());
+        return as.stream().map(a -> RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("path")).collect(Collectors.toSet());
     }
 
     @Override
-    protected final Y80sItem getItem(@Nonnull URI uri) throws NotFoundException {
-        Document document = getDocument(new URIBuilder(uri), true);
+    protected final Y80sItem getItem(@Nonnull String path) throws NotFoundException {
+        URIBuilder builder = builder0(path);
+        Document document = getDocument(builder, true);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }
-        Y80sItem item = new Y80sItem(uri.toString());
+        Y80sItem item = new Y80sItem(builder.toString());
 
-        Element path = document.selectFirst("#path");
-        Elements lis = path.select(TAG_LI);
+        Elements lis = document.selectFirst("#path").select(TAG_LI);
         Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, lis.get(1).selectFirst(TAG_A).attr(ATTR_HREF));
         item.setType(Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("type"))));
         item.setTitle(lis.last().text().strip());
@@ -118,7 +113,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         Elements dls = main.select("#dl-tab-panes").select("a.btn_dl");
         for (Element a : dls) {
             String href = a.attr(ATTR_HREF);
-            resources.add(ResourceFactory.create(a.text().strip(), href, () -> new UnknownResource(href)));
+            resources.add(ResourceFactory.create(a.text().strip(), href));
         }
         item.setResources(resources);
 

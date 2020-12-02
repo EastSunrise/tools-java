@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
@@ -79,9 +80,13 @@ public class SubjectController extends AbstractController {
             subjectDto.setDbId(movie.getDbId());
             subjectDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));
-            subjectDto.setArchived(videoManager.getFile(movie).isPresent());
+            try {
+                subjectDto.setStatus(videoManager.archive(movie, false));
+            } catch (IOException e) {
+                subjectDto.setStatus(VideoStatus.SERVER_ERROR);
+            }
             return subjectDto;
-        }).collect(Collectors.toList());
+        }).sorted((o1, o2) -> o2.getStatus().getCode() - o1.getStatus().getCode()).collect(Collectors.toList());
         model.addAttribute("movies", subjects);
         Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
         List<SeriesDto> tvs = map.entrySet().stream().map(entry -> {
@@ -97,7 +102,11 @@ public class SubjectController extends AbstractController {
                         .collect(Collectors.joining("/")));
                 seasonDto.setCurrentSeason(season.getCurrentSeason());
                 seasonDto.setEpisodesCount(season.getEpisodesCount());
-                seasonDto.setArchived(videoManager.getFile(season).isPresent());
+                try {
+                    seasonDto.setStatus(videoManager.archive(season, false));
+                } catch (IOException e) {
+                    seasonDto.setStatus(VideoStatus.SERVER_ERROR);
+                }
                 return seasonDto;
             }).collect(Collectors.toList());
             seriesDto.setSeasons(seasons);
@@ -166,6 +175,18 @@ public class SubjectController extends AbstractController {
         seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
         model.addAttribute("items", items);
         return "video/series/resources";
+    }
+
+    @PostMapping(path = "/series/download")
+    @ResponseBody
+    public ResponseEntity<Long> downloadSeries(Long id) {
+        BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
+        if (!result.hasLeft()) {
+            return ResponseEntity.notFound().build();
+        }
+        SeriesEntity entity = result.getLeft();
+        SingleResult<Long> download = resourceService.download(pathConfig.tmpdir(entity), null, entity.getImdbId());
+        return ResponseEntity.ok(download.getRecord());
     }
 
     @PostMapping(path = "/season/archive")

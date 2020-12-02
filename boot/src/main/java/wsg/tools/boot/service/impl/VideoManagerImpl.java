@@ -11,20 +11,21 @@ import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.boot.pojo.entity.subject.SubjectEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
-import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.io.Filetype;
+import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
 import wsg.tools.internet.resource.download.Thunder;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,11 +41,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     public static final Pattern EPISODE_FILE_REGEX = Pattern.compile("[^\\d]*(?<e>\\d+)[^\\d]*");
 
-    private final ResourceService resourceService;
     private final PathConfiguration pathConfig;
 
-    public VideoManagerImpl(ResourceService resourceService, PathConfiguration pathConfig) {
-        this.resourceService = resourceService;
+    public VideoManagerImpl(PathConfiguration pathConfig) {
         this.pathConfig = pathConfig;
     }
 
@@ -82,68 +81,32 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public final VideoStatus archive(MovieEntity movie, boolean chosen) throws IOException {
-        Optional<File> optional = getFile(movie);
-        if (optional.isPresent()) {
-            return VideoArchivedStatus.archived(optional.get());
-        }
-
-        File tempDir = pathConfig.tmpdir(movie);
-        if (tempDir.isDirectory()) {
-            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
-                return VideoStatus.DOWNLOADING;
-            }
-            Collection<File> videoFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
-            if (videoFiles.isEmpty()) {
-                return VideoStatus.NONE_DOWNLOADED;
-            }
-            if (!chosen || videoFiles.size() > 1) {
-                return VideoStatus.TO_ARCHIVE;
-            }
-
+        return archive(movie, this::getFile, 1, chosen, (videoFiles, tempDir) -> {
             File srcFile = videoFiles.iterator().next();
             String suffix = Filetype.getRealType(srcFile).suffix();
             File destFile = new File(pathConfig.getLocation(movie) + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
             FileUtils.moveFile(srcFile, destFile);
             FileUtils.deleteDirectory(tempDir);
             return VideoArchivedStatus.archived(destFile);
-        }
-
-        return download(tempDir, movie.getDbId(), movie.getImdbId());
+        });
     }
 
     @Override
     public VideoStatus archive(SeasonEntity season, boolean chosen) throws IOException {
-        Optional<File> optional = getFile(season);
-        if (optional.isPresent()) {
-            return VideoArchivedStatus.archived(optional.get());
-        }
-
-        File tempDir = pathConfig.tmpdir(season);
-        if (tempDir.isDirectory()) {
-            if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
-                return VideoStatus.DOWNLOADING;
-            }
-            Collection<File> videoFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
-            if (videoFiles.isEmpty()) {
-                return VideoStatus.NONE_DOWNLOADED;
-            }
-            if (!chosen || videoFiles.size() != season.getEpisodesCount()) {
-                return VideoStatus.TO_ARCHIVE;
-            }
-
+        return archive(season, this::getFile, season.getEpisodesCount(), chosen, (videoFiles, tempDir) -> {
             Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
             for (File srcFile : videoFiles) {
                 Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
                 if (!matcher.matches()) {
-                    return VideoStatus.TO_ARCHIVE;
+                    return VideoStatus.TO_CHOOSE;
                 }
                 int currentEpisode = Integer.parseInt(matcher.group("e"));
                 if (currentEpisode < 1 || currentEpisode > season.getEpisodesCount()) {
-                    return VideoStatus.TO_ARCHIVE;
+                    return VideoStatus.TO_CHOOSE;
                 }
                 String location = pathConfig.getLocation(season, currentEpisode);
                 if (movedFiles.containsKey(location)) {
-                    return VideoStatus.TO_ARCHIVE;
+                    return VideoStatus.TO_CHOOSE;
                 }
                 movedFiles.put(location, srcFile);
             }
@@ -157,19 +120,36 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             log.info("Deleting {}.", tempDir);
             FileUtils.deleteDirectory(tempDir);
             return VideoArchivedStatus.archived(new File(pathConfig.getLocation(season)));
-        }
-
-        return download(tempDir, season.getDbId(), null);
+        });
     }
 
-    private VideoStatus download(File tmpdir, @Nullable Long dbId, @Nullable String imdbId) {
-        Long count = resourceService.download(tmpdir, dbId, imdbId).getRecord();
-        if (count == -1) {
-            return VideoStatus.NONE_FOUND;
+    private <E extends SubjectEntity> VideoStatus archive(
+            E entity, Function<E, Optional<File>> getFile, int count, boolean chosen,
+            ThrowableBiFunction<Collection<File>, File, VideoStatus, IOException> move) throws IOException {
+        Optional<File> optional = getFile.apply(entity);
+        if (optional.isPresent()) {
+            return VideoArchivedStatus.archived(optional.get());
         }
-        if (count == 0) {
-            return VideoStatus.NONE_DOWNLOADED;
+
+        File tempDir = pathConfig.tmpdir(entity);
+        if (!tempDir.isDirectory()) {
+            if (!tempDir.mkdirs()) {
+                throw new IOException("Failed to create directory: " + tempDir);
+            }
+            return VideoStatus.TO_DOWNLOAD;
         }
-        return VideoStatus.TO_DOWNLOAD;
+
+        if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
+            return VideoStatus.DOWNLOADING;
+        }
+        Collection<File> videoFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
+        if (videoFiles.size() < count) {
+            return VideoStatus.LACKING;
+        }
+        if (videoFiles.size() > count || !chosen) {
+            return VideoStatus.TO_CHOOSE;
+        }
+
+        return move.apply(videoFiles, tempDir);
     }
 }

@@ -11,7 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,13 +47,13 @@ public class FfmpegExecutor {
      * Constructs a ffmpeg executor with given bin directory of ffmpeg.
      */
     public FfmpegExecutor(String binDir) {
-        this.ffmpeg = new CommandExecutor(binDir + File.separator + "ffmpeg.exe");
-        this.ffprobe = new CommandExecutor(binDir + File.separator + "ffprobe.exe");
-        this.ffplay = new CommandExecutor(binDir + File.separator + "ffplay.exe");
+        this.ffmpeg = new CommandExecutor(binDir + File.separator + "ffmpeg");
+        this.ffprobe = new CommandExecutor(binDir + File.separator + "ffprobe");
+        this.ffplay = new CommandExecutor(binDir + File.separator + "ffplay");
     }
 
-    public MultimediaInfo getInfo(URI uri) throws ParseException, InputFormatException, IOException {
-        return getInfo(uri.toString());
+    public MultimediaInfo getInfo(URL url) throws ParseException, InputFormatException, IOException {
+        return getInfo(url.toString());
     }
 
     public MultimediaInfo getInfo(File file) throws ParseException, InputFormatException, IOException {
@@ -97,8 +97,7 @@ public class FfmpegExecutor {
                 continue;
             }
             if (line.startsWith(target)) {
-                String message = line.substring(target.length() + 2);
-                throw new InputFormatException(message);
+                throw new InputFormatException(line);
             }
             if (line.startsWith("Input")) {
                 MultimediaInfo info = new MultimediaInfo();
