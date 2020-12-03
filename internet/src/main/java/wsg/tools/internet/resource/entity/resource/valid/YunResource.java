@@ -1,9 +1,7 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,12 +11,16 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/10/30
  */
-public class YunResource extends HttpResource {
+public class YunResource extends BaseValidResource {
 
-    private static final Pattern URL_REGEX = Pattern.compile("https://www\\.yun\\.cn/s/[0-9a-z]{32}(\\?chkey=4e2xc)?");
+    public static final String YUN_HOST = "yun.cn";
+    private static final Pattern URL_REGEX = Pattern.compile("https://www\\.yun\\.cn/s/(?<key>[0-9a-z]{32})(\\?chkey=4e2xc)?");
 
-    private YunResource(String title, URL url) {
-        super(title, url);
+    private final String key;
+
+    public YunResource(String title, String key) {
+        super(title);
+        this.key = key;
     }
 
     public static YunResource of(String title, String url) {
@@ -26,10 +28,11 @@ public class YunResource extends HttpResource {
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Not a valid yun url.");
         }
-        try {
-            return new YunResource(title, new URL(url));
-        } catch (MalformedURLException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        return new YunResource(title, matcher.group("key"));
+    }
+
+    @Override
+    public String getUrl() {
+        return String.format("https://www.yun.cn/s/%s", key);
     }
 }

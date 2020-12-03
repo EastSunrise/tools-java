@@ -15,8 +15,6 @@ import java.net.URL;
 public class HttpResource extends BaseValidResource {
 
     public static final String[] PERMIT_SCHEMES = new String[]{"http", "https", "ftp"};
-    static final String PAN_HOST = "pan.baidu.com";
-    static final String YUN_HOST = "yun.cn";
 
     private final URL url;
 
@@ -26,12 +24,6 @@ public class HttpResource extends BaseValidResource {
     }
 
     public static HttpResource of(String title, String url) {
-        if (url.contains(PAN_HOST)) {
-            return PanResource.of(title, url);
-        }
-        if (url.contains(YUN_HOST)) {
-            return YunResource.of(title, url);
-        }
         try {
             url = decode(url);
             return new HttpResource(title, new URL(url));

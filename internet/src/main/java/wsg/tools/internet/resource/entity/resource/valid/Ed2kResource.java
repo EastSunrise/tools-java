@@ -86,4 +86,12 @@ public class Ed2kResource extends BaseValidResource {
         }
         return builder.toString();
     }
+
+    public String filename() {
+        return filename;
+    }
+
+    public long size() {
+        return size;
+    }
 }

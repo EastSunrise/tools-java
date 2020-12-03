@@ -8,9 +8,7 @@ import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResource;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
-import wsg.tools.internet.resource.entity.resource.valid.Ed2kResource;
-import wsg.tools.internet.resource.entity.resource.valid.HttpResource;
-import wsg.tools.internet.resource.entity.resource.valid.MagnetResource;
+import wsg.tools.internet.resource.entity.resource.valid.*;
 
 import java.nio.charset.Charset;
 
@@ -45,6 +43,12 @@ public final class ResourceFactory {
                 return MagnetResource.of(title, url);
             }
             if (StringUtils.startsWithAny(url, HttpResource.PERMIT_SCHEMES)) {
+                if (url.contains(PanResource.PAN_HOST)) {
+                    return PanResource.of(title, url);
+                }
+                if (url.contains(YunResource.YUN_HOST)) {
+                    return YunResource.of(title, url);
+                }
                 return HttpResource.of(title, url);
             }
             return new UnknownResource(title, url);

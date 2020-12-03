@@ -3,8 +3,6 @@ package wsg.tools.internet.resource.download;
 import org.apache.commons.io.FilenameUtils;
 import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.internet.resource.entity.resource.valid.HttpResource;
-import wsg.tools.internet.resource.entity.resource.valid.PanResource;
-import wsg.tools.internet.resource.entity.resource.valid.YunResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,10 +41,6 @@ public class InternetDownloadManager extends CommandExecutor implements Download
      */
     @Override
     public boolean addTask(File dir, HttpResource resource) throws IOException {
-        if (resource instanceof PanResource || resource instanceof YunResource) {
-            return false;
-        }
-
         if (!dir.isDirectory() && !dir.mkdirs()) {
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
