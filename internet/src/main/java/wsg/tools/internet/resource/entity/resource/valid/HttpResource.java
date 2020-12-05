@@ -2,6 +2,7 @@ package wsg.tools.internet.resource.entity.resource.valid;
 
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
+import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,7 +13,7 @@ import java.net.URL;
  * @author Kingen
  * @since 2020/9/18
  */
-public class HttpResource extends BaseValidResource {
+public class HttpResource extends BaseValidResource implements FilenameSupplier {
 
     public static final String[] PERMIT_SCHEMES = new String[]{"http", "https", "ftp"};
 
@@ -37,7 +38,8 @@ public class HttpResource extends BaseValidResource {
         return this.url.toString();
     }
 
-    public String filename() {
+    @Override
+    public String getFilename() {
         String path = this.url.getPath();
         if (path == null || path.endsWith(SignEnum.URL_PATH_SEPARATOR)) {
             return "index.html";

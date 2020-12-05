@@ -34,4 +34,9 @@ public class ResourceLinkEntity extends IdentityEntity {
 
     @Column(nullable = false, length = 4095)
     private String url;
+
+    @Column
+    private String filename;
+
+    private Long length;
 }

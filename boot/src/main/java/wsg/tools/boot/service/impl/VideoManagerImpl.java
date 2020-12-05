@@ -5,7 +5,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.enums.VideoArchivedStatus;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.PathConfiguration;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
@@ -87,7 +86,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             File destFile = new File(pathConfig.getLocation(movie) + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
             FileUtils.moveFile(srcFile, destFile);
             FileUtils.deleteDirectory(tempDir);
-            return VideoArchivedStatus.archived(destFile);
+            return VideoStatus.ARCHIVED;
         });
     }
 
@@ -119,7 +118,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             }
             log.info("Deleting {}.", tempDir);
             FileUtils.deleteDirectory(tempDir);
-            return VideoArchivedStatus.archived(new File(pathConfig.getLocation(season)));
+            return VideoStatus.ARCHIVED;
         });
     }
 
@@ -128,7 +127,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             ThrowableBiFunction<Collection<File>, File, VideoStatus, IOException> move) throws IOException {
         Optional<File> optional = getFile.apply(entity);
         if (optional.isPresent()) {
-            return VideoArchivedStatus.archived(optional.get());
+            return VideoStatus.ARCHIVED;
         }
 
         File tempDir = pathConfig.tmpdir(entity);
@@ -143,6 +142,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.DOWNLOADING;
         }
         Collection<File> videoFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
+        if (videoFiles.isEmpty()) {
+            return VideoStatus.NOT_FOUND;
+        }
         if (videoFiles.size() < count) {
             return VideoStatus.LACKING;
         }

@@ -60,7 +60,7 @@ public class FfmpegExecutor {
         return getInfo(file.getAbsolutePath());
     }
 
-    private MultimediaInfo getInfo(String target) throws InputFormatException, ParseException, IOException {
+    public MultimediaInfo getInfo(String target) throws InputFormatException, ParseException, IOException {
         CommandTask task = ffprobe.createTask("-i", "\"" + target + "\"");
         task.execute();
         try {

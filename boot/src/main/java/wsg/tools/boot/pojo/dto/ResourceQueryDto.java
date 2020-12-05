@@ -18,4 +18,5 @@ public class ResourceQueryDto extends BaseDto implements DoubanIdentifier, ImdbI
     private String key;
     private Long dbId;
     private String imdbId;
+    private Boolean chosen = false;
 }

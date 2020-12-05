@@ -45,7 +45,7 @@ public class InternetDownloadManager extends CommandExecutor implements Download
             throw new SecurityException("Can't create dir " + dir.getPath());
         }
 
-        String filename = resource.filename();
+        String filename = resource.getFilename();
         File dest = new File(dir, filename);
         if (dest.isFile()) {
             if (ignored) {

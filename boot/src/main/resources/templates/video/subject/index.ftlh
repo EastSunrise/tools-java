@@ -46,8 +46,8 @@
                                 <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
                                    title="click to search with a key">Input</a>
                                 /
-                                <a href="javascript:void(0);" class="movie-download" data-id="${movie.id?c}"
-                                   title="click to download"> Download </a>
+                                <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true"
+                                   target="_blank" title="show all links">Links</a>
                             </td>
                             <td style="width: 200px">
                                 <#if movie.archived>
@@ -96,8 +96,8 @@
                                 <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}"
                                    title="click to search with a key">Input</a>
                                 /
-                                <a href="javascript:void(0);" class="series-download" data-id="${series.id?c}"
-                                   title="click to download"> Download </a>
+                                <a href="/video/resource/index?imdbId=${series.imdbId}&chosen=true" target="_blank"
+                                   title="show all links">Links</a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -113,11 +113,8 @@
                                     <#if season.archived>
                                         Archived
                                     <#else>
-                                        <a href="/video/resource/index?dbId=${season.dbId?c}" target="_blank"
-                                           title="show all links">Links</a>
-                                        /
-                                        <a href="javascript:void(0);" class="season-download" data-id="${season.id?c}"
-                                           title="click to download"> Download </a>
+                                        <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true"
+                                           target="_blank" title="show all links">Links</a>
                                         /
                                         <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-archive checked"

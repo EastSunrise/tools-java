@@ -1,7 +1,4 @@
 $(function () {
-    $('.movie-archive').on('click', function () {
-        archive($(this), '/video/movie/archive');
-    });
     $('.movie-search').on('click', function () {
         search("/video/movie/resources", $(this).data('id'));
     });
@@ -12,18 +9,12 @@ $(function () {
             search("/video/movie/resources", id, value);
         })
     });
-    $('.movie-download').on('click', function () {
-        download($(this), '/video/movie/download')
-    })
-    $('.season-archive').on('click', function () {
-        archive($(this), '/video/season/archive');
+    $('.movie-archive').on('click', function () {
+        archive($(this), '/video/movie/archive');
     });
     $('.series-search').on('click', function () {
         search("/video/series/resources", $(this).data('id'));
     });
-    $('.series-download').on('click', function () {
-        download($(this), '/video/series/download')
-    })
     $('.series-input').on('click', function () {
         let id = $(this).data('id');
         layui.layer.prompt(function (value, index) {
@@ -31,9 +22,9 @@ $(function () {
             search("/video/series/resources", id, value);
         })
     });
-    $('.season-download').on('click', function () {
-        download($(this), '/video/season/download')
-    })
+    $('.season-archive').on('click', function () {
+        archive($(this), '/video/season/archive');
+    });
 });
 
 /**

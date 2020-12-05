@@ -157,8 +157,8 @@ public enum Filetype {
         if ("".equals(extension)) {
             return null;
         }
-        Filetype filetype = FILE_SUFFIXES.get(extension);
-        return Objects.requireNonNull(filetype, "Unknown filetype of %s" + name);
+        Filetype filetype = FILE_SUFFIXES.get(extension.toUpperCase());
+        return Objects.requireNonNull(filetype, "Unknown filetype of " + name);
     }
 
     public static SuffixFileFilter fileFilter(Filetype... types) {

@@ -21,14 +21,14 @@
                     <label class="layui-form-label" for="dbId" style="width: 100px"> ID of Douban </label>
                     <div class="layui-input-inline">
                         <input type="text" id="dbId" name="dbId" required placeholder="Please input an ID of Douban"
-                               value="${query.dbId?c!''}" autocomplete="off" class="layui-input">
+                               value="${(query.dbId?c)!''}" autocomplete="off" class="layui-input">
                     </div>
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label" for="imdbId"> ID of IMDb </label>
                     <div class="layui-input-inline">
                         <input type="text" id="imdbId" name="imdbId" required placeholder="Please input an ID of IMDb"
-                               value="${query.imdbId!''}" autocomplete="off" class="layui-input">
+                               value="${(query.imdbId)!''}" autocomplete="off" class="layui-input">
                     </div>
                 </div>
             </div>
@@ -40,15 +40,16 @@
                 <div class="layui-colla-item">
                     <h2 class="layui-colla-title"> ${type} </h2>
                     <div class="layui-colla-content layui-show">
-                        <ul>
-                            <#list links[type]?sort_by("url") as link>
-                                <li>
-                                    ${link_index+1}. <a href="${link.url}">${link.title}</a>
-                                    /
-                                    <a href="${link.thunder}">Thunder</a>
-                                </li>
+                        <table class="layui-table">
+                            <#list links[type]?sort_by("filename") as link>
+                                <tr>
+                                    <td>${link_index+1}</td>
+                                    <td><a href="${link.url}">${(link.filename)!""}</td>
+                                    <td>${link.length!""}</td>
+                                    <td><a href="${link.thunder}">Thunder</a></td>
+                                </tr>
                             </#list>
-                        </ul>
+                        </table>
                     </div>
                 </div>
             </#list>

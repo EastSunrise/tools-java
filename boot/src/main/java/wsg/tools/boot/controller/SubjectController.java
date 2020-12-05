@@ -12,17 +12,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.common.enums.VideoStatus;
-import wsg.tools.boot.config.PathConfiguration;
+import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
-import wsg.tools.boot.pojo.dto.SubjectDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.BiResult;
-import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
@@ -50,14 +48,12 @@ public class SubjectController extends AbstractController {
     private final SubjectService subjectService;
     private final ResourceService resourceService;
     private final VideoManager videoManager;
-    private final PathConfiguration pathConfig;
 
     @Autowired
-    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager, PathConfiguration pathConfig) {
+    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager) {
         this.subjectService = subjectService;
         this.resourceService = resourceService;
         this.videoManager = videoManager;
-        this.pathConfig = pathConfig;
     }
 
     /**
@@ -71,21 +67,21 @@ public class SubjectController extends AbstractController {
 
     @GetMapping(path = "/subject/index")
     public String subjects(Model model) {
-        List<MovieEntity> movies = subjectService.listMovies().getRecords();
-        List<SubjectDto> subjects = movies.stream().map(movie -> {
-            SubjectDto subjectDto = new SubjectDto();
-            subjectDto.setId(movie.getId());
-            subjectDto.setTitle(movie.getTitle());
-            subjectDto.setYear(movie.getYear().getValue());
-            subjectDto.setDbId(movie.getDbId());
-            subjectDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
+        List<MovieDto> subjects = subjectService.listMovies().getRecords().stream().map(movie -> {
+            MovieDto movieDto = new MovieDto();
+            movieDto.setId(movie.getId());
+            movieDto.setImdbId(movie.getImdbId());
+            movieDto.setTitle(movie.getTitle());
+            movieDto.setYear(movie.getYear().getValue());
+            movieDto.setDbId(movie.getDbId());
+            movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));
             try {
-                subjectDto.setStatus(videoManager.archive(movie, false));
+                movieDto.setStatus(videoManager.archive(movie, false));
             } catch (IOException e) {
-                subjectDto.setStatus(VideoStatus.SERVER_ERROR);
+                movieDto.setStatus(VideoStatus.SERVER_ERROR);
             }
-            return subjectDto;
+            return movieDto;
         }).sorted((o1, o2) -> o2.getStatus().getCode() - o1.getStatus().getCode()).collect(Collectors.toList());
         model.addAttribute("movies", subjects);
         Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
@@ -146,18 +142,6 @@ public class SubjectController extends AbstractController {
         }
     }
 
-    @PostMapping(path = "/movie/download")
-    @ResponseBody
-    public ResponseEntity<Long> downloadMovie(Long id) {
-        Optional<MovieEntity> optional = subjectService.getMovie(id);
-        if (optional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        MovieEntity entity = optional.get();
-        SingleResult<Long> result = resourceService.download(pathConfig.tmpdir(entity), entity.getDbId(), entity.getImdbId());
-        return ResponseEntity.ok(result.getRecord());
-    }
-
     @PostMapping(path = "/series/resources")
     public String seriesResources(Long id, String key, Model model) {
         BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
@@ -177,18 +161,6 @@ public class SubjectController extends AbstractController {
         return "video/series/resources";
     }
 
-    @PostMapping(path = "/series/download")
-    @ResponseBody
-    public ResponseEntity<Long> downloadSeries(Long id) {
-        BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
-        if (!result.hasLeft()) {
-            return ResponseEntity.notFound().build();
-        }
-        SeriesEntity entity = result.getLeft();
-        SingleResult<Long> download = resourceService.download(pathConfig.tmpdir(entity), null, entity.getImdbId());
-        return ResponseEntity.ok(download.getRecord());
-    }
-
     @PostMapping(path = "/season/archive")
     @ResponseBody
     public ResponseEntity<?> archiveSeason(Long id, boolean chosen) {
@@ -201,17 +173,5 @@ public class SubjectController extends AbstractController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
-    }
-
-    @PostMapping(path = "/season/download")
-    @ResponseBody
-    public ResponseEntity<Long> downloadSeason(Long id) {
-        Optional<SeasonEntity> optional = subjectService.getSeason(id);
-        if (optional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        SeasonEntity entity = optional.get();
-        SingleResult<Long> result = resourceService.download(pathConfig.tmpdir(entity), entity.getDbId(), null);
-        return ResponseEntity.ok(result.getRecord());
     }
 }

@@ -21,6 +21,8 @@ import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
 import wsg.tools.internet.resource.entity.item.base.YearSupplier;
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
+import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
+import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
 import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.valid.*;
 import wsg.tools.internet.resource.site.BaseResourceSite;
@@ -90,6 +92,12 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                     linkEntity.setTitle(baseValidResource.getTitle());
                     linkEntity.setUrl(baseValidResource.getUrl());
                     linkEntity.setType(EnumUtilExt.deserializeAka(baseValidResource.getClass(), ResourceType.class));
+                    if (resource instanceof FilenameSupplier) {
+                        linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
+                    }
+                    if (resource instanceof LengthSupplier) {
+                        linkEntity.setLength(((LengthSupplier) resource).length());
+                    }
                     linkRepository.insert(linkEntity);
                     linksCount++;
                 }

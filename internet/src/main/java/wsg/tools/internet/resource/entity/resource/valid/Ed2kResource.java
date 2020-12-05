@@ -1,6 +1,8 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
 import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
+import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
+import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
 
 import javax.annotation.Nonnull;
 import java.util.regex.Matcher;
@@ -12,7 +14,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/9/18
  */
-public class Ed2kResource extends BaseValidResource {
+public class Ed2kResource extends BaseValidResource implements FilenameSupplier, LengthSupplier {
 
     public static final String SCHEME = "ed2k";
 
@@ -87,11 +89,13 @@ public class Ed2kResource extends BaseValidResource {
         return builder.toString();
     }
 
-    public String filename() {
+    @Override
+    public String getFilename() {
         return filename;
     }
 
-    public long size() {
+    @Override
+    public Long length() {
         return size;
     }
 }
