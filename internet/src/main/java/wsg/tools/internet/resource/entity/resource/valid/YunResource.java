@@ -18,7 +18,7 @@ public class YunResource extends BaseValidResource {
 
     private final String key;
 
-    public YunResource(String title, String key) {
+    private YunResource(String title, String key) {
         super(title);
         this.key = key;
     }

@@ -80,7 +80,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <#list tvs?sort_by('unarchived')?reverse as tv>
+                    <#list tvs as tv>
                         <#assign series=tv.series>
                         <#assign seasons=tv.seasons?sort_by('currentSeason')>
                         <tr>
@@ -98,6 +98,9 @@
                                 /
                                 <a href="/video/resource/index?imdbId=${series.imdbId}&chosen=true" target="_blank"
                                    title="show all links">Links</a>
+                                /
+                                <a href="http://www.rrys2020.com/search?keyword=${series.title}"
+                                   target="_blank" title="search on yyets">YYETS</a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -110,12 +113,12 @@
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
                                 <td style="width: 300px">
+                                    <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true"
+                                       target="_blank" title="show all links">Links</a>
+                                    /
                                     <#if season.archived>
                                         Archived
                                     <#else>
-                                        <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true"
-                                           target="_blank" title="show all links">Links</a>
-                                        /
                                         <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-archive checked"
                                            data-id="${season.id?c}" title="click to archive"> ${season.status.text} </a>

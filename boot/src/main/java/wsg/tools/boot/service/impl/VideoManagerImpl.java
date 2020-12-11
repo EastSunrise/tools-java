@@ -38,7 +38,8 @@ import java.util.regex.Pattern;
 @Service
 public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
-    public static final Pattern EPISODE_FILE_REGEX = Pattern.compile("[^\\d]*(?<e>\\d+)[^\\d]*");
+    public static final Pattern EPISODE_FILE_REGEX =
+            Pattern.compile("[^\\d]*((?<year>\\d{4})[^\\d]+)?(S(?<s>\\d{1,2})E)?(?<e>\\d{1,3})([^\\d]+(720P|1080P|x264))*[^\\d]*", Pattern.CASE_INSENSITIVE);
 
     private final PathConfiguration pathConfig;
 
@@ -97,14 +98,27 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             for (File srcFile : videoFiles) {
                 Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
                 if (!matcher.matches()) {
+                    log.info("Not matched file: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                String year = matcher.group("year");
+                if (year != null && Integer.parseInt(year) != season.getYear().getValue()) {
+                    log.info("Not matched year: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                String s = matcher.group("s");
+                if (s != null && Integer.parseInt(s) != season.getCurrentSeason()) {
+                    log.info("Not matched season: {}", srcFile);
                     return VideoStatus.TO_CHOOSE;
                 }
                 int currentEpisode = Integer.parseInt(matcher.group("e"));
                 if (currentEpisode < 1 || currentEpisode > season.getEpisodesCount()) {
+                    log.info("Not matched episode: {}", srcFile);
                     return VideoStatus.TO_CHOOSE;
                 }
                 String location = pathConfig.getLocation(season, currentEpisode);
                 if (movedFiles.containsKey(location)) {
+                    log.info("Duplicate episodes: {}", srcFile);
                     return VideoStatus.TO_CHOOSE;
                 }
                 movedFiles.put(location, srcFile);
@@ -132,9 +146,6 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
         File tempDir = pathConfig.tmpdir(entity);
         if (!tempDir.isDirectory()) {
-            if (!tempDir.mkdirs()) {
-                throw new IOException("Failed to create directory: " + tempDir);
-            }
             return VideoStatus.TO_DOWNLOAD;
         }
 

@@ -2,6 +2,7 @@ package wsg.tools.common.io.multimedia;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.common.io.CommandTask;
@@ -13,10 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +36,11 @@ public class FfmpegExecutor {
             Pattern.compile("Stream #(?<i>\\d+):(?<j>\\d+)(\\((?<remark>[a-z]+)\\))?: (?<type>Audio|Video|Subtitle|Attachment): (?<c>.*)");
     private static final Pattern CHAPTER_REGEX =
             Pattern.compile("Chapter #(?<i>\\d+):(?<j>\\d+): start (?<start>\\d+\\.\\d+), end (?<end>\\d+\\.\\d+)");
+    private static final Pattern FRAME_SIZE_REGEX = Pattern.compile("(?<w>\\d+)x(?<h>\\d+)");
+    private static final Pattern FRAME_RATE_REGEX = Pattern.compile("(?<r>[\\d.]+)\\s+fps");
+    private static final Pattern BIT_RATE_REGEX = Pattern.compile("(?<r>\\d+)\\s+kb/s");
+    private static final Pattern SAMPLING_RATE_REGEX = Pattern.compile("(?<r>\\d+)\\s+Hz");
+    private static final Pattern CHANNEL_REGEX = Pattern.compile("(?<c>mono|stereo|quad)", Pattern.CASE_INSENSITIVE);
 
     private final CommandExecutor ffmpeg;
     private final CommandExecutor ffprobe;
@@ -163,12 +166,7 @@ public class FfmpegExecutor {
             }
             if (current == 4) {
                 if (line.startsWith("Stream")) {
-                    Matcher matcher = RegexUtils.matchesOrElseThrow(STREAM_REGEX, line);
-                    String type = matcher.group("type");
-                    String content = matcher.group("c");
-                    StreamInfo streamInfo = new StreamInfo();
-                    streamInfo.setType(type);
-                    streamInfo.setContent(content);
+                    StreamInfo streamInfo = parseStreamSpecs(line);
                     info.addStream(streamInfo);
                     currentObject = streamInfo;
                     index++;
@@ -201,6 +199,67 @@ public class FfmpegExecutor {
             throw new ParseException("Unknown line of input: " + line);
         }
         return index;
+    }
+
+    private StreamInfo parseStreamSpecs(String line) {
+        Matcher matcher = RegexUtils.matchesOrElseThrow(STREAM_REGEX, line);
+        String type = matcher.group("type");
+        String content = matcher.group("c");
+        if (VideoStreamInfo.TYPE.equalsIgnoreCase(type)) {
+            VideoStreamInfo videoStreamInfo = new VideoStreamInfo();
+            StringTokenizer tokenizer = new StringTokenizer(content, ",");
+            if (tokenizer.hasMoreTokens()) {
+                videoStreamInfo.setDecoder(tokenizer.nextToken().trim());
+            }
+            while (tokenizer.hasMoreTokens()) {
+                String token = tokenizer.nextToken().strip();
+                Matcher m = FRAME_SIZE_REGEX.matcher(token);
+                if (m.find()) {
+                    videoStreamInfo.setFrameWidth(Integer.parseInt(m.group("w")));
+                    videoStreamInfo.setFrameHeight(Integer.parseInt(m.group("h")));
+                    continue;
+                }
+                Matcher m2 = FRAME_RATE_REGEX.matcher(token);
+                if (m2.find()) {
+                    videoStreamInfo.setFrameRate(Double.parseDouble(m2.group("r")));
+                    continue;
+                }
+                Matcher m3 = BIT_RATE_REGEX.matcher(token);
+                if (m3.find()) {
+                    videoStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
+                }
+            }
+            return videoStreamInfo;
+        }
+        if (AudioStreamInfo.TYPE.equalsIgnoreCase(type)) {
+            AudioStreamInfo audioStreamInfo = new AudioStreamInfo();
+            StringTokenizer tokenizer = new StringTokenizer(content, ",");
+            if (tokenizer.hasMoreTokens()) {
+                audioStreamInfo.setDecoder(tokenizer.nextToken().trim());
+            }
+            while (tokenizer.hasMoreTokens()) {
+                String token = tokenizer.nextToken().strip();
+                Matcher m = SAMPLING_RATE_REGEX.matcher(token);
+                if (m.find()) {
+                    audioStreamInfo.setSamplingRate(Integer.parseInt(m.group("r")));
+                    continue;
+                }
+                Matcher m2 = CHANNEL_REGEX.matcher(token);
+                if (m2.find()) {
+                    audioStreamInfo.setChannel(EnumUtils.getEnumIgnoreCase(AudioStreamInfo.AudioChannel.class, m2.group("c")));
+                    continue;
+                }
+                Matcher m3 = BIT_RATE_REGEX.matcher(token);
+                if (m3.find()) {
+                    audioStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
+                }
+            }
+            return audioStreamInfo;
+        }
+        StreamInfo streamInfo = new StreamInfo();
+        streamInfo.setType(type);
+        streamInfo.setContent(content);
+        return streamInfo;
     }
 
     /**

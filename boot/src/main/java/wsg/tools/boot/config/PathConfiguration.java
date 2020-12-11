@@ -1,5 +1,6 @@
 package wsg.tools.boot.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/11/21
  */
+@Slf4j
 @Configuration
 @PropertySource("classpath:config/private/video.properties")
 public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
@@ -61,7 +63,7 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     }
 
     public File tmpdir(SubjectEntity entity) {
-        return new File(tmpdir, entity.getId() + "_" + entity.getTitle());
+        return new File(tmpdir, entity.getYear() + " " + entity.getTitle());
     }
 
     /**
@@ -98,7 +100,8 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         }
         file = new File(this.tmpdir);
         if (!file.isDirectory()) {
-            throw new IllegalArgumentException("Not a valid tmpdir: " + tmpdir);
+            log.warn("Not a valid tmpdir: " + tmpdir);
+            this.tmpdir = System.getProperty("java.io.tmpdir");
         }
     }
 }

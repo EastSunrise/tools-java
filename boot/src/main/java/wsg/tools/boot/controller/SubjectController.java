@@ -82,7 +82,13 @@ public class SubjectController extends AbstractController {
                 movieDto.setStatus(VideoStatus.SERVER_ERROR);
             }
             return movieDto;
-        }).sorted((o1, o2) -> o2.getStatus().getCode() - o1.getStatus().getCode()).collect(Collectors.toList());
+        }).sorted((o1, o2) -> {
+            int dif = o2.getStatus().getCode() - o1.getStatus().getCode();
+            if (dif != 0) {
+                return dif;
+            }
+            return o2.getYear().compareTo(o1.getYear());
+        }).collect(Collectors.toList());
         model.addAttribute("movies", subjects);
         Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
         List<SeriesDto> tvs = map.entrySet().stream().map(entry -> {
@@ -108,7 +114,13 @@ public class SubjectController extends AbstractController {
             seriesDto.setSeasons(seasons);
             seriesDto.setUnarchived((int) seasons.stream().filter(season -> !season.isArchived()).count());
             return seriesDto;
-        }).collect(Collectors.toList());
+        }).sorted(((o1, o2) -> {
+            int dif = o2.getUnarchived() - o1.getUnarchived();
+            if (dif != 0) {
+                return dif;
+            }
+            return o2.getSeries().getYear().compareTo(o1.getSeries().getYear());
+        })).collect(Collectors.toList());
         model.addAttribute("tvs", tvs);
         return "video/subject/index";
     }
