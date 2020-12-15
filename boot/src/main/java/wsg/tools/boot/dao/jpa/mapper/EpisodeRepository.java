@@ -4,6 +4,7 @@ import wsg.tools.boot.dao.jpa.base.BaseRepository;
 import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for episodes of TV series.
@@ -20,4 +21,12 @@ public interface EpisodeRepository extends BaseRepository<EpisodeEntity, Long> {
      * @return list of episodes
      */
     List<EpisodeEntity> findAllBySeasonId(Long seasonId);
+
+    /**
+     * Query an entity by imdb id.
+     *
+     * @param imdbId imdb id
+     * @return an optional of the entity
+     */
+    Optional<EpisodeEntity> findByImdbId(String imdbId);
 }

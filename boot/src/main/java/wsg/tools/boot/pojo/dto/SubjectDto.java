@@ -23,6 +23,6 @@ public class SubjectDto extends BaseDto implements DoubanIdentifier {
     private VideoStatus status;
 
     public boolean isArchived() {
-        return status == VideoStatus.ARCHIVED;
+        return status == VideoStatus.ARCHIVED || status == VideoStatus.COMING;
     }
 }

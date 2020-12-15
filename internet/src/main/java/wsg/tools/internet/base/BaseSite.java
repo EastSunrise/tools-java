@@ -89,8 +89,10 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
      * Common HTML tags and attributes.
      */
     protected static final String TAG_A = "a";
+    protected static final String TAG_INPUT = "input";
     protected static final String TAG_FIELDSET = "fieldset";
     protected static final String TAG_LI = "li";
+    protected static final String TAG_OPTION = "option";
     protected static final String TAG_SPAN = "span";
     protected static final String TAG_STRONG = "strong";
     protected static final String TAG_H3 = "h3";
@@ -99,6 +101,7 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     protected static final String TAG_FONT = "font";
     protected static final String TAG_SCRIPT = "script";
     protected static final String ATTR_HREF = "href";
+    protected static final String ATTR_NAME = "name";
     protected static final String ATTR_DATETIME = "datetime";
     protected static final String ATTR_CONTENT = "content";
     /**

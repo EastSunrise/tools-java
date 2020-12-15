@@ -8,7 +8,6 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,13 +56,4 @@ public interface SubjectAdapter {
      * @throws NotFoundException if not found
      */
     SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException;
-
-    /**
-     * Obtains all episodes of the given series,
-     *
-     * @param seriesId id to specify series.
-     * @return result
-     * @throws NotFoundException if not found
-     */
-    SingleResult<List<String[]>> episodes(String seriesId) throws NotFoundException;
 }

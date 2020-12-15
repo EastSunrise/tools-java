@@ -23,6 +23,10 @@ public class BiResult<L, R> extends BaseResult {
         return new BiResult<>(left, right);
     }
 
+    public static <L, R> BiResult<L, R> empty() {
+        return new BiResult<>(null, null);
+    }
+
     public boolean hasLeft() {
         return left != null;
     }

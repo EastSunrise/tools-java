@@ -5,6 +5,8 @@ import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.entity.imdb.info.YearInfo;
 
+import java.util.List;
+
 /**
  * IMDb TV Series.
  *
@@ -17,4 +19,11 @@ public class ImdbSeries extends BaseImdbTitle {
 
     private YearInfo yearInfo;
     private ImdbVideoObject trailer;
+
+    /**
+     * Index of a given episode is array[currentSeason-1][currentEpisode].
+     * Ep0 may be included if exists.
+     * The corresponding element will be null if an season has no episodes.
+     */
+    private List<String[]> episodes;
 }

@@ -15,4 +15,6 @@ import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 public class DoubanSeries extends BaseDoubanSubject {
 
     private Integer episodesCount;
+    private Long[] seasons;
+    private Integer currentSeason;
 }

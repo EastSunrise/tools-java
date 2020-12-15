@@ -26,6 +26,7 @@ import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.time.Year;
 import java.util.*;
@@ -39,7 +40,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/6/16
  */
-public final class ImdbSite extends BaseSite {
+public final class ImdbSite extends BaseSite implements ImdbRepo {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
@@ -71,10 +72,8 @@ public final class ImdbSite extends BaseSite {
                 ).registerModule(new JavaTimeModule());
     }
 
-    /**
-     * Get subject info by parsing the html page
-     */
-    public BaseImdbTitle title(String tt) throws NotFoundException {
+    @Override
+    public BaseImdbTitle getItemById(@Nonnull String tt) throws NotFoundException {
         Document document = getDocument(builder0("/title/%s", tt), true);
         BaseImdbTitle title;
         try {
@@ -102,6 +101,11 @@ public final class ImdbSite extends BaseSite {
                     Year.of(Integer.parseInt(matcher.group("start"))),
                     end == null ? null : Year.of(Integer.parseInt(end))
             ));
+            try {
+                ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
+            } catch (NotFoundException e) {
+                throw AssertUtils.runtimeException(e);
+            }
         } else if (title instanceof ImdbEpisode) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
@@ -137,13 +141,7 @@ public final class ImdbSite extends BaseSite {
         return title;
     }
 
-    /**
-     * Obtains ids of all episodes. Index of a given episode is array[currentSeason-1][currentEpisode].
-     * Ep0 may be included if exists.
-     *
-     * @return all episodes. Maybe uncompleted.
-     */
-    public List<String[]> episodes(String seriesId) throws NotFoundException {
+    private List<String[]> getEpisodes(String seriesId) throws NotFoundException {
         List<String[]> result = new ArrayList<>();
         int currentSeason = 0;
         while (true) {
@@ -171,6 +169,10 @@ public final class ImdbSite extends BaseSite {
                 if (null != map.put(episode, id)) {
                     throw new UnexpectedContentException("Conflict episodes of " + seriesId);
                 }
+            }
+            if (map.isEmpty()) {
+                result.add(null);
+                continue;
             }
             String[] episodes = new String[Collections.max(map.keySet()) + 1];
             map.forEach((key, value) -> episodes[key] = value);

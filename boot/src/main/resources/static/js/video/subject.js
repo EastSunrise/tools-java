@@ -143,8 +143,10 @@ function archive(ele, url) {
                 ele.attr('hidden', false);
             }
         },
-        error: function (xhr, status, msg) {
-            layui.layer.alert(msg);
+        error: function (xhr) {
+            clearInterval(timer);
+            tip.text("ERROR");
+            layui.layer.alert(xhr.responseText);
         }
     });
 }

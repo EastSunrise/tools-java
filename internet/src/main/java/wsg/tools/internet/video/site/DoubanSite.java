@@ -16,6 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
@@ -192,6 +193,18 @@ public class DoubanSite extends BaseSite {
             final String plEpisodes = "集数:";
             if ((span = spans.get(plEpisodes)) != null) {
                 series.setEpisodesCount(Integer.parseInt(((TextNode) span.nextSibling()).text().strip()));
+            }
+            Element season = document.selectFirst("#season");
+            if (season != null) {
+                Elements options = season.select(TAG_OPTION);
+                Long[] seasons = new Long[options.size()];
+                for (Element option : options) {
+                    seasons[Integer.parseInt(option.text()) - 1] = Long.parseLong(option.val());
+                    if (option.hasAttr("selected")) {
+                        series.setCurrentSeason(Integer.valueOf(option.text()));
+                    }
+                }
+                series.setSeasons(seasons);
             }
         }
 

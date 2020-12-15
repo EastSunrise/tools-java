@@ -20,6 +20,7 @@ import wsg.tools.internet.resource.download.Thunder;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Year;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,7 @@ import java.util.regex.Pattern;
 public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     public static final Pattern EPISODE_FILE_REGEX =
-            Pattern.compile("[^\\d]*((?<year>\\d{4})[^\\d]+)?(S(?<s>\\d{1,2})E)?(?<e>\\d{1,3})([^\\d]+(720P|1080P|x264))*[^\\d]*", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("[^\\d]*((?<year>\\d{4})[^\\d]+)?(S(?<s>\\d{1,2})E)?(?<e>\\d{1,3})([^\\d]+(AC3|720P|1080P|X264|1024X576))*[^\\d]*", Pattern.CASE_INSENSITIVE);
 
     private final PathConfiguration pathConfig;
 
@@ -139,6 +140,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private <E extends SubjectEntity> VideoStatus archive(
             E entity, Function<E, Optional<File>> getFile, int count, boolean chosen,
             ThrowableBiFunction<Collection<File>, File, VideoStatus, IOException> move) throws IOException {
+        if (entity.getYear().compareTo(Year.now()) > 0) {
+            return VideoStatus.COMING;
+        }
+
         Optional<File> optional = getFile.apply(entity);
         if (optional.isPresent()) {
             return VideoStatus.ARCHIVED;

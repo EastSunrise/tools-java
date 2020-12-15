@@ -63,7 +63,14 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     }
 
     public File tmpdir(SubjectEntity entity) {
-        return new File(tmpdir, entity.getYear() + " " + entity.getTitle());
+        if (entity instanceof SeasonEntity) {
+            SeasonEntity season = (SeasonEntity) entity;
+            SeriesEntity series = season.getSeries();
+            if (series.getSeasonsCount() > 1) {
+                return new File(tmpdir, String.format("%s第%d季", StringUtilsExt.toFilename(series.getTitle()), season.getCurrentSeason()));
+            }
+        }
+        return new File(tmpdir, entity.getTitle());
     }
 
     /**

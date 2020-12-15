@@ -6,20 +6,18 @@ import org.springframework.context.annotation.Configuration;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
-import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
-import wsg.tools.internet.video.site.ImdbSite;
+import wsg.tools.internet.video.site.ImdbCnSite;
+import wsg.tools.internet.video.site.ImdbRepo;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +33,7 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     private static final String DOUBAN_SUBJECT = "douban subject";
     private static final String IMDB_TITLE = "imdb title";
 
-    private final ImdbSite imdbSite = new ImdbSite();
+    private final ImdbRepo imdbRepo = new ImdbCnSite();
     private final DoubanSite doubanSite = new DoubanSite();
 
     private IdRelationRepository relationRepository;
@@ -54,30 +52,22 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     }
 
     @Override
-    public SingleResult<Long> getDbIdByImdbId(String imdbId) throws SiteException, NotFoundException {
+    public SingleResult<Long> getDbIdByImdbId(String imdbId) throws NotFoundException {
         Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getDbId());
         }
-        Long dbId;
-        try {
-            dbId = doubanSite.getDbIdByImdbId(imdbId);
-        } catch (LoginException e) {
-            throw new SiteException(doubanSite.getName(), "Can't find douban ID by IMDb ID without logging in.");
-        }
-        if (dbId != null) {
-            saveIdRelation(dbId, imdbId);
-            return SingleResult.of(dbId);
-        } else {
-            throw new NotFoundException("Can't find douban ID by IMDb ID: " + imdbId);
-        }
+        throw new NotFoundException("Can't find douban ID by IMDb ID: " + imdbId);
     }
 
     private void saveIdRelation(long dbId, String imdbId) {
-        IdRelationEntity entity = new IdRelationEntity();
-        entity.setImdbId(imdbId);
-        entity.setDbId(dbId);
-        relationRepository.save(entity);
+        Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
+        if (optional.isEmpty()) {
+            IdRelationEntity entity = new IdRelationEntity();
+            entity.setImdbId(imdbId);
+            entity.setDbId(dbId);
+            relationRepository.insert(entity);
+        }
     }
 
     @Override
@@ -93,19 +83,9 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     public SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
         Objects.requireNonNull(imdbId);
         try {
-            return SingleResult.of(imdbSite.title(imdbId));
+            return SingleResult.of(imdbRepo.getItemById(imdbId));
         } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg(imdbSite, IMDB_TITLE, imdbId, e));
-        }
-    }
-
-    @Override
-    public SingleResult<List<String[]>> episodes(String seriesId) throws NotFoundException {
-        Objects.requireNonNull(seriesId);
-        try {
-            return SingleResult.of(imdbSite.episodes(seriesId));
-        } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg(imdbSite, "episodes", seriesId, e));
+            throw new NotFoundException(errorMsg((BaseSite) imdbRepo, IMDB_TITLE, imdbId, e));
         }
     }
 

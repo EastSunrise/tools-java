@@ -12,11 +12,11 @@
 <body>
 <div class="layui-tab">
     <ul class="layui-tab-title">
-        <li class="layui-this">Movies</li>
-        <li>TV</li>
+        <li>Movies</li>
+        <li class="layui-this">TV</li>
     </ul>
     <ul class="layui-tab-content">
-        <li class="layui-tab-item layui-show">
+        <li class="layui-tab-item">
             <div>
                 <table id="movies" class="layui-table" lay-even>
                     <thead>
@@ -51,7 +51,7 @@
                             </td>
                             <td style="width: 200px">
                                 <#if movie.archived>
-                                    Archived
+                                    ${movie.status.text}
                                 <#else>
                                     <span class="click-tip" hidden="hidden"></span>
                                     <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
@@ -64,7 +64,7 @@
                 </table>
             </div>
         </li>
-        <li class="layui-tab-item">
+        <li class="layui-tab-item layui-show">
             <div>
                 <table id="series" class="layui-table">
                     <thead>
@@ -95,12 +95,6 @@
                                 /
                                 <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}"
                                    title="click to search with a key">Input</a>
-                                /
-                                <a href="/video/resource/index?imdbId=${series.imdbId}&chosen=true" target="_blank"
-                                   title="show all links">Links</a>
-                                /
-                                <a href="http://www.rrys2020.com/search?keyword=${series.title}"
-                                   target="_blank" title="search on yyets">YYETS</a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -117,7 +111,7 @@
                                        target="_blank" title="show all links">Links</a>
                                     /
                                     <#if season.archived>
-                                        Archived
+                                        ${season.status.text}
                                     <#else>
                                         <span class="click-tip" hidden="hidden"></span>
                                         <a href="javascript:void(0);" class="season-archive checked"
