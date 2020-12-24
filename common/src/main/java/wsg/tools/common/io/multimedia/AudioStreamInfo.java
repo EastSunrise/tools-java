@@ -9,7 +9,7 @@ import lombok.Getter;
  * @since 2020/12/6
  */
 @Getter
-public class AudioStreamInfo extends StreamInfo {
+public class AudioStreamInfo extends AbstractStreamInfo {
 
     public static final String TYPE = "Audio";
 

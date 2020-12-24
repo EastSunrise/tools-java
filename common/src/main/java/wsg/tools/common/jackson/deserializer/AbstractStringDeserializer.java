@@ -3,8 +3,10 @@ package wsg.tools.common.jackson.deserializer;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
@@ -30,7 +32,11 @@ public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
             return null;
         }
         if (parser.hasToken(JsonToken.VALUE_STRING)) {
-            return parseText(parser.getText());
+            String text = parser.getText();
+            if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT) && StringUtils.isBlank(text)) {
+                return null;
+            }
+            return parseText(text);
         }
         return (T) context.handleUnexpectedToken(clazz, parser);
     }

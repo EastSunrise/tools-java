@@ -22,10 +22,29 @@ public class MultimediaInfo extends MetadataInfo {
     private Double start;
     private Integer bitrate;
 
-    private List<StreamInfo> streams;
+    private List<VideoStreamInfo> videos;
+    private List<AudioStreamInfo> audios;
+    /**
+     * Other streams
+     */
+    private List<SimpleStreamInfo> streams;
     private List<ChapterInfo> chapters;
 
-    void addStream(StreamInfo streamInfo) {
+    void addVideo(VideoStreamInfo videoStreamInfo) {
+        if (videos == null) {
+            videos = new ArrayList<>();
+        }
+        videos.add(videoStreamInfo);
+    }
+
+    void addAudio(AudioStreamInfo audioStreamInfo) {
+        if (audios == null) {
+            audios = new ArrayList<>();
+        }
+        audios.add(audioStreamInfo);
+    }
+
+    void addStream(SimpleStreamInfo streamInfo) {
         if (streams == null) {
             streams = new ArrayList<>();
         }

@@ -20,8 +20,8 @@ import java.io.IOException;
  */
 public class EnumDeserializers {
 
-    public static <C, E extends Enum<E> & CodeSupplier<C>> EnumCodeDeserializer<C, E> getCodeDeserializer(Class<C> cClass, Class<E> tClass) {
-        return new EnumCodeDeserializer<>(tClass, cClass);
+    public static <C, E extends Enum<E> & CodeSupplier<C>> EnumCodeDeserializer<C, E> getCodeDeserializer(Class<C> cClass, Class<E> eClass) {
+        return new EnumCodeDeserializer<>(eClass, cClass);
     }
 
     public static <Aka, E extends Enum<E> & AkaPredicate<Aka>> EnumAkaDeserializer<Aka, E> getAkaDeserializer(Class<Aka> akaClass, Class<E> eClass) {

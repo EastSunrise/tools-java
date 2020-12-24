@@ -3,14 +3,13 @@ package wsg.tools.common.io.multimedia;
 import lombok.Getter;
 
 /**
- * Info of stream within a multimedia.
+ * Info of a stream without details.
  *
  * @author Kingen
- * @since 2020/12/1
+ * @since 2020/12/16
  */
 @Getter
-public class StreamInfo extends MetadataInfo {
-
+public class SimpleStreamInfo extends AbstractStreamInfo {
     private String type;
     private String content;
 

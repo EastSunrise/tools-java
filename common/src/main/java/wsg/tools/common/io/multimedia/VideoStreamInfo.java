@@ -9,7 +9,7 @@ import lombok.Getter;
  * @since 2020/12/6
  */
 @Getter
-public class VideoStreamInfo extends StreamInfo {
+public class VideoStreamInfo extends AbstractStreamInfo {
 
     public static final String TYPE = "Video";
 

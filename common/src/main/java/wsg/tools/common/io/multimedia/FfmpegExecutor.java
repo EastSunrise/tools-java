@@ -33,7 +33,7 @@ public class FfmpegExecutor {
                     "start: (?<start>\\d+\\.\\d+), " +
                     "bitrate: (?<br>\\d+) kb/s");
     private static final Pattern STREAM_REGEX =
-            Pattern.compile("Stream #(?<i>\\d+):(?<j>\\d+)(\\((?<remark>[a-z]+)\\))?: (?<type>Audio|Video|Subtitle|Attachment): (?<c>.*)");
+            Pattern.compile("Stream #(?<i>\\d+):(?<j>\\d+)(\\((?<remark>[a-z]+)\\))?: (?<type>Audio|Video|Subtitle|Attachment|Data): (?<c>.*)");
     private static final Pattern CHAPTER_REGEX =
             Pattern.compile("Chapter #(?<i>\\d+):(?<j>\\d+): start (?<start>\\d+\\.\\d+), end (?<end>\\d+\\.\\d+)");
     private static final Pattern FRAME_SIZE_REGEX = Pattern.compile("(?<w>\\d+)x(?<h>\\d+)");
@@ -84,7 +84,8 @@ public class FfmpegExecutor {
      * @throws InputFormatException if the format of the source file cannot be recognized and decoded.
      * @throws ParseException       If stream of the info cannot be recognized
      */
-    private List<MultimediaInfo> parseMultimediaInfo(String target, BufferedReader reader) throws InputFormatException, ParseException, IOException {
+    private List<MultimediaInfo> parseMultimediaInfo(String target, BufferedReader reader)
+            throws InputFormatException, ParseException, IOException {
         List<String> lines = new ArrayList<>();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -166,7 +167,27 @@ public class FfmpegExecutor {
             }
             if (current == 4) {
                 if (line.startsWith("Stream")) {
-                    StreamInfo streamInfo = parseStreamSpecs(line);
+                    Matcher matcher = RegexUtils.matchesOrElseThrow(STREAM_REGEX, line);
+                    String type = matcher.group("type");
+                    String content = matcher.group("c");
+                    if (VideoStreamInfo.TYPE.equalsIgnoreCase(type)) {
+                        VideoStreamInfo videoStreamInfo = parseVideoStream(content);
+                        info.addVideo(videoStreamInfo);
+                        currentObject = videoStreamInfo;
+                        index++;
+                        continue;
+                    }
+                    if (AudioStreamInfo.TYPE.equalsIgnoreCase(type)) {
+                        AudioStreamInfo audioStreamInfo = parseAudioStream(content);
+                        info.addAudio(audioStreamInfo);
+                        currentObject = audioStreamInfo;
+                        index++;
+                        continue;
+                    }
+
+                    SimpleStreamInfo streamInfo = new SimpleStreamInfo();
+                    streamInfo.setType(type);
+                    streamInfo.setContent(content);
                     info.addStream(streamInfo);
                     currentObject = streamInfo;
                     index++;
@@ -201,65 +222,57 @@ public class FfmpegExecutor {
         return index;
     }
 
-    private StreamInfo parseStreamSpecs(String line) {
-        Matcher matcher = RegexUtils.matchesOrElseThrow(STREAM_REGEX, line);
-        String type = matcher.group("type");
-        String content = matcher.group("c");
-        if (VideoStreamInfo.TYPE.equalsIgnoreCase(type)) {
-            VideoStreamInfo videoStreamInfo = new VideoStreamInfo();
-            StringTokenizer tokenizer = new StringTokenizer(content, ",");
-            if (tokenizer.hasMoreTokens()) {
-                videoStreamInfo.setDecoder(tokenizer.nextToken().trim());
-            }
-            while (tokenizer.hasMoreTokens()) {
-                String token = tokenizer.nextToken().strip();
-                Matcher m = FRAME_SIZE_REGEX.matcher(token);
-                if (m.find()) {
-                    videoStreamInfo.setFrameWidth(Integer.parseInt(m.group("w")));
-                    videoStreamInfo.setFrameHeight(Integer.parseInt(m.group("h")));
-                    continue;
-                }
-                Matcher m2 = FRAME_RATE_REGEX.matcher(token);
-                if (m2.find()) {
-                    videoStreamInfo.setFrameRate(Double.parseDouble(m2.group("r")));
-                    continue;
-                }
-                Matcher m3 = BIT_RATE_REGEX.matcher(token);
-                if (m3.find()) {
-                    videoStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
-                }
-            }
-            return videoStreamInfo;
+    private VideoStreamInfo parseVideoStream(String content) {
+        VideoStreamInfo videoStreamInfo = new VideoStreamInfo();
+        StringTokenizer tokenizer = new StringTokenizer(content, ",");
+        if (tokenizer.hasMoreTokens()) {
+            videoStreamInfo.setDecoder(tokenizer.nextToken().trim());
         }
-        if (AudioStreamInfo.TYPE.equalsIgnoreCase(type)) {
-            AudioStreamInfo audioStreamInfo = new AudioStreamInfo();
-            StringTokenizer tokenizer = new StringTokenizer(content, ",");
-            if (tokenizer.hasMoreTokens()) {
-                audioStreamInfo.setDecoder(tokenizer.nextToken().trim());
+        while (tokenizer.hasMoreTokens()) {
+            String token = tokenizer.nextToken().strip();
+            Matcher m = FRAME_SIZE_REGEX.matcher(token);
+            if (m.find()) {
+                videoStreamInfo.setFrameWidth(Integer.parseInt(m.group("w")));
+                videoStreamInfo.setFrameHeight(Integer.parseInt(m.group("h")));
+                continue;
             }
-            while (tokenizer.hasMoreTokens()) {
-                String token = tokenizer.nextToken().strip();
-                Matcher m = SAMPLING_RATE_REGEX.matcher(token);
-                if (m.find()) {
-                    audioStreamInfo.setSamplingRate(Integer.parseInt(m.group("r")));
-                    continue;
-                }
-                Matcher m2 = CHANNEL_REGEX.matcher(token);
-                if (m2.find()) {
-                    audioStreamInfo.setChannel(EnumUtils.getEnumIgnoreCase(AudioStreamInfo.AudioChannel.class, m2.group("c")));
-                    continue;
-                }
-                Matcher m3 = BIT_RATE_REGEX.matcher(token);
-                if (m3.find()) {
-                    audioStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
-                }
+            Matcher m2 = FRAME_RATE_REGEX.matcher(token);
+            if (m2.find()) {
+                videoStreamInfo.setFrameRate(Double.parseDouble(m2.group("r")));
+                continue;
             }
-            return audioStreamInfo;
+            Matcher m3 = BIT_RATE_REGEX.matcher(token);
+            if (m3.find()) {
+                videoStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
+            }
         }
-        StreamInfo streamInfo = new StreamInfo();
-        streamInfo.setType(type);
-        streamInfo.setContent(content);
-        return streamInfo;
+        return videoStreamInfo;
+    }
+
+    private AudioStreamInfo parseAudioStream(String content) {
+        AudioStreamInfo audioStreamInfo = new AudioStreamInfo();
+        StringTokenizer tokenizer = new StringTokenizer(content, ",");
+        if (tokenizer.hasMoreTokens()) {
+            audioStreamInfo.setDecoder(tokenizer.nextToken().trim());
+        }
+        while (tokenizer.hasMoreTokens()) {
+            String token = tokenizer.nextToken().strip();
+            Matcher m = SAMPLING_RATE_REGEX.matcher(token);
+            if (m.find()) {
+                audioStreamInfo.setSamplingRate(Integer.parseInt(m.group("r")));
+                continue;
+            }
+            Matcher m2 = CHANNEL_REGEX.matcher(token);
+            if (m2.find()) {
+                audioStreamInfo.setChannel(EnumUtils.getEnumIgnoreCase(AudioStreamInfo.AudioChannel.class, m2.group("c")));
+                continue;
+            }
+            Matcher m3 = BIT_RATE_REGEX.matcher(token);
+            if (m3.find()) {
+                audioStreamInfo.setBitrate(Integer.parseInt(m3.group("r")));
+            }
+        }
+        return audioStreamInfo;
     }
 
     /**

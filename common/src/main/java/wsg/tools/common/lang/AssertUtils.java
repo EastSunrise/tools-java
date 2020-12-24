@@ -16,26 +16,27 @@ public final class AssertUtils {
     /**
      * Validate range of an object, [fromInclusive, toExclusive)
      */
-    public static <T extends Comparable<T>> void requireRange(T target, T fromInclusive, T toExclusive) {
+    public static <T extends Comparable<T>> T requireRange(T target, T fromInclusive, T toExclusive) {
         Objects.requireNonNull(target);
         if (fromInclusive == null && toExclusive == null) {
-            return;
+            return target;
         }
         if (fromInclusive == null) {
             if (target.compareTo(toExclusive) >= 0) {
                 throw new IllegalArgumentException("Target must be less than " + toExclusive);
             }
-            return;
+            return target;
         }
         if (toExclusive == null) {
             if (target.compareTo(fromInclusive) < 0) {
                 throw new IllegalArgumentException("Target mustn't be less than " + fromInclusive);
             }
-            return;
+            return target;
         }
         if (target.compareTo(fromInclusive) < 0 || target.compareTo(toExclusive) >= 0) {
             throw new IllegalArgumentException("Target must be within range fromInclusive " + fromInclusive + " toExclusive " + toExclusive);
         }
+        return target;
     }
 
     /**
