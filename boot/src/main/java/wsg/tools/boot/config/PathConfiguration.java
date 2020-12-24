@@ -10,13 +10,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
-import wsg.tools.boot.pojo.entity.subject.SubjectEntity;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.video.enums.LanguageEnum;
 
+import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.Objects;
+import java.time.Year;
+import java.util.List;
 
 /**
  * Configurations for video.
@@ -40,11 +40,11 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     private String tmpdir;
 
     public String getLocation(MovieEntity entity) {
-        return getLocation0(MOVIE_DIR, entity);
+        return join(MOVIE_DIR, entity.getYear(), entity.getTitle());
     }
 
     public String getLocation(SeriesEntity entity) {
-        return getLocation0(TV_DIR, entity);
+        return join(TV_DIR, entity.getYear(), entity.getTitle());
     }
 
     public String getLocation(SeasonEntity season) {
@@ -57,40 +57,27 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     }
 
     public String getLocation(SeasonEntity season, int currentEpisode) {
-        AssertUtils.requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
-        String format = "E%0" + (((int) Math.log10(season.getEpisodesCount())) + 1) + "d";
+        Integer episodeCount = AssertUtils.requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
+        String format = "E%0" + (((int) Math.log10(episodeCount)) + 1) + "d";
         return getLocation(season) + File.separator + String.format(format, currentEpisode);
     }
 
-    public File tmpdir(SubjectEntity entity) {
-        if (entity instanceof SeasonEntity) {
-            SeasonEntity season = (SeasonEntity) entity;
-            SeriesEntity series = season.getSeries();
-            if (series.getSeasonsCount() > 1) {
-                return new File(tmpdir, String.format("%s第%d季", StringUtilsExt.toFilename(series.getTitle()), season.getCurrentSeason()));
-            }
-        }
-        return new File(tmpdir, entity.getTitle());
+    public File tmpdir(MovieEntity movie) {
+        return new File(tmpdir, StringUtilsExt.toFilename(movie.getTitle()));
+    }
+
+    public List<File> tmpdir(SeasonEntity season) {
+        return List.of(
+                new File(tmpdir, StringUtilsExt.toFilename(season.getTitle())),
+                new File(tmpdir, StringUtilsExt.toFilename(season.getSeries().getTitle() + "第" + season.getCurrentSeason() + "季"))
+        );
     }
 
     /**
-     * Only for {@link MovieEntity} and {@link SeriesEntity}.
+     * Join parts of the path.
      */
-    private String getLocation0(String dir, SubjectEntity entity) {
-        Objects.requireNonNull(entity, "Given entity mustn't be null.");
-        Objects.requireNonNull(entity.getLanguages(), "Languages of subject " + entity.getId() + " mustn't be null.");
-        Objects.requireNonNull(entity.getYear(), "Year of subject " + entity.getId() + " mustn't be null.");
-        Objects.requireNonNull(entity.getTitle(), "Title of subject " + entity.getId() + " mustn't be null.");
-
-        StringBuilder builder = new StringBuilder().append(cdn).append(File.separator).append(dir).append(File.separator);
-        LanguageEnum language = entity.getLanguages().get(0);
-        if (language.ordinal() <= LanguageEnum.TH.ordinal()) {
-            builder.append(String.format("%02d", language.ordinal())).append(" ").append(language.getTitle());
-        } else {
-            builder.append("99").append(" ").append("其他");
-        }
-        builder.append(File.separator).append(entity.getYear());
-        return builder.append(NAME_SEPARATOR).append(StringUtilsExt.toFilename(entity.getTitle())).toString();
+    private String join(@Nonnull String dir, @Nonnull Year year, @Nonnull String title) {
+        return cdn + File.separator + dir + File.separator + year + NAME_SEPARATOR + StringUtilsExt.toFilename(title);
     }
 
     @Override

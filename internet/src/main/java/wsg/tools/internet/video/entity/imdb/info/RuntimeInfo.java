@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.entity.imdb.info;
 
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.common.lang.NumberUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbInfo;
@@ -20,22 +19,25 @@ import java.util.regex.Pattern;
  * @since 2020/9/4
  */
 @Getter
-@Setter
 public class RuntimeInfo extends BaseImdbInfo {
 
-    private static final Pattern RUNTIME_REGEX = Pattern.compile("([1-9]\\d{0,2}(,?\\d{3})*)( min|分钟)");
-
+    private static final Pattern RUNTIME_REGEX = Pattern.compile("(?<d>[\\d,]+)(-(?<d2>\\d+))?( ?min| ?分钟)?");
+    /**
+     * in minutes usually
+     */
+    private final Duration duration;
     /**
      * null by default
      */
     private RegionEnum region;
-    /**
-     * in minutes usually
-     */
-    private Duration duration;
+    private Duration duration2;
 
     public RuntimeInfo(String text) {
         Matcher matcher = RegexUtils.matchesOrElseThrow(RUNTIME_REGEX, text);
-        this.duration = Duration.ofMinutes(NumberUtilsExt.parseCommaSeparatedNumber(matcher.group(1)));
+        this.duration = Duration.ofMinutes(NumberUtilsExt.parseCommaSeparatedNumber(matcher.group("d")));
+        String d2 = matcher.group("d2");
+        if (d2 != null) {
+            this.duration2 = Duration.ofMinutes(Long.parseLong(d2));
+        }
     }
 }

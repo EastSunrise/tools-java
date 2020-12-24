@@ -32,6 +32,7 @@ import wsg.tools.internet.video.entity.douban.base.LoginResult;
 import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
 import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
 import wsg.tools.internet.video.entity.douban.object.SearchItem;
+import wsg.tools.internet.video.entity.imdb.info.RuntimeInfo;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -160,6 +161,9 @@ public class DoubanSite extends BaseSite {
         String year = StringUtils.strip(document.selectFirst("span.year").html(), "()");
         subject.setYear(Year.of(Integer.parseInt(year)));
 
+        Element rating = document.selectFirst("div.rating_right");
+        subject.setShowed(!rating.hasClass("not_showed"));
+
         Element info = document.selectFirst("div#info");
         Map<String, Element> spans = info.select("span.pl").stream().collect(Collectors.toMap(Element::text, span -> span));
         Element span;
@@ -194,6 +198,12 @@ public class DoubanSite extends BaseSite {
             if ((span = spans.get(plEpisodes)) != null) {
                 series.setEpisodesCount(Integer.parseInt(((TextNode) span.nextSibling()).text().strip()));
             }
+
+            final String plDuration = "单集片长:";
+            if ((span = spans.get(plDuration)) != null) {
+                series.setDuration(new RuntimeInfo(((TextNode) span.nextSibling()).text().strip()).getDuration());
+            }
+
             Element season = document.selectFirst("#season");
             if (season != null) {
                 Elements options = season.select(TAG_OPTION);
@@ -240,7 +250,13 @@ public class DoubanSite extends BaseSite {
         if (input == null) {
             return null;
         }
-        String href = input.nextElementSibling().nextElementSibling().attr(ATTR_HREF);
+        Element span = input.nextElementSibling();
+        Element ref = span.nextElementSibling();
+        if (ref == null) {
+            log.error(span.text());
+            return null;
+        }
+        String href = ref.attr(ATTR_HREF);
         return Long.parseLong(RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
     }
 

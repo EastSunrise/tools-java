@@ -3,6 +3,9 @@ package wsg.tools.boot.pojo.dto;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
+import wsg.tools.internet.video.enums.LanguageEnum;
+
+import java.util.List;
 
 /**
  * Subject of movie.
@@ -15,4 +18,5 @@ import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 public class MovieDto extends SubjectDto implements ImdbIdentifier {
 
     private String imdbId;
+    private List<LanguageEnum> languages;
 }

@@ -42,6 +42,11 @@ public abstract class BaseDoubanSubject {
     private List<LanguageEnum> languages;
 
     /**
+     * Whether the subject is showed.
+     */
+    private Boolean showed;
+
+    /**
      * Combined with title and original title.
      */
     private String name;

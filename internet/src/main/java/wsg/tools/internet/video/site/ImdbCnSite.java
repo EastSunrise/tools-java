@@ -7,7 +7,6 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
@@ -29,7 +28,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/12/12
  */
-public class ImdbCnSite extends BaseSite implements ImdbRepo {
+public class ImdbCnSite extends ImdbRepo {
 
     private static final Pattern EPISODE_LIST_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/episodelist\\?season=\\d+");
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/");
@@ -140,7 +139,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepo {
                         .addParameter("page", String.valueOf(++page)), true);
             }
             if (map.isEmpty()) {
-                result.add(null);
+                result.add(new String[1]);
             } else {
                 String[] episodes = new String[Collections.max(map.keySet()) + 1];
                 map.forEach((key, value) -> episodes[key] = value);

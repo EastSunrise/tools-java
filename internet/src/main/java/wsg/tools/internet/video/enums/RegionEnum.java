@@ -17,11 +17,13 @@ public enum RegionEnum implements CodeSupplier<String>, TextSupplier, TitleSuppl
      * Extended ISO regions.
      */
     WW("World", "世界", new String[]{"World-wide"}),
-    CN("China", "中国", new String[]{"中国大陆"}),
+    OTH("Others", "其他"),
+    CN("China", "中国", new String[]{"中国大陆", "大陆"}),
     US("United States", "美国", new String[]{"USA"}),
     GB("United Kingdom", "英国", new String[]{"UK"}),
     HK("Hong Kong SAR China", "中国香港特别行政区", new String[]{"Hong Kong", "中国香港", "香港"}),
     TW("Taiwan", "台湾", new String[]{"中国台湾"}),
+    KR("South Korea", "韩国", new String[]{"韩国韩国网络"}),
     DE("Germany", "德国", new String[]{"西德", "West Germany", "East Germany"}),
     CZ("Czechia", "捷克", new String[]{"Czech Republic"}),
     AE("United Arab Emirates", "阿拉伯联合酋长国", new String[]{"阿联酋"}),
@@ -148,7 +150,6 @@ public enum RegionEnum implements CodeSupplier<String>, TextSupplier, TitleSuppl
     KM("Comoros", "科摩罗"),
     KN("St. Kitts & Nevis", "圣基茨和尼维斯"),
     KP("North Korea", "朝鲜"),
-    KR("South Korea", "韩国"),
     KW("Kuwait", "科威特"),
     KY("Cayman Islands", "开曼群岛"),
     KZ("Kazakhstan", "哈萨克斯坦"),

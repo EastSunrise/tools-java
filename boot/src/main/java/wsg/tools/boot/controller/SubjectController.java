@@ -73,6 +73,7 @@ public class SubjectController extends AbstractController {
             movieDto.setImdbId(movie.getImdbId());
             movieDto.setTitle(movie.getTitle());
             movieDto.setYear(movie.getYear().getValue());
+            movieDto.setLanguages(movie.getLanguages());
             movieDto.setDbId(movie.getDbId());
             movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));

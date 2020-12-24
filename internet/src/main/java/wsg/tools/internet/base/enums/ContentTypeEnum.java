@@ -17,7 +17,11 @@ public enum ContentTypeEnum {
     /**
      * Content type of HTML
      */
-    HTML;
+    HTML,
+    /**
+     * Content type of JavaScript
+     */
+    JS;
 
     public String getSuffix() {
         return "." + name().toLowerCase();

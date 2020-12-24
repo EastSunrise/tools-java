@@ -12,11 +12,11 @@
 <body>
 <div class="layui-tab">
     <ul class="layui-tab-title">
-        <li>Movies</li>
-        <li class="layui-this">TV</li>
+        <li class="layui-this">Movies</li>
+        <li>TV</li>
     </ul>
     <ul class="layui-tab-content">
-        <li class="layui-tab-item">
+        <li class="layui-tab-item layui-show">
             <div>
                 <table id="movies" class="layui-table" lay-even>
                     <thead>
@@ -24,6 +24,7 @@
                         <th>No.</th>
                         <th>Title</th>
                         <th>Year</th>
+                        <th>Language</th>
                         <th>Durations</th>
                         <th>Resources</th>
                         <th>Video</th>
@@ -34,20 +35,23 @@
                         <tr>
                             <td>${movie_index+1}</td>
                             <td>
-                                <a href="https://movie.douban.com/subject/${movie.dbId?c}"
-                                   target="_blank">${movie.title}</a>
+                                <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}</a>
                             </td>
                             <td>${movie.year?c}</td>
+                            <td>${(movie.languages[0].title)!""}</td>
                             <td>${movie.durations}</td>
                             <td>
-                                <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
-                                   title="click to search">Search</a>
+                                <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}">Query</a>
                                 /
-                                <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
-                                   title="click to search with a key">Input</a>
+                                <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}">Input</a>
                                 /
-                                <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true"
-                                   target="_blank" title="show all links">Links</a>
+                                <a href="https://www.baidu.com/s?wd=${movie.title}%20下载" target="_blank">Baidu</a>
+                                /
+                                <a href="https://cn.bing.com/search?q=${movie.title}+下载" target="_blank">Bing</a>
+                                /
+                                <a href="http://www.rrys2020.com/search?keyword=${movie.title}" target="_blank">YYETS</a>
+                                /
+                                <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank">Links</a>
                             </td>
                             <td style="width: 200px">
                                 <#if movie.archived>
@@ -64,13 +68,14 @@
                 </table>
             </div>
         </li>
-        <li class="layui-tab-item layui-show">
+        <li class="layui-tab-item">
             <div>
                 <table id="series" class="layui-table">
                     <thead>
                     <tr>
                         <th>No.</th>
                         <th>Title</th>
+                        <th>Language</th>
                         <th>Resources</th>
                         <th>Season</th>
                         <th>Year</th>
@@ -89,33 +94,38 @@
                             <td rowspan="${rows}">
                                 <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.title}</a>
                             </td>
+                            <td rowspan="${rows}">${(series.languages[0].title)!""}</td>
                             <td rowspan="${rows}">
-                                <a href="javascript:void(0);" class="series-search" data-id="${series.id?c}"
-                                   title="click to search">Search</a>
+                                <a href="javascript:void(0);" class="series-search" data-id="${series.id?c}">Query</a>
                                 /
-                                <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}"
-                                   title="click to search with a key">Input</a>
+                                <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}">Input</a>
+                                /
+                                <a href="https://www.baidu.com/s?wd=${series.title}%20下载" target="_blank">Baidu</a>
+                                /
+                                <a href="https://cn.bing.com/search?q=${series.title}+下载" target="_blank">Bing</a>
+                                /
+                                <a href="https://www.05jl.com/search/${series.title}" target="_blank">Documentary</a>
+                                /
+                                <a href="http://www.rrys2020.com/search?keyword=${series.title}" target="_blank">YYETS</a>
                             </td>
                         </tr>
                         <#list seasons as season>
                             <tr>
                                 <td>
-                                    <a href="https://movie.douban.com/subject/${season.dbId?c}/"
-                                       target="_blank">${season.title}</a>
+                                    <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.title}</a>
                                 </td>
                                 <td>${season.year?c}</td>
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
                                 <td style="width: 300px">
-                                    <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true"
-                                       target="_blank" title="show all links">Links</a>
+                                    <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true" target="_blank" title="show all links">Links</a>
                                     /
                                     <#if season.archived>
                                         ${season.status.text}
                                     <#else>
                                         <span class="click-tip" hidden="hidden"></span>
-                                        <a href="javascript:void(0);" class="season-archive checked"
-                                           data-id="${season.id?c}" title="click to archive"> ${season.status.text} </a>
+                                        <a href="javascript:void(0);" class="season-archive checked" data-id="${season.id?c}"
+                                           title="click to archive"> ${season.status.text} </a>
                                     </#if>
                                 </td>
                             </tr>

@@ -102,6 +102,7 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     protected static final String TAG_SCRIPT = "script";
     protected static final String ATTR_HREF = "href";
     protected static final String ATTR_NAME = "name";
+    protected static final String ATTR_SRC = "src";
     protected static final String ATTR_DATETIME = "datetime";
     protected static final String ATTR_CONTENT = "content";
     /**
@@ -199,6 +200,13 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
         cookie.setPath(path);
         cookieStore.addCookie(cookie);
         this.context.setCookieStore(cookieStore);
+    }
+
+    /**
+     * Return content of get request.
+     */
+    protected final String getContent(URIBuilder builder, ContentTypeEnum contentType, boolean cached) throws NotFoundException {
+        return readContent(RequestBuilder.get(builder), contentType, cached);
     }
 
     /**

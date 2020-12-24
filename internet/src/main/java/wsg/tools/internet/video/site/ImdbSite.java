@@ -13,7 +13,6 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/6/16
  */
-public final class ImdbSite extends BaseSite implements ImdbRepo {
+public final class ImdbSite extends ImdbRepo {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
@@ -57,7 +56,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepo {
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
 
     public ImdbSite() {
-        super("IMDb", "imdb.com", 10);
+        super("IMDb", "imdb.com");
     }
 
     @Override
@@ -171,7 +170,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepo {
                 }
             }
             if (map.isEmpty()) {
-                result.add(null);
+                result.add(new String[1]);
                 continue;
             }
             String[] episodes = new String[Collections.max(map.keySet()) + 1];

@@ -1,13 +1,16 @@
 package wsg.tools.boot.dao.api.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 import wsg.tools.boot.pojo.result.SingleResult;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
@@ -28,7 +31,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Configuration
-public class SubjectAdapterImpl implements SubjectAdapter {
+public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
 
     private static final String DOUBAN_SUBJECT = "douban subject";
     private static final String IMDB_TITLE = "imdb title";
@@ -57,10 +60,21 @@ public class SubjectAdapterImpl implements SubjectAdapter {
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getDbId());
         }
+        if (doubanSite.user() != null) {
+            Long dbIdByImdbId;
+            try {
+                dbIdByImdbId = doubanSite.getDbIdByImdbId(imdbId);
+            } catch (LoginException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+            if (dbIdByImdbId != null) {
+                return SingleResult.of(saveIdRelation(dbIdByImdbId, imdbId));
+            }
+        }
         throw new NotFoundException("Can't find douban ID by IMDb ID: " + imdbId);
     }
 
-    private void saveIdRelation(long dbId, String imdbId) {
+    private long saveIdRelation(long dbId, String imdbId) {
         Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
         if (optional.isEmpty()) {
             IdRelationEntity entity = new IdRelationEntity();
@@ -68,6 +82,7 @@ public class SubjectAdapterImpl implements SubjectAdapter {
             entity.setDbId(dbId);
             relationRepository.insert(entity);
         }
+        return dbId;
     }
 
     @Override
@@ -85,7 +100,7 @@ public class SubjectAdapterImpl implements SubjectAdapter {
         try {
             return SingleResult.of(imdbRepo.getItemById(imdbId));
         } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg((BaseSite) imdbRepo, IMDB_TITLE, imdbId, e));
+            throw new NotFoundException(errorMsg(imdbRepo, IMDB_TITLE, imdbId, e));
         }
     }
 
@@ -96,5 +111,11 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     @Autowired
     public void setRelationRepository(IdRelationRepository relationRepository) {
         this.relationRepository = relationRepository;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        doubanSite.close();
+
     }
 }

@@ -22,8 +22,9 @@ public class ImdbSeries extends BaseImdbTitle {
 
     /**
      * Index of a given episode is array[currentSeason-1][currentEpisode].
-     * Ep0 may be included if exists.
-     * The corresponding element will be null if an season has no episodes.
+     * <p>
+     * Ep0 may be included if exists. It also means that length of each array is at least 1
+     * even if all of the elements are null.
      */
     private List<String[]> episodes;
 }

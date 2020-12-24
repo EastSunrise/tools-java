@@ -13,22 +13,22 @@
                 <div class="layui-inline">
                     <label class="layui-form-label" for="key"> KEY </label>
                     <div class="layui-input-inline">
-                        <input type="text" id="key" name="key" required placeholder="Please input a key"
-                               value="${query.key!''}" autocomplete="off" class="layui-input">
+                        <input type="text" id="key" name="key" required placeholder="Please input a key" value="${query.key!''}" autocomplete="off"
+                               class="layui-input">
                     </div>
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label" for="dbId" style="width: 100px"> ID of Douban </label>
                     <div class="layui-input-inline">
-                        <input type="text" id="dbId" name="dbId" required placeholder="Please input an ID of Douban"
-                               value="${(query.dbId?c)!''}" autocomplete="off" class="layui-input">
+                        <input type="text" id="dbId" name="dbId" required placeholder="Please input an ID of Douban" value="${(query.dbId?c)!''}"
+                               autocomplete="off" class="layui-input">
                     </div>
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label" for="imdbId"> ID of IMDb </label>
                     <div class="layui-input-inline">
-                        <input type="text" id="imdbId" name="imdbId" required placeholder="Please input an ID of IMDb"
-                               value="${(query.imdbId)!''}" autocomplete="off" class="layui-input">
+                        <input type="text" id="imdbId" name="imdbId" required placeholder="Please input an ID of IMDb" value="${(query.imdbId)!''}"
+                               autocomplete="off" class="layui-input">
                     </div>
                 </div>
             </div>
@@ -45,7 +45,9 @@
                                 <tr>
                                     <td>${link_index+1}</td>
                                     <td><a href="${link.url}">${(link.filename)!""}</td>
-                                    <td>${link.length!""}</td>
+                                    <td>
+                                        <#if link.length??>${(link.length/1024)?round} KB</#if>
+                                    </td>
                                     <td><a href="${link.thunder}">Thunder</a></td>
                                 </tr>
                             </#list>
