@@ -13,6 +13,7 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/6/16
  */
+@SiteStatus(status = SiteStatus.Status.BLOCKED)
 public final class ImdbSite extends ImdbRepo {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-z·\u0080-\u00FF]+";

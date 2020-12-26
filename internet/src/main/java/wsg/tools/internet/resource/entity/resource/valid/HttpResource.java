@@ -1,21 +1,22 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
 import wsg.tools.common.constant.SignEnum;
-import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Resources of http/https/ftp, except {@link PanResource} and {@link YunResource}.
+ * Resources of http/https/ftp, except {@link BaiduDiskResource} and {@link UcDiskResource}.
  *
  * @author Kingen
  * @since 2020/9/18
  */
-public class HttpResource extends BaseValidResource implements FilenameSupplier {
+public class HttpResource extends ValidResource implements FilenameSupplier {
 
-    public static final String[] PERMIT_SCHEMES = new String[]{"http", "https", "ftp"};
+    public static final String[] PERMIT_SCHEMES = new String[]{"http://", "https://", "ftp://"};
 
     private final URL url;
 
@@ -24,12 +25,12 @@ public class HttpResource extends BaseValidResource implements FilenameSupplier 
         this.url = url;
     }
 
-    public static HttpResource of(String title, String url) {
+    public static HttpResource of(String title, String url) throws InvalidResourceException {
         try {
             url = decode(url);
             return new HttpResource(title, new URL(url));
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Not a valid url: " + e.getMessage());
+            throw new InvalidResourceException("Not a valid http url: " + e.getMessage(), title, url);
         }
     }
 

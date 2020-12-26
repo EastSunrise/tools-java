@@ -8,6 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -17,27 +18,30 @@ import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
 import java.time.Year;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author Kingen
- * @see <a href="https://993dy.com">Movie Heaven</a>
+ * @see <a href="https://www.993dy.com/">Movie Heaven</a>
  * @since 2020/10/18
  */
 @Slf4j
 public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
 
     private static final String TIP_TITLE = "系统提示";
-    private static final Pattern ITEM_TITLE_REGEX =
-            Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
-    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-type-id-(?<index>\\d+)-pg-1.html");
+    private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
+    private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/vod-detail-id-(?<id>\\d+)\\.html");
+    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-type-id-(?<index>\\d+)-pg-1\\.html");
     private static final String UNKNOWN_YEAR = "未知";
     private static final Pattern VAR_URL_REGEX = Pattern.compile("var downurls=\"(?<entries>.*)#\";");
     private static final Pattern RESOURCE_REGEX = Pattern.compile("(?<title>(第\\d+集\\$)?[^$]+)\\$(?<url>[^$]*)");
@@ -55,27 +59,31 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected List<String> getAllPaths() {
-        return getPathsById(1, 73911, id -> String.format("/vod-detail-id-%d.html", id));
+    public List<SimpleItem> findAll() {
+        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/vod-detail-id-%d.html", id));
+        return findAllByPathsIgnoreNotFound(paths, this::getItem);
     }
 
-    @Override
-    protected Set<String> searchItems(@Nonnull String keyword) {
+    /**
+     * @see <a href="https://www.993dy.com/">Home</a>
+     */
+    private int getMaxId() {
         Document document;
         try {
-            document = getDocument(builder0("/index.php")
-                    .addParameter("m", "vod-search")
-                    .addParameter("wd", keyword)
-                    .addParameter("submit", "搜索影片"), true);
+            document = getDocument(builder0("/"), false);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Element ul = document.selectFirst("ul.img-list");
-        return ul.select(TAG_LI).stream().map(li -> li.selectFirst(TAG_A).attr(ATTR_HREF)).collect(Collectors.toSet());
+        Elements lis = document.selectFirst("div.newbox").select(TAG_LI);
+        int max = 1;
+        for (Element li : lis) {
+            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, li.selectFirst(TAG_A).attr(ATTR_HREF)).group("id");
+            max = Math.max(max, Integer.parseInt(id));
+        }
+        return max;
     }
 
-    @Override
-    protected SimpleItem getItem(@Nonnull String path) throws NotFoundException {
+    private SimpleItem getItem(@Nonnull String path) throws NotFoundException {
         URIBuilder builder = builder0(path);
         Document document = getDocument(builder, true);
         String title = document.title();
@@ -102,7 +110,8 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             }
         }
 
-        List<Resource> resources = new LinkedList<>();
+        List<ValidResource> resources = new LinkedList<>();
+        List<InvalidResourceException> exceptions = new LinkedList<>();
         final String downUl = "ul.downurl";
         for (Element ul : document.select(downUl)) {
             String varUrls = ul.selectFirst(TAG_SCRIPT).html().strip().split("\n")[0].strip();
@@ -114,11 +123,15 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {
                     continue;
                 }
-                resources.add(ResourceFactory.create(matcher.group("title"), url));
+                try {
+                    resources.add(ResourceFactory.create(matcher.group("title"), url, null));
+                } catch (InvalidResourceException e) {
+                    exceptions.add(e);
+                }
             }
         }
         item.setResources(resources);
-
+        item.setExceptions(exceptions);
         return item;
     }
 }

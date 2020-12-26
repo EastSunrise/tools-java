@@ -60,7 +60,7 @@ public final class AssertUtils {
      * @return the object
      * @throws IllegalArgumentException if test is failed
      */
-    public static <T> T test(T t, Predicate<T> predicate, String message) {
+    public static <T> T require(T t, Predicate<T> predicate, String message) {
         if (predicate.test(t)) {
             return t;
         }
@@ -70,10 +70,11 @@ public final class AssertUtils {
     /**
      * Validate args to be not blank.
      */
-    public static void requireNotBlank(String arg) {
+    public static String requireNotBlank(String arg) {
         if (StringUtils.isBlank(arg)) {
             throw new IllegalArgumentException("Arg mustn't be blank.");
         }
+        return arg;
     }
 
     /**

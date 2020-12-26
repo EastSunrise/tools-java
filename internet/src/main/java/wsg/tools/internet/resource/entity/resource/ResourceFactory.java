@@ -1,16 +1,16 @@
 package wsg.tools.internet.resource.entity.resource;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.entity.resource.base.InvalidResource;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 import wsg.tools.internet.resource.entity.resource.valid.*;
 
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * Factory of resources.
@@ -21,39 +21,39 @@ import java.nio.charset.Charset;
 @Slf4j
 public final class ResourceFactory {
 
-    public static Resource create(String title, @NonNull String url) {
-        return create(title, url, Constants.UTF_8);
+    public static ValidResource create(String title, String url, String password) throws InvalidResourceException {
+        return create(title, url, password, Constants.UTF_8);
     }
 
     /**
      * Create a resource based on the given url and title.
      */
-    public static Resource create(String title, @NonNull String url, Charset charset) {
+    public static ValidResource create(String title, String url, String password, Charset charset) throws InvalidResourceException {
+        Objects.requireNonNull(url);
         try {
             url = Thunder.decodeThunder(url.strip(), charset);
         } catch (IllegalArgumentException e) {
-            return new InvalidResource(title, url, e.getMessage());
+            throw new InvalidResourceException(e.getMessage(), title, url, password);
         }
 
-        try {
-            if (StringUtils.startsWithAny(url, Ed2kResource.SCHEME)) {
-                return Ed2kResource.of(title, url);
-            }
-            if (StringUtils.startsWithAny(url, MagnetResource.SCHEME)) {
-                return MagnetResource.of(title, url);
-            }
-            if (StringUtils.startsWithAny(url, HttpResource.PERMIT_SCHEMES)) {
-                if (url.contains(PanResource.PAN_HOST)) {
-                    return PanResource.of(title, url);
-                }
-                if (url.contains(YunResource.YUN_HOST)) {
-                    return YunResource.of(title, url);
-                }
-                return HttpResource.of(title, url);
-            }
-            return new UnknownResource(title, url);
-        } catch (IllegalArgumentException e) {
-            return new InvalidResource(title, url, e.getMessage());
+        if (StringUtils.containsIgnoreCase(url, Ed2kResource.SCHEME)) {
+            return Ed2kResource.of(title, url);
         }
+        if (StringUtils.containsIgnoreCase(url, MagnetResource.SCHEME)) {
+            return MagnetResource.of(title, url);
+        }
+        if (StringUtils.containsIgnoreCase(url, YyetsResource.SCHEME)) {
+            return YyetsResource.of(title, url);
+        }
+        if (StringUtils.containsIgnoreCase(url, BaiduDiskResource.HOST)) {
+            return BaiduDiskResource.of(title, url, password);
+        }
+        if (StringUtils.containsIgnoreCase(url, UcDiskResource.HOST)) {
+            return UcDiskResource.of(title, url);
+        }
+        if (StringUtils.containsAny(url, HttpResource.PERMIT_SCHEMES)) {
+            return HttpResource.of(title, url);
+        }
+        throw new UnknownResourceException(title, url, password);
     }
 }

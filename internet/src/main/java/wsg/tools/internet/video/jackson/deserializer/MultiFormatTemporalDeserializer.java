@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.jackson.deserializer;
 
+import com.fasterxml.jackson.databind.DeserializationContext;
 import wsg.tools.common.jackson.deserializer.AbstractStringDeserializer;
 
 import java.time.LocalDate;
@@ -26,7 +27,7 @@ public class MultiFormatTemporalDeserializer extends AbstractStringDeserializer<
     }
 
     @Override
-    protected Temporal parseText(String text) {
+    protected Temporal parseText(String text, DeserializationContext context) {
         try {
             return LocalDate.parse(text, DATE_FORMAT);
         } catch (DateTimeParseException e) {

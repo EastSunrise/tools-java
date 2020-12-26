@@ -31,7 +31,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
     public Object deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         if (targetType.isCollectionLikeType() && parser.hasToken(JsonToken.VALUE_STRING)) {
             String text = parser.getText();
-            if (StringUtils.isBlank(text)) {
+            if (StringUtils.isBlank(text) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
             String[] values = StringUtils.split(text, separator);
@@ -50,7 +50,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
     public JsonDeserializer<?> createContextual(DeserializationContext context, BeanProperty property) {
         JoinedValue joinedValue = property.getAnnotation(JoinedValue.class);
         if (joinedValue != null) {
-            separator = joinedValue.separator().toString();
+            separator = joinedValue.separator();
         }
         targetType = property.getType();
         this.property = property;

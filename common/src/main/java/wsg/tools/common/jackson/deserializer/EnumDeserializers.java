@@ -3,7 +3,10 @@ package wsg.tools.common.jackson.deserializer;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.CodeSupplier;
@@ -11,6 +14,7 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 
 import java.io.IOException;
+import java.util.function.BiPredicate;
 
 /**
  * Deserializers for {@link Enum} which usually implements {@link CodeSupplier}
@@ -19,6 +23,10 @@ import java.io.IOException;
  * @since 2020/7/23
  */
 public class EnumDeserializers {
+
+    public static <E extends Enum<E>, U> EnumDeserializer<E, U> getDeserializer(Class<E> eClass, Class<U> uClass, BiPredicate<E, U> predicate) {
+        return new EnumDeserializer<>(eClass, uClass, predicate);
+    }
 
     public static <C, E extends Enum<E> & CodeSupplier<C>> EnumCodeDeserializer<C, E> getCodeDeserializer(Class<C> cClass, Class<E> eClass) {
         return new EnumCodeDeserializer<>(eClass, cClass);
@@ -34,6 +42,35 @@ public class EnumDeserializers {
 
     public static <E extends Enum<E> & TitleSupplier> EnumTitleDeserializer<E> getTitleDeserializer(Class<E> tClass) {
         return new EnumTitleDeserializer<>(tClass);
+    }
+
+    public static class EnumDeserializer<E extends Enum<E>, U> extends StdDeserializer<E> {
+
+        private final Class<U> uClass;
+        private final BiPredicate<E, U> predicate;
+
+        protected EnumDeserializer(Class<E> eClass, Class<U> uClass, BiPredicate<E, U> predicate) {
+            super(eClass);
+            this.uClass = uClass;
+            this.predicate = predicate;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public E deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.hasToken(JsonToken.VALUE_NULL)) {
+                return null;
+            }
+            U u = parser.readValueAs(uClass);
+            if (u instanceof String && StringUtils.isBlank((String) u) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+                return null;
+            }
+            try {
+                return EnumUtilExt.deserialize((Class<E>) handledType(), e -> predicate.test(e, u));
+            } catch (IllegalArgumentException e) {
+                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), u, parser);
+            }
+        }
     }
 
     public static class EnumCodeDeserializer<Code, E extends Enum<E> & CodeSupplier<Code>> extends StdDeserializer<E> {
@@ -52,7 +89,14 @@ public class EnumDeserializers {
                 return null;
             }
             Code code = parser.readValueAs(codeClass);
-            return EnumUtilExt.deserializeCode(code, (Class<E>) handledType());
+            if (code instanceof String && StringUtils.isBlank((String) code) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+                return null;
+            }
+            try {
+                return EnumUtilExt.deserializeCode(code, (Class<E>) handledType());
+            } catch (IllegalArgumentException e) {
+                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), code, parser);
+            }
         }
     }
 
@@ -72,7 +116,14 @@ public class EnumDeserializers {
                 return null;
             }
             Aka aka = parser.readValueAs(akaClass);
-            return EnumUtilExt.deserializeAka(aka, (Class<E>) handledType());
+            if (aka instanceof String && StringUtils.isBlank((String) aka) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+                return null;
+            }
+            try {
+                return EnumUtilExt.deserializeAka(aka, (Class<E>) handledType());
+            } catch (IllegalArgumentException e) {
+                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), aka, parser);
+            }
         }
     }
 
@@ -83,8 +134,13 @@ public class EnumDeserializers {
         }
 
         @Override
-        protected E parseText(String text) {
-            return EnumUtilExt.deserializeText(text, clazz);
+        @SuppressWarnings("unchecked")
+        protected E parseText(String text, DeserializationContext context) throws IOException {
+            try {
+                return EnumUtilExt.deserializeText(text, clazz, context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
+            } catch (IllegalArgumentException e) {
+                return (E) context.handleWeirdStringValue(handledType(), text, e.getMessage());
+            }
         }
     }
 
@@ -95,8 +151,13 @@ public class EnumDeserializers {
         }
 
         @Override
-        protected E parseText(String title) {
-            return EnumUtilExt.deserializeTitle(title, clazz);
+        @SuppressWarnings("unchecked")
+        protected E parseText(String title, DeserializationContext context) throws IOException {
+            try {
+                return EnumUtilExt.deserializeTitle(title, clazz, context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
+            } catch (IllegalArgumentException e) {
+                return (E) context.handleWeirdStringValue(handledType(), title, e.getMessage());
+            }
         }
     }
 }

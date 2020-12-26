@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -36,7 +35,7 @@ public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
             if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT) && StringUtils.isBlank(text)) {
                 return null;
             }
-            return parseText(text);
+            return parseText(text, context);
         }
         return (T) context.handleUnexpectedToken(clazz, parser);
     }
@@ -44,9 +43,10 @@ public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
     /**
      * Obtains an object from a string.
      *
-     * @param text string
+     * @param text    string
+     * @param context Context that can be used to access information about this deserialization activity.
      * @return parsed object
-     * @throws InvalidFormatException invalid format
+     * @throws IOException i/o exception
      */
-    protected abstract T parseText(String text) throws InvalidFormatException;
+    protected abstract T parseText(String text, DeserializationContext context) throws IOException;
 }

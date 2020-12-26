@@ -3,7 +3,6 @@ package wsg.tools.internet.resource.site;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -15,17 +14,19 @@ import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
 import java.time.Year;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * @author Kingen
- * @see <a href="https://aixiaoju.com">AXJ</a>
+ * @see <a href="https://www.xlc2020.com/">XunLeiCang</a>
  * @since 2020/9/9
  */
 @Slf4j
@@ -33,10 +34,9 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
-    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<index>\\d+).html");
+    private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/vod-read-id-(?<id>\\d+)\\.html");
+    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<index>\\d+)\\.html");
 
-    private static final Pattern ITEM_HREF_REGEX =
-            Pattern.compile("(https://www\\.(xunleicang\\.in|xlc2020\\.com))?(?<path>/vod-read-id-\\d+.html)");
     private static final VideoType[] TYPES = {
             null, VideoType.MOVIE, VideoType.TV, VideoType.ANIME, VideoType.VARIETY, VideoType.FOUR_K,
             VideoType.FHD, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
@@ -50,35 +50,31 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
     }
 
     @Override
-    protected List<String> getAllPaths() {
-        return getPathsById(1, 43238, id -> String.format("/vod-read-id-%d.html", id));
+    public List<SimpleItem> findAll() {
+        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/vod-read-id-%d.html", id));
+        return findAllByPathsIgnoreNotFound(paths, this::getItem);
     }
 
-    @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
-        List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("wd", keyword));
+    /**
+     * @see <a href="https://www.xlc2020.com/ajax-show-id-new.html">Last Update</a>
+     */
+    private int getMaxId() {
         Document document;
         try {
-            document = postDocument(builder0("/vod-search"), params, true);
+            document = getDocument(builder0("/ajax-show-id-new.html"), false);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Set<String> paths = new HashSet<>();
-        String movList = "div.movList4";
-        for (Element div : document.select(movList)) {
-            Element h3 = div.selectFirst(TAG_H3);
-            Element a = h3.selectFirst(TAG_A);
-            Matcher matcher = ITEM_HREF_REGEX.matcher(a.attr(ATTR_HREF));
-            if (!matcher.matches()) {
-                continue;
-            }
-            paths.add(matcher.group("path"));
+        Elements as = document.selectFirst("ul.f6").select(TAG_A);
+        int max = 1;
+        for (Element a : as) {
+            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("id");
+            max = Math.max(max, Integer.parseInt(id));
         }
-        return paths;
+        return max;
     }
 
-    @Override
-    protected final SimpleItem getItem(@Nonnull String path) throws NotFoundException {
+    private SimpleItem getItem(@Nonnull String path) throws NotFoundException {
         URIBuilder builder = builder0(path);
         Document document = getDocument(builder, true);
         SimpleItem item = new SimpleItem(builder.toString());
@@ -95,7 +91,8 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             }
         }
 
-        List<Resource> resources = new LinkedList<>();
+        List<ValidResource> resources = new LinkedList<>();
+        List<InvalidResourceException> exceptions = new LinkedList<>();
         Elements lis = document.select("ul.down-list").select("li.item");
         for (Element li : lis) {
             Element a = li.selectFirst(TAG_A);
@@ -103,10 +100,14 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
-            resources.add(ResourceFactory.create(a.text().strip(), href));
+            try {
+                resources.add(ResourceFactory.create(a.text().strip(), href, null));
+            } catch (InvalidResourceException e) {
+                exceptions.add(e);
+            }
         }
         item.setResources(resources);
-
+        item.setExceptions(exceptions);
         return item;
     }
 }

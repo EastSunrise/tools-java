@@ -2,7 +2,6 @@ package wsg.tools.internet.resource.site;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -14,13 +13,13 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.Y80sItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author Kingen
@@ -41,40 +40,42 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
             "course", VideoType.COURSE,
             "weidianying", VideoType.MOVIE
     );
-    private static final Pattern ITEM_PATH_REGEX =
-            Pattern.compile("(?<path>/(?<type>" + String.join("|", TYPE_AKA.keySet()) + ")/\\d+)");
-    private static final Pattern ITEM_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com" + ITEM_PATH_REGEX.pattern());
-    private static final Pattern TYPE_HREF_REGEX =
-            Pattern.compile("//m\\.y80s\\.com/(?<type>movie|ju|zy|dm|trailer|mv|video|course|weidianying)/\\d+(-\\d){6}");
-    private static final Pattern YEAR_REGEX =
-            Pattern.compile("-?(?<year>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
-    private static final Pattern DOUBAN_HREF_REGEX =
-            Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
+    private static final Pattern MOVIE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
+    private static final Pattern TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<type>movie|ju|zy|dm|trailer|mv|video|course|weidianying)/\\d+(-\\d){6}");
+    private static final Pattern YEAR_REGEX = Pattern.compile("-?(?<year>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
+    private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
     public Y80sSite() {
         super("80s", SchemeEnum.HTTP, "m.y80s.com", 0.1);
     }
 
     @Override
-    protected List<String> getAllPaths() {
-        return getPathsById(1, 43708, id -> String.format("/movie/%d", id), 6800, 10705, 21147, 24926);
+    public List<Y80sItem> findAll() {
+        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/movie/%d", id), 6800, 10705, 21147, 24926);
+        return findAllByPathsIgnoreNotFound(paths, this::getItem);
     }
 
-    @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
-        AssertUtils.requireNotBlank(keyword);
-        List<BasicNameValuePair> params = Collections.singletonList(new BasicNameValuePair("keyword", keyword));
-        Elements as;
+    /**
+     * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
+     */
+    private int getMaxId() {
+        Document document;
         try {
-            as = postDocument(builder0("/search"), params, true).select("a.list-group-item");
+            document = getDocument(builder0("/movie/1-0-0-0-0-0-0"), false);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        return as.stream().map(a -> RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("path")).collect(Collectors.toSet());
+        Elements list = document.select(".list_mov");
+        int max = 1;
+        for (Element div : list) {
+            String href = div.selectFirst(TAG_A).attr(ATTR_HREF);
+            String id = RegexUtils.matchesOrElseThrow(MOVIE_HREF_REGEX, href).group("id");
+            max = Math.max(max, Integer.parseInt(id));
+        }
+        return max;
     }
 
-    @Override
-    protected final Y80sItem getItem(@Nonnull String path) throws NotFoundException {
+    private Y80sItem getItem(@Nonnull String path) throws NotFoundException {
         URIBuilder builder = builder0(path);
         Document document = getDocument(builder, true);
         if (document.childNodes().size() == 1) {
@@ -109,14 +110,18 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
             }
         }
 
-        List<Resource> resources = new LinkedList<>();
+        List<ValidResource> resources = new LinkedList<>();
+        List<InvalidResourceException> exceptions = new LinkedList<>();
         Elements dls = main.select("#dl-tab-panes").select("a.btn_dl");
         for (Element a : dls) {
-            String href = a.attr(ATTR_HREF);
-            resources.add(ResourceFactory.create(a.text().strip(), href));
+            try {
+                resources.add(ResourceFactory.create(a.text().strip(), a.attr(ATTR_HREF), null));
+            } catch (InvalidResourceException e) {
+                exceptions.add(e);
+            }
         }
         item.setResources(resources);
-
+        item.setExceptions(exceptions);
         return item;
     }
 }

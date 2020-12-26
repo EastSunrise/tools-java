@@ -9,28 +9,33 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.impl.BdFilmItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.base.UnknownResource;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * @author Kingen
- * @see <a href="https://bd-film.cc">BD Film</a>
+ * @see <a href="https://www.bd-film.cc/">BD Film</a>
  * @since 2020/9/23
  */
 @Slf4j
+@SiteStatus(status = SiteStatus.Status.RESTRICTED)
 public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
-    private static final Pattern ITEM_URL_REGEX =
-            Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+).htm)");
+    private static final Pattern ITEM_URL_REGEX = Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+)\\.htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
     private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-z+/=]*)\", " +
             "adsUrls = \"[0-9A-z+/=]*\", " +
@@ -47,36 +52,33 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     }
 
     @Override
-    protected List<String> getAllPaths() {
-        return getPathsById(359, 31256, id -> String.format("/gy/%d.htm", id), 30508);
+    public List<BdFilmItem> findAll() {
+        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/gy/%d.htm", id), 30508);
+        return findAllByPathsIgnoreNotFound(paths, this::getItem);
     }
 
     /**
-     * @param keyword title, id of Douban, or id of IMDb
+     * @see <a href="https://www.bd-film.cc/movies/index.htm">Last Update</a>
      */
-    @Override
-    protected final Set<String> searchItems(@Nonnull String keyword) {
+    private int getMaxId() {
         Document document;
         try {
-            document = getDocument(builder0("/search.jspx").addParameter("q", keyword), true);
+            document = getDocument(builder0("/movies/index.htm"), false);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
-        Elements lis = document.selectFirst("ul#content_list").select("li.list-item");
-        Set<String> paths = new HashSet<>();
+        Elements lis = document.selectFirst("#content_list").select("li.list-item");
+        int max = 1;
         for (Element li : lis) {
-            Element a = li.selectFirst(TAG_A);
-            Matcher matcher = ITEM_URL_REGEX.matcher(a.attr(ATTR_HREF));
-            if (!matcher.matches()) {
-                continue;
+            Matcher matcher = ITEM_URL_REGEX.matcher(li.selectFirst(TAG_A).attr(ATTR_HREF));
+            if (matcher.matches()) {
+                max = Math.max(max, Integer.parseInt(matcher.group("id")));
             }
-            paths.add(matcher.group("path"));
         }
-        return paths;
+        return max;
     }
 
-    @Override
-    protected final BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
+    private BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
         Document document = getDocument(builder0(path), true);
 
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
@@ -100,14 +102,17 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
         item.setDbId(db == null ? null : Long.parseLong(db));
         item.setImdbId(matcher.group("imdb"));
 
-        List<Resource> resources = new LinkedList<>();
+        List<ValidResource> resources = new LinkedList<>();
+        List<InvalidResourceException> exceptions = new LinkedList<>();
         String urls = decode(matcher.group("urls"));
-        urls = StringEscapeUtils.unescapeHtml4(urls)
-                .replace("<p>", "").replace("</p>", "");
+        urls = StringEscapeUtils.unescapeHtml4(urls).replace("<p>", "").replace("</p>", "");
         for (String url : urls.split("#{3,4}\r\n|#{3,4}")) {
             if (StringUtils.isNotBlank(url)) {
-                Resource resource = ResourceFactory.create("bd url", url);
-                resources.add(resource);
+                try {
+                    resources.add(ResourceFactory.create(null, url, null));
+                } catch (InvalidResourceException e) {
+                    exceptions.add(e);
+                }
             }
         }
 
@@ -118,13 +123,18 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                 Matcher m = DISK_RESOURCE_REGEX.matcher(diskUrl);
                 if (m.matches()) {
                     String url = "https://" + m.group("host") + m.group("path");
-                    resources.add(ResourceFactory.create(m.group("pwd"), url));
+                    try {
+                        resources.add(ResourceFactory.create(null, url, m.group("pwd")));
+                    } catch (InvalidResourceException e) {
+                        exceptions.add(e);
+                    }
                     continue;
                 }
-                resources.add(new UnknownResource(null, diskUrl));
+                exceptions.add(new UnknownResourceException(null, diskUrl, null));
             }
         }
         item.setResources(resources);
+        item.setExceptions(exceptions);
 
         Element content = document.selectFirst("dl.content");
         if (content == null) {
@@ -134,7 +144,6 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
         if (item.getImdbId() == null) {
             RegexUtils.ifFind(IMDB_INFO_REGEX, text, m -> item.setImdbId(m.group("id")));
         }
-
         return item;
     }
 

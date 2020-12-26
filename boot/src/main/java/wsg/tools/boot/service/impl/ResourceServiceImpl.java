@@ -15,21 +15,20 @@ import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
 import wsg.tools.internet.resource.entity.item.base.YearSupplier;
-import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
-import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
-import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.base.*;
 import wsg.tools.internet.resource.entity.resource.valid.*;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.annotation.Nullable;
+import javax.persistence.EntityExistsException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -58,15 +57,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Override
     @Transactional(rollbackFor = Exception.class)
     public <I extends BaseItem> void importAll(BaseResourceSite<I> site) {
-        Set<I> items = site.findAll();
+        List<I> items = site.findAll();
         int itemsCount = 0, linksCount = 0;
         for (I item : items) {
-            if (CollectionUtils.isEmpty(item.getResources())) {
+            List<ValidResource> resources = item.getResources();
+            if (CollectionUtils.isEmpty(resources)) {
                 continue;
             }
+            String itemUrl = item.getUrl();
 
             ResourceItemEntity itemEntity = new ResourceItemEntity();
-            itemEntity.setUrl(item.getUrl());
+            itemEntity.setUrl(itemUrl);
             itemEntity.setTitle(item.getTitle());
             itemEntity.setIdentified(false);
             if (item instanceof TypeSupplier) {
@@ -81,26 +82,27 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             if (item instanceof ImdbIdentifier) {
                 itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
             }
-            String itemUrl = itemRepository.insert(itemEntity).getUrl();
-            itemsCount++;
+            try {
+                itemRepository.insert(itemEntity);
+                itemsCount++;
+            } catch (EntityExistsException e) {
+                continue;
+            }
 
-            for (Resource resource : item.getResources()) {
-                if (resource instanceof BaseValidResource) {
-                    BaseValidResource baseValidResource = (BaseValidResource) resource;
-                    ResourceLinkEntity linkEntity = new ResourceLinkEntity();
-                    linkEntity.setItemUrl(itemUrl);
-                    linkEntity.setTitle(baseValidResource.getTitle());
-                    linkEntity.setUrl(baseValidResource.getUrl());
-                    linkEntity.setType(EnumUtilExt.deserializeAka(baseValidResource.getClass(), ResourceType.class));
-                    if (resource instanceof FilenameSupplier) {
-                        linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
-                    }
-                    if (resource instanceof LengthSupplier) {
-                        linkEntity.setLength(((LengthSupplier) resource).length());
-                    }
-                    linkRepository.insert(linkEntity);
-                    linksCount++;
+            for (ValidResource resource : resources) {
+                ResourceLinkEntity linkEntity = new ResourceLinkEntity();
+                linkEntity.setItemUrl(itemUrl);
+                linkEntity.setTitle(resource.getTitle());
+                linkEntity.setUrl(resource.getUrl());
+                linkEntity.setType(EnumUtilExt.deserializeAka(resource.getClass(), ResourceType.class));
+                if (resource instanceof FilenameSupplier) {
+                    linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
                 }
+                if (resource instanceof LengthSupplier) {
+                    linkEntity.setLength(((LengthSupplier) resource).length());
+                }
+                linkRepository.insert(linkEntity);
+                linksCount++;
             }
         }
         log.info("Finished importing: {} items, {} links.", itemsCount, linksCount);
@@ -149,26 +151,30 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (items.isEmpty()) {
             return SingleResult.of(-1L);
         }
-        Set<BaseValidResource> resources = new HashSet<>();
+        Set<ValidResource> resources = new HashSet<>();
         for (ResourceItemEntity item : items) {
             if (!item.getIdentified()) {
                 continue;
             }
             List<ResourceLinkEntity> links = linkRepository.findAllByItemUrl(item.getUrl());
             links.stream().map(link -> {
-                switch (link.getType()) {
-                    case ED2K:
-                        return Ed2kResource.of(link.getTitle(), link.getUrl());
-                    case HTTP:
-                        return HttpResource.of(link.getTitle(), link.getUrl());
-                    case MAGNET:
-                        return MagnetResource.of(link.getTitle(), link.getUrl());
-                    case UC_DISK:
-                        return YunResource.of(link.getTitle(), link.getUrl());
-                    case BAIDU_DISK:
-                        return PanResource.of(link.getTitle(), link.getUrl());
-                    default:
-                        throw new IllegalArgumentException("Unknown type of resources: " + link.getType());
+                try {
+                    switch (link.getType()) {
+                        case ED2K:
+                            return Ed2kResource.of(link.getTitle(), link.getUrl());
+                        case HTTP:
+                            return HttpResource.of(link.getTitle(), link.getUrl());
+                        case MAGNET:
+                            return MagnetResource.of(link.getTitle(), link.getUrl());
+                        case UC_DISK:
+                            return UcDiskResource.of(link.getTitle(), link.getUrl());
+                        case BAIDU_DISK:
+                            return BaiduDiskResource.of(link.getTitle(), link.getUrl(), null);
+                        default:
+                            throw new UnknownResourceException(link.getTitle(), link.getUrl(), null);
+                    }
+                } catch (InvalidResourceException e) {
+                    throw AssertUtils.runtimeException(e);
                 }
             }).forEach(resources::add);
         }

@@ -44,7 +44,6 @@ public interface SubjectService {
      * @throws SiteException          if an error occurs when accessing to the site
      * @throws DataIntegrityException if data is lacking
      */
-    @Deprecated
     SingleResult<Long> insertSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException;
 
     /**

@@ -4,9 +4,9 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
-import wsg.tools.internet.resource.entity.resource.valid.PanResource;
-import wsg.tools.internet.resource.entity.resource.valid.YunResource;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.valid.BaiduDiskResource;
+import wsg.tools.internet.resource.entity.resource.valid.UcDiskResource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.xunlei.com/">Thunder</a>
  * @since 2020/10/8
  */
-public class Thunder implements Downloader<BaseValidResource> {
+public class Thunder implements Downloader<ValidResource> {
 
     public static final String SCHEME = "thunder";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
@@ -63,8 +63,8 @@ public class Thunder implements Downloader<BaseValidResource> {
      * @param dir target directory is dependent on the selection of the dialog
      */
     @Override
-    public boolean addTask(File dir, BaseValidResource resource) throws IOException {
-        if (resource instanceof PanResource || resource instanceof YunResource) {
+    public boolean addTask(File dir, ValidResource resource) throws IOException {
+        if (resource instanceof BaiduDiskResource || resource instanceof UcDiskResource) {
             return false;
         }
 

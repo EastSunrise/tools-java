@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,7 +14,7 @@ import javax.persistence.Table;
  * Entities of links of resources.
  *
  * @author Kingen
- * @see BaseValidResource
+ * @see ValidResource
  * @since 2020/10/30
  */
 @Getter

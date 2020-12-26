@@ -1,8 +1,9 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.internet.resource.entity.resource.base.BaseValidResource;
 import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
+import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
+import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,12 +14,11 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/12/6
  */
-public class YyetsResource extends BaseValidResource implements FilenameSupplier, LengthSupplier {
+public class YyetsResource extends ValidResource implements FilenameSupplier, LengthSupplier {
 
-    public static final String SCHEME = "yyets";
+    public static final String SCHEME = "yyets://";
 
-    private static final Pattern URI_REGEX =
-            Pattern.compile("yyets://N=(?<name>[^|]+)\\|S=(?<size>\\d+)\\|H=(?<hash>[0-9A-z]{40})\\|");
+    private static final Pattern URI_REGEX = Pattern.compile("yyets://N=(?<name>[^|]+)\\|S=(?<size>\\d+)\\|H=(?<hash>[0-9A-z]{40})\\|");
 
     private final String name;
     private final long size;
@@ -31,13 +31,12 @@ public class YyetsResource extends BaseValidResource implements FilenameSupplier
         this.hash = hash;
     }
 
-    public static YyetsResource of(String title, String url) {
+    public static YyetsResource of(String title, String url) throws InvalidResourceException {
         Matcher matcher = URI_REGEX.matcher(url);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException(String.format("Not a valid %s url.", SCHEME));
+            throw new InvalidResourceException("Not a valid yyets url.", title, url);
         }
-        return new YyetsResource(title, matcher.group("name"),
-                Long.parseLong(matcher.group("size")), matcher.group("hash"));
+        return new YyetsResource(title, matcher.group("name"), Long.parseLong(matcher.group("size")), matcher.group("hash"));
     }
 
     @Override
