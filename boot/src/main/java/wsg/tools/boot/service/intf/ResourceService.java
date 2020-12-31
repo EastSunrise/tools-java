@@ -4,6 +4,7 @@ import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.pojo.result.SingleResult;
+import wsg.tools.internet.base.exception.SiteStatusException;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.site.BaseResourceSite;
 
@@ -25,8 +26,9 @@ public interface ResourceService {
      * Import all resources from the given site.
      *
      * @param site an implementation of {@link BaseResourceSite<I>}
+     * @throws SiteStatusException if the status of the site is abnormal
      */
-    <I extends BaseItem> void importAll(BaseResourceSite<I> site);
+    <I extends BaseItem> void importAll(BaseResourceSite<I> site) throws SiteStatusException;
 
     /**
      * Search resources of the given key.

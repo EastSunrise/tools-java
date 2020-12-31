@@ -32,8 +32,11 @@ public class ResourceLinkEntity extends IdentityEntity {
     @Column(nullable = false)
     private ResourceType type;
 
-    @Column(nullable = false, length = 4095)
+    @Column(nullable = false, length = 16383)
     private String url;
+
+    @Column(length = 4)
+    private String password;
 
     @Column
     private String filename;

@@ -11,7 +11,8 @@ public enum SchemeEnum {
      * Protocol of the url
      */
     HTTPS,
-    HTTP;
+    HTTP,
+    FTP;
 
     @Override
     public String toString() {

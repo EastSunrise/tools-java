@@ -1,9 +1,7 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
-import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import org.apache.commons.lang3.StringUtils;
+import wsg.tools.internet.resource.entity.resource.base.*;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,9 +14,9 @@ import java.util.regex.Pattern;
  */
 public class YyetsResource extends ValidResource implements FilenameSupplier, LengthSupplier {
 
-    public static final String SCHEME = "yyets://";
+    public static final String YYETS_PREFIX = "yyets://";
 
-    private static final Pattern URI_REGEX = Pattern.compile("yyets://N=(?<name>[^|]+)\\|S=(?<size>\\d+)\\|H=(?<hash>[0-9A-z]{40})\\|");
+    private static final Pattern YYETS_REGEX = Pattern.compile("yyets://N=(?<name>[^|]+)\\|S=(?<size>\\d+)\\|H=(?<hash>[0-9A-Za-z]{40})\\|", Pattern.CASE_INSENSITIVE);
 
     private final String name;
     private final long size;
@@ -32,9 +30,12 @@ public class YyetsResource extends ValidResource implements FilenameSupplier, Le
     }
 
     public static YyetsResource of(String title, String url) throws InvalidResourceException {
-        Matcher matcher = URI_REGEX.matcher(url);
+        if (!StringUtils.startsWithIgnoreCase(url, YYETS_PREFIX)) {
+            throw new UnknownResourceException("Not a yyets url", title, url);
+        }
+        Matcher matcher = YYETS_REGEX.matcher(url);
         if (!matcher.matches()) {
-            throw new InvalidResourceException("Not a valid yyets url.", title, url);
+            throw new InvalidResourceException("Not a valid yyets url", title, url);
         }
         return new YyetsResource(title, matcher.group("name"), Long.parseLong(matcher.group("size")), matcher.group("hash"));
     }

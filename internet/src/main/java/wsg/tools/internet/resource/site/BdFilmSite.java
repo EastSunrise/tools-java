@@ -37,12 +37,12 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
     private static final Pattern ITEM_URL_REGEX = Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+)\\.htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
-    private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-z+/=]*)\", " +
-            "adsUrls = \"[0-9A-z+/=]*\", " +
-            "diskUrls = \"(?<disk>[0-9A-z+/=]*)\", " +
+    private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-Za-z+/=]*)\", " +
+            "adsUrls = \"[0-9A-Za-z+/=]*\", " +
+            "diskUrls = \"(?<disk>[0-9A-Za-z+/=]*)\", " +
             "scoreData = \"(?<imdb>tt\\d+)? ?###(?<db>\\d+)?\"");
     private static final Pattern DISK_RESOURCE_REGEX = Pattern.compile(
-            "(\\+链接: )?(?<pwd>[0-9A-z]{4})?" +
+            "(\\+链接: )?(?<pwd>[0-9A-Za-z]{4})?" +
                     "(\\|\\|(https?|ttps| https|whttps|\\|https)|\\|?https|\\s+\\|\\|https)" +
                     "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com)(?<path>/[\\w-./?=&]+)\\s*"
     );
@@ -53,14 +53,13 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
 
     @Override
     public List<BdFilmItem> findAll() {
-        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/gy/%d.htm", id), 30508);
-        return findAllByPathsIgnoreNotFound(paths, this::getItem);
+        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
     }
 
     /**
      * @see <a href="https://www.bd-film.cc/movies/index.htm">Last Update</a>
      */
-    private int getMaxId() {
+    private List<String> getAllPaths() {
         Document document;
         try {
             document = getDocument(builder0("/movies/index.htm"), false);
@@ -75,7 +74,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                 max = Math.max(max, Integer.parseInt(matcher.group("id")));
             }
         }
-        return max;
+        return getPathsById(max, "/gy/%d.htm", 30508);
     }
 
     private BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
@@ -130,7 +129,7 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                     }
                     continue;
                 }
-                exceptions.add(new UnknownResourceException(null, diskUrl, null));
+                exceptions.add(new UnknownResourceException("Not a disk resource", null, diskUrl));
             }
         }
         item.setResources(resources);

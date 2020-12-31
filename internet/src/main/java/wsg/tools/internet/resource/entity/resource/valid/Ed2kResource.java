@@ -1,9 +1,7 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
-import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
-import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import org.apache.commons.lang3.StringUtils;
+import wsg.tools.internet.resource.entity.resource.base.*;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -18,16 +16,14 @@ import java.util.regex.Pattern;
  */
 public class Ed2kResource extends ValidResource implements FilenameSupplier, LengthSupplier {
 
-    public static final String SCHEME = "ed2k://";
-
-    private static final Pattern URI_REGEX = Pattern.compile(
-            "((请输入)?ed2k://(开头的地址|\\|file\\|)?)?ed2k://\\|file\\|+(?<name>[^|]+)\\|+(?<size>\\d+)\\|+(?<hash>[0-9A-z]{32})" +
-                    "(\\|+\\s*h=(?<h>[0-9A-z]{32})" +
-                    "|\\|+\\s*p=(?<p>[0-9A-z]{32}(:[0-9A-z]{32})*)" +
-                    "|\\|+\\s*s=(?<s>[^|]+))*" +
-                    "(\\|/\\|sources,(?<sources>\\d{1,3}(\\.\\d{1,3}){3}:\\d{1,5})\\|/)?" +
-                    "([|/]?|\\|/.*|\\|(?![hps]=).*)", Pattern.CASE_INSENSITIVE
-    );
+    public static final String ED2K_PREFIX = "ed2k://";
+    private static final Pattern ED2K_REGEX = Pattern.compile(
+            "ed2k://\\|file\\|(?<name>[^|]+)\\|(?<size>\\d+)\\|(?<hash>[0-9A-Za-z]{32})" +
+                    "(\\|h=(?<h>[0-9A-Za-z]{32})" +
+                    "|\\|p=(?<p>[0-9A-Za-z]{32}(:[0-9A-Za-z]{32})*)" +
+                    "|\\|s=(?<s>[^|]+))*" +
+                    "(\\|/\\|sources,(?<sources>\\d{1,3}(\\.\\d{1,3}){3}:\\d{1,5})\\|/" +
+                    "|(\\|/.*)|(\\|/\\|/)|(\\|)|)", Pattern.CASE_INSENSITIVE);
     private final String filename;
     private final long size;
     private final String hash;
@@ -52,9 +48,12 @@ public class Ed2kResource extends ValidResource implements FilenameSupplier, Len
     }
 
     public static Ed2kResource of(String title, @Nonnull String url) throws InvalidResourceException {
-        url = decode(url);
-        Matcher matcher = URI_REGEX.matcher(url);
-        if (matcher.matches()) {
+        if (!StringUtils.startsWithIgnoreCase(url, ED2K_PREFIX)) {
+            throw new UnknownResourceException("Not an ed2k url", title, url);
+        }
+        url = url.replace(" ", "");
+        Matcher matcher = ED2K_REGEX.matcher(url);
+        if (matcher.lookingAt()) {
             return new Ed2kResource(
                     title,
                     matcher.group("name"),
@@ -66,7 +65,7 @@ public class Ed2kResource extends ValidResource implements FilenameSupplier, Len
                     matcher.group("sources")
             );
         }
-        throw new InvalidResourceException("Not a valid ed2k url.", title, url);
+        throw new InvalidResourceException("Not a valid ed2k url", title, url);
     }
 
     @Override

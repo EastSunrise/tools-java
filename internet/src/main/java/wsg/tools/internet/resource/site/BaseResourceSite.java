@@ -10,7 +10,6 @@ import wsg.tools.internet.resource.entity.item.base.BaseItem;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -56,11 +55,11 @@ public abstract class BaseResourceSite<I extends BaseItem> extends BaseSite {
     /**
      * Obtains paths based on ids.
      */
-    protected final List<String> getPathsById(int startInclusive, int endInclusive, IntFunction<String> creator, int... excepts) {
-        if (ArrayUtils.isEmpty(excepts)) {
-            return IntStream.rangeClosed(startInclusive, endInclusive).mapToObj(creator).collect(Collectors.toList());
+    protected final List<String> getPathsById(int endInclusive, String pathFormat, int... excepts) {
+        IntStream intStream = IntStream.rangeClosed(1, endInclusive);
+        if (ArrayUtils.isNotEmpty(excepts)) {
+            intStream = intStream.filter(i -> !ArrayUtils.contains(excepts, i));
         }
-        return IntStream.rangeClosed(startInclusive, endInclusive).filter(i -> !ArrayUtils.contains(excepts, i))
-                .mapToObj(creator).collect(Collectors.toList());
+        return intStream.mapToObj(id -> String.format(pathFormat, id)).collect(Collectors.toList());
     }
 }

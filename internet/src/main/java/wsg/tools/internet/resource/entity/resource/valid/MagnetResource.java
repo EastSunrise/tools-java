@@ -1,9 +1,11 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
@@ -21,23 +23,20 @@ import java.util.stream.Collectors;
  */
 public class MagnetResource extends ValidResource {
 
-    public static final String SCHEME = "magnet:?";
+    public static final String MAGNET_PREFIX = "magnet:?";
 
-    private static final String XT = "urn:(btih|tree:tiger|sha1|ed2k|aich|kzhash|md5):([0-9A-z]{40}|[0-9A-z]{32})";
+    private static final String XT = "urn:(btih|tree:tiger|sha1|ed2k|aich|kzhash|md5):([0-9A-Za-z]{40}|[0-9A-Za-z]{32})";
     private static final String XL = "\\d+";
-    private static final String EQ = "(\\.?\\d+)?=";
+    private static final String EQ = "(\\d+|\\.\\d+|\\+\\d+)?=";
     private static final String VAR = "[^&]*(&(?!(xl|tr|dn|xt)" + EQ + ")[^&]*)*";
-    private static final Pattern XT_REGEX = Pattern.compile("(\\?1?|&)xt" + EQ + "(?<xt>" + XT + ")");
+    private static final Pattern XT_REGEX = Pattern.compile("(\\?1?xt1?|&xt)" + EQ + "(?<xt>" + XT + ")");
     private static final Pattern DN_REGEX = Pattern.compile("[?&]dn" + EQ + "(?<dn>" + VAR + ")");
     private static final Pattern TR_REGEX = Pattern.compile("[?&]tr" + EQ + "(?<tr>" + VAR + ")");
-    private static final Pattern XL_REGEX = Pattern.compile("[?&]xl" + EQ + "(?<xl>\\d+)");
-    private static final Pattern URL_REGEX = Pattern.compile(
-            "(请输入Magnet://开头的地址|magnet(:\\??)?)+(xt" + EQ + XT + "&+|(tr|dn)(" + EQ + VAR + ")?&+|xl" + EQ + XL + "&+)*" +
-                    "1?xt" + EQ + XT +
-                    "(&+xt" + EQ + XT + "|&+(tr|dn)(" + EQ + VAR + ")?|&+xl" + EQ + XL + ")*" +
-                    "(&+(?!xl|tr|dn|xt)[^&]*)?"
-    );
-
+    private static final Pattern XL_REGEX = Pattern.compile("[?&]xl" + EQ + "(?<xl>" + XL + ")");
+    private static final Pattern MAGNET_REGEX = Pattern.compile(
+            "magnet:\\?((tr|dn)" + EQ + VAR + "&|xl" + EQ + XL + "&)*" +
+                    "+1?xt1?" + EQ + XT + "\\W?(&(tr|dn)" + EQ + VAR + "|&xl" + EQ + XL + ")*" +
+                    "(&t|&dn|&tr)?", Pattern.CASE_INSENSITIVE);
     private final Set<String> topics;
     /**
      * may empty
@@ -55,11 +54,13 @@ public class MagnetResource extends ValidResource {
     }
 
     public static MagnetResource of(String title, @Nonnull String url) throws InvalidResourceException {
-        url = decode(url);
+        if (!StringUtils.startsWithIgnoreCase(url, MAGNET_PREFIX)) {
+            throw new UnknownResourceException("Not a magnet url", title, url);
+        }
         url = url.replace(" ", "");
         url = StringEscapeUtils.unescapeHtml4(url);
-        if (!URL_REGEX.matcher(url).matches()) {
-            throw new InvalidResourceException("Not a valid magnet url.", title, url);
+        if (!MAGNET_REGEX.matcher(url).matches()) {
+            throw new InvalidResourceException("Not a valid magnet url", title, url);
         }
         Matcher matcher = XT_REGEX.matcher(url);
         Set<String> topics = new HashSet<>();

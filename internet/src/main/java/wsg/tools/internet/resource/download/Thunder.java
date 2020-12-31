@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.download;
 
+import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.io.Rundll32;
@@ -24,35 +25,33 @@ import java.util.regex.Pattern;
  */
 public class Thunder implements Downloader<ValidResource> {
 
-    public static final String SCHEME = "thunder";
+    public static final String PREFIX = "thunder://";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
-    private static final Pattern DECODED_REGEX = Pattern.compile("AA(?<url>.*)ZZ");
+    private static final Pattern THUNDER_REGEX = Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)/?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SRC_URL_REGEX = Pattern.compile("AA(?<url>.*)ZZ");
 
     /**
      * Encode a url to a thunder url.
      */
     public static String encodeThunder(@Nonnull String url) {
-        if (url.startsWith(SCHEME)) {
+        if (StringUtils.startsWithIgnoreCase(url, PREFIX)) {
             return url;
         }
         byte[] bytes = ("AA" + url + "ZZ").getBytes(Constants.UTF_8);
-        return String.format("%s://%s", SCHEME, Base64.getEncoder().encodeToString(bytes));
-    }
-
-    public static String decodeThunder(@Nonnull String url) {
-        return decodeThunder(url, Constants.UTF_8);
+        return PREFIX + Base64.getEncoder().encodeToString(bytes);
     }
 
     /**
      * Decode a thunder to a common url.
      */
     public static String decodeThunder(@Nonnull String url, Charset charset) {
-        while (url.startsWith(SCHEME)) {
-            url = url.substring((SCHEME + "://").length());
-            url = new String(Base64.getDecoder().decode(url), charset);
-            url = RegexUtils.matchesOrElseThrow(DECODED_REGEX, url).group("url");
+        url = url.strip();
+        while (StringUtils.startsWithIgnoreCase(url, PREFIX)) {
+            url = RegexUtils.matchesOrElseThrow(THUNDER_REGEX, url).group("c");
+            url = new String(Base64.getDecoder().decode(url.getBytes(charset)), charset);
+            url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("url").strip();
         }
-        return url.strip();
+        return url;
     }
 
     public static Filetype[] tmpTypes() {

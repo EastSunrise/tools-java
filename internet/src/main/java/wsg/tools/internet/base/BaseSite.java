@@ -114,7 +114,9 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     protected final ObjectMapper mapper;
     @Getter
     private final String name;
+    @Getter
     private final SchemeEnum scheme;
+    @Getter
     private final String host;
     private final HttpClientContext context;
     private final Map<String, RateLimiter> limiters;

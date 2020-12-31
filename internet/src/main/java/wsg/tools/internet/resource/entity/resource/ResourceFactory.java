@@ -9,6 +9,7 @@ import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 import wsg.tools.internet.resource.entity.resource.valid.*;
 
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
@@ -30,30 +31,38 @@ public final class ResourceFactory {
      */
     public static ValidResource create(String title, String url, String password, Charset charset) throws InvalidResourceException {
         Objects.requireNonNull(url);
+        if (StringUtils.startsWithIgnoreCase(url, Thunder.PREFIX)) {
+            try {
+                url = Thunder.decodeThunder(url, charset);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidResourceException("Not a valid thunder url", title, url, password);
+            }
+        }
         try {
-            url = Thunder.decodeThunder(url.strip(), charset);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidResourceException(e.getMessage(), title, url, password);
+            url = URLDecoder.decode(url, charset);
+        } catch (IllegalArgumentException ignored) {
         }
 
-        if (StringUtils.containsIgnoreCase(url, Ed2kResource.SCHEME)) {
+        if (StringUtils.startsWithIgnoreCase(url, Ed2kResource.ED2K_PREFIX)) {
             return Ed2kResource.of(title, url);
         }
-        if (StringUtils.containsIgnoreCase(url, MagnetResource.SCHEME)) {
+        if (StringUtils.startsWithIgnoreCase(url, MagnetResource.MAGNET_PREFIX)) {
             return MagnetResource.of(title, url);
         }
-        if (StringUtils.containsIgnoreCase(url, YyetsResource.SCHEME)) {
+        if (StringUtils.startsWithIgnoreCase(url, YyetsResource.YYETS_PREFIX)) {
             return YyetsResource.of(title, url);
         }
-        if (StringUtils.containsIgnoreCase(url, BaiduDiskResource.HOST)) {
-            return BaiduDiskResource.of(title, url, password);
+        if (StringUtils.containsIgnoreCase(url, BaiduDiskResource.BAIDU_DISK_HOST)) {
+            throw new InvalidResourceException("password", title, url, password);
         }
-        if (StringUtils.containsIgnoreCase(url, UcDiskResource.HOST)) {
+        if (StringUtils.containsIgnoreCase(url, UcDiskResource.UC_DISK_HOST)) {
             return UcDiskResource.of(title, url);
         }
-        if (StringUtils.containsAny(url, HttpResource.PERMIT_SCHEMES)) {
-            return HttpResource.of(title, url);
+        for (String prefix : HttpResource.HTTP_PREFIXES) {
+            if (StringUtils.startsWithIgnoreCase(url, prefix)) {
+                return HttpResource.of(title, url);
+            }
         }
-        throw new UnknownResourceException(title, url, password);
+        throw new UnknownResourceException("Unknown type of resource", title, url, password);
     }
 }

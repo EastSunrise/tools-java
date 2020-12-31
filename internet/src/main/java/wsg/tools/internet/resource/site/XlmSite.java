@@ -48,14 +48,13 @@ public class XlmSite extends BaseResourceSite<SimpleItem> {
 
     @Override
     public List<SimpleItem> findAll() {
-        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/dy/k%d.html", id), 16962, 30391, 30721);
-        return findAllByPathsIgnoreNotFound(paths, this::getItem);
+        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
     }
 
     /**
      * @see <a href="https://www.xlmdytt.com/new.html">Last Update</a>
      */
-    private int getMaxId() {
+    private List<String> getAllPaths() {
         Document document;
         try {
             document = getDocument(builder0("/new.html"), false);
@@ -68,7 +67,7 @@ public class XlmSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, tit.attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return max;
+        return getPathsById(max, "/dy/k%d.html", 16962, 30391, 30721);
     }
 
     private SimpleItem getItem(@Nonnull String path) throws NotFoundException {

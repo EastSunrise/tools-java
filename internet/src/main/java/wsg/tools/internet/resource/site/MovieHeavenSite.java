@@ -60,14 +60,13 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
 
     @Override
     public List<SimpleItem> findAll() {
-        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/vod-detail-id-%d.html", id));
-        return findAllByPathsIgnoreNotFound(paths, this::getItem);
+        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
     }
 
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
-    private int getMaxId() {
+    private List<String> getAllPaths() {
         Document document;
         try {
             document = getDocument(builder0("/"), false);
@@ -80,7 +79,7 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, li.selectFirst(TAG_A).attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return max;
+        return getPathsById(max, "/vod-detail-id-%d.html");
     }
 
     private SimpleItem getItem(@Nonnull String path) throws NotFoundException {

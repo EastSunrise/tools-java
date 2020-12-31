@@ -51,14 +51,13 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
 
     @Override
     public List<SimpleItem> findAll() {
-        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/vod-read-id-%d.html", id));
-        return findAllByPathsIgnoreNotFound(paths, this::getItem);
+        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
     }
 
     /**
      * @see <a href="https://www.xlc2020.com/ajax-show-id-new.html">Last Update</a>
      */
-    private int getMaxId() {
+    private List<String> getAllPaths() {
         Document document;
         try {
             document = getDocument(builder0("/ajax-show-id-new.html"), false);
@@ -71,7 +70,7 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return max;
+        return getPathsById(max, "/vod-read-id-%d.html");
     }
 
     private SimpleItem getItem(@Nonnull String path) throws NotFoundException {

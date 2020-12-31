@@ -18,6 +18,7 @@ public enum ResourceType implements AkaPredicate<Class<? extends ValidResource>>
      */
     ED2K(Ed2kResource.class, "ed2k"),
     MAGNET(MagnetResource.class, "magnet"),
+    YYETS(YyetsResource.class, "yyets"),
     BAIDU_DISK(BaiduDiskResource.class, "Baidu Yun Disk"),
     UC_DISK(UcDiskResource.class, "UC Yun DIsk"),
     HTTP(HttpResource.class, "HTTP/HTTPS/FTP");

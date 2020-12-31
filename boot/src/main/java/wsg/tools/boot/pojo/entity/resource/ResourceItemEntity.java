@@ -31,6 +31,9 @@ public class ResourceItemEntity extends BaseEntity implements DoubanIdentifier, 
     @Column(length = 63)
     private String url;
 
+    @Column(nullable = false, length = 15)
+    private String site;
+
     @Column(nullable = false)
     private String title;
 

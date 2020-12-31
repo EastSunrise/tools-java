@@ -1,12 +1,15 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
+import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.SignEnum;
 import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 
 /**
  * Resources of http/https/ftp, except {@link BaiduDiskResource} and {@link UcDiskResource}.
@@ -16,7 +19,7 @@ import java.net.URL;
  */
 public class HttpResource extends ValidResource implements FilenameSupplier {
 
-    public static final String[] PERMIT_SCHEMES = new String[]{"http://", "https://", "ftp://"};
+    public static final String[] HTTP_PREFIXES = new String[]{"https://", "http://", "ftp://"};
 
     private final URL url;
 
@@ -26,11 +29,13 @@ public class HttpResource extends ValidResource implements FilenameSupplier {
     }
 
     public static HttpResource of(String title, String url) throws InvalidResourceException {
+        if (Arrays.stream(HTTP_PREFIXES).noneMatch(prefix -> StringUtils.startsWithIgnoreCase(url, prefix))) {
+            throw new UnknownResourceException("Not a http url", title, url);
+        }
         try {
-            url = decode(url);
             return new HttpResource(title, new URL(url));
         } catch (MalformedURLException e) {
-            throw new InvalidResourceException("Not a valid http url: " + e.getMessage(), title, url);
+            throw new InvalidResourceException("Not a valid http url", title, url);
         }
     }
 

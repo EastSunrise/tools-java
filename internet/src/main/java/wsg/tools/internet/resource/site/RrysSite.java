@@ -10,7 +10,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -65,6 +64,8 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
     private static final Pattern INDEX_INFO_REGEX = Pattern.compile("var index_info=(?<info>\\{.*})");
     private static final Pattern RESOURCE_URL_REGEX = Pattern.compile("http://got002\\.com/resource\\.html\\?code=(?<c>[0-9A-Za-z]+)");
     private static final Pattern IMDB_URL_REGEX = Pattern.compile("http://www\\.imdb\\.com/title/(?<id>tt\\d+)/");
+    private static final Pattern PASSWORD_REGEX = Pattern.compile("(密码：)?(?<p>[0-9a-zA-Z]{4}) ?(下同|\\u200B+|)");
+    private static final Pattern URL_PWD_REGEX = Pattern.compile("(提取码|密码)：(?<p>[0-9a-zA-Z]{4})(?!\\w)");
 
     public RrysSite() {
         super("RRYS", SchemeEnum.HTTP, "www.rrys2020.com", 10D);
@@ -167,8 +168,15 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
                     if (files != null) {
                         for (FileItem file : files) {
                             String passwd = file.getPasswd();
-                            if (StringUtils.isBlank(passwd)) {
-                                passwd = null;
+                            if (passwd != null) {
+                                Matcher m = PASSWORD_REGEX.matcher(passwd);
+                                passwd = m.matches() ? m.group("p") : null;
+                            }
+                            if (passwd == null) {
+                                Matcher m = URL_PWD_REGEX.matcher(file.getAddress());
+                                if (m.find()) {
+                                    passwd = m.group("p");
+                                }
                             }
                             try {
                                 resources.add(ResourceFactory.create(name, file.getAddress(), passwd));

@@ -11,19 +11,18 @@ import lombok.Getter;
 @Getter
 public class InvalidResourceException extends Exception implements Resource {
 
-    private final String reason;
     private final String title;
     private final String url;
     private String password;
 
     public InvalidResourceException(String reason, String title, String url) {
-        this.reason = reason;
+        super(reason);
         this.title = title;
         this.url = url;
     }
 
     public InvalidResourceException(String reason, String title, String url, String password) {
-        this.reason = reason;
+        super(reason);
         this.title = title;
         this.url = url;
         this.password = password;

@@ -4,6 +4,7 @@ import wsg.tools.boot.dao.jpa.base.BaseRepository;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for items of resources.
@@ -11,7 +12,15 @@ import java.util.List;
  * @author Kingen
  * @since 2020/11/4
  */
-public interface ResourceItemRepository extends BaseRepository<ResourceItemEntity, Long> {
+public interface ResourceItemRepository extends BaseRepository<ResourceItemEntity, String> {
+
+    /**
+     * Find an entity by the given url.
+     *
+     * @param url id
+     * @return optional of the entity
+     */
+    Optional<ResourceItemEntity> findByUrl(String url);
 
     /**
      * Find all entities by identify.

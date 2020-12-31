@@ -11,7 +11,11 @@ import lombok.Getter;
 @Getter
 public class UnknownResourceException extends InvalidResourceException {
 
-    public UnknownResourceException(String title, String url, String password) {
-        super("Unknown type of resource.", title, url, password);
+    public UnknownResourceException(String reason, String title, String url) {
+        super(reason, title, url);
+    }
+
+    public UnknownResourceException(String reason, String title, String url, String password) {
+        super(reason, title, url, password);
     }
 }

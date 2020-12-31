@@ -51,14 +51,13 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
 
     @Override
     public List<Y80sItem> findAll() {
-        List<String> paths = getPathsById(1, getMaxId(), id -> String.format("/movie/%d", id), 6800, 10705, 21147, 24926);
-        return findAllByPathsIgnoreNotFound(paths, this::getItem);
+        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
     }
 
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
-    private int getMaxId() {
+    private List<String> getAllPaths() {
         Document document;
         try {
             document = getDocument(builder0("/movie/1-0-0-0-0-0-0"), false);
@@ -72,7 +71,7 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
             String id = RegexUtils.matchesOrElseThrow(MOVIE_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return max;
+        return getPathsById(max, "/movie/%d", 6800, 10705, 21147, 24926);
     }
 
     private Y80sItem getItem(@Nonnull String path) throws NotFoundException {

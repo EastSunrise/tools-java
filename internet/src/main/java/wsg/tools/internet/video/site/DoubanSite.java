@@ -60,17 +60,15 @@ import java.util.stream.Collectors;
 public class DoubanSite extends BaseSite {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
-    public static final String TITLE_PERMIT_CHARS = "[ ?#&*,-.!'0-9:;A-z·\u0080-\u024F\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\u2150-\u218F\u3040-\u30FF\u4E00-\u9FBF\uAC00-\uD7AF！：。]";
     public static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
     protected static final int MAX_COUNT_ONCE = 100;
-    protected static final int COUNT_PER_PAGE = 15;
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
     private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
-    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9+/A-z]+\"");
+    private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9A-Za-z+/]+\"");
     private static final Pattern SEARCH_ITEM_HREF_REGEX =
-            Pattern.compile("https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-z%.-]+)&query=(?<q>[0-9A-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
+            Pattern.compile("https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-Za-z%.-]+)&query=(?<q>[0-9A-Za-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
 
     public DoubanSite() {
         super("Douban", "douban.com", 1);

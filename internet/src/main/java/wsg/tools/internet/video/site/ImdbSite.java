@@ -43,18 +43,14 @@ import java.util.stream.Collectors;
 @SiteStatus(status = SiteStatus.Status.BLOCKED)
 public final class ImdbSite extends ImdbRepo {
 
-    private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-z·\u0080-\u00FF]+";
+    private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
-    private static final Pattern MOVIE_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
+    private static final Pattern MOVIE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
     private static final Pattern SERIES_PAGE_TITLE_REGEX =
             Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV (Mini-)?Series (?<start>\\d{4})(–((?<end>\\d{4})| )?)?\\) - IMDb");
-    private static final Pattern SEASON_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
-    private static final Pattern EPISODE_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
-    private static final Pattern WORK_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
+    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
+    private static final Pattern EPISODE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
+    private static final Pattern WORK_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
 
     public ImdbSite() {
