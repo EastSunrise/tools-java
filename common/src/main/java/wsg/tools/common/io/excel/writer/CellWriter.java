@@ -20,34 +20,48 @@ import java.util.Date;
  * @author Kingen
  * @since 2020/7/21
  */
-public class BaseCellWriter<V> {
+public class CellWriter<V> {
+
+    /**
+     * Must be one of types mentioned in {@link #setCellValue(Cell, Object, Class)}.
+     */
+    private final Class<?> targetType;
+
+    public CellWriter() {
+        this.targetType = null;
+    }
+
+    public CellWriter(Class<?> targetType) {
+        this.targetType = targetType;
+    }
 
     /**
      * Set value of the given cell.
+     * <p>
+     * If type of the value is one of those mentioned in {@link #setCellValue(Cell, Object, Class)}, it'll set directly.
+     * If not, the value will be convert to the target type, and then try to set the cell again.
+     * If still not, it will throw an exception.
      *
      * @param cell   given cell
      * @param value  object to write
      * @param mapper mapper to convert values
      */
     public void setCellValue(Cell cell, V value, ObjectMapper mapper) {
-        if (setCellValue(cell, value)) {
+        if (value == null) {
+            return;
+        }
+        if (setCellValue(cell, value, value.getClass())) {
             return;
         }
 
-        Class<?> middleType = getMiddleType();
-        Object middleValue;
-        if (middleType != null) {
-            middleValue = (ClassUtils.isAssignable(value.getClass(), middleType)) ?
-                    middleType.cast(value) :
-                    mapper.convertValue(value, middleType);
-            if (setCellValue(cell, middleValue)) {
+        if (targetType != null) {
+            Object targetValue = (ClassUtils.isAssignable(value.getClass(), targetType)) ? targetType.cast(value) : mapper.convertValue(value, targetType);
+            if (setCellValue(cell, targetValue, targetType)) {
                 return;
             }
-        } else {
-            middleValue = value;
+            throw new IllegalArgumentException("Can't write type of " + targetType.getName() + " to a cell.");
         }
-
-        setCellValue(cell, middleValue.toString());
+        throw new IllegalArgumentException("Can't write type of " + value.getClass().getName() + " to a cell.");
     }
 
     /**
@@ -61,63 +75,49 @@ public class BaseCellWriter<V> {
     }
 
     /**
-     * Print a value
+     * Print a value to the csv
      */
     public void print(CSVPrinter printer, V value, ObjectMapper mapper) throws IOException {
         printer.print(mapper.convertValue(value, String.class));
     }
 
     /**
-     * Returns middle type between type of the cell and type of java object to write.
+     * Set value of the given cell.
      *
-     * @return middle type
+     * @return true if the value is null or the type of the value is one of String, Boolean, LocalDate, LocalDateTime,
+     * Double, Date, Calendar, or RichTextString.
      */
-    protected Class<?> getMiddleType() {
-        return null;
-    }
-
-    /**
-     * Set value of the given cell
-     *
-     * @param cell  given cell
-     * @param value value to set
-     * @return whether set successfully
-     */
-    private boolean setCellValue(Cell cell, Object value) {
+    private boolean setCellValue(Cell cell, Object value, Class<?> clazz) {
         if (value == null) {
             return true;
         }
-        if (value instanceof String) {
+        if (String.class.equals(clazz)) {
             cell.setCellValue((String) value);
             return true;
         }
-        if (value instanceof Number) {
-            cell.setCellValue(((Number) value).doubleValue());
-            return true;
-        }
-        if (value instanceof Boolean) {
+        if (Boolean.class.equals(clazz)) {
             cell.setCellValue((Boolean) value);
             return true;
         }
-        if (value instanceof LocalDate) {
+        if (LocalDate.class.equals(clazz)) {
             cell.setCellValue((LocalDate) value);
             return true;
         }
-        if (value instanceof LocalDateTime) {
+        if (LocalDateTime.class.equals(clazz)) {
             cell.setCellValue((LocalDateTime) value);
             return true;
         }
-        if (value instanceof Date) {
+        if (Double.class.equals(clazz)) {
+            cell.setCellValue((Double) value);
+        }
+        if (Date.class.equals(clazz)) {
             cell.setCellValue((Date) value);
-            return true;
         }
-        if (value instanceof Calendar) {
+        if (Calendar.class.equals(clazz)) {
             cell.setCellValue((Calendar) value);
-            return true;
         }
-        if (value instanceof RichTextString) {
+        if (RichTextString.class.equals(clazz)) {
             cell.setCellValue((RichTextString) value);
-            return true;
         }
         return false;
     }

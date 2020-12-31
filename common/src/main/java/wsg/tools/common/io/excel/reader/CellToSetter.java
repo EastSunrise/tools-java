@@ -13,27 +13,31 @@ import wsg.tools.common.util.function.SetterBiConsumer;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class BaseCellToSetter<T, V> extends CellReader<V> implements SetterBiConsumer<T, V> {
+public class CellToSetter<T, V> extends CellReader<V> {
 
-    public BaseCellToSetter(Class<V> clazz) {
+    private final SetterBiConsumer<T, V> setter;
+
+    public CellToSetter(Class<V> clazz, SetterBiConsumer<T, V> setter) {
         super(clazz);
+        this.setter = setter;
     }
 
-    public BaseCellToSetter(TypeReference<V> typeReference) {
+    public CellToSetter(TypeReference<V> typeReference, SetterBiConsumer<T, V> setter) {
         super(typeReference);
+        this.setter = setter;
     }
 
     /**
      * Read the given cell and set the corresponding property of the target object.
      */
-    public void readCellToSet(Cell cell, ObjectMapper mapper, T t) {
-        setValue(t, readCell(cell, mapper));
+    public void readCellToSetter(Cell cell, ObjectMapper mapper, T t) {
+        setter.setValue(t, readCell(cell, mapper));
     }
 
     /**
      * Read the given value and set the corresponding property of the target object.
      */
-    public void readRecordToSet(String value, ObjectMapper mapper, T t) {
-        setValue(t, readRecord(value, mapper));
+    public void readRecordToSetter(String value, ObjectMapper mapper, T t) {
+        setter.setValue(t, readRecord(value, mapper));
     }
 }

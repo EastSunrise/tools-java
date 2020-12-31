@@ -2,6 +2,7 @@ package wsg.tools.common.io.excel.writer;
 
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
+import wsg.tools.common.util.function.GetterFunction;
 
 import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
 
@@ -11,7 +12,11 @@ import static org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLUE;
  * @author Kingen
  * @since 2020/7/21
  */
-public abstract class BaseHyperlinkCellFromGetter<T> extends BaseCellFromGetter<T, String> {
+public abstract class HyperlinkCellFromGetter<T> extends CellFromGetter<T, String> {
+
+    public HyperlinkCellFromGetter(GetterFunction<T, String> getter) {
+        super(getter);
+    }
 
     @Override
     public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {
@@ -36,19 +41,6 @@ public abstract class BaseHyperlinkCellFromGetter<T> extends BaseCellFromGetter<
         cellStyle.setFont(font);
         return cellStyle;
     }
-
-    @Override
-    public String getValue(T t) {
-        return getLabel(t);
-    }
-
-    /**
-     * Returns text label for this hyperlink
-     *
-     * @param t given object
-     * @return text to display
-     */
-    public abstract String getLabel(T t);
 
     /**
      * Returns address for this hyperlink

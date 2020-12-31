@@ -1,5 +1,7 @@
 package wsg.tools.common.util.function;
 
+import java.util.Map;
+
 /**
  * Supply an instance of the given type {@link T}.
  *
@@ -12,7 +14,8 @@ public interface CreatorSupplier<T> {
     /**
      * Create an instance of the type {@link T}.
      *
+     * @param map map of properties
      * @return created instance
      */
-    T create();
+    T create(Map<String, Object> map);
 }

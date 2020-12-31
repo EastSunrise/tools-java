@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * Interface to read a cell.
@@ -29,7 +31,7 @@ public class CellReader<V> {
     }
 
     /**
-     * Read a cell of Excel.
+     * Read value of a cell of Excel.
      */
     public V readCell(Cell cell, ObjectMapper mapper) {
         Object value = readValue(cell);
@@ -42,7 +44,7 @@ public class CellReader<V> {
     }
 
     /**
-     * Read a value of csv
+     * Read value of a record of csv
      */
     public V readRecord(String value, ObjectMapper mapper) {
         if (StringUtils.isBlank(value)) {
@@ -58,25 +60,32 @@ public class CellReader<V> {
     }
 
     /**
-     * Read value of the given cell
+     * todo Read value of the given cell
      *
      * @param cell given cell, not null
      * @return value
      */
     private Object readValue(Cell cell) {
-        CellType cellType = cell.getCellType();
-        switch (cellType) {
-            case BOOLEAN:
+        if (type instanceof Class) {
+            if (String.class.equals(type)) {
+                return cell.getStringCellValue();
+            }
+            if (Boolean.class.equals(type)) {
                 return cell.getBooleanCellValue();
-            case NUMERIC:
+            }
+            if (LocalDate.class.equals(type)) {
+                return cell.getLocalDateTimeCellValue().toLocalDate();
+            }
+            if (LocalDateTime.class.equals(type)) {
+                return cell.getLocalDateTimeCellValue();
+            }
+            if (Double.class.equals(type)) {
                 return cell.getNumericCellValue();
-            case STRING:
-                String value = cell.getStringCellValue();
-                return StringUtils.isBlank(value) ? null : value;
-            case FORMULA:
-                return cell.getCellFormula();
-            default:
-                return null;
+            }
+            if (Date.class.equals(type)) {
+                return cell.getDateCellValue();
+            }
         }
+        return null;
     }
 }

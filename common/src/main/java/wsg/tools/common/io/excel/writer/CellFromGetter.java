@@ -16,26 +16,37 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/24
  */
-public abstract class BaseCellFromGetter<T, V> extends BaseCellWriter<V> implements GetterFunction<T, V> {
+public class CellFromGetter<T, V> extends CellWriter<V> {
+
+    private final GetterFunction<T, V> getter;
+
+    public CellFromGetter(GetterFunction<T, V> getter) {
+        this.getter = getter;
+    }
+
+    public CellFromGetter(Class<?> targetType, GetterFunction<T, V> getter) {
+        super(targetType);
+        this.getter = getter;
+    }
 
     /**
      * Set the given cell with value got from implemented getter.
      */
     public void setCellFromGetter(Cell cell, T t, ObjectMapper mapper) {
-        super.setCellValue(cell, getValue(t), mapper);
+        super.setCellValue(cell, getter.getValue(t), mapper);
     }
 
     /**
      * Set style of the given cell.
      */
     public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {
-        super.setCellStyle(cell, getValue(t), workbook);
+        super.setCellStyle(cell, getter.getValue(t), workbook);
     }
 
     /**
      * Print value got from implemented getter.
      */
     public void printFromGetter(CSVPrinter printer, T t, ObjectMapper mapper) throws IOException {
-        super.print(printer, getValue(t), mapper);
+        super.print(printer, getter.getValue(t), mapper);
     }
 }
