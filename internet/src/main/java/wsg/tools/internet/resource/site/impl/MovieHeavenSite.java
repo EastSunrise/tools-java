@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,16 +12,15 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.VideoConstants;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
-import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
+import wsg.tools.internet.resource.entity.item.impl.MovieHeavenItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.video.VideoConstants;
 
-import javax.annotation.Nonnull;
 import java.time.Year;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -36,7 +35,7 @@ import java.util.regex.Pattern;
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
+public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
@@ -58,15 +57,11 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
         super("Movie Heaven", "993dy.com");
     }
 
-    @Override
-    public List<SimpleItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
-    }
-
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
-    private List<String> getAllPaths() {
+    @Override
+    protected int getMaxId() {
         Document document;
         try {
             document = getDocument(builder0("/"), false);
@@ -79,18 +74,19 @@ public class MovieHeavenSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, li.selectFirst(TAG_A).attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return getPathsById(max, "/vod-detail-id-%d.html");
+        return max;
     }
 
-    private SimpleItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    @Override
+    protected MovieHeavenItem getItem(int id) throws NotFoundException {
+        URIBuilder builder = builder0("/vod-detail-id-%d.html", id);
         Document document = getDocument(builder, true);
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
         }
 
-        SimpleItem item = new SimpleItem(builder.toString());
+        MovieHeavenItem item = new MovieHeavenItem(id, builder.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
 
         Map<String, Node> infos = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);

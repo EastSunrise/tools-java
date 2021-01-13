@@ -28,10 +28,7 @@ import wsg.tools.boot.service.intf.VideoManager;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -168,7 +165,7 @@ public class SubjectController extends AbstractController {
         if (StringUtils.isBlank(key)) {
             key = seriesEntity.getTitle();
         }
-        Set<ResourceItemEntity> items = resourceService.search(key, null, seriesEntity.getImdbId());
+        Set<ResourceItemEntity> items = new HashSet<>(resourceService.search(key, null, seriesEntity.getImdbId()));
         seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
         model.addAttribute("items", items);
         return "video/series/resources";

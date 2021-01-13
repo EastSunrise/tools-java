@@ -1,8 +1,9 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,7 +18,6 @@ import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
-import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @SiteStatus(status = SiteStatus.Status.RESTRICTED)
-public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
+public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
 
     private static final Pattern ITEM_URL_REGEX = Pattern.compile("(https?://www\\.bd-film\\.(cc|com))?(?<path>/(?<type>gy|dh|gq|jd|zx|zy)/(?<id>\\d+)\\.htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
@@ -48,18 +48,14 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
     );
 
     public BdFilmSite() {
-        super("BD-Film", "bd-film.cc");
-    }
-
-    @Override
-    public List<BdFilmItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
+        super("BD-Film", "bd-film.cc", 30508);
     }
 
     /**
      * @see <a href="https://www.bd-film.cc/movies/index.htm">Last Update</a>
      */
-    private List<String> getAllPaths() {
+    @Override
+    protected int getMaxId() {
         Document document;
         try {
             document = getDocument(builder0("/movies/index.htm"), false);
@@ -74,17 +70,18 @@ public final class BdFilmSite extends BaseResourceSite<BdFilmItem> {
                 max = Math.max(max, Integer.parseInt(matcher.group("id")));
             }
         }
-        return getPathsById(max, "/gy/%d.htm", 30508);
+        return max;
     }
 
-    private BdFilmItem getItem(@Nonnull String path) throws NotFoundException {
-        Document document = getDocument(builder0(path), true);
-
+    @Override
+    protected BdFilmItem getItem(int id) throws NotFoundException {
+        URIBuilder builder = builder0("/gy/%d.htm", id);
+        Document document = getDocument(builder, true);
         String location = document.selectFirst("meta[property=og:url]").attr(ATTR_CONTENT);
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
             throw new NotFoundException("Not a film page: " + location);
         }
-        BdFilmItem item = new BdFilmItem(location);
+        BdFilmItem item = new BdFilmItem(id, location);
         String[] keywords = document.selectFirst("meta[name=keywords]").attr(ATTR_CONTENT).split(",免费下载");
         item.setTitle(keywords[0].strip());
 

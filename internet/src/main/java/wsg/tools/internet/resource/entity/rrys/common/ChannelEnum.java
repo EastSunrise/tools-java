@@ -1,7 +1,7 @@
 package wsg.tools.internet.resource.entity.rrys.common;
 
 import wsg.tools.internet.resource.entity.item.base.VideoType;
-import wsg.tools.internet.resource.site.RrysSite;
+import wsg.tools.internet.resource.site.impl.RrysSite;
 
 /**
  * Channels of resources of {@link RrysSite}.

@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -13,12 +13,11 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
-import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
+import wsg.tools.internet.resource.entity.item.impl.XlmItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.xlmdytt.com/">XLM</a>
  * @since 2020/12/2
  */
-public class XlmSite extends BaseResourceSite<SimpleItem> {
+public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
 
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/dy/k(?<id>\\d+)\\.html");
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>[^《》]*(《[^《》]+》)?[^《》]*)》\\S+\\1\\S+");
@@ -43,18 +42,14 @@ public class XlmSite extends BaseResourceSite<SimpleItem> {
     };
 
     public XlmSite() {
-        super("Xlm", "xlmdytt.com");
-    }
-
-    @Override
-    public List<SimpleItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
+        super("Xlm", "xlmdytt.com", 16962, 30391, 30721);
     }
 
     /**
      * @see <a href="https://www.xlmdytt.com/new.html">Last Update</a>
      */
-    private List<String> getAllPaths() {
+    @Override
+    protected int getMaxId() {
         Document document;
         try {
             document = getDocument(builder0("/new.html"), false);
@@ -67,13 +62,14 @@ public class XlmSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, tit.attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return getPathsById(max, "/dy/k%d.html", 16962, 30391, 30721);
+        return max;
     }
 
-    private SimpleItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    @Override
+    protected XlmItem getItem(int id) throws NotFoundException {
+        URIBuilder builder = builder0("/dy/k%d.html", id);
         Document document = getDocument(builder, true);
-        SimpleItem item = new SimpleItem(builder.toString());
+        XlmItem item = new XlmItem(id, builder.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
 
         String typeHref = document.selectFirst("div.conpath").select(TAG_A).get(1).attr(ATTR_HREF);

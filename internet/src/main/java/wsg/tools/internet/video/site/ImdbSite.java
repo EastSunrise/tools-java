@@ -13,6 +13,7 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/16
  */
 @SiteStatus(status = SiteStatus.Status.BLOCKED)
-public final class ImdbSite extends ImdbRepo {
+public final class ImdbSite extends BaseSite implements ImdbRepository {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");

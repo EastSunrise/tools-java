@@ -1,6 +1,5 @@
 package wsg.tools.internet.video.site;
 
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 
@@ -12,11 +11,7 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2020/12/12
  */
-public abstract class ImdbRepo extends BaseSite {
-
-    public ImdbRepo(String name, String host) {
-        super(name, host);
-    }
+public interface ImdbRepository {
 
     /**
      * Obtains an item by the given identifier.
@@ -25,5 +20,5 @@ public abstract class ImdbRepo extends BaseSite {
      * @return info of the item
      * @throws NotFoundException if not found
      */
-    public abstract BaseImdbTitle getItemById(@Nonnull String imdbId) throws NotFoundException;
+    BaseImdbTitle getItemById(@Nonnull String imdbId) throws NotFoundException;
 }

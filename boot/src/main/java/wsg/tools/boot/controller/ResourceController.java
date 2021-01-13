@@ -42,7 +42,7 @@ public class ResourceController extends AbstractController {
             final boolean chosen = query.getChosen();
             items = items.filter(item -> item.getIdentified() == chosen);
         }
-        List<ResourceLinkEntity> linkEntities = resourceService.getLinks(items.map(ResourceItemEntity::getUrl).collect(Collectors.toSet()));
+        List<ResourceLinkEntity> linkEntities = resourceService.getLinks(items.map(ResourceItemEntity::getId).collect(Collectors.toList()));
         Map<String, List<LinkDto>> links = linkEntities.stream().map(link -> {
             LinkDto linkDto = BeanUtilExt.convert(link, LinkDto.class);
             if (linkDto.getFilename() == null) {

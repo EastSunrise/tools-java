@@ -375,10 +375,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     @Override
     public BatchResult<Long> importDouban(long userId, LocalDate since) {
         if (since == null) {
-            since = userRecordRepository.findMaxMarkDate();
-            if (since == null) {
-                since = DoubanSite.DOUBAN_START_DATE;
-            }
+            since = userRecordRepository.findMaxMarkDate().orElse(DoubanSite.DOUBAN_START_DATE);
         }
         log.info("Start to import douban subjects of {} since {}", userId, since);
         int[] count = {0};

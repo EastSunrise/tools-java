@@ -3,16 +3,15 @@ package wsg.tools.boot.service.intf;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
-import wsg.tools.boot.pojo.result.SingleResult;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.SiteStatusException;
-import wsg.tools.internet.resource.entity.item.base.BaseItem;
-import wsg.tools.internet.resource.site.BaseResourceSite;
+import wsg.tools.internet.resource.entity.item.base.IdentifiedItem;
+import wsg.tools.internet.resource.site.intf.RangeRepository;
+import wsg.tools.internet.resource.site.intf.ResourceRepository;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Interface of resource service.
@@ -25,10 +24,18 @@ public interface ResourceService {
     /**
      * Import all resources from the given site.
      *
-     * @param site an implementation of {@link BaseResourceSite<I>}
+     * @param site an implementation of {@link ResourceRepository}
      * @throws SiteStatusException if the status of the site is abnormal
      */
-    <I extends BaseItem> void importAll(BaseResourceSite<I> site) throws SiteStatusException;
+    <I extends IdentifiedItem, S extends BaseSite & ResourceRepository<I, Integer>> void importAll(S site) throws SiteStatusException;
+
+    /**
+     * Import latest resources from the given site.
+     *
+     * @param site an implementation of {@link ResourceRepository}
+     * @throws SiteStatusException if the status of the site is abnormal
+     */
+    <I extends IdentifiedItem, S extends BaseSite & RangeRepository<I>> void importLatest(S site) throws SiteStatusException;
 
     /**
      * Search resources of the given key.
@@ -38,7 +45,7 @@ public interface ResourceService {
      * @param imdbId id of IMDb
      * @return result of list of resources
      */
-    Set<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId);
+    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId);
 
     /**
      * Link the given item to the given identifiers.
@@ -49,20 +56,10 @@ public interface ResourceService {
     long check(List<ResourceCheckDto> checkDtoList);
 
     /**
-     * Download all resources matched by the given identifiers to the target directory.
-     *
-     * @param target target directory
-     * @param dbId   id of Douban
-     * @param imdbId id of IMDb
-     * @return -1 if none resource found, otherwise, count of links added to download.
-     */
-    SingleResult<Long> download(File target, @Nullable Long dbId, @Nullable String imdbId);
-
-    /**
      * Obtains links of the given items.
      *
-     * @param itemUrls urls of items
+     * @param itemIds ids of items
      * @return map of item-links
      */
-    List<ResourceLinkEntity> getLinks(Collection<String> itemUrls);
+    List<ResourceLinkEntity> getLinks(Collection<Long> itemIds);
 }

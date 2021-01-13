@@ -15,18 +15,10 @@ import java.util.List;
 public interface ResourceLinkRepository extends BaseRepository<ResourceLinkEntity, Long> {
 
     /**
-     * Obtains all links of the given item.
-     *
-     * @param itemUrl url of the item
-     * @return list of links
-     */
-    List<ResourceLinkEntity> findAllByItemUrl(String itemUrl);
-
-    /**
      * Obtains all links of the given items.
      *
-     * @param itemUrls urls of the items
+     * @param itemIds ids of the items
      * @return list of links
      */
-    List<ResourceLinkEntity> findAllByItemUrlIsIn(Collection<String> itemUrls);
+    List<ResourceLinkEntity> findAllByItemIdIsIn(Collection<Long> itemIds);
 }

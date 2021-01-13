@@ -1,37 +1,29 @@
 package wsg.tools.internet.resource.entity.item.impl;
 
 import lombok.Setter;
-import wsg.tools.internet.resource.entity.item.base.BaseItem;
+import wsg.tools.internet.resource.entity.item.base.IdentifiedItem;
 import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.base.YearSupplier;
+import wsg.tools.internet.resource.site.impl.MovieHeavenSite;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * Items with year and type.
+ * Items of {@link MovieHeavenSite}.
  *
  * @author Kingen
- * @since 2020/10/20
+ * @since 2021/1/10
  */
 @Setter
-public class SimpleItem extends BaseItem implements YearSupplier, TypeSupplier {
+public class MovieHeavenItem extends IdentifiedItem implements TypeSupplier, YearSupplier {
 
     private Integer year;
     private VideoType type;
 
-    public SimpleItem(@Nonnull String url) {
-        super(url);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
+    public MovieHeavenItem(int id, @Nonnull String url) {
+        super(id, url);
     }
 
     @Override
@@ -39,6 +31,7 @@ public class SimpleItem extends BaseItem implements YearSupplier, TypeSupplier {
         return type;
     }
 
+    @Nullable
     @Override
     public Integer getYear() {
         return year;

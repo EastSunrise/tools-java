@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.resource.entity.rrys.common.FormatEnum;
-import wsg.tools.internet.resource.site.RrysSite;
+import wsg.tools.internet.resource.site.impl.RrysSite;
 
 import java.io.IOException;
 import java.time.Year;

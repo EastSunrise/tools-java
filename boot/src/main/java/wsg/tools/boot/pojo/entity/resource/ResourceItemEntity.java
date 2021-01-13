@@ -2,17 +2,13 @@ package wsg.tools.boot.pojo.entity.resource;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.BaseEntity;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.resource.entity.item.base.BaseItem;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import java.util.Objects;
+import javax.persistence.*;
 
 /**
  * Items of resources.
@@ -24,20 +20,25 @@ import java.util.Objects;
 @Getter
 @Setter
 @Entity
-@Table(name = "resource_item")
-public class ResourceItemEntity extends BaseEntity implements DoubanIdentifier, ImdbIdentifier {
-
-    @Id
-    @Column(length = 63)
-    private String url;
+@Table(name = "resource_item", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_site_key", columnNames = {"site", "sid"})
+}, indexes = {
+        @Index(name = "index_imdb", columnList = "imdbId")
+})
+public class ResourceItemEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier {
 
     @Column(nullable = false, length = 15)
     private String site;
 
     @Column(nullable = false)
-    private String title;
+    private Integer sid;
+
+    @Column(nullable = false, length = 63, unique = true)
+    private String url;
 
     @Column(nullable = false)
+    private String title;
+
     private VideoType videoType;
 
     private Integer year;
@@ -52,18 +53,11 @@ public class ResourceItemEntity extends BaseEntity implements DoubanIdentifier, 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ResourceItemEntity that = (ResourceItemEntity) o;
-        return Objects.equals(url, that.url);
+        return super.equals(o);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url);
+        return super.hashCode();
     }
 }

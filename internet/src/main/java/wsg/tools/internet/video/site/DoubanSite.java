@@ -354,7 +354,7 @@ public class DoubanSite extends BaseSite {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
-        log.info("Collect {} of user {} since {}", catalog, userId, since);
+        log.info("Collect {} {} of user {} since {}", mark, catalog, userId, since);
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
@@ -385,7 +385,7 @@ public class DoubanSite extends BaseSite {
                 break;
             }
         }
-        log.info("Collected {} {}", map.size(), catalog);
+        log.info("Collected {}: {}", catalog, map.size());
         return map;
     }
 

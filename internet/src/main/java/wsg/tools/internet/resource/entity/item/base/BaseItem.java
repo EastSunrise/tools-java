@@ -5,9 +5,7 @@ import lombok.Setter;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
-import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Detail of a base item.
@@ -19,29 +17,7 @@ import java.util.Objects;
 @Setter
 public class BaseItem {
 
-    private final String url;
     private String title;
     private List<ValidResource> resources;
     private List<InvalidResourceException> exceptions;
-
-    public BaseItem(@Nonnull String url) {
-        this.url = url;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        BaseItem that = (BaseItem) o;
-        return url.equals(that.url);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(url);
-    }
 }

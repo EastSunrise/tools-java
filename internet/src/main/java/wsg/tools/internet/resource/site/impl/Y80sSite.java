@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
@@ -16,7 +16,6 @@ import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +26,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends BaseResourceSite<Y80sItem> {
+public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
 
     private static final Map<String, VideoType> TYPE_AKA = Map.of(
             "movie", VideoType.MOVIE,
@@ -46,18 +45,14 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
     private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
     public Y80sSite() {
-        super("80s", SchemeEnum.HTTP, "m.y80s.com", 0.1);
-    }
-
-    @Override
-    public List<Y80sItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
+        super("80s", SchemeEnum.HTTP, "m.y80s.com", 0.1, 6800, 10705, 21147, 24926);
     }
 
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
-    private List<String> getAllPaths() {
+    @Override
+    protected int getMaxId() {
         Document document;
         try {
             document = getDocument(builder0("/movie/1-0-0-0-0-0-0"), false);
@@ -71,16 +66,17 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
             String id = RegexUtils.matchesOrElseThrow(MOVIE_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return getPathsById(max, "/movie/%d", 6800, 10705, 21147, 24926);
+        return max;
     }
 
-    private Y80sItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    @Override
+    protected Y80sItem getItem(int id) throws NotFoundException {
+        URIBuilder builder = builder0("/movie/%d", id);
         Document document = getDocument(builder, true);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }
-        Y80sItem item = new Y80sItem(builder.toString());
+        Y80sItem item = new Y80sItem(id, builder.toString());
 
         Elements lis = document.selectFirst("#path").select(TAG_LI);
         Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, lis.get(1).selectFirst(TAG_A).attr(ATTR_HREF));
@@ -103,9 +99,9 @@ public class Y80sSite extends BaseResourceSite<Y80sItem> {
         span = attributes.get("豆瓣评分：");
         if (span != null) {
             String doubanHref = span.nextElementSibling().nextElementSibling().attr(ATTR_HREF);
-            String id = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
-            if (id != null) {
-                item.setDbId(Long.parseLong(id));
+            String dbId = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
+            if (dbId != null) {
+                item.setDbId(Long.parseLong(dbId));
             }
         }
 

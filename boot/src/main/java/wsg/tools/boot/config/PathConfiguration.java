@@ -90,7 +90,8 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     public void afterPropertiesSet() {
         File file = new File(this.cdn);
         if (!file.isDirectory()) {
-            throw new IllegalArgumentException("Not a valid cdn: " + cdn);
+            log.warn("Not a valid cdn: " + cdn);
+            this.cdn = System.getProperty("java.io.tmpdir");
         }
         file = new File(this.tmpdir);
         if (!file.isDirectory()) {

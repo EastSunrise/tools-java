@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class ResourceCheckDto extends BaseDto {
 
-    private String url;
+    private Long id;
     private Long dbId;
     private String imdbId;
 }

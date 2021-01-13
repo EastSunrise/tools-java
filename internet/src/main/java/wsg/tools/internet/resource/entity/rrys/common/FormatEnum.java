@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity.rrys.common;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.internet.resource.site.RrysSite;
+import wsg.tools.internet.resource.site.impl.RrysSite;
 
 /**
  * Formats of files of {@link RrysSite}.

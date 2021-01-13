@@ -49,8 +49,6 @@
                                 /
                                 <a href="https://cn.bing.com/search?q=${movie.title}+下载" target="_blank">Bing</a>
                                 /
-                                <a href="http://www.rrys2020.com/search?keyword=${movie.title}" target="_blank">YYETS</a>
-                                /
                                 <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank">Links</a>
                             </td>
                             <td style="width: 200px">
@@ -105,8 +103,6 @@
                                 <a href="https://cn.bing.com/search?q=${series.title}+下载" target="_blank">Bing</a>
                                 /
                                 <a href="https://www.05jl.com/search/${series.title}" target="_blank">Documentary</a>
-                                /
-                                <a href="http://www.rrys2020.com/search?keyword=${series.title}" target="_blank">YYETS</a>
                             </td>
                         </tr>
                         <#list seasons as season>

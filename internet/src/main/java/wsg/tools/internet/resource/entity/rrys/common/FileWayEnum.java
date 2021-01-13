@@ -2,7 +2,7 @@ package wsg.tools.internet.resource.entity.rrys.common;
 
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.resource.site.RrysSite;
+import wsg.tools.internet.resource.site.impl.RrysSite;
 
 /**
  * Ways to download files of {@link RrysSite}.

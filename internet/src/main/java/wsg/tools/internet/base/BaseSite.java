@@ -39,6 +39,7 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.base.exception.SiteStatusException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -131,6 +132,7 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     public BaseSite(String name, SchemeEnum scheme, String host, double permitsPerSecond, double postPermitsPerSecond) {
+        validateStatus(this);
         this.name = name;
         this.scheme = scheme;
         this.host = host;
@@ -160,6 +162,21 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     /**
+     * Validate the status of the site based on the annotation {@link SiteStatus}.
+     *
+     * @throws SiteStatusException if the status is abnormal
+     */
+    private void validateStatus(BaseSite site) throws SiteStatusException {
+        SiteStatus annotation = site.getClass().getAnnotation(SiteStatus.class);
+        if (annotation != null) {
+            SiteStatus.Status status = annotation.status();
+            if (!SiteStatus.Status.NORMAL.equals(status)) {
+                throw new SiteStatusException(annotation);
+            }
+        }
+    }
+
+    /**
      * Obtains current user, null if not logon yet.
      *
      * @return object of user, may identity or username
@@ -180,28 +197,50 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     /**
-     * Add cookie manually.
+     * Add cookies manually.
      */
-    public final void addCookie(String name, String value) {
+    public final void addCookies(List<? extends Cookie> cookies) {
         CookieStore cookieStore = this.context.getCookieStore();
         if (cookieStore == null) {
             cookieStore = new BasicCookieStore();
         }
-        BasicClientCookie cookie = new BasicClientCookie(name, value);
-        String domain = host;
-        String path = "/";
-        Date expiredDate = new Date();
-        if (cookieStore.getCookies().size() > 0) {
-            Cookie cookie0 = cookieStore.getCookies().get(0);
-            path = cookie0.getPath();
-            expiredDate = cookie0.getExpiryDate();
-            domain = cookie0.getDomain();
+        for (Cookie cookie : cookies) {
+            cookieStore.addCookie(cookie);
         }
-        cookie.setDomain(domain);
-        cookie.setExpiryDate(expiredDate);
-        cookie.setPath(path);
+        this.context.setCookieStore(cookieStore);
+        updateContext();
+    }
+
+    /**
+     * Add one cookie manually.
+     */
+    public final void addCookie(Cookie cookie) {
+        CookieStore cookieStore = this.context.getCookieStore();
+        if (cookieStore == null) {
+            cookieStore = new BasicCookieStore();
+        }
         cookieStore.addCookie(cookie);
         this.context.setCookieStore(cookieStore);
+        updateContext();
+    }
+
+    /**
+     * Add cookie manually with the given name-value pair.
+     */
+    public final void addCookie(String name, String value) {
+        BasicClientCookie cookie = new BasicClientCookie(name, value);
+        CookieStore cookieStore = this.context.getCookieStore();
+        if (cookieStore != null && cookieStore.getCookies().size() > 0) {
+            Cookie cookie0 = cookieStore.getCookies().get(0);
+            cookie.setDomain(cookie0.getDomain());
+            cookie.setExpiryDate(cookie0.getExpiryDate());
+            cookie.setPath(cookie0.getPath());
+        } else {
+            cookie.setDomain(host);
+            cookie.setExpiryDate(new Date());
+            cookie.setPath("/");
+        }
+        addCookie(cookie);
     }
 
     /**

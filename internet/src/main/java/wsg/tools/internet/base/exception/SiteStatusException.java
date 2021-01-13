@@ -9,7 +9,7 @@ import wsg.tools.internet.base.SiteStatus;
  * @author Kingen
  * @since 2020/12/30
  */
-public class SiteStatusException extends Exception {
+public class SiteStatusException extends RuntimeException {
 
     @Getter
     private final SiteStatus status;

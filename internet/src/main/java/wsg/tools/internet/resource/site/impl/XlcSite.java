@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -8,16 +8,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.VideoConstants;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
-import wsg.tools.internet.resource.entity.item.impl.SimpleItem;
+import wsg.tools.internet.resource.entity.item.impl.XlcItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.video.VideoConstants;
 
-import javax.annotation.Nonnull;
 import java.time.Year;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends BaseResourceSite<SimpleItem> {
+public class XlcSite extends AbstractRangeResourceSite<XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
@@ -49,15 +48,11 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
         super("XLC", "www.xunleicang.in", 0.1);
     }
 
-    @Override
-    public List<SimpleItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
-    }
-
     /**
      * @see <a href="https://www.xlc2020.com/ajax-show-id-new.html">Last Update</a>
      */
-    private List<String> getAllPaths() {
+    @Override
+    protected int getMaxId() {
         Document document;
         try {
             document = getDocument(builder0("/ajax-show-id-new.html"), false);
@@ -70,13 +65,14 @@ public class XlcSite extends BaseResourceSite<SimpleItem> {
             String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
-        return getPathsById(max, "/vod-read-id-%d.html");
+        return max;
     }
 
-    private SimpleItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    @Override
+    protected XlcItem getItem(int id) throws NotFoundException {
+        URIBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, true);
-        SimpleItem item = new SimpleItem(builder.toString());
+        XlcItem item = new XlcItem(id, builder.toString());
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
 
         Elements as = document.selectFirst("div.pleft").selectFirst(TAG_H3).select(TAG_A);

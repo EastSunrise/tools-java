@@ -18,7 +18,7 @@ import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
 import wsg.tools.internet.video.site.ImdbCnSite;
-import wsg.tools.internet.video.site.ImdbRepo;
+import wsg.tools.internet.video.site.ImdbRepository;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     private static final String DOUBAN_SUBJECT = "douban subject";
     private static final String IMDB_TITLE = "imdb title";
 
-    private final ImdbRepo imdbRepo = new ImdbCnSite();
+    private final ImdbRepository imdbRepository = new ImdbCnSite();
     private final DoubanSite doubanSite = new DoubanSite();
 
     private IdRelationRepository relationRepository;
@@ -98,9 +98,9 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     public SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
         Objects.requireNonNull(imdbId);
         try {
-            return SingleResult.of(imdbRepo.getItemById(imdbId));
+            return SingleResult.of(imdbRepository.getItemById(imdbId));
         } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg(imdbRepo, IMDB_TITLE, imdbId, e));
+            throw new NotFoundException(errorMsg((BaseSite) imdbRepository, IMDB_TITLE, imdbId, e));
         }
     }
 

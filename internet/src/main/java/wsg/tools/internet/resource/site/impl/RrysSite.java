@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.site;
+package wsg.tools.internet.resource.site.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,17 +23,10 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.resource.entity.item.impl.RrysItem;
-import wsg.tools.internet.resource.entity.resource.ResourceFactory;
-import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
-import wsg.tools.internet.resource.entity.rrys.common.CommonGroupEnum;
-import wsg.tools.internet.resource.entity.rrys.common.FileWayEnum;
-import wsg.tools.internet.resource.entity.rrys.common.FormatEnum;
-import wsg.tools.internet.resource.entity.rrys.common.ResourceTypeEnum;
+import wsg.tools.internet.resource.entity.rrys.common.*;
 import wsg.tools.internet.resource.entity.rrys.info.IndexInfo;
-import wsg.tools.internet.resource.entity.rrys.item.EpisodeItem;
-import wsg.tools.internet.resource.entity.rrys.item.FileItem;
 import wsg.tools.internet.resource.entity.rrys.item.ResourceInfo;
 import wsg.tools.internet.resource.entity.rrys.item.SeasonItem;
 import wsg.tools.internet.resource.entity.rrys.jackson.PlayStatus;
@@ -40,7 +34,6 @@ import wsg.tools.internet.resource.entity.rrys.jackson.PlayStatusDeserializer;
 import wsg.tools.internet.resource.entity.rrys.jackson.RrysProblemHandler;
 import wsg.tools.internet.video.enums.RegionEnum;
 
-import javax.annotation.Nonnull;
 import java.net.URISyntaxException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -57,15 +50,13 @@ import java.util.stream.IntStream;
  * @since 2020/12/23
  */
 @Slf4j
-public class RrysSite extends BaseResourceSite<RrysItem> {
+public class RrysSite extends AbstractResourceSite<RrysItem, Integer> {
 
     private static final Pattern RESOURCE_HREF_REGEX = Pattern.compile("/resource/(?<rid>\\d+)");
     private static final Pattern RESOURCE_SRC_REGEX = Pattern.compile("/resource/index_json/rid/(?<rid>\\d+)/channel/(?<c>tv|movie|openclass)");
     private static final Pattern INDEX_INFO_REGEX = Pattern.compile("var index_info=(?<info>\\{.*})");
     private static final Pattern RESOURCE_URL_REGEX = Pattern.compile("http://got002\\.com/resource\\.html\\?code=(?<c>[0-9A-Za-z]+)");
     private static final Pattern IMDB_URL_REGEX = Pattern.compile("http://www\\.imdb\\.com/title/(?<id>tt\\d+)/");
-    private static final Pattern PASSWORD_REGEX = Pattern.compile("(密码：)?(?<p>[0-9a-zA-Z]{4}) ?(下同|\\u200B+|)");
-    private static final Pattern URL_PWD_REGEX = Pattern.compile("(提取码|密码)：(?<p>[0-9a-zA-Z]{4})(?!\\w)");
 
     public RrysSite() {
         super("RRYS", SchemeEnum.HTTP, "www.rrys2020.com", 10D);
@@ -73,11 +64,7 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
 
     @Override
     public List<RrysItem> findAll() {
-        return findAllByPathsIgnoreNotFound(getAllPaths(), this::getItem);
-    }
-
-    private List<String> getAllPaths() {
-        List<String> paths = new ArrayList<>();
+        List<RrysItem> items = new ArrayList<>();
         IntStream.rangeClosed(1, getMaxPage()).forEach(page -> {
             Document document;
             try {
@@ -90,10 +77,13 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
             Element showList = document.selectFirst(".resource-showlist");
             for (Element li : showList.select(TAG_LI)) {
                 String href = li.selectFirst(TAG_A).attr(ATTR_HREF);
-                paths.add(RegexUtils.matchesOrElseThrow(RESOURCE_HREF_REGEX, href).group());
+                try {
+                    items.add(findById(Integer.parseInt(RegexUtils.matchesOrElseThrow(RESOURCE_HREF_REGEX, href).group("rid"))));
+                } catch (NotFoundException ignored) {
+                }
             }
         });
-        return paths;
+        return items;
     }
 
     /**
@@ -110,10 +100,35 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
         return Integer.parseInt(as.get(as.size() - 2).text().substring(3));
     }
 
-    private RrysItem getItem(@Nonnull String path) throws NotFoundException {
-        URIBuilder builder = builder0(path);
+    @Override
+    public RrysItem findById(Integer id) throws NotFoundException {
+        if (id < 1) {
+            throw new NotFoundException("Not a valid id.");
+        }
+        URIBuilder builder = builder0("/resource/%d", id);
         Document document = getDocument(builder, true);
-        RrysItem rrysItem = new RrysItem(builder.toString());
+        Elements scripts = document.body().select(TAG_SCRIPT);
+        for (Element script : scripts) {
+            String src = script.attr(ATTR_SRC);
+            Matcher matcher = RESOURCE_SRC_REGEX.matcher(src);
+            if (matcher.matches()) {
+                return extractInfo(matcher, document);
+            }
+        }
+        throw new UnexpectedContentException("Can't find index json.");
+    }
+
+    private RrysItem extractInfo(Matcher matcher, Document document) throws NotFoundException {
+        String content = getContent(builder0(matcher.group()), ContentTypeEnum.JS, true);
+        String str = RegexUtils.matchesOrElseThrow(INDEX_INFO_REGEX, content).group("info");
+        IndexInfo indexInfo;
+        try {
+            indexInfo = this.mapper.readValue(str, IndexInfo.class);
+        } catch (JsonProcessingException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+        ChannelEnum channel = EnumUtils.getEnumIgnoreCase(ChannelEnum.class, matcher.group("c"));
+        RrysItem rrysItem = new RrysItem(Integer.parseInt(matcher.group("rid")), channel, indexInfo.getPlayStatus());
 
         Element div = document.selectFirst(".fl-info");
         Map<String, Element> lis = new HashMap<>(16);
@@ -126,79 +141,25 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
             rrysItem.setImdbId(RegexUtils.matchesOrElseThrow(IMDB_URL_REGEX, href).group("id"));
         }
 
-        Elements scripts = document.body().select(TAG_SCRIPT);
-        String infoPath = null;
-        for (Element script : scripts) {
-            String src = script.attr(ATTR_SRC);
-            if (RESOURCE_SRC_REGEX.matcher(src).matches()) {
-                infoPath = src;
-                break;
-            }
-        }
-        Objects.requireNonNull(infoPath, "Can't find index json.");
-        String content = getContent(builder0(infoPath), ContentTypeEnum.JS, true);
-        String str = RegexUtils.matchesOrElseThrow(INDEX_INFO_REGEX, content).group("info");
-        IndexInfo indexInfo;
-        try {
-            indexInfo = this.mapper.readValue(str, IndexInfo.class);
-        } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
-        }
         Element button = Jsoup.parse(indexInfo.getResourceContent()).selectFirst(TAG_H3).selectFirst(TAG_A);
         if (button == null) {
             return rrysItem;
         }
-        Matcher matcher = RESOURCE_URL_REGEX.matcher(button.attr(ATTR_HREF));
-        if (!matcher.matches()) {
+        Matcher gotMatcher = RESOURCE_URL_REGEX.matcher(button.attr(ATTR_HREF));
+        if (!gotMatcher.matches()) {
             return rrysItem;
         }
 
-        Data data = getResource(matcher.group("c")).getData();
-        ResourceInfo info = data.getInfo();
-        rrysItem.setTitle(info.getCnname());
-        rrysItem.setType(info.getChannel().videoType());
-        List<ValidResource> resources = new ArrayList<>();
-        List<InvalidResourceException> exceptions = new ArrayList<>();
-        for (SeasonItem seasonItem : data.getList()) {
-            Map<FormatEnum, List<EpisodeItem>> items = seasonItem.getItems();
-            for (FormatEnum format : seasonItem.getFormats()) {
-                for (EpisodeItem episodeItem : items.get(format)) {
-                    String name = episodeItem.getName();
-                    List<FileItem> files = episodeItem.getFiles();
-                    if (files != null) {
-                        for (FileItem file : files) {
-                            String passwd = file.getPasswd();
-                            if (passwd != null) {
-                                Matcher m = PASSWORD_REGEX.matcher(passwd);
-                                passwd = m.matches() ? m.group("p") : null;
-                            }
-                            if (passwd == null) {
-                                Matcher m = URL_PWD_REGEX.matcher(file.getAddress());
-                                if (m.find()) {
-                                    passwd = m.group("p");
-                                }
-                            }
-                            try {
-                                resources.add(ResourceFactory.create(name, file.getAddress(), passwd));
-                            } catch (InvalidResourceException e) {
-                                exceptions.add(e);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        rrysItem.setResources(resources);
-        rrysItem.setExceptions(exceptions);
-        return rrysItem;
-    }
-
-    private Response getResource(String code) {
+        Data data;
         try {
-            return getObject(new URIBuilder("http://got002.com/api/v1/static/resource/detail?code=" + code), Response.class);
+            String code = gotMatcher.group("c");
+            data = getObject(new URIBuilder("http://got002.com/api/v1/static/resource/detail?code=" + code), Response.class).data;
         } catch (NotFoundException | URISyntaxException e) {
             throw AssertUtils.runtimeException(e);
         }
+        rrysItem.setInfo(data.info);
+        rrysItem.setSeasons(data.seasons);
+        return rrysItem;
     }
 
     @Override
@@ -223,7 +184,7 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
 
     @Getter
     @Setter
-    public static class Response {
+    private static class Response {
         private Data data;
         private int status;
         private String info;
@@ -231,8 +192,8 @@ public class RrysSite extends BaseResourceSite<RrysItem> {
 
     @Getter
     @Setter
-    public static class Data {
+    private static class Data {
         private ResourceInfo info;
-        private List<SeasonItem> list;
+        private List<SeasonItem> seasons;
     }
 }
