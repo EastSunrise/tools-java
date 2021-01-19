@@ -19,3 +19,6 @@ spring:
 server:
   address: 0.0.0.0
   port: 6808
+logging:
+  level:
+    org.hibernate.type.descriptor.sql.BasicBinder: trace

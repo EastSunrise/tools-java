@@ -17,7 +17,6 @@ import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.DoubanSite;
-import wsg.tools.internet.video.site.ImdbCnSite;
 import wsg.tools.internet.video.site.ImdbRepository;
 
 import java.time.LocalDate;
@@ -36,7 +35,7 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     private static final String DOUBAN_SUBJECT = "douban subject";
     private static final String IMDB_TITLE = "imdb title";
 
-    private final ImdbRepository imdbRepository = new ImdbCnSite();
+    private final ImdbRepository imdbRepository = new ImdbProxy();
     private final DoubanSite doubanSite = new DoubanSite();
 
     private IdRelationRepository relationRepository;

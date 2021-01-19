@@ -41,10 +41,10 @@ public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
     }
 
     /**
-     * Obtains an object from a string.
+     * Parses an object from a string.
      *
-     * @param text    string
-     * @param context Context that can be used to access information about this deserialization activity.
+     * @param text    target text
+     * @param context context that can be used to access information about this deserialization activity.
      * @return parsed object
      * @throws IOException i/o exception
      */

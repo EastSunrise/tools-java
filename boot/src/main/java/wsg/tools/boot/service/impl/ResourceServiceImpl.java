@@ -3,8 +3,7 @@ package wsg.tools.boot.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.common.enums.ResourceType;
@@ -12,6 +11,7 @@ import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
+import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
@@ -31,10 +31,8 @@ import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import javax.persistence.criteria.Predicate;
+import java.util.*;
 
 /**
  * @author Kingen
@@ -140,13 +138,21 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId) {
-        ResourceItemEntity entity = new ResourceItemEntity();
-        entity.setDbId(dbId);
-        entity.setImdbId(imdbId);
-        entity.setTitle(key);
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreCase(true).withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains());
-        return itemRepository.findAll(Example.of(entity, matcher));
+        Specification<ResourceItemEntity> specification = (root, query, builder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (dbId != null) {
+                predicates.add(builder.equal(root.get(ResourceItemEntity_.dbId), dbId));
+            }
+            if (imdbId != null) {
+                predicates.add(builder.equal(root.get(ResourceItemEntity_.imdbId), imdbId));
+            }
+            if (key != null) {
+                predicates.add(builder.like(root.get(ResourceItemEntity_.title), "%" + key + "%", '%'));
+            }
+            Predicate predicate = builder.or(predicates.toArray(new Predicate[0]));
+            return query.where(predicate).getRestriction();
+        };
+        return itemRepository.findAll(specification);
     }
 
     @Override

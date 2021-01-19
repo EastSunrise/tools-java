@@ -139,7 +139,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             try {
                 imdbMovie = (ImdbMovie) adapter.imdbTitle(imdbId).getRecord();
             } catch (NotFoundException e) {
-                throw new UnexpectedException(e);
+                log.error(e.getMessage());
             }
         }
         if (doubanMovie == null && imdbMovie == null) {

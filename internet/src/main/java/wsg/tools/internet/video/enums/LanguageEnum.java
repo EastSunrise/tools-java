@@ -50,6 +50,7 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     NAP("Neapolitan", "那不勒斯语"),
     PAR("Parsee", "帕西语"),
     FLE("Flemish", "弗拉芒语"),
+    LAD("Ladakh", "拉达克语"),
 
     /**
      * Manual languages, three-letter abbreviation as code

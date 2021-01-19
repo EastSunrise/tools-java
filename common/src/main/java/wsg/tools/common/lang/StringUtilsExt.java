@@ -1,7 +1,6 @@
 package wsg.tools.common.lang;
 
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.SignEnum;
 
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -14,14 +13,24 @@ import java.util.regex.Pattern;
  */
 public class StringUtilsExt {
 
+
+    /**
+     * Chars which aren't permit to name files on Windows.
+     */
+    private static final char[] NOT_PERMIT_CHARS_FOR_FILENAME = new char[]{
+            ':', '*', '?', '"', '<', '>', '|'
+    };
     private static final Pattern CHINESE_REGEX = Pattern.compile("[\u4E00-\u9FBF]");
+    /**
+     * Special chars which need to escape in the patterns.
+     */
     private static final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
     private static final String[] UNITS = {
             "零", "一", "二", "三", "四", "五", "六", "七", "八", "九"
     };
 
     /**
-     * Encode a string as a pattern.
+     * Encode a string as a pattern with special chars escaped.
      */
     public static String encodeAsPattern(String str) {
         if (str == null) {
@@ -82,7 +91,7 @@ public class StringUtilsExt {
      */
     public static String toFilename(final String filename) {
         String result = filename;
-        for (char sign : SignEnum.NOT_PERMIT_CHARS_FOR_FILENAME) {
+        for (char sign : NOT_PERMIT_CHARS_FOR_FILENAME) {
             result = StringUtils.replace(result, String.valueOf(sign), "#" + ((int) sign));
         }
         return result;

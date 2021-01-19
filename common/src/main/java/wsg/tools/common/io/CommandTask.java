@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * A task created by an executor.
+ * A task created by an executor with the given arguments.
  *
  * @author Kingen
  * @since 2020/12/1

@@ -1,8 +1,9 @@
 package wsg.tools.internet.resource.download;
 
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.io.Filetype;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.resource.entity.resource.base.ValidResource;
@@ -54,8 +55,11 @@ public class Thunder implements Downloader<ValidResource> {
         return url;
     }
 
-    public static Filetype[] tmpTypes() {
-        return new Filetype[]{Filetype.XLTD};
+    /**
+     * Filter temporary files of thunder application.
+     */
+    public static SuffixFileFilter tmpFileFilter() {
+        return new SuffixFileFilter("xltd", IOCase.INSENSITIVE);
     }
 
     /**

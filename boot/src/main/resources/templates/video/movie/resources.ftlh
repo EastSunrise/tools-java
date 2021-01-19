@@ -11,7 +11,7 @@
                 </#if>
                 <#if movie.imdbId??>
                     <td>
-                        <a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">${movie.text}</a>
+                        <a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">${(movie.text)!""}</a>
                     </td>
                 </#if>
             </tr>

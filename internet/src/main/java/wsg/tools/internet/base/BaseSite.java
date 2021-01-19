@@ -187,13 +187,14 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     /**
-     * Clear current cookies to log out.
+     * Clears all cookies.
      */
-    public final void logout() {
-        if (user() != null) {
-            this.context.setCookieStore(null);
-            updateContext();
+    public final void clearCookies() {
+        CookieStore store = this.context.getCookieStore();
+        if (store != null) {
+            store.clear();
         }
+        updateContext();
     }
 
     /**

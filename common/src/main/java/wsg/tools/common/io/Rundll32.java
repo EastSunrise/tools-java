@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Protocol handler of files on Windows.
+ * Run 32-bits dll applications on Windows.
  *
  * @author Kingen
  * @since 2020/12/2
@@ -27,7 +27,6 @@ public class Rundll32 extends CommandExecutor {
         if (!file.exists()) {
             throw new FileNotFoundException(file.getPath());
         }
-
         return open(file.getAbsolutePath());
     }
 

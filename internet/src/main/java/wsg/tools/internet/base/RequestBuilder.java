@@ -11,7 +11,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.constant.SignEnum;
 import wsg.tools.common.lang.StringUtilsExt;
 
 import java.io.File;
@@ -24,6 +23,8 @@ import java.util.List;
  * @since 2020/9/23
  */
 public class RequestBuilder extends HttpRequestBase {
+
+    private static final String PARAMETER_SEPARATOR = "&";
 
     private final String method;
     private final URIBuilder builder;
@@ -85,7 +86,7 @@ public class RequestBuilder extends HttpRequestBase {
         }
 
         if (params != null) {
-            sb.append(File.separator).append(StringUtils.join(params, SignEnum.PARAMETER_SEPARATOR));
+            sb.append(File.separator).append(StringUtils.join(params, PARAMETER_SEPARATOR));
         }
 
         return StringUtilsExt.toFilename(sb.toString());
@@ -97,7 +98,7 @@ public class RequestBuilder extends HttpRequestBase {
     public String displayUrl() {
         String url = builder.toString();
         if (params != null) {
-            url += ", params: " + StringUtils.join(params, SignEnum.PARAMETER_SEPARATOR);
+            url += ", params: " + StringUtils.join(params, PARAMETER_SEPARATOR);
         }
         return url;
     }

@@ -3,6 +3,8 @@ package wsg.tools.boot.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.enums.VideoStatus;
@@ -12,8 +14,7 @@ import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
-import wsg.tools.common.constant.SignEnum;
-import wsg.tools.common.io.Filetype;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.resource.download.Thunder;
 
 import java.io.File;
@@ -37,6 +38,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     public static final Pattern EPISODE_FILE_REGEX =
             Pattern.compile("[^\\d]*((?<year>\\d{4})[^\\d]+)?(S(?<s>\\d{1,2})E)?(?<e>\\d{1,3})([^\\d]+" +
                     "(AC3|X264|1080P|720P|1280x720|1024X576))*[^\\d]*", Pattern.CASE_INSENSITIVE);
+    private static final String[] VIDEO_SUFFIXES = new String[]{"mp4", "mkv"};
+    private static final SuffixFileFilter VIDEO_FILTER = new SuffixFileFilter(VIDEO_SUFFIXES, IOCase.INSENSITIVE);
 
     private final PathConfiguration pathConfig;
 
@@ -47,8 +50,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     @Override
     public final Optional<File> getFile(MovieEntity movie) {
         String location = pathConfig.getLocation(movie);
-        for (Filetype type : Filetype.videoTypes()) {
-            File file = new File(location + SignEnum.FILE_EXTENSION_SEPARATOR + type.suffix());
+        for (String suffix : VIDEO_SUFFIXES) {
+            File file = new File(location + Constants.FILE_EXTENSION_SEPARATOR + suffix);
             if (file.isFile()) {
                 return Optional.of(file);
             }
@@ -89,10 +92,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (!tempDir.isDirectory()) {
             return VideoStatus.TO_DOWNLOAD;
         }
-        if (!FileUtils.listFiles(tempDir, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty()) {
+        if (!FileUtils.listFiles(tempDir, Thunder.tmpFileFilter(), TrueFileFilter.INSTANCE).isEmpty()) {
             return VideoStatus.DOWNLOADING;
         }
-        Collection<File> videoFiles = FileUtils.listFiles(tempDir, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE);
+        Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
         if (videoFiles.isEmpty()) {
             return VideoStatus.TO_DOWNLOAD;
         }
@@ -101,8 +104,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         }
 
         File srcFile = videoFiles.iterator().next();
-        String suffix = Filetype.getRealType(srcFile).suffix();
-        File destFile = new File(pathConfig.getLocation(movie) + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
+        String suffix = FilenameUtils.getExtension(srcFile.getName());
+        File destFile = new File(pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
         FileUtils.moveFile(srcFile, destFile);
         FileUtils.deleteDirectory(tempDir);
         return VideoStatus.ARCHIVED;
@@ -121,12 +124,11 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (tempDirs.isEmpty()) {
             return VideoStatus.TO_DOWNLOAD;
         }
-        if (tempDirs.stream().anyMatch(file ->
-                !FileUtils.listFiles(file, Filetype.fileFilter(Thunder.tmpTypes()), TrueFileFilter.INSTANCE).isEmpty())) {
+        if (tempDirs.stream().anyMatch(file -> !FileUtils.listFiles(file, Thunder.tmpFileFilter(), TrueFileFilter.INSTANCE).isEmpty())) {
             return VideoStatus.DOWNLOADING;
         }
         Collection<File> videoFiles = tempDirs.stream()
-                .map(file -> FileUtils.listFiles(file, Filetype.fileFilter(Filetype.videoTypes()), TrueFileFilter.INSTANCE))
+                .map(file -> FileUtils.listFiles(file, VIDEO_FILTER, TrueFileFilter.INSTANCE))
                 .reduce((files, files2) -> {
                     files.addAll(files2);
                     return files;
@@ -176,8 +178,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         for (Map.Entry<String, File> entry : entries) {
             File srcFile = entry.getValue();
             log.info("Moving {} as {}.", srcFile, entry.getKey());
-            String suffix = Filetype.getRealType(srcFile).suffix();
-            File destFile = new File(entry.getKey() + SignEnum.FILE_EXTENSION_SEPARATOR + suffix);
+            String suffix = FilenameUtils.getExtension(srcFile.getName());
+            File destFile = new File(entry.getKey() + Constants.FILE_EXTENSION_SEPARATOR + suffix);
             FileUtils.moveFile(srcFile, destFile);
         }
         for (File tempDir : tempDirs) {

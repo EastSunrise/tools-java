@@ -1,7 +1,7 @@
 package wsg.tools.internet.resource.entity.resource.valid;
 
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.SignEnum;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
@@ -47,10 +47,10 @@ public class HttpResource extends ValidResource implements FilenameSupplier {
     @Override
     public String getFilename() {
         String path = this.url.getPath();
-        if (path == null || path.endsWith(SignEnum.URL_PATH_SEPARATOR)) {
+        if (path == null || path.endsWith(Constants.URL_PATH_SEPARATOR)) {
             return "index.html";
         } else {
-            return path.substring(path.lastIndexOf(SignEnum.URL_PATH_SEPARATOR) + 1);
+            return path.substring(path.lastIndexOf(Constants.URL_PATH_SEPARATOR) + 1);
         }
     }
 }

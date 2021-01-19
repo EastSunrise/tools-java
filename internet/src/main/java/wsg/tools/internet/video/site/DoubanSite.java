@@ -85,7 +85,9 @@ public class DoubanSite extends BaseSite {
     }
 
     public final void login(String username, String password) throws LoginException {
-        logout();
+        if (user() != null) {
+            clearCookies();
+        }
         if (getCookies().size() == 0) {
             try {
                 getDocument(builder0(null), false);
