@@ -1,12 +1,12 @@
-package wsg.tools.internet.resource.entity.resource.valid;
+package wsg.tools.internet.resource.entity.resource.impl;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/9/18
  */
-public class MagnetResource extends ValidResource {
+public class MagnetResource extends Resource {
 
     public static final String MAGNET_PREFIX = "magnet:?";
 

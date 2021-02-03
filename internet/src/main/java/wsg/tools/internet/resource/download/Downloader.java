@@ -1,6 +1,6 @@
 package wsg.tools.internet.resource.download;
 
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/9/14
  */
-public interface Downloader<R extends ValidResource> {
+public interface Downloader<R extends Resource> {
 
     /**
      * Download the given resource.

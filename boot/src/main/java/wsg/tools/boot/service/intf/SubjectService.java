@@ -10,6 +10,7 @@ import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -51,9 +52,10 @@ public interface SubjectService {
      *
      * @param userId user id
      * @param since  since when
+     * @param mark   marking type
      * @return result of importing
      */
-    BatchResult<Long> importDouban(long userId, LocalDate since);
+    BatchResult<Long> importDouban(long userId, LocalDate since, MarkEnum mark);
 
     /**
      * Obtains all subjects of movies.

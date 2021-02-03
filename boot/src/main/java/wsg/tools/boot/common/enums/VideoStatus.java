@@ -16,9 +16,8 @@ public class VideoStatus implements TextSupplier, CodeSupplier<Integer> {
     public static final VideoStatus TO_DOWNLOAD = new VideoStatus(30, "To download");
     public static final VideoStatus DOWNLOADING = new VideoStatus(31, "Downloading");
     public static final VideoStatus TO_CHOOSE = new VideoStatus(32, "To choose");
-    public static final VideoStatus LACKING = new VideoStatus(41, "Lacking");
-    public static final VideoStatus NOT_FOUND = new VideoStatus(44, "Not found");
-    public static final VideoStatus SERVER_ERROR = new VideoStatus(50, "I/O error");
+    public static final VideoStatus LACKING = new VideoStatus(33, "Lacking");
+    public static final VideoStatus TO_ARCHIVE = new VideoStatus(40, "To archive");
 
     private final int code;
     private final String text;

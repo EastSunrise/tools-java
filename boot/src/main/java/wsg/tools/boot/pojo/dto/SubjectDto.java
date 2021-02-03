@@ -21,8 +21,4 @@ public class SubjectDto extends BaseDto implements DoubanIdentifier {
     private Long dbId;
     private String durations;
     private VideoStatus status;
-
-    public boolean isArchived() {
-        return status == VideoStatus.ARCHIVED || status == VideoStatus.COMING;
-    }
 }

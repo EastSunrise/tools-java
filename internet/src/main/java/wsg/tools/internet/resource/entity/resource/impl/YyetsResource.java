@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity.resource.valid;
+package wsg.tools.internet.resource.entity.resource.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.resource.entity.resource.base.*;
@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/12/6
  */
-public class YyetsResource extends ValidResource implements FilenameSupplier, LengthSupplier {
+public class YyetsResource extends Resource implements FilenameSupplier, LengthSupplier {
 
     public static final String YYETS_PREFIX = "yyets://";
 

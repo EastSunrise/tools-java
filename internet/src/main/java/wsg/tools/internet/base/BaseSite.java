@@ -476,7 +476,7 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     protected final URIBuilder builder0(String path, Object... pathArgs) {
-        return builder(null, path, pathArgs);
+        return builder("www", path, pathArgs);
     }
 
     /**

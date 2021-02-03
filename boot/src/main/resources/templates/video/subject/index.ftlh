@@ -27,7 +27,6 @@
                         <th>Language</th>
                         <th>Durations</th>
                         <th>Resources</th>
-                        <th>Video</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -41,23 +40,22 @@
                             <td>${(movie.languages[0].title)!""}</td>
                             <td>${movie.durations}</td>
                             <td>
-                                <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}">Query</a>
-                                /
-                                <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}">Input</a>
-                                /
-                                <a href="https://www.baidu.com/s?wd=${movie.title}%20下载" target="_blank">Baidu</a>
-                                /
-                                <a href="https://cn.bing.com/search?q=${movie.title}+下载" target="_blank">Bing</a>
-                                /
-                                <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank">Links</a>
-                            </td>
-                            <td style="width: 200px">
-                                <#if movie.archived>
-                                    ${movie.status.text}
-                                <#else>
+                                <#assign sc = movie.status.code/>
+                                <#if sc == 30>
+                                    <a href="javascript:void(0);" class="movie-search link" data-id="${movie.id?c}"
+                                       title="Query resources with the title">Query</a>
+                                    /
+                                    <a href="javascript:void(0);" class="movie-input link" data-id="${movie.id?c}"
+                                       title="Query resources with input key">Input</a>
+                                    /
+                                    <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank" class="link"
+                                       title="Choose resources to download">Download</a>
+                                <#elseif sc==40>
                                     <span class="click-tip" hidden="hidden"></span>
-                                    <a href="javascript:void(0);" class="movie-archive checked" data-id="${movie.id?c}"
-                                       title="click to archive"> ${movie.status.text} </a>
+                                    <a href="javascript:void(0);" class="movie-archive link" data-id="${movie.id?c}"
+                                       title="Archived downloaded resources"> Archive </a>
+                                <#else>
+                                    ${movie.status.text}
                                 </#if>
                             </td>
                         </tr>
@@ -97,12 +95,6 @@
                                 <a href="javascript:void(0);" class="series-search" data-id="${series.id?c}">Query</a>
                                 /
                                 <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}">Input</a>
-                                /
-                                <a href="https://www.baidu.com/s?wd=${series.title}%20下载" target="_blank">Baidu</a>
-                                /
-                                <a href="https://cn.bing.com/search?q=${series.title}+下载" target="_blank">Bing</a>
-                                /
-                                <a href="https://www.05jl.com/search/${series.title}" target="_blank">Documentary</a>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -113,15 +105,17 @@
                                 <td>${season.year?c}</td>
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
-                                <td style="width: 300px">
-                                    <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true" target="_blank" title="show all links">Links</a>
-                                    /
-                                    <#if season.archived>
-                                        ${season.status.text}
-                                    <#else>
+                                <td>
+                                    <#assign sc = season.status.code/>
+                                    <#if sc == 30>
+                                        <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true" target="_blank" class="link"
+                                           title="Choose resources to download">Download</a>
+                                    <#elseif sc==40>
                                         <span class="click-tip" hidden="hidden"></span>
-                                        <a href="javascript:void(0);" class="season-archive checked" data-id="${season.id?c}"
-                                           title="click to archive"> ${season.status.text} </a>
+                                        <a href="javascript:void(0);" class="season-archive link" data-id="${season.id?c}"
+                                           title="Archived downloaded resources"> Archive </a>
+                                    <#else>
+                                        ${season.status.text}
                                     </#if>
                                 </td>
                             </tr>

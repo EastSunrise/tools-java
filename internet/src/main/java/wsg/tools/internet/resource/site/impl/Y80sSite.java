@@ -14,7 +14,7 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.Y80sItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -45,7 +45,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
     private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
     public Y80sSite() {
-        super("80s", SchemeEnum.HTTP, "m.y80s.com", 0.1, 6800, 10705, 21147, 24926);
+        super("80s", SchemeEnum.HTTP, "y80s.com", 0.1, 6800, 10705, 21147, 24926);
     }
 
     /**
@@ -71,7 +71,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
 
     @Override
     protected Y80sItem getItem(int id) throws NotFoundException {
-        URIBuilder builder = builder0("/movie/%d", id);
+        URIBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, true);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
@@ -105,7 +105,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
             }
         }
 
-        List<ValidResource> resources = new LinkedList<>();
+        List<Resource> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         Elements dls = main.select("#dl-tab-panes").select("a.btn_dl");
         for (Element a : dls) {

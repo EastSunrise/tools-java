@@ -24,6 +24,7 @@ import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
+import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -59,7 +60,11 @@ public class SubjectController extends AbstractController {
     @PostMapping(value = "/douban/import")
     @ResponseBody
     public BatchResult<Long> importDouban(long user, LocalDate since) {
-        return subjectService.importDouban(user, since);
+        BatchResult<Long> result = BatchResult.empty();
+        for (MarkEnum mark : MarkEnum.values()) {
+            result = result.plus(subjectService.importDouban(user, since, mark));
+        }
+        return result;
     }
 
     @GetMapping(path = "/subject/index")
@@ -74,11 +79,7 @@ public class SubjectController extends AbstractController {
             movieDto.setDbId(movie.getDbId());
             movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));
-            try {
-                movieDto.setStatus(videoManager.archive(movie, false));
-            } catch (IOException e) {
-                movieDto.setStatus(VideoStatus.SERVER_ERROR);
-            }
+            movieDto.setStatus(videoManager.getStatus(movie));
             return movieDto;
         }).sorted((o1, o2) -> {
             int dif = o2.getStatus().getCode() - o1.getStatus().getCode();
@@ -102,15 +103,12 @@ public class SubjectController extends AbstractController {
                         .collect(Collectors.joining("/")));
                 seasonDto.setCurrentSeason(season.getCurrentSeason());
                 seasonDto.setEpisodesCount(season.getEpisodesCount());
-                try {
-                    seasonDto.setStatus(videoManager.archive(season, false));
-                } catch (IOException e) {
-                    seasonDto.setStatus(VideoStatus.SERVER_ERROR);
-                }
+                seasonDto.setStatus(videoManager.getStatus(season));
                 return seasonDto;
             }).collect(Collectors.toList());
             seriesDto.setSeasons(seasons);
-            seriesDto.setUnarchived((int) seasons.stream().filter(season -> !season.isArchived()).count());
+            seriesDto.setUnarchived((int) seasons.stream()
+                    .filter(season -> season.getStatus() != VideoStatus.ARCHIVED || season.getStatus() != VideoStatus.COMING).count());
             return seriesDto;
         }).sorted(((o1, o2) -> {
             int dif = o2.getUnarchived() - o1.getUnarchived();
@@ -140,13 +138,13 @@ public class SubjectController extends AbstractController {
 
     @PostMapping(path = "/movie/archive")
     @ResponseBody
-    public ResponseEntity<?> archiveMovie(Long id, boolean chosen) {
+    public ResponseEntity<?> archiveMovie(Long id) {
         Optional<MovieEntity> optional = subjectService.getMovie(id);
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         try {
-            return ResponseEntity.ok(videoManager.archive(optional.get(), chosen));
+            return ResponseEntity.ok(videoManager.archive(optional.get()));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
@@ -173,13 +171,13 @@ public class SubjectController extends AbstractController {
 
     @PostMapping(path = "/season/archive")
     @ResponseBody
-    public ResponseEntity<?> archiveSeason(Long id, boolean chosen) {
+    public ResponseEntity<?> archiveSeason(Long id) {
         Optional<SeasonEntity> optional = subjectService.getSeason(id);
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         try {
-            return ResponseEntity.ok(videoManager.archive(optional.get(), chosen));
+            return ResponseEntity.ok(videoManager.archive(optional.get()));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }

@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity.item.base;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 
 import java.util.List;
 
@@ -18,6 +18,6 @@ import java.util.List;
 public class BaseItem {
 
     private String title;
-    private List<ValidResource> resources;
+    private List<Resource> resources;
     private List<InvalidResourceException> exceptions;
 }

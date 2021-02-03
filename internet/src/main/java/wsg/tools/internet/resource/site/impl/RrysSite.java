@@ -59,7 +59,7 @@ public class RrysSite extends AbstractResourceSite<RrysItem, Integer> {
     private static final Pattern IMDB_URL_REGEX = Pattern.compile("http://www\\.imdb\\.com/title/(?<id>tt\\d+)/");
 
     public RrysSite() {
-        super("RRYS", SchemeEnum.HTTP, "www.rrys2020.com", 10D);
+        super("RRYS", SchemeEnum.HTTP, "rrys2020.com", 10D);
     }
 
     @Override

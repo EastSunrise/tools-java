@@ -5,9 +5,9 @@ import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
-import wsg.tools.internet.resource.entity.resource.valid.*;
+import wsg.tools.internet.resource.entity.resource.impl.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -22,14 +22,14 @@ import java.util.Objects;
 @Slf4j
 public final class ResourceFactory {
 
-    public static ValidResource create(String title, String url, String password) throws InvalidResourceException {
+    public static Resource create(String title, String url, String password) throws InvalidResourceException {
         return create(title, url, password, Constants.UTF_8);
     }
 
     /**
      * Create a resource based on the given url and title.
      */
-    public static ValidResource create(String title, String url, String password, Charset charset) throws InvalidResourceException {
+    public static Resource create(String title, String url, String password, Charset charset) throws InvalidResourceException {
         Objects.requireNonNull(url);
         if (StringUtils.startsWithIgnoreCase(url, Thunder.PREFIX)) {
             try {

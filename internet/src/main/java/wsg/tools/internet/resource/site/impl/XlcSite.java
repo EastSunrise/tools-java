@@ -14,7 +14,7 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.XlcItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.video.VideoConstants;
 
 import java.time.Year;
@@ -45,7 +45,7 @@ public class XlcSite extends AbstractRangeResourceSite<XlcItem> {
     };
 
     public XlcSite() {
-        super("XLC", "www.xunleicang.in", 0.1);
+        super("XLC", "xunleicang.in", 0.1);
     }
 
     /**
@@ -86,7 +86,7 @@ public class XlcSite extends AbstractRangeResourceSite<XlcItem> {
             }
         }
 
-        List<ValidResource> resources = new LinkedList<>();
+        List<Resource> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         Elements lis = document.select("ul.down-list").select("li.item");
         for (Element li : lis) {

@@ -1,9 +1,9 @@
-package wsg.tools.internet.resource.entity.resource.valid;
+package wsg.tools.internet.resource.entity.resource.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/10/30
  */
-public class UcDiskResource extends ValidResource {
+public class UcDiskResource extends Resource {
 
     public static final String UC_DISK_HOST = "yun.cn";
 

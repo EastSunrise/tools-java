@@ -42,28 +42,40 @@ public interface VideoManager {
     Optional<File> getFile(SeasonEntity season);
 
     /**
-     * Archive the given movie.
+     * Obtains archiving status of the given movie.
      * <p>
      * Firstly, locate the file from cdn. Otherwise, find under temporary directory.
-     * If still not found, search download by {@link ResourceService#search(String, Long, String)}.
      *
-     * @param movie  given movie
-     * @param chosen if downloaded files have been chosen
+     * @param movie given movie
      * @return status of archiving
-     * @throws IOException if an error occurs when edit files.
      */
-    VideoStatus archive(MovieEntity movie, boolean chosen) throws IOException;
+    VideoStatus getStatus(MovieEntity movie);
 
     /**
-     * Archive the given season from the cdn.
+     * Obtains archiving status of the given season.
      * <p>
      * Firstly, locate the file from cdn. Otherwise, find under temporary directory.
-     * If still not found, search and download by {@link ResourceService#search(String, Long, String)}.
      *
      * @param season given season
-     * @param chosen if downloaded files have been chosen
      * @return status of archiving
+     */
+    VideoStatus getStatus(SeasonEntity season);
+
+    /**
+     * Archives the given movie.
+     *
+     * @param movie given movie
+     * @return result of archiving
      * @throws IOException if an error occurs when edit files.
      */
-    VideoStatus archive(SeasonEntity season, boolean chosen) throws IOException;
+    VideoStatus archive(MovieEntity movie) throws IOException;
+
+    /**
+     * Archives the given season.
+     *
+     * @param season given season
+     * @return result of archiving
+     * @throws IOException if an error occurs when edit files.
+     */
+    VideoStatus archive(SeasonEntity season) throws IOException;
 }

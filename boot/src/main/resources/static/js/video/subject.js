@@ -49,7 +49,7 @@ function search(url, id, key) {
                     let dbId = $(this).data('dbId') || "";
                     let imdbId = $(this).data('imdbId') || "";
                     checks.push({
-                        url: $(this).data('url'),
+                        id: $(this).data('id'),
                         dbId: dbId === "" ? null : dbId,
                         imdbId: imdbId === "" ? null : imdbId
                     });
@@ -60,12 +60,12 @@ function search(url, id, key) {
                 if (value !== "") {
                     if (value.startsWith("tt")) {
                         checks.push({
-                            url: $(this).data('url'),
+                            id: $(this).data('id'),
                             imdbId: value
                         })
                     } else {
                         checks.push({
-                            url: $(this).data('url'),
+                            id: $(this).data('id'),
                             dbId: value
                         });
                     }
@@ -89,7 +89,6 @@ function search(url, id, key) {
 }
 
 const ARCHIVED_CODE = 20;
-const TO_ARCHIVE_CODE = 32;
 
 /**
  * Archive a subject
@@ -97,13 +96,8 @@ const TO_ARCHIVE_CODE = 32;
  * @param url url to post
  */
 function archive(ele, url) {
-    let chosen = false;
-    if (ele.data('toArchive')) {
-        if (!confirm('Are files chosen?')) {
-            return;
-        } else {
-            chosen = true;
-        }
+    if (!confirm('Are all files chosen?')) {
+        return;
     }
 
     let tip = ele.prev('.click-tip');
@@ -127,20 +121,13 @@ function archive(ele, url) {
         type: 'POST',
         data: {
             id: ele.data('id'),
-            chosen: chosen
         },
         'success': function (status) {
             clearInterval(timer);
-            if (status.code === ARCHIVED_CODE) {
-                ele.remove();
-                tip.text(status.text);
-            } else {
-                if (status.code === TO_ARCHIVE_CODE) {
-                    ele.data('toArchive', true);
-                }
-                ele.text(status.text);
-                tip.attr('hidden', true);
-                ele.attr('hidden', false);
+            ele.remove();
+            tip.text(status.text);
+            if (status.code !== ARCHIVED_CODE) {
+                alert('Failed to archive the subject: ' + (status.text.toUpperCase()));
             }
         },
         error: function (xhr) {
@@ -149,20 +136,4 @@ function archive(ele, url) {
             layui.layer.alert(xhr.responseText);
         }
     });
-}
-
-/**
- * Download the given subject.
- * @param ele
- * @param url
- */
-function download(ele, url) {
-    let id = ele.data('id');
-    $.post(url, {id: id}, function (count) {
-        if (count === 0) {
-            layui.layer.alert("None added.");
-        } else {
-            layui.layer.alert(count + ' added to download.');
-        }
-    })
 }

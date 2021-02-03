@@ -6,9 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
-import wsg.tools.internet.resource.entity.resource.valid.BaiduDiskResource;
-import wsg.tools.internet.resource.entity.resource.valid.UcDiskResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
+import wsg.tools.internet.resource.entity.resource.impl.BaiduDiskResource;
+import wsg.tools.internet.resource.entity.resource.impl.UcDiskResource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.xunlei.com/">Thunder</a>
  * @since 2020/10/8
  */
-public class Thunder implements Downloader<ValidResource> {
+public class Thunder implements Downloader<Resource> {
 
     public static final String PREFIX = "thunder://";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
@@ -66,7 +66,7 @@ public class Thunder implements Downloader<ValidResource> {
      * @param dir target directory is dependent on the selection of the dialog
      */
     @Override
-    public boolean addTask(File dir, ValidResource resource) throws IOException {
+    public boolean addTask(File dir, Resource resource) throws IOException {
         if (resource instanceof BaiduDiskResource || resource instanceof UcDiskResource) {
             return false;
         }

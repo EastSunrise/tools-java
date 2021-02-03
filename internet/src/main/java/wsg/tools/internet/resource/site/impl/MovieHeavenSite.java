@@ -12,13 +12,14 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.MovieHeavenItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.video.VideoConstants;
 
 import java.time.Year;
@@ -35,6 +36,7 @@ import java.util.regex.Pattern;
  * @since 2020/10/18
  */
 @Slf4j
+@SiteStatus(status = SiteStatus.Status.INVALID)
 public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
@@ -105,7 +107,7 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
             }
         }
 
-        List<ValidResource> resources = new LinkedList<>();
+        List<Resource> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         final String downUl = "ul.downurl";
         for (Element ul : document.select(downUl)) {

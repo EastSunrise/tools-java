@@ -3,7 +3,7 @@ package wsg.tools.internet.resource.entity.resource.base;
 import lombok.Getter;
 
 /**
- * Unknown resource.
+ * Exceptions thrown when the target is not a known resource.
  *
  * @author Kingen
  * @since 2020/11/1

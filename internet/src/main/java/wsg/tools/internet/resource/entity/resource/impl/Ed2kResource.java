@@ -1,4 +1,4 @@
-package wsg.tools.internet.resource.entity.resource.valid;
+package wsg.tools.internet.resource.entity.resource.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.resource.entity.resource.base.*;
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/9/18
  */
-public class Ed2kResource extends ValidResource implements FilenameSupplier, LengthSupplier {
+public class Ed2kResource extends Resource implements FilenameSupplier, LengthSupplier {
 
     public static final String ED2K_PREFIX = "ed2k://";
     private static final Pattern ED2K_REGEX = Pattern.compile(

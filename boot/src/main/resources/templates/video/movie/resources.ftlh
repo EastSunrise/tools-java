@@ -64,7 +64,7 @@
                         <td>
                             <#if !item.identified>
                                 <label>
-                                    <input type="checkbox" class="resource-choose" data-url="${item.url}" data-db-id="${(movie.dbId?c)!''}"
+                                    <input type="checkbox" class="resource-choose" data-id="${item.id?c}" data-db-id="${(movie.dbId?c)!''}"
                                            data-imdb-id="${movie.imdbId!''}">
                                 </label>
                             <#else>

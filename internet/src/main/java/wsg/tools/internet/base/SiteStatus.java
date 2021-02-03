@@ -29,6 +29,10 @@ public @interface SiteStatus {
         /**
          * If the site is accessible but part of resources is restricted by security verification or else.
          */
-        RESTRICTED
+        RESTRICTED,
+        /**
+         * If the site is invalid.
+         */
+        INVALID
     }
 }

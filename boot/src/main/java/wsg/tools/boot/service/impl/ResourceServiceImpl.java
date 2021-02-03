@@ -24,7 +24,7 @@ import wsg.tools.internet.resource.entity.item.base.YearSupplier;
 import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
 import wsg.tools.internet.resource.entity.resource.base.PasswordProvider;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.site.intf.RangeRepository;
 import wsg.tools.internet.resource.site.intf.ResourceRepository;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
@@ -84,7 +84,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     private <I extends IdentifiedItem> int saveItem(I item, String name) {
-        List<ValidResource> resources = item.getResources();
+        List<Resource> resources = item.getResources();
         if (CollectionUtils.isEmpty(resources)) {
             return -1;
         }
@@ -114,7 +114,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         return Objects.requireNonNull(template.execute(status -> {
             Long itemId = itemRepository.insert(itemEntity).getId();
             List<ResourceLinkEntity> links = new LinkedList<>();
-            for (ValidResource resource : resources) {
+            for (Resource resource : resources) {
                 ResourceLinkEntity linkEntity = new ResourceLinkEntity();
                 linkEntity.setItemId(itemId);
                 linkEntity.setTitle(resource.getTitle());

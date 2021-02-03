@@ -1,10 +1,10 @@
-package wsg.tools.internet.resource.entity.resource.valid;
+package wsg.tools.internet.resource.entity.resource.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.entity.resource.base.PasswordProvider;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/9/18
  */
-public class BaiduDiskResource extends ValidResource implements PasswordProvider {
+public class BaiduDiskResource extends Resource implements PasswordProvider {
 
     public static final String BAIDU_DISK_HOST = "pan.baidu.com";
 

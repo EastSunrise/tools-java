@@ -373,39 +373,37 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public BatchResult<Long> importDouban(long userId, LocalDate since) {
+    public BatchResult<Long> importDouban(long userId, LocalDate since, MarkEnum mark) {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate().orElse(DoubanSite.DOUBAN_START_DATE);
         }
-        log.info("Start to import douban subjects of {} since {}", userId, since);
-        int[] count = {0};
+        log.info("Start to import douban subjects marked as {} of {} since {}", mark, userId, since);
+        Map<Long, LocalDate> map;
+        try {
+            map = adapter.collectUserSubjects(userId, since, mark).getRecord();
+        } catch (NotFoundException e) {
+            log.error(e.getMessage());
+            return new BatchResult<>(0, Collections.emptyMap());
+        }
+        int count = 0;
         Map<Long, String> fails = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-        for (MarkEnum mark : MarkEnum.values()) {
-            Map<Long, LocalDate> map;
+        for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
+            Long id;
             try {
-                map = adapter.collectUserSubjects(userId, since, mark).getRecord();
-            } catch (NotFoundException e) {
-                log.error(e.getMessage());
+                id = this.insertSubjectByDb(entry.getKey()).getRecord();
+            } catch (SiteException | DataIntegrityException | NotFoundException e) {
+                fails.put(entry.getKey(), e.getMessage());
                 continue;
             }
-            for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
-                Long id;
-                try {
-                    id = this.insertSubjectByDb(entry.getKey()).getRecord();
-                } catch (SiteException | DataIntegrityException | NotFoundException e) {
-                    fails.put(entry.getKey(), e.getMessage());
-                    continue;
-                }
-                count[0]++;
-                UserRecordEntity entity = new UserRecordEntity();
-                entity.setMark(mark);
-                entity.setMarkDate(entry.getValue());
-                entity.setSubjectId(id);
-                entity.setUserId(userId);
-                userRecordRepository.updateOrInsert(entity, () -> userRecordRepository.findBySubjectIdAndUserId(id, userId));
-            }
+            count++;
+            UserRecordEntity entity = new UserRecordEntity();
+            entity.setMark(mark);
+            entity.setMarkDate(entry.getValue());
+            entity.setSubjectId(id);
+            entity.setUserId(userId);
+            userRecordRepository.updateOrInsert(entity, () -> userRecordRepository.findBySubjectIdAndUserId(id, userId));
         }
-        return new BatchResult<>(count[0], fails);
+        return new BatchResult<>(count, fails);
     }
 
     @Override

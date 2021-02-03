@@ -16,7 +16,6 @@ import wsg.tools.common.lang.StringUtilsExt;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.time.Year;
-import java.util.List;
 
 /**
  * Configurations for video.
@@ -62,15 +61,8 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         return getLocation(season) + File.separator + String.format(format, currentEpisode);
     }
 
-    public File tmpdir(MovieEntity movie) {
-        return new File(tmpdir, StringUtilsExt.toFilename(movie.getTitle()));
-    }
-
-    public List<File> tmpdir(SeasonEntity season) {
-        return List.of(
-                new File(tmpdir, StringUtilsExt.toFilename(season.getTitle())),
-                new File(tmpdir, StringUtilsExt.toFilename(season.getSeries().getTitle() + "第" + season.getCurrentSeason() + "季"))
-        );
+    public File tmpdir(String title) {
+        return new File(tmpdir, StringUtilsExt.toFilename(title));
     }
 
     /**

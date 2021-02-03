@@ -15,8 +15,8 @@ import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.entity.item.impl.BdFilmItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 import wsg.tools.internet.resource.entity.resource.base.UnknownResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -98,7 +98,7 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
         item.setDbId(db == null ? null : Long.parseLong(db));
         item.setImdbId(matcher.group("imdb"));
 
-        List<ValidResource> resources = new LinkedList<>();
+        List<Resource> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         String urls = decode(matcher.group("urls"));
         urls = StringEscapeUtils.unescapeHtml4(urls).replace("<p>", "").replace("</p>", "");

@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Year;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -80,15 +81,24 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public final VideoStatus archive(MovieEntity movie, boolean chosen) throws IOException {
-        if (movie.getYear().compareTo(Year.now()) > 0) {
+    public VideoStatus getStatus(MovieEntity movie) {
+        return getStatus(movie.getYear(), () -> this.getFile(movie), movie.getTitle(), 1);
+    }
+
+    @Override
+    public VideoStatus getStatus(SeasonEntity season) {
+        return getStatus(season.getYear(), () -> this.getFile(season), season.getTitle(), season.getEpisodesCount());
+    }
+
+    private VideoStatus getStatus(Year year, Supplier<Optional<File>> getFile, String title, int count) {
+        if (Year.now().compareTo(year) < 0) {
             return VideoStatus.COMING;
         }
-        Optional<File> optional = this.getFile(movie);
+        Optional<File> optional = getFile.get();
         if (optional.isPresent()) {
             return VideoStatus.ARCHIVED;
         }
-        File tempDir = pathConfig.tmpdir(movie);
+        File tempDir = pathConfig.tmpdir(title);
         if (!tempDir.isDirectory()) {
             return VideoStatus.TO_DOWNLOAD;
         }
@@ -96,13 +106,25 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             return VideoStatus.DOWNLOADING;
         }
         Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
-        if (videoFiles.isEmpty()) {
-            return VideoStatus.TO_DOWNLOAD;
+        if (videoFiles.size() < count) {
+            return VideoStatus.LACKING;
         }
-        if (videoFiles.size() > 1 || !chosen) {
+        if (videoFiles.size() > count) {
             return VideoStatus.TO_CHOOSE;
         }
+        return VideoStatus.TO_ARCHIVE;
 
+    }
+
+    @Override
+    public VideoStatus archive(MovieEntity movie) throws IOException {
+        VideoStatus status = getStatus(movie);
+        if (status != VideoStatus.TO_ARCHIVE) {
+            return status;
+        }
+
+        File tempDir = pathConfig.tmpdir(movie.getTitle());
+        Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
         File srcFile = videoFiles.iterator().next();
         String suffix = FilenameUtils.getExtension(srcFile.getName());
         File destFile = new File(pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
@@ -112,38 +134,15 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     @Override
-    public VideoStatus archive(SeasonEntity season, boolean chosen) throws IOException {
-        if (season.getYear().compareTo(Year.now()) > 0) {
-            return VideoStatus.COMING;
-        }
-        Optional<File> optional = this.getFile(season);
-        if (optional.isPresent()) {
-            return VideoStatus.ARCHIVED;
-        }
-        List<File> tempDirs = pathConfig.tmpdir(season).stream().filter(File::isDirectory).collect(Collectors.toList());
-        if (tempDirs.isEmpty()) {
-            return VideoStatus.TO_DOWNLOAD;
-        }
-        if (tempDirs.stream().anyMatch(file -> !FileUtils.listFiles(file, Thunder.tmpFileFilter(), TrueFileFilter.INSTANCE).isEmpty())) {
-            return VideoStatus.DOWNLOADING;
-        }
-        Collection<File> videoFiles = tempDirs.stream()
-                .map(file -> FileUtils.listFiles(file, VIDEO_FILTER, TrueFileFilter.INSTANCE))
-                .reduce((files, files2) -> {
-                    files.addAll(files2);
-                    return files;
-                }).orElseThrow();
-        if (videoFiles.isEmpty()) {
-            return VideoStatus.TO_DOWNLOAD;
-        }
-        if (videoFiles.size() < season.getEpisodesCount()) {
-            return VideoStatus.LACKING;
-        }
-        if (videoFiles.size() > season.getEpisodesCount() || !chosen) {
-            return VideoStatus.TO_CHOOSE;
+    public VideoStatus archive(SeasonEntity season) throws IOException {
+        VideoStatus status = getStatus(season);
+        if (status != VideoStatus.TO_ARCHIVE) {
+            return status;
         }
 
+        File tempDir = pathConfig.tmpdir(season.getTitle());
         Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
+        Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
         for (File srcFile : videoFiles) {
             Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
             if (!matcher.matches()) {
@@ -182,9 +181,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
             File destFile = new File(entry.getKey() + Constants.FILE_EXTENSION_SEPARATOR + suffix);
             FileUtils.moveFile(srcFile, destFile);
         }
-        for (File tempDir : tempDirs) {
-            FileUtils.deleteDirectory(tempDir);
-        }
+        FileUtils.deleteDirectory(tempDir);
         return VideoStatus.ARCHIVED;
+
     }
 }

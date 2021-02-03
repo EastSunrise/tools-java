@@ -16,7 +16,7 @@ import wsg.tools.internet.resource.entity.item.base.VideoType;
 import wsg.tools.internet.resource.entity.item.impl.XlmItem;
 import wsg.tools.internet.resource.entity.resource.ResourceFactory;
 import wsg.tools.internet.resource.entity.resource.base.InvalidResourceException;
-import wsg.tools.internet.resource.entity.resource.base.ValidResource;
+import wsg.tools.internet.resource.entity.resource.base.Resource;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author Kingen
- * @see <a href="https://www.xlmdytt.com/">XLM</a>
+ * @see <a href="https://www.xleimi.com/">XLM</a>
  * @since 2020/12/2
  */
 public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
@@ -42,11 +42,11 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
     };
 
     public XlmSite() {
-        super("Xlm", "xlmdytt.com", 16962, 30391, 30721);
+        super("Xlm", "xleimi.com", 16962, 30391, 30721);
     }
 
     /**
-     * @see <a href="https://www.xlmdytt.com/new.html">Last Update</a>
+     * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
      */
     @Override
     protected int getMaxId() {
@@ -77,7 +77,7 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
         item.setType(Objects.requireNonNull(TYPES[Integer.parseInt(i)]));
 
         Element downs = document.selectFirst("#downs");
-        List<ValidResource> resources = new LinkedList<>();
+        List<Resource> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         for (Element a : downs.select(TAG_A)) {
             String href = a.attr(ATTR_HREF);

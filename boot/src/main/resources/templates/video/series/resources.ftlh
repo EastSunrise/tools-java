@@ -60,9 +60,9 @@
                             <#if !item.identified>
                                 <label>
                                     <#if seasons?size==1>
-                                        <input type="checkbox" class="resource-choose" data-url="${item.url}" data-db-id="${seasons?first.dbId?c}">
+                                        <input type="checkbox" class="resource-choose" data-id="${item.id?c}" data-db-id="${seasons?first.dbId?c}">
                                     <#else>
-                                        <select class="resource-choose" data-url="${item.url}" style="width: 100px">
+                                        <select class="resource-choose" data-id="${item.id?c}" style="width: 100px">
                                             <option value="">--Choose--</option>
                                             <option value="${series.imdbId}">mixed</option>
                                             <#list seasons as season>

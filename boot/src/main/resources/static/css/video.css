@@ -3,5 +3,9 @@
 }
 
 .checked {
+    color: black;
+}
+
+.link {
     color: blue;
 }
