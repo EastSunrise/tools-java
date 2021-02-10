@@ -5,9 +5,9 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.SiteStatusException;
-import wsg.tools.internet.resource.entity.item.base.IdentifiedItem;
-import wsg.tools.internet.resource.site.intf.RangeRepository;
-import wsg.tools.internet.resource.site.intf.ResourceRepository;
+import wsg.tools.internet.resource.item.IdentifiedItem;
+import wsg.tools.internet.resource.site.BaseRepository;
+import wsg.tools.internet.resource.site.RangeRepository;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -24,18 +24,18 @@ public interface ResourceService {
     /**
      * Import all resources from the given site.
      *
-     * @param site an implementation of {@link ResourceRepository}
+     * @param site an implementation of {@link BaseRepository}
      * @throws SiteStatusException if the status of the site is abnormal
      */
-    <I extends IdentifiedItem, S extends BaseSite & ResourceRepository<I, Integer>> void importAll(S site) throws SiteStatusException;
+    <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws SiteStatusException;
 
     /**
      * Import latest resources from the given site.
      *
-     * @param site an implementation of {@link ResourceRepository}
+     * @param site an implementation of {@link BaseRepository}
      * @throws SiteStatusException if the status of the site is abnormal
      */
-    <I extends IdentifiedItem, S extends BaseSite & RangeRepository<I>> void importLatest(S site) throws SiteStatusException;
+    <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws SiteStatusException;
 
     /**
      * Search resources of the given key.

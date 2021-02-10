@@ -9,6 +9,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.entity.douban.container.BoxResult;
@@ -70,7 +71,7 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public RankedResult apiMovieWeekly() {
         try {
-            return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, false);
+            return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, CacheStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -81,7 +82,7 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public BoxResult apiMovieUsBox() {
         try {
-            return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, true);
+            return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, CacheStrategy.NEVER_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -117,7 +118,7 @@ public class ApiDoubanSite extends DoubanSite {
             builder.setParameter("start", String.valueOf(start));
             ChartResult chartResult;
             try {
-                chartResult = getObject(builder, ChartResult.class, false);
+                chartResult = getObject(builder, ChartResult.class, CacheStrategy.ALWAYS_UPDATE);
             } catch (NotFoundException e) {
                 throw AssertUtils.runtimeException(e);
             }

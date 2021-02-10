@@ -1,5 +1,6 @@
 package wsg.tools.boot.dao.jpa.converter;
 
+import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.internet.video.enums.MarkEnum;
@@ -21,6 +22,13 @@ public class CodeEnumJpaConverters {
     public static class MarkEnumConverter extends CodeEnumConverter<MarkEnum> {
         public MarkEnumConverter() {
             super(MarkEnum.class);
+        }
+    }
+
+    @Converter(autoApply = true)
+    public static class ResourceTypeConverter extends CodeEnumConverter<ResourceType> {
+        public ResourceTypeConverter() {
+            super(ResourceType.class);
         }
     }
 

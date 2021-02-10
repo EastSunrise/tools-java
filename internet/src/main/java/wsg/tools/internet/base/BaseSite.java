@@ -73,7 +73,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * which handle json requests and return Java objects.
  * <p>
  * Method {@link #readContent} is main method to obtains target content.
- * Reads and writes caches if caches are used.
+ * Reads and writes caches if there exist caches which are updatable if required.
  * Otherwise call execution methods to do the request.
  * Overrideable methods are invoked to handle request and response in the process.
  * <p>
@@ -86,26 +86,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("UnstableApiUsage")
 public abstract class BaseSite implements Closeable, ResponseHandler<String> {
 
-    /**
-     * Common HTML tags and attributes.
-     */
-    protected static final String TAG_A = "a";
-    protected static final String TAG_INPUT = "input";
-    protected static final String TAG_FIELDSET = "fieldset";
-    protected static final String TAG_LI = "li";
-    protected static final String TAG_OPTION = "option";
-    protected static final String TAG_SPAN = "span";
-    protected static final String TAG_STRONG = "strong";
-    protected static final String TAG_H3 = "h3";
-    protected static final String TAG_H4 = "h4";
-    protected static final String TAG_TIME = "time";
-    protected static final String TAG_FONT = "font";
-    protected static final String TAG_SCRIPT = "script";
-    protected static final String ATTR_HREF = "href";
-    protected static final String ATTR_NAME = "name";
-    protected static final String ATTR_SRC = "src";
-    protected static final String ATTR_DATETIME = "datetime";
-    protected static final String ATTR_CONTENT = "content";
+    protected static final double DEFAULT_PERMITS_PER_SECOND = 10D;
     /**
      * temporary directory for cached content.
      */
@@ -118,24 +99,28 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     @Getter
     private final SchemeEnum scheme;
     @Getter
-    private final String host;
+    private final String domain;
     private final HttpClientContext context;
     private final Map<String, RateLimiter> limiters;
     private final CloseableHttpClient client;
 
-    public BaseSite(String name, String host) {
-        this(name, host, 10D);
+    public BaseSite(String name, String domain) {
+        this(name, domain, DEFAULT_PERMITS_PER_SECOND);
     }
 
-    public BaseSite(String name, String host, double permitsPerSecond) {
-        this(name, SchemeEnum.HTTPS, host, permitsPerSecond, permitsPerSecond);
+    public BaseSite(String name, SchemeEnum scheme, String domain) {
+        this(name, scheme, domain, DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
     }
 
-    public BaseSite(String name, SchemeEnum scheme, String host, double permitsPerSecond, double postPermitsPerSecond) {
+    public BaseSite(String name, String domain, double permitsPerSecond) {
+        this(name, SchemeEnum.HTTPS, domain, permitsPerSecond, permitsPerSecond);
+    }
+
+    public BaseSite(String name, SchemeEnum scheme, String domain, double permitsPerSecond, double postPermitsPerSecond) {
         validateStatus(this);
         this.name = name;
         this.scheme = scheme;
-        this.host = host;
+        this.domain = domain;
         this.mapper = objectMapper();
         this.limiters = new HashMap<>(2);
         this.limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
@@ -237,7 +222,7 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
             cookie.setExpiryDate(cookie0.getExpiryDate());
             cookie.setPath(cookie0.getPath());
         } else {
-            cookie.setDomain(host);
+            cookie.setDomain(domain);
             cookie.setExpiryDate(new Date());
             cookie.setPath("/");
         }
@@ -247,24 +232,24 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     /**
      * Return content of get request.
      */
-    protected final String getContent(URIBuilder builder, ContentTypeEnum contentType, boolean cached) throws NotFoundException {
-        return readContent(RequestBuilder.get(builder), contentType, cached);
+    protected final String getContent(URIBuilder builder, ContentTypeEnum contentType, CacheStrategy strategy) throws NotFoundException {
+        return readContent(RequestBuilder.get(builder), contentType, strategy);
     }
 
     /**
      * Return the document of html content of get request.
      */
-    protected final Document getDocument(URIBuilder builder, boolean cached) throws NotFoundException {
-        String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.HTML, cached);
+    protected final Document getDocument(URIBuilder builder, CacheStrategy strategy) throws NotFoundException {
+        String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.HTML, strategy);
         return Jsoup.parse(content);
     }
 
     /**
      * Return the content of html content of post request.
      */
-    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, boolean cached)
+    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, CacheStrategy strategy)
             throws NotFoundException {
-        String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.HTML, cached);
+        String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.HTML, strategy);
         return Jsoup.parse(content);
     }
 
@@ -272,22 +257,22 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
      * Return the content of response with a Java object.
      */
     protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws NotFoundException {
-        return getObject(builder, clazz, true);
+        return getObject(builder, clazz, CacheStrategy.NEVER_UPDATE);
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
     protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws NotFoundException {
-        return getObject(builder, type, true);
+        return getObject(builder, type, CacheStrategy.NEVER_UPDATE);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, boolean cached) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, CacheStrategy strategy) throws NotFoundException {
         try {
-            String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, cached);
+            String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, strategy);
             return mapper.readValue(content, clazz);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -297,9 +282,9 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     /**
      * Return the content of response with a generic Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, boolean cached) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, CacheStrategy strategy) throws NotFoundException {
         try {
-            String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, cached);
+            String content = readContent(RequestBuilder.get(builder), ContentTypeEnum.JSON, strategy);
             return mapper.readValue(content, type);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -309,10 +294,10 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     /**
      * Return the content of post response with a Java object.
      */
-    protected final <T> T postObject(URIBuilder builder, List<BasicNameValuePair> params, Class<T> clazz, boolean cached)
+    protected final <T> T postObject(URIBuilder builder, List<BasicNameValuePair> params, Class<T> clazz, CacheStrategy strategy)
             throws NotFoundException {
         try {
-            String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.JSON, cached);
+            String content = readContent(RequestBuilder.post(builder, params), ContentTypeEnum.JSON, strategy);
             return mapper.readValue(content, clazz);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
@@ -324,52 +309,60 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
      *
      * @param builder     builder for request.
      * @param contentType content type of the response
-     * @param cached      whether to read cached content
+     * @param strategy    strategy of caching
      */
-    private String readContent(RequestBuilder builder, ContentTypeEnum contentType, boolean cached) throws NotFoundException {
-        String content;
-        if (!cached) {
-            content = execute(builder);
-        } else {
-            String filepath = builder.filepath();
-            String user = user();
-            if (user != null) {
-                filepath += "#" + user;
-            }
-            if (contentType != null) {
-                filepath += contentType.getSuffix();
-            }
-            File file = new File(TMPDIR + filepath);
+    private String readContent(RequestBuilder builder, ContentTypeEnum contentType, CacheStrategy strategy) throws NotFoundException {
+        String filepath = builder.filepath();
+        String user = user();
+        if (user != null) {
+            filepath += "#" + user;
+        }
+        if (contentType != null) {
+            filepath += contentType.getSuffix();
+        }
+        File file = new File(TMPDIR + filepath);
 
-            if (file.isFile()) {
-                log.info("Read from {}", file.getPath());
-                try {
-                    content = FileUtils.readFileToString(file, UTF_8);
-                } catch (IOException e) {
-                    throw AssertUtils.runtimeException(e);
-                }
-                if (Constants.NULL_NA.equals(content)) {
-                    throw new NotFoundException("Not Found");
-                }
-            } else {
-                try {
-                    content = execute(builder);
-                    try {
-                        FileUtils.write(file, content, UTF_8);
-                    } catch (IOException e) {
-                        throw AssertUtils.runtimeException(e);
-                    }
-                } catch (NotFoundException e) {
-                    try {
-                        FileUtils.write(file, Constants.NULL_NA, UTF_8);
-                    } catch (IOException ex) {
-                        throw AssertUtils.runtimeException(ex);
-                    }
-                    throw e;
-                }
+        String content;
+        if (file.isFile()) {
+            content = readCache(file);
+            if (Constants.NULL_NA.equals(content)) {
+                throw new NotFoundException("Not Found");
             }
+            if (strategy.ifUpdate(content)) {
+                content = updateCache(builder, file);
+            }
+        } else {
+            content = updateCache(builder, file);
         }
         return handleContent(content, contentType);
+    }
+
+    private String readCache(File file) {
+        log.info("Read from {}", file.getPath());
+        try {
+            return FileUtils.readFileToString(file, UTF_8);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+    }
+
+    private String updateCache(RequestBuilder builder, File file) throws NotFoundException {
+        try {
+            String content = execute(builder);
+            try {
+                FileUtils.write(file, content, UTF_8);
+            } catch (IOException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+            return content;
+        } catch (NotFoundException e) {
+            try {
+                FileUtils.write(file, Constants.NULL_NA, UTF_8);
+            } catch (IOException ex) {
+                throw AssertUtils.runtimeException(ex);
+            }
+            throw e;
+        }
     }
 
     private String execute(RequestBuilder builder) throws NotFoundException {
@@ -443,7 +436,12 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     }
 
     private File cookieFile() {
-        return new File(StringUtils.joinWith(File.separator, TMPDIR, "context", name + ".cookie"));
+        String user = this.user();
+        String filename = name;
+        if (user != null) {
+            filename += "#" + user;
+        }
+        return new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filename + ".cookie"));
     }
 
     /**
@@ -482,10 +480,10 @@ public abstract class BaseSite implements Closeable, ResponseHandler<String> {
     /**
      * Get builder of request uri, including scheme, host, and path.
      */
-    protected final URIBuilder builder(String subHost, String path, Object... pathArgs) {
+    protected final URIBuilder builder(String subDomain, String path, Object... pathArgs) {
         URIBuilder builder = new URIBuilder()
                 .setScheme(scheme.toString())
-                .setHost(StringUtils.isBlank(subHost) ? host : subHost + "." + host);
+                .setHost(StringUtils.isBlank(subDomain) ? domain : subDomain + "." + domain);
         if (StringUtils.isNotBlank(path)) {
             builder.setPath(String.format(path, pathArgs));
         }

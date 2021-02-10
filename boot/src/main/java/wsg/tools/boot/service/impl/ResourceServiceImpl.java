@@ -18,20 +18,26 @@ import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.SiteStatusException;
-import wsg.tools.internet.resource.entity.item.base.IdentifiedItem;
-import wsg.tools.internet.resource.entity.item.base.TypeSupplier;
-import wsg.tools.internet.resource.entity.item.base.YearSupplier;
-import wsg.tools.internet.resource.entity.resource.base.FilenameSupplier;
-import wsg.tools.internet.resource.entity.resource.base.LengthSupplier;
-import wsg.tools.internet.resource.entity.resource.base.PasswordProvider;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.site.intf.RangeRepository;
-import wsg.tools.internet.resource.site.intf.ResourceRepository;
+import wsg.tools.internet.resource.base.AbstractResource;
+import wsg.tools.internet.resource.base.FilenameSupplier;
+import wsg.tools.internet.resource.base.LengthSupplier;
+import wsg.tools.internet.resource.base.PasswordProvider;
+import wsg.tools.internet.resource.item.IdentifiedItem;
+import wsg.tools.internet.resource.item.intf.TypeSupplier;
+import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
+import wsg.tools.internet.resource.item.intf.YearSupplier;
+import wsg.tools.internet.resource.site.BaseRepository;
+import wsg.tools.internet.resource.site.RangeRepository;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalQueries;
 import java.util.*;
 
 /**
@@ -54,10 +60,10 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <I extends IdentifiedItem, S extends BaseSite & ResourceRepository<I, Integer>> void importAll(S site) throws SiteStatusException {
+    public <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws SiteStatusException {
         int itemsCount = 0, linksCount = 0;
         String name = site.getName();
-        for (I item : site.findAll()) {
+        for (T item : site.findAll()) {
             int count = saveItem(item, name);
             if (count >= 0) {
                 itemsCount++;
@@ -68,12 +74,12 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <I extends IdentifiedItem, S extends BaseSite & RangeRepository<I>> void importLatest(S site) throws SiteStatusException {
+    public <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws SiteStatusException {
         int itemsCount = 0, linksCount = 0;
         String name = site.getName();
-        int start = itemRepository.findMaxSid(name).orElse(0) + 1;
-        List<I> items = site.findAllByRangeClosed(start, null);
-        for (I item : items) {
+        Integer start = itemRepository.findMaxSid(name).orElse(null);
+        List<T> items = site.findAllByRangeClosed(start, null);
+        for (T item : items) {
             int count = saveItem(item, name);
             if (count >= 0) {
                 itemsCount++;
@@ -83,8 +89,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         log.info("Finished importing: {} items, {} links.", itemsCount, linksCount);
     }
 
-    private <I extends IdentifiedItem> int saveItem(I item, String name) {
-        List<Resource> resources = item.getResources();
+    private <T extends IdentifiedItem> int saveItem(T item, String name) {
+        List<AbstractResource> resources = item.getResources();
         if (CollectionUtils.isEmpty(resources)) {
             return -1;
         }
@@ -99,7 +105,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
         if (item instanceof TypeSupplier) {
-            itemEntity.setVideoType(((TypeSupplier) item).getType());
+            itemEntity.setType(((TypeSupplier) item).getType());
         }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());
@@ -110,11 +116,22 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (item instanceof ImdbIdentifier) {
             itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
         }
+        if (item instanceof UpdateTimeSupplier) {
+            Temporal temporal = ((UpdateTimeSupplier<?>) item).getUpdateTime();
+            LocalDate date = temporal.query(TemporalQueries.localDate());
+            if (date != null) {
+                LocalTime time = temporal.query(TemporalQueries.localTime());
+                if (time == null) {
+                    time = LocalTime.MIN;
+                }
+                itemEntity.setUpdateTime(LocalDateTime.of(date, time));
+            }
+        }
 
         return Objects.requireNonNull(template.execute(status -> {
             Long itemId = itemRepository.insert(itemEntity).getId();
             List<ResourceLinkEntity> links = new LinkedList<>();
-            for (Resource resource : resources) {
+            for (AbstractResource resource : resources) {
                 ResourceLinkEntity linkEntity = new ResourceLinkEntity();
                 linkEntity.setItemId(itemId);
                 linkEntity.setTitle(resource.getTitle());

@@ -3,12 +3,16 @@ package wsg.tools.boot.pojo.entity.resource;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.resource.entity.item.base.BaseItem;
-import wsg.tools.internet.resource.entity.item.base.VideoType;
+import wsg.tools.internet.resource.item.BaseItem;
+import wsg.tools.internet.resource.item.VideoType;
+import wsg.tools.internet.resource.item.intf.TypeSupplier;
+import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
+import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 /**
  * Items of resources.
@@ -25,7 +29,7 @@ import javax.persistence.*;
 }, indexes = {
         @Index(name = "index_imdb", columnList = "imdbId")
 })
-public class ResourceItemEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier {
+public class ResourceItemEntity extends IdentityEntity implements TypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier, UpdateTimeSupplier<LocalDateTime> {
 
     @Column(nullable = false, length = 15)
     private String site;
@@ -39,7 +43,7 @@ public class ResourceItemEntity extends IdentityEntity implements DoubanIdentifi
     @Column(nullable = false)
     private String title;
 
-    private VideoType videoType;
+    private VideoType type;
 
     private Integer year;
 
@@ -47,6 +51,9 @@ public class ResourceItemEntity extends IdentityEntity implements DoubanIdentifi
 
     @Column(length = 10)
     private String imdbId;
+
+    @Column(length = 0)
+    private LocalDateTime updateTime;
 
     @Column(nullable = false)
     private Boolean identified;

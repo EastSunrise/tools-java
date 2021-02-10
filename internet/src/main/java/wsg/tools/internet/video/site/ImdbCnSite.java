@@ -8,6 +8,8 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.CacheStrategy;
+import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.enums.ContentTypeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
@@ -44,22 +46,22 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
 
     @Override
     public BaseImdbTitle getItemById(@Nonnull String imdbId) throws NotFoundException {
-        Document document = getDocument(builder0("/title/%s", imdbId), true);
+        Document document = getDocument(builder0("/title/%s", imdbId), CacheStrategy.NEVER_UPDATE);
 
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
         Document editForm = getDocument(builder0("/index/video.editform/index.html")
                 .setParameter("m_id", dataset.get("movie_id"))
-                .setParameter("location", dataset.get("location")), true);
+                .setParameter("location", dataset.get("location")), CacheStrategy.NEVER_UPDATE);
         Map<String, Element> fields = new HashMap<>(16);
         Elements items = editForm.select(".item");
         for (Element item : items) {
             if (item.hasClass("items")) {
-                Element input = item.selectFirst(TAG_INPUT);
-                fields.put(input.attr(ATTR_NAME), input);
+                Element input = item.selectFirst(CssSelector.TAG_INPUT);
+                fields.put(input.attr(CssSelector.ATTR_NAME), input);
                 continue;
             }
             Elements children = item.selectFirst(".choices").children();
-            fields.put(children.get(2).attr(ATTR_NAME), children.get(1));
+            fields.put(children.get(2).attr(CssSelector.ATTR_NAME), children.get(1));
         }
         Year year = Year.of(Integer.parseInt(fields.get("year").val()));
         Duration duration = null;
@@ -68,7 +70,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
             duration = Duration.ofMinutes(Integer.parseInt(runtime));
         }
 
-        Elements lis = document.selectFirst("div.item_r").select(TAG_LI);
+        Elements lis = document.selectFirst("div.item_r").select(CssSelector.TAG_LI);
         AssertUtils.requireRange(lis.size(), 4, 6);
         BaseImdbTitle imdbTitle;
         final int size = 4;
@@ -78,7 +80,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
             movie.setDuration(duration);
             imdbTitle = movie;
         } else {
-            String href = lis.first().selectFirst(TAG_A).attr(ATTR_HREF);
+            String href = lis.first().selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
             String seriesId = RegexUtils.matchesOrElseThrow(EPISODE_LIST_REGEX, href).group("id");
             if (seriesId.equals(imdbId)) {
                 ImdbSeries series = new ImdbSeries();
@@ -112,8 +114,8 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
 
     private List<String[]> getEpisodes(String seriesId) throws NotFoundException {
         Document document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                .addParameter("season", "1"), true);
-        int seasonsCount = document.selectFirst("select#ep_season").select(TAG_OPTION).size() - 1;
+                .addParameter("season", "1"), CacheStrategy.NEVER_UPDATE);
+        int seasonsCount = document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
 
         List<String[]> result = new ArrayList<>();
         int currentSeason = 1;
@@ -123,7 +125,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
             while (true) {
                 Elements items = document.select("div.s_item");
                 for (Element item : items) {
-                    String href = item.selectFirst(TAG_A).attr(ATTR_HREF);
+                    String href = item.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
                     String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group("id");
                     String text = item.selectFirst("span.s2").text();
                     int episode = Integer.parseInt(RegexUtils.matchesOrElseThrow(CURRENT_EPISODE_REGEX, text).group("e"));
@@ -133,13 +135,13 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
                 if (pagination == null) {
                     break;
                 }
-                Element nextPage = pagination.select(TAG_LI).last();
+                Element nextPage = pagination.select(CssSelector.TAG_LI).last();
                 if (nextPage.hasClass("disabled")) {
                     break;
                 }
                 document = getDocument(builder0("/title/%s/episodelist", seriesId)
                         .addParameter("season", String.valueOf(currentSeason))
-                        .addParameter("page", String.valueOf(++page)), true);
+                        .addParameter("page", String.valueOf(++page)), CacheStrategy.NEVER_UPDATE);
             }
             if (map.isEmpty()) {
                 result.add(new String[1]);
@@ -153,7 +155,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository {
                 break;
             }
             document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)), true);
+                    .addParameter("season", String.valueOf(currentSeason)), CacheStrategy.NEVER_UPDATE);
         }
         return result;
     }

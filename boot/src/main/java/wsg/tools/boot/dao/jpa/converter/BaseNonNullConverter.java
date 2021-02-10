@@ -8,9 +8,9 @@ import javax.persistence.AttributeConverter;
  * @author Kingen
  * @since 2020/7/12
  */
-public abstract class BaseNonNullConverter<JavaType, DbType> implements AttributeConverter<JavaType, DbType> {
+public abstract class BaseNonNullConverter<JavaType, JdbcType> implements AttributeConverter<JavaType, JdbcType> {
     @Override
-    public DbType convertToDatabaseColumn(JavaType attribute) {
+    public JdbcType convertToDatabaseColumn(JavaType attribute) {
         if (attribute == null) {
             return null;
         }
@@ -18,7 +18,7 @@ public abstract class BaseNonNullConverter<JavaType, DbType> implements Attribut
     }
 
     @Override
-    public JavaType convertToEntityAttribute(DbType dbData) {
+    public JavaType convertToEntityAttribute(JdbcType dbData) {
         if (dbData == null) {
             return null;
         }
@@ -31,7 +31,7 @@ public abstract class BaseNonNullConverter<JavaType, DbType> implements Attribut
      * @param dbData data of db, not null
      * @return target object
      */
-    protected abstract JavaType deserialize(DbType dbData);
+    protected abstract JavaType deserialize(JdbcType dbData);
 
     /**
      * Serialize a non-null object to database column
@@ -39,6 +39,6 @@ public abstract class BaseNonNullConverter<JavaType, DbType> implements Attribut
      * @param attribute source object, not null
      * @return value to store in db
      */
-    protected abstract DbType serialize(JavaType attribute);
+    protected abstract JdbcType serialize(JavaType attribute);
 
 }

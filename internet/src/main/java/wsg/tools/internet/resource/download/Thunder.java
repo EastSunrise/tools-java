@@ -6,9 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.resource.entity.resource.base.Resource;
-import wsg.tools.internet.resource.entity.resource.impl.BaiduDiskResource;
-import wsg.tools.internet.resource.entity.resource.impl.UcDiskResource;
+import wsg.tools.internet.resource.base.AbstractResource;
+import wsg.tools.internet.resource.impl.BaiduDiskResource;
+import wsg.tools.internet.resource.impl.UcDiskResource;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -24,22 +24,22 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.xunlei.com/">Thunder</a>
  * @since 2020/10/8
  */
-public class Thunder implements Downloader<Resource> {
+public class Thunder implements Downloader<AbstractResource> {
 
-    public static final String PREFIX = "thunder://";
+    public static final String THUNDER_PREFIX = "thunder://";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
-    private static final Pattern THUNDER_REGEX = Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)/?", Pattern.CASE_INSENSITIVE);
-    private static final Pattern SRC_URL_REGEX = Pattern.compile("AA(?<url>.*)ZZ");
+    private static final Pattern THUNDER_REGEX = Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SRC_URL_REGEX = Pattern.compile("AA\\s*(?<url>.*)\\s*ZZ");
 
     /**
      * Encode a url to a thunder url.
      */
     public static String encodeThunder(@Nonnull String url) {
-        if (StringUtils.startsWithIgnoreCase(url, PREFIX)) {
+        if (StringUtils.startsWithIgnoreCase(url, THUNDER_PREFIX)) {
             return url;
         }
         byte[] bytes = ("AA" + url + "ZZ").getBytes(Constants.UTF_8);
-        return PREFIX + Base64.getEncoder().encodeToString(bytes);
+        return THUNDER_PREFIX + Base64.getEncoder().encodeToString(bytes);
     }
 
     /**
@@ -47,7 +47,10 @@ public class Thunder implements Downloader<Resource> {
      */
     public static String decodeThunder(@Nonnull String url, Charset charset) {
         url = url.strip();
-        while (StringUtils.startsWithIgnoreCase(url, PREFIX)) {
+        while (StringUtils.startsWithIgnoreCase(url, THUNDER_PREFIX)) {
+            url = StringUtils.replace(url, "%2b", "+");
+            url = StringUtils.replace(url, "%20", "+");
+            url = StringUtils.replace(url, "%3D", "=");
             url = RegexUtils.matchesOrElseThrow(THUNDER_REGEX, url).group("c");
             url = new String(Base64.getDecoder().decode(url.getBytes(charset)), charset);
             url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("url").strip();
@@ -66,7 +69,7 @@ public class Thunder implements Downloader<Resource> {
      * @param dir target directory is dependent on the selection of the dialog
      */
     @Override
-    public boolean addTask(File dir, Resource resource) throws IOException {
+    public boolean addTask(File dir, AbstractResource resource) throws IOException {
         if (resource instanceof BaiduDiskResource || resource instanceof UcDiskResource) {
             return false;
         }

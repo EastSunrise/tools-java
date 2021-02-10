@@ -23,6 +23,8 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.CacheStrategy;
+import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
@@ -90,7 +92,7 @@ public class DoubanSite extends BaseSite {
         }
         if (getCookies().size() == 0) {
             try {
-                getDocument(builder0(null), false);
+                getDocument(builder0(null), CacheStrategy.ALWAYS_UPDATE);
             } catch (NotFoundException e) {
                 throw AssertUtils.runtimeException(e);
             }
@@ -102,7 +104,7 @@ public class DoubanSite extends BaseSite {
                     new BasicNameValuePair("name", username),
                     new BasicNameValuePair("password", password),
                     new BasicNameValuePair("remember", String.valueOf(true))
-            ), LoginResult.class, false);
+            ), LoginResult.class, CacheStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -137,7 +139,7 @@ public class DoubanSite extends BaseSite {
      * @return IMDb id
      */
     public BaseDoubanSubject subject(long subjectId) throws NotFoundException {
-        Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), true);
+        Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), CacheStrategy.NEVER_UPDATE);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -165,9 +167,38 @@ public class DoubanSite extends BaseSite {
         subject.setShowed(!rating.hasClass("not_showed"));
 
         Element info = document.selectFirst("div#info");
-        Map<String, Element> spans = info.select("span.pl").stream().collect(Collectors.toMap(Element::text, span -> span));
-        Element span;
+        final String propertyRuntime = "span[property=v:runtime]";
+        Element span = info.selectFirst(propertyRuntime);
+        if (span != null && subject instanceof DoubanMovie) {
+            Node node = span.nextSibling();
+            if (node instanceof TextNode && !((TextNode) node).isBlank()) {
+                ((DoubanMovie) subject).setExtDurations(new ArrayList<>());
+                Matcher matcher = EXT_DURATIONS_REGEX.matcher(((TextNode) node).text().strip());
+                while (matcher.find()) {
+                    ((DoubanMovie) subject).getExtDurations().add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
+                }
+            }
+        }
+        if (subject instanceof DoubanSeries) {
+            Element season = document.selectFirst("#season");
+            if (season != null) {
+                Elements options = season.select(CssSelector.TAG_OPTION);
+                Long[] seasons = new Long[options.size()];
+                for (Element option : options) {
+                    seasons[Integer.parseInt(option.text()) - 1] = Long.parseLong(option.val());
+                    if (option.hasAttr("selected")) {
+                        ((DoubanSeries) subject).setCurrentSeason(Integer.valueOf(option.text()));
+                    }
+                }
+                ((DoubanSeries) subject).setSeasons(seasons);
+            }
+        }
+        extractInfo(subject, info.select("span.pl").stream().collect(Collectors.toMap(Element::text, e -> e)));
+        return subject;
+    }
 
+    private void extractInfo(BaseDoubanSubject subject, Map<String, Element> spans) {
+        Element span;
         final String plLanguage = "语言:";
         if ((span = spans.get(plLanguage)) != null) {
             String[] languages = StringUtils.split(((TextNode) span.nextSibling()).text(), "/");
@@ -178,18 +209,6 @@ public class DoubanSite extends BaseSite {
         final String plImdb = "IMDb链接:";
         if ((span = spans.get(plImdb)) != null) {
             subject.setImdbId(span.nextElementSibling().text().strip());
-        }
-
-        final String propertyRuntime = "span[property=v:runtime]";
-        if ((span = info.selectFirst(propertyRuntime)) != null && subject instanceof DoubanMovie) {
-            Node node = span.nextSibling();
-            if (node instanceof TextNode && !((TextNode) node).isBlank()) {
-                ((DoubanMovie) subject).setExtDurations(new ArrayList<>());
-                Matcher matcher = EXT_DURATIONS_REGEX.matcher(((TextNode) node).text().strip());
-                while (matcher.find()) {
-                    ((DoubanMovie) subject).getExtDurations().add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
-                }
-            }
         }
 
         if (subject instanceof DoubanSeries) {
@@ -203,22 +222,7 @@ public class DoubanSite extends BaseSite {
             if ((span = spans.get(plDuration)) != null) {
                 series.setDuration(new RuntimeInfo(((TextNode) span.nextSibling()).text().strip()).getDuration());
             }
-
-            Element season = document.selectFirst("#season");
-            if (season != null) {
-                Elements options = season.select(TAG_OPTION);
-                Long[] seasons = new Long[options.size()];
-                for (Element option : options) {
-                    seasons[Integer.parseInt(option.text()) - 1] = Long.parseLong(option.val());
-                    if (option.hasAttr("selected")) {
-                        series.setCurrentSeason(Integer.valueOf(option.text()));
-                    }
-                }
-                series.setSeasons(seasons);
-            }
         }
-
-        return subject;
     }
 
     /**
@@ -240,12 +244,12 @@ public class DoubanSite extends BaseSite {
                     new BasicNameValuePair("p_uid", imdbId),
                     new BasicNameValuePair("cat", String.valueOf(cat.getCode())),
                     new BasicNameValuePair("subject_submit", "下一步")
-            ), true);
+            ), CacheStrategy.NEVER_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
 
-        Element fieldset = document.selectFirst("div#content").selectFirst(TAG_FIELDSET);
+        Element fieldset = document.selectFirst("div#content").selectFirst(CssSelector.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
         if (input == null) {
             return null;
@@ -256,7 +260,7 @@ public class DoubanSite extends BaseSite {
             log.error(span.text());
             return null;
         }
-        String href = ref.attr(ATTR_HREF);
+        String href = ref.attr(CssSelector.ATTR_HREF);
         return Long.parseLong(RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
     }
 
@@ -275,7 +279,7 @@ public class DoubanSite extends BaseSite {
                 .setParameter("cat", String.valueOf(catalog.getCode()));
         Document document;
         try {
-            document = getDocument(builder, true);
+            document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -285,7 +289,7 @@ public class DoubanSite extends BaseSite {
                     Element a = div.selectFirst("a.title-text");
                     SearchItem item = new SearchItem();
                     item.setTitle(a.text().strip());
-                    item.setUrl(a.attr(ATTR_HREF));
+                    item.setUrl(a.attr(CssSelector.ATTR_HREF));
                     return item;
                 }).collect(Collectors.toList());
     }
@@ -307,16 +311,16 @@ public class DoubanSite extends BaseSite {
         }
         Document document;
         try {
-            document = getDocument(builder, true);
+            document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
 
         return document.selectFirst("div.search-result").select("div.result").stream()
                 .map(div -> {
-                    Element a = div.selectFirst(TAG_H3).selectFirst(TAG_A);
+                    Element a = div.selectFirst(CssSelector.TAG_H3).selectFirst(CssSelector.TAG_A);
                     SearchItem item = new SearchItem();
-                    Matcher matcher = RegexUtils.matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(ATTR_HREF));
+                    Matcher matcher = RegexUtils.matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(CssSelector.ATTR_HREF));
                     item.setTitle(a.text().strip());
                     item.setUrl(URLDecoder.decode(matcher.group("url"), Constants.UTF_8));
                     return item;
@@ -338,7 +342,7 @@ public class DoubanSite extends BaseSite {
         URIBuilder builder = builder(catalog.getPath(), "/j/subject_suggest")
                 .setParameter("q", keyword);
         try {
-            return getObject(builder, new TypeReference<>() {}, true);
+            return getObject(builder, new TypeReference<>() {}, CacheStrategy.NEVER_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -364,12 +368,12 @@ public class DoubanSite extends BaseSite {
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
-            Document document = getDocument(builder, false);
+            Document document = getDocument(builder, CacheStrategy.ALWAYS_UPDATE);
             boolean done = false;
             String listClass = ".list-view";
-            for (Element li : document.selectFirst(listClass).select(TAG_LI)) {
+            for (Element li : document.selectFirst(listClass).select(CssSelector.TAG_LI)) {
                 Element div = li.selectFirst(".title");
-                String href = div.selectFirst(TAG_A).attr("href");
+                String href = div.selectFirst(CssSelector.TAG_A).attr("href");
                 long id = Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/"));
                 LocalDate markDate = LocalDate.parse(div.nextElementSibling().text().strip());
                 if (!markDate.isBefore(since)) {
@@ -403,10 +407,10 @@ public class DoubanSite extends BaseSite {
         while (true) {
             URIBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
-            Document document = getDocument(builder, false);
+            Document document = getDocument(builder, CacheStrategy.ALWAYS_UPDATE);
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
-                Element a = div.selectFirst(".title").selectFirst(TAG_A);
+                Element a = div.selectFirst(".title").selectFirst(CssSelector.TAG_A);
                 String href = a.attr("href");
                 ids.add(Long.parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
                 start++;

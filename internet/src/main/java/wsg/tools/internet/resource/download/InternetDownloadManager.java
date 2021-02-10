@@ -2,7 +2,7 @@ package wsg.tools.internet.resource.download;
 
 import org.apache.commons.io.FilenameUtils;
 import wsg.tools.common.io.CommandExecutor;
-import wsg.tools.internet.resource.entity.resource.impl.HttpResource;
+import wsg.tools.internet.resource.impl.HttpResource;
 
 import java.io.File;
 import java.io.IOException;
