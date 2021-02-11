@@ -1,0 +1,18 @@
+package wsg.tools.internet.video.site.douban.api.pojo;
+
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * An image.
+ *
+ * @author Kingen
+ * @since 2020/6/30
+ */
+@Setter
+@Getter
+public class Image {
+    private String small;
+    private String large;
+    private String medium;
+}

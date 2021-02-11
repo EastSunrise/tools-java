@@ -28,8 +28,8 @@ import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.resource.site.BaseRepository;
 import wsg.tools.internet.resource.site.RangeRepository;
-import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
-import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
+import wsg.tools.internet.video.site.douban.DoubanIdentifier;
+import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;

@@ -14,8 +14,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -81,7 +81,7 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
     protected int max() {
         Document document;
         try {
-            document = getDocument(builder0("/"), CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder0("/"), SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -97,7 +97,7 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
     @Override
     protected MovieHeavenItem getItem(int id) throws NotFoundException {
         URIBuilder builder = builder0("/vod-detail-id-%d.html", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
             throw new NotFoundException(document.selectFirst("h4.infotitle1").text());

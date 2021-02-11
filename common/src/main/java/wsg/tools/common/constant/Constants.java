@@ -17,7 +17,6 @@ public final class Constants {
     /**
      * Common strings.
      */
-    public static final String NULL_NA = "N/A";
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
     public static final String FILE_EXTENSION_SEPARATOR = ".";
     public static final String URL_PATH_SEPARATOR = "/";

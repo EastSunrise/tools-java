@@ -11,8 +11,8 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -68,7 +68,7 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
     protected int max() {
         Document document;
         try {
-            document = getDocument(builder0("/movies/index.htm"), CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -89,7 +89,7 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
             throw new NotFoundException("Not a film page");
         }
         URIBuilder builder = builder0("/gy/%d.htm", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         Map<String, String> meta = document.select("meta[property]").stream()
                 .collect(Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));

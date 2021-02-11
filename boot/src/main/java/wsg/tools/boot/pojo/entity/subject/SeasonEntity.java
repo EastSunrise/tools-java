@@ -3,8 +3,8 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
 import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 
 import javax.persistence.*;
 import java.time.Duration;

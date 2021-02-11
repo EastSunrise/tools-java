@@ -1,5 +1,7 @@
 package wsg.tools.internet.base;
 
+import wsg.tools.internet.base.exception.SiteStatusException;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,6 +35,21 @@ public @interface SiteStatus {
         /**
          * If the site is invalid.
          */
-        INVALID
+        INVALID;
+
+        /**
+         * Validate the status of the site based on the annotation {@link SiteStatus}.
+         *
+         * @throws SiteStatusException if the status is abnormal
+         */
+        public static void validateStatus(BaseSite site) throws SiteStatusException {
+            SiteStatus annotation = site.getClass().getAnnotation(SiteStatus.class);
+            if (annotation != null) {
+                SiteStatus.Status status = annotation.status();
+                if (!SiteStatus.Status.NORMAL.equals(status)) {
+                    throw new SiteStatusException(annotation);
+                }
+            }
+        }
     }
 }

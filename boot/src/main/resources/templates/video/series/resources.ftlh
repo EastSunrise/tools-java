@@ -55,7 +55,7 @@
                         <td>
                             <#if item.year??>${item.year?c}</#if>
                         </td>
-                        <td>${item.videoType}</td>
+                        <td>${item.type}</td>
                         <td>
                             <#if !item.identified>
                                 <label>

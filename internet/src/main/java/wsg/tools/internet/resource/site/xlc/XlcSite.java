@@ -10,8 +10,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -71,7 +71,7 @@ public class XlcSite extends AbstractRangeResourceSite<XlcItem> {
     protected int max() {
         Document document;
         try {
-            document = getDocument(builder0("/ajax-show-id-new.html"), CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder0("/ajax-show-id-new.html"), SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -87,7 +87,7 @@ public class XlcSite extends AbstractRangeResourceSite<XlcItem> {
     @Override
     protected XlcItem getItem(int id) throws NotFoundException {
         URIBuilder builder = builder0("/vod-read-id-%d.html", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         Map<String, Node> infos = new HashMap<>(8);
         Elements elements = document.selectFirst(".moviecont").select(CssSelector.TAG_STRONG);

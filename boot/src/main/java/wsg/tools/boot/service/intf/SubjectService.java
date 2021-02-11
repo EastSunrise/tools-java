@@ -12,6 +12,7 @@ import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.enums.MarkEnum;
 
+import javax.annotation.Nullable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ import java.util.Optional;
 public interface SubjectService {
 
     /**
-     * Insert entity obtained by id of douban.
+     * Import a subject obtained by id of douban.
      *
      * @param dbId id of Douban
      * @return result with subject id
@@ -34,10 +35,10 @@ public interface SubjectService {
      * @throws SiteException          if an error occurs when accessing to the site
      * @throws DataIntegrityException if data is lacking
      */
-    SingleResult<Long> insertSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException;
+    SingleResult<Long> importSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException;
 
     /**
-     * Insert entity obtained by id of IMDb.
+     * Import a subject obtained by id of IMDb.
      *
      * @param imdbId id of IMDb, not null
      * @return result with subject id
@@ -45,7 +46,7 @@ public interface SubjectService {
      * @throws SiteException          if an error occurs when accessing to the site
      * @throws DataIntegrityException if data is lacking
      */
-    SingleResult<Long> insertSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException;
+    SingleResult<Long> importSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException;
 
     /**
      * Import subjects from Douban of the given user.
@@ -55,7 +56,7 @@ public interface SubjectService {
      * @param mark   marking type
      * @return result of importing
      */
-    BatchResult<Long> importDouban(long userId, LocalDate since, MarkEnum mark);
+    BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark);
 
     /**
      * Obtains all subjects of movies.

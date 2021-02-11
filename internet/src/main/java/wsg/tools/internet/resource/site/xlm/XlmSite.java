@@ -10,8 +10,8 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -66,7 +66,7 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
     protected int max() {
         Document document;
         try {
-            document = getDocument(builder0("/new.html"), CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder0("/new.html"), SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -82,7 +82,7 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
     @Override
     protected XlmItem getItem(int id) throws NotFoundException {
         URIBuilder builder = builder0("/dy/k%d.html", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         String typeHref = document.selectFirst("div.conpath").select(CssSelector.TAG_A).get(1).attr(CssSelector.ATTR_HREF);
         String i = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("i");

@@ -12,12 +12,13 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
-import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
-import wsg.tools.internet.video.site.DoubanSite;
-import wsg.tools.internet.video.site.ImdbRepository;
+import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
+import wsg.tools.internet.video.site.douban.DoubanSite;
+import wsg.tools.internet.video.site.imdb.ImdbCnSite;
+import wsg.tools.internet.video.site.imdb.ImdbRepository;
+import wsg.tools.internet.video.site.imdb.ImdbTitle;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -35,8 +36,8 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     private static final String DOUBAN_SUBJECT = "douban subject";
     private static final String IMDB_TITLE = "imdb title";
 
-    private final ImdbRepository imdbRepository = new ImdbProxy();
-    private final DoubanSite doubanSite = new DoubanSite();
+    private final ImdbRepository<ImdbTitle> imdbRepository = ImdbCnSite.getInstance();
+    private final DoubanSite doubanSite = DoubanSite.getInstance();
 
     private IdRelationRepository relationRepository;
 
@@ -94,7 +95,7 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     }
 
     @Override
-    public SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
+    public SingleResult<ImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
         Objects.requireNonNull(imdbId);
         try {
             return SingleResult.of(imdbRepository.getItemById(imdbId));

@@ -25,17 +25,18 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
-import wsg.tools.internet.video.entity.douban.object.DoubanMovie;
-import wsg.tools.internet.video.entity.douban.object.DoubanSeries;
-import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
-import wsg.tools.internet.video.entity.imdb.object.ImdbEpisode;
-import wsg.tools.internet.video.entity.imdb.object.ImdbMovie;
-import wsg.tools.internet.video.entity.imdb.object.ImdbSeries;
 import wsg.tools.internet.video.enums.MarkEnum;
-import wsg.tools.internet.video.site.DoubanSite;
+import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
+import wsg.tools.internet.video.site.douban.DoubanMovie;
+import wsg.tools.internet.video.site.douban.DoubanSeries;
+import wsg.tools.internet.video.site.douban.DoubanSite;
+import wsg.tools.internet.video.site.imdb.ImdbEpisode;
+import wsg.tools.internet.video.site.imdb.ImdbMovie;
+import wsg.tools.internet.video.site.imdb.ImdbSeries;
+import wsg.tools.internet.video.site.imdb.ImdbTitle;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
@@ -73,7 +74,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public SingleResult<Long> insertSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException {
+    public SingleResult<Long> importSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException {
         Optional<IdView<Long>> optional = movieRepository.findByDbId(dbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getId());
@@ -96,13 +97,13 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             throw new DataIntegrityException("Can't save series without IMDb id.");
         }
 
-        BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
+        ImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
         return insertSeries(imdbId, imdbTitle);
     }
 
     @Override
-    public SingleResult<Long> insertSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException {
-        BaseImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
+    public SingleResult<Long> importSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException {
+        ImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
         if (imdbTitle instanceof ImdbMovie) {
             Optional<IdView<Long>> optional = movieRepository.findByImdbId(imdbId);
             if (optional.isPresent()) {
@@ -156,7 +157,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             movieEntity.setYear(doubanMovie.getYear());
             movieEntity.setLanguages(doubanMovie.getLanguages());
             CollectionUtils.addIgnoreNull(durations, doubanMovie.getDuration());
-            List<Duration> extDurations = doubanMovie.getExtDurations();
+            List<Duration> extDurations = doubanMovie.getDurations();
             if (extDurations != null) {
                 durations.addAll(extDurations);
             }
@@ -180,10 +181,10 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return SingleResult.of(movieRepository.insert(movieEntity).getId());
         } catch (DataIntegrityViolationException e) {
             if (movieEntity.getYear() != null && movieEntity.getYear().compareTo(Year.now()) > 0) {
-                throw new DataIntegrityException("The movie isn't showed yet.");
+                throw new DataIntegrityException("The movie isn't released yet.");
             }
-            if (doubanMovie != null && !doubanMovie.getShowed()) {
-                throw new DataIntegrityException("The movie isn't showed yet.");
+            if (doubanMovie != null && !doubanMovie.isReleased()) {
+                throw new DataIntegrityException("The movie isn't released yet.");
             }
             throw new DataIntegrityException("Data of the movie isn't integral: " + e.getMessage());
         }
@@ -192,7 +193,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     /**
      * Id and title are both required not null.
      */
-    private SingleResult<Long> insertSeries(@Nonnull String imdbId, @Nonnull BaseImdbTitle title)
+    private SingleResult<Long> insertSeries(@Nonnull String imdbId, @Nonnull ImdbTitle title)
             throws SiteException, DataIntegrityException {
         String seriesImdbId;
         ImdbSeries imdbSeries;
@@ -283,7 +284,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 }
             } catch (DataIntegrityViolationException | IllegalArgumentException e) {
                 if (season.getYear() != null && season.getYear().compareTo(Year.now()) > 0) {
-                    fails.put(season.getCurrentSeason(), "The season isn't showed yet.");
+                    fails.put(season.getCurrentSeason(), "The season isn't released yet.");
                 } else {
                     fails.put(season.getCurrentSeason(), e.getMessage());
                 }
@@ -357,7 +358,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
 
-        BaseImdbTitle imdbTitle;
+        ImdbTitle imdbTitle;
         try {
             imdbTitle = adapter.imdbTitle(episodeImdbId).getRecord();
         } catch (NotFoundException e) {
@@ -373,7 +374,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public BatchResult<Long> importDouban(long userId, LocalDate since, MarkEnum mark) {
+    public BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark) {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate().orElse(DoubanSite.DOUBAN_START_DATE);
         }
@@ -390,7 +391,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
             Long id;
             try {
-                id = this.insertSubjectByDb(entry.getKey()).getRecord();
+                id = this.importSubjectByDb(entry.getKey()).getRecord();
             } catch (SiteException | DataIntegrityException | NotFoundException e) {
                 fails.put(entry.getKey(), e.getMessage());
                 continue;

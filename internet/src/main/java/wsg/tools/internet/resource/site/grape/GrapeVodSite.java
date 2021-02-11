@@ -12,8 +12,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -98,7 +98,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
         URIBuilder builder = builder0("/index.php").addParameter("s", String.format("vod-type-id-%d-p-%d.html", typeId, page));
         Document document;
         try {
-            document = getDocument(builder, CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -131,7 +131,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
 
     private GrapeVodItem getVodItem(String path, VideoType type) throws NotFoundException {
         URIBuilder builder = builder0(path);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         LocalDateTime addTime = LocalDateTime.parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
         GrapeVodItem item = new GrapeVodItem(builder.toString(), type, addTime);

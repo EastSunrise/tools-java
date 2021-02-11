@@ -5,7 +5,7 @@ import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
 import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
-import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
+import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDate;

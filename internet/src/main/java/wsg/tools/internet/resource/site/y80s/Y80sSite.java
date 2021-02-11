@@ -10,8 +10,8 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.enums.SchemeEnum;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
@@ -76,7 +76,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
     protected int max() {
         Document document;
         try {
-            document = getDocument(builder("m", "/movie/1-0-0-0-0-0-0"), CacheStrategy.ALWAYS_UPDATE);
+            document = getDocument(builder("m", "/movie/1-0-0-0-0-0-0"), SnapshotStrategy.ALWAYS_UPDATE);
         } catch (NotFoundException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -93,7 +93,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
     @Override
     protected Y80sItem getItem(int id) throws NotFoundException {
         URIBuilder builder = builder("m", "/movie/%d", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }

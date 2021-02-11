@@ -8,8 +8,8 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheStrategy;
 import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
@@ -57,7 +57,7 @@ public class GrapeNewsSite extends AbstractRangeResourceSite<GrapeNewsItem> impl
     @Override
     protected GrapeNewsItem getItem(int id) throws NotFoundException {
         URIBuilder builder = builder0("/movie/%d.html", id);
-        Document document = getDocument(builder, CacheStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         LocalDate releaseDate = LocalDate.parse(RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text()).group("s"));
         GrapeNewsItem item = new GrapeNewsItem(id, builder.toString(), releaseDate);

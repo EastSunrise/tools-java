@@ -30,7 +30,7 @@ public class RequestBuilder extends HttpRequestBase {
     private final URIBuilder builder;
     private final List<? extends NameValuePair> params;
 
-    public RequestBuilder(String method, URIBuilder builder, List<? extends NameValuePair> params) {
+    private RequestBuilder(String method, URIBuilder builder, List<? extends NameValuePair> params) {
         this.method = method;
         this.builder = builder;
         this.params = params;

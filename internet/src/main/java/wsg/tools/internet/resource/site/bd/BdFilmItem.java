@@ -4,8 +4,8 @@ import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
 import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
-import wsg.tools.internet.video.entity.douban.base.DoubanIdentifier;
-import wsg.tools.internet.video.entity.imdb.base.ImdbIdentifier;
+import wsg.tools.internet.video.site.douban.DoubanIdentifier;
+import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;

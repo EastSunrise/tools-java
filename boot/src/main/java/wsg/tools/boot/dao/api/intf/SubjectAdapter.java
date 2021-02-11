@@ -3,9 +3,11 @@ package wsg.tools.boot.dao.api.intf;
 import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.video.entity.douban.base.BaseDoubanSubject;
-import wsg.tools.internet.video.entity.imdb.base.BaseImdbTitle;
 import wsg.tools.internet.video.enums.MarkEnum;
+import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
+import wsg.tools.internet.video.site.douban.DoubanSite;
+import wsg.tools.internet.video.site.imdb.ImdbSite;
+import wsg.tools.internet.video.site.imdb.ImdbTitle;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -19,7 +21,7 @@ import java.util.Map;
 public interface SubjectAdapter {
 
     /**
-     * Obtains subject from {@link wsg.tools.internet.video.site.DoubanSite}.
+     * Obtains subject from {@link DoubanSite}.
      *
      * @param dbId id of Douban
      * @return result
@@ -49,11 +51,11 @@ public interface SubjectAdapter {
     SingleResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws NotFoundException;
 
     /**
-     * Obtains title from {@link wsg.tools.internet.video.site.ImdbSite}.
+     * Obtains title from {@link ImdbSite}.
      *
      * @param imdbId id of IMDb
      * @return result
      * @throws NotFoundException if not found
      */
-    SingleResult<BaseImdbTitle> imdbTitle(String imdbId) throws NotFoundException;
+    SingleResult<ImdbTitle> imdbTitle(String imdbId) throws NotFoundException;
 }
