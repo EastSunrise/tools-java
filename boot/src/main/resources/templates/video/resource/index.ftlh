@@ -41,7 +41,7 @@
                     <h2 class="layui-colla-title"> ${type} </h2>
                     <div class="layui-colla-content layui-show">
                         <table class="layui-table">
-                            <#list links[type]?sort_by("filename") as link>
+                            <#list links[type] as link>
                                 <tr>
                                     <td>${link_index+1}</td>
                                     <td><a href="${link.url}">${(link.filename)!""}</td>

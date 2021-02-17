@@ -33,7 +33,6 @@ import wsg.tools.internet.video.enums.MarkEnum;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URLDecoder;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -58,7 +57,6 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern.compile("[^()\\s]+\\((\\d+)\\)");
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(?<t>.*)\\s\\(豆瓣\\)");
     private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern.compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
-    private static final Pattern EXT_DURATIONS_REGEX = Pattern.compile("(\\d+) ?分钟");
     private static final Pattern COOKIE_DBCL2_REGEX = Pattern.compile("\"(?<id>\\d+):[0-9A-Za-z+/]+\"");
     private static final Pattern SEARCH_ITEM_HREF_REGEX =
             Pattern.compile("https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-Za-z%.-]+)&query=(?<q>[0-9A-Za-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
@@ -166,20 +164,6 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         Element rating = document.selectFirst("div.rating_right");
         subject.setReleased(!rating.hasClass("not_showed"));
 
-        Element info = document.selectFirst("div#info");
-        final String propertyRuntime = "span[property=v:runtime]";
-        Element span = info.selectFirst(propertyRuntime);
-        if (span != null && subject instanceof DoubanMovie) {
-            Node node = span.nextSibling();
-            if (node instanceof TextNode && !((TextNode) node).isBlank()) {
-                List<Duration> durations = new ArrayList<>();
-                Matcher matcher = EXT_DURATIONS_REGEX.matcher(((TextNode) node).text().strip());
-                while (matcher.find()) {
-                    durations.add(Duration.ofMinutes(Long.parseLong(matcher.group(1))));
-                }
-                ((DoubanMovie) subject).setDurations(durations);
-            }
-        }
         if (subject instanceof DoubanSeries) {
             Element season = document.selectFirst("#season");
             if (season != null) {
@@ -194,6 +178,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                 ((DoubanSeries) subject).setSeasons(seasons);
             }
         }
+        Element info = document.selectFirst("div#info");
         extractInfo(subject, info.select("span.pl").stream().collect(Collectors.toMap(Element::text, e -> e)));
         return subject;
     }
@@ -210,6 +195,19 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         final String plImdb = "IMDb链接:";
         if ((span = spans.get(plImdb)) != null) {
             subject.setImdbId(span.nextElementSibling().text().strip());
+        }
+
+        if (subject instanceof DoubanMovie) {
+            DoubanMovie movie = (DoubanMovie) subject;
+            final String plDuration = "片长:";
+            if ((span = spans.get(plDuration)) != null) {
+                Element element = span.nextElementSibling();
+                Node node = element.is(CssSelector.TAG_SPAN) ? element.nextSibling() : element.previousSibling();
+                if (node instanceof TextNode) {
+                    String[] parts = StringUtils.strip(((TextNode) node).text(), " /").split("/");
+                    movie.setDurations(Arrays.stream(parts).map(String::strip).map(Parsers::parseDuration).collect(Collectors.toList()));
+                }
+            }
         }
 
         if (subject instanceof DoubanSeries) {

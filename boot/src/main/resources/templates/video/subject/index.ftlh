@@ -35,25 +35,29 @@
                             <td>${movie_index+1}</td>
                             <td>
                                 <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}</a>
+                                <a href="https://www.baidu.com/s?wd=${movie.title}" target="_blank"><i class="layui-icon layui-icon-search"></i></a>
                             </td>
                             <td>${movie.year?c}</td>
                             <td>${(movie.languages[0].title)!""}</td>
                             <td>${movie.durations}</td>
                             <td>
                                 <#assign sc = movie.status.code/>
+                                <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
+                                   title="Query resources with the title"><i class="layui-icon layui-icon-search"></i></a>
+                                &nbsp;
                                 <#if sc == 30>
-                                    <a href="javascript:void(0);" class="movie-search link" data-id="${movie.id?c}"
-                                       title="Query resources with the title">Query</a>
-                                    /
-                                    <a href="javascript:void(0);" class="movie-input link" data-id="${movie.id?c}"
-                                       title="Query resources with input key">Input</a>
-                                    /
-                                    <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank" class="link"
-                                       title="Choose resources to download">Download</a>
+                                    <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
+                                       title="Query resources with input key"><i class="layui-icon layui-icon-edit"></i> </a>
+                                    &nbsp;
+                                    <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank"
+                                       title="Choose resources to download"><i class="layui-icon layui-icon-link"></i> </a>
                                 <#elseif sc==40>
                                     <span class="click-tip" hidden="hidden"></span>
                                     <a href="javascript:void(0);" class="movie-archive link" data-id="${movie.id?c}"
                                        title="Archived downloaded resources"> Archive </a>
+                                <#elseif sc==20>
+                                    <a href="javascript:void(0);" class="movie-open" data-id="${movie.id?c}" title="Click to open the video"><i
+                                                class="layui-icon layui-icon-video"></i> </a>
                                 <#else>
                                     ${movie.status.text}
                                 </#if>

@@ -58,8 +58,18 @@ public class ImdbTitle extends BaseImdbTitle {
 
     private List<Duration> runtimes;
     private List<LanguageEnum> languages;
+    private List<LocalDate> releases;
 
     ImdbTitle() {
+    }
+
+    @Nullable
+    public List<LocalDate> getReleases() {
+        return releases;
+    }
+
+    void setReleases(List<LocalDate> releases) {
+        this.releases = releases;
     }
 
     @Nullable

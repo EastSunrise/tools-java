@@ -35,8 +35,10 @@
                 <#list items?sort_by('gmtModified')?reverse as item>
                     <tr>
                         <td>${item_index+1}</td>
-                        <td>
-                            <a href="${item.url}" target="_blank">${item.title!""}</a>
+                        <td style="width: 400px">
+                            <a href="${item.url}" target="_blank">${item.title}</a>
+                            <a href="https://search.douban.com/movie/subject_search?search_text=${item.title}&cat=1002" target="_blank">
+                                <i class="layui-icon layui-icon-search"></i></a>
                         </td>
                         <td>
                             <#if item.year??>${item.year?c}</#if>

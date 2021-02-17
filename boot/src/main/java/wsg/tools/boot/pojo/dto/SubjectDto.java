@@ -5,6 +5,8 @@ import lombok.Setter;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 
+import java.time.LocalDateTime;
+
 /**
  * Subject object for movie and season.
  *
@@ -21,4 +23,5 @@ public class SubjectDto extends BaseDto implements DoubanIdentifier {
     private Long dbId;
     private String durations;
     private VideoStatus status;
+    private LocalDateTime gmtModified;
 }

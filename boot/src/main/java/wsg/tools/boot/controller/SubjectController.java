@@ -19,13 +19,18 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.boot.pojo.error.DataIntegrityException;
+import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
+import wsg.tools.common.io.Rundll32;
+import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.enums.MarkEnum;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -67,6 +72,20 @@ public class SubjectController extends AbstractController {
         return result;
     }
 
+    @PostMapping(value = "/import")
+    @ResponseBody
+    public ResponseEntity<String> importSubject(Long id) {
+        if (id == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID must be not null.");
+        }
+        try {
+            subjectService.importSubjectByDb(id);
+            return ResponseEntity.ok("Success");
+        } catch (NotFoundException | SiteException | DataIntegrityException e) {
+            return ResponseEntity.ok(e.getMessage());
+        }
+    }
+
     @GetMapping(path = "/subject/index")
     public String subjects(Model model) {
         List<MovieDto> subjects = subjectService.listMovies().getRecords().stream().map(movie -> {
@@ -80,13 +99,14 @@ public class SubjectController extends AbstractController {
             movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                     .collect(Collectors.joining("/")));
             movieDto.setStatus(videoManager.getStatus(movie));
+            movieDto.setGmtModified(movie.getGmtModified());
             return movieDto;
         }).sorted((o1, o2) -> {
             int dif = o2.getStatus().getCode() - o1.getStatus().getCode();
             if (dif != 0) {
                 return dif;
             }
-            return o2.getYear().compareTo(o1.getYear());
+            return o2.getGmtModified().compareTo(o1.getGmtModified());
         }).collect(Collectors.toList());
         model.addAttribute("movies", subjects);
         Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
@@ -181,5 +201,24 @@ public class SubjectController extends AbstractController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+
+    @PostMapping(path = "/open")
+    @ResponseBody
+    public ResponseEntity<?> open(long id) {
+        Optional<MovieEntity> optional = subjectService.getMovie(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Optional<File> file = videoManager.getFile(optional.get());
+        if (file.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            Rundll32.openFile(file.get());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+        return ResponseEntity.ok().build();
     }
 }

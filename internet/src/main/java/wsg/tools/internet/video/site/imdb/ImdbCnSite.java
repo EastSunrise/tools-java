@@ -18,9 +18,11 @@ import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.Year;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * <a href="https://imdb.cn">IMDb CN</a>
@@ -110,7 +112,9 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         }
         String showdate = fields.get("showdate00").val();
         if (StringUtils.isNotBlank(showdate)) {
-            imdbTitle.setRelease(new ReleaseInfo(showdate).getDate());
+            String[] parts = showdate.split("/");
+            List<LocalDate> dates = Arrays.stream(parts).map(String::strip).map(ReleaseInfo::new).map(ReleaseInfo::getDate).collect(Collectors.toList());
+            imdbTitle.setReleases(dates);
         }
 
         return imdbTitle;

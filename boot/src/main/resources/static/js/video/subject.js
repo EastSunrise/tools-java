@@ -25,6 +25,11 @@ $(function () {
     $('.season-archive').on('click', function () {
         archive($(this), '/video/season/archive');
     });
+    $('.movie-open').on('click', function () {
+        $.post('/video/open', {
+            id: $(this).data("id")
+        });
+    })
 });
 
 /**
