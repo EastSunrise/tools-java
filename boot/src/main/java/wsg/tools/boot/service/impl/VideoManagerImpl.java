@@ -15,13 +15,18 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
 import wsg.tools.internet.resource.download.Thunder;
+import wsg.tools.internet.resource.item.intf.YearSupplier;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.time.Year;
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -82,23 +87,92 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public VideoStatus getStatus(MovieEntity movie) {
-        return getStatus(movie.getYear(), () -> this.getFile(movie), movie.getTitle(), 1);
+        return getStatus(movie, this::getFile, 1);
     }
 
     @Override
     public VideoStatus getStatus(SeasonEntity season) {
-        return getStatus(season.getYear(), () -> this.getFile(season), season.getTitle(), season.getEpisodesCount());
+        return getStatus(season, this::getFile, season.getEpisodesCount());
     }
 
-    private VideoStatus getStatus(Year year, Supplier<Optional<File>> getFile, String title, int count) {
-        if (Year.now().compareTo(year) < 0) {
+    private <T extends YearSupplier & TitleSupplier> VideoStatus getStatus(T t, Function<T, Optional<File>> getFile, int count) {
+        try {
+            return archive(t, getFile, count, null);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+    }
+
+    @Override
+    public VideoStatus archive(MovieEntity movie) throws IOException {
+        return archive(movie, this::getFile, 1, (tempDir, videoFiles) -> {
+            File srcFile = videoFiles.iterator().next();
+            String suffix = FilenameUtils.getExtension(srcFile.getName());
+            File destFile = new File(pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
+            FileUtils.moveFile(srcFile, destFile);
+            FileUtils.deleteDirectory(tempDir);
+            return VideoStatus.ARCHIVED;
+        });
+    }
+
+    @Override
+    public VideoStatus archive(SeasonEntity season) throws IOException {
+        return archive(season, this::getFile, season.getEpisodesCount(), (tempDir, videoFiles) -> {
+            Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
+            for (File srcFile : videoFiles) {
+                Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
+                if (!matcher.matches()) {
+                    log.info("Not matched file: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                String year = matcher.group("year");
+                if (year != null && Integer.parseInt(year) != season.getYear()) {
+                    log.info("Not matched year: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                String s = matcher.group("s");
+                if (s != null && Integer.parseInt(s) != season.getCurrentSeason()) {
+                    log.info("Not matched season: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                int currentEpisode = Integer.parseInt(matcher.group("e"));
+                if (currentEpisode < 1 || currentEpisode > season.getEpisodesCount()) {
+                    log.info("Not matched episode: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                String location = pathConfig.getLocation(season, currentEpisode);
+                if (movedFiles.containsKey(location)) {
+                    log.info("Duplicate episodes: {}", srcFile);
+                    return VideoStatus.TO_CHOOSE;
+                }
+                movedFiles.put(location, srcFile);
+            }
+            List<Map.Entry<String, File>> entries = movedFiles.entrySet().stream()
+                    .sorted(Map.Entry.<String, File>comparingByKey().reversed())
+                    .collect(Collectors.toList());
+            for (Map.Entry<String, File> entry : entries) {
+                File srcFile = entry.getValue();
+                log.info("Moving {} as {}.", srcFile, entry.getKey());
+                String suffix = FilenameUtils.getExtension(srcFile.getName());
+                File destFile = new File(entry.getKey() + Constants.FILE_EXTENSION_SEPARATOR + suffix);
+                FileUtils.moveFile(srcFile, destFile);
+            }
+            FileUtils.deleteDirectory(tempDir);
+            return VideoStatus.ARCHIVED;
+        });
+    }
+
+    private <T extends YearSupplier & TitleSupplier> VideoStatus archive(
+            T t, Function<T, Optional<File>> getFile, int count, @Nullable ThrowableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
+            throws IOException {
+        if (Year.now().getValue() < t.getYear()) {
             return VideoStatus.COMING;
         }
-        Optional<File> optional = getFile.get();
+        Optional<File> optional = getFile.apply(t);
         if (optional.isPresent()) {
             return VideoStatus.ARCHIVED;
         }
-        File tempDir = pathConfig.tmpdir(title);
+        File tempDir = pathConfig.tmpdir(t.getTitle());
         if (!tempDir.isDirectory()) {
             return VideoStatus.TO_DOWNLOAD;
         }
@@ -112,77 +186,9 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (videoFiles.size() > count) {
             return VideoStatus.TO_CHOOSE;
         }
-        return VideoStatus.TO_ARCHIVE;
-
-    }
-
-    @Override
-    public VideoStatus archive(MovieEntity movie) throws IOException {
-        VideoStatus status = getStatus(movie);
-        if (status != VideoStatus.TO_ARCHIVE) {
-            return status;
+        if (ifToArchive == null) {
+            return VideoStatus.TO_ARCHIVE;
         }
-
-        File tempDir = pathConfig.tmpdir(movie.getTitle());
-        Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
-        File srcFile = videoFiles.iterator().next();
-        String suffix = FilenameUtils.getExtension(srcFile.getName());
-        File destFile = new File(pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
-        FileUtils.moveFile(srcFile, destFile);
-        FileUtils.deleteDirectory(tempDir);
-        return VideoStatus.ARCHIVED;
-    }
-
-    @Override
-    public VideoStatus archive(SeasonEntity season) throws IOException {
-        VideoStatus status = getStatus(season);
-        if (status != VideoStatus.TO_ARCHIVE) {
-            return status;
-        }
-
-        File tempDir = pathConfig.tmpdir(season.getTitle());
-        Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
-        Collection<File> videoFiles = FileUtils.listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
-        for (File srcFile : videoFiles) {
-            Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
-            if (!matcher.matches()) {
-                log.info("Not matched file: {}", srcFile);
-                return VideoStatus.TO_CHOOSE;
-            }
-            String year = matcher.group("year");
-            if (year != null && Integer.parseInt(year) != season.getYear().getValue()) {
-                log.info("Not matched year: {}", srcFile);
-                return VideoStatus.TO_CHOOSE;
-            }
-            String s = matcher.group("s");
-            if (s != null && Integer.parseInt(s) != season.getCurrentSeason()) {
-                log.info("Not matched season: {}", srcFile);
-                return VideoStatus.TO_CHOOSE;
-            }
-            int currentEpisode = Integer.parseInt(matcher.group("e"));
-            if (currentEpisode < 1 || currentEpisode > season.getEpisodesCount()) {
-                log.info("Not matched episode: {}", srcFile);
-                return VideoStatus.TO_CHOOSE;
-            }
-            String location = pathConfig.getLocation(season, currentEpisode);
-            if (movedFiles.containsKey(location)) {
-                log.info("Duplicate episodes: {}", srcFile);
-                return VideoStatus.TO_CHOOSE;
-            }
-            movedFiles.put(location, srcFile);
-        }
-        List<Map.Entry<String, File>> entries = movedFiles.entrySet().stream()
-                .sorted(Map.Entry.<String, File>comparingByKey().reversed())
-                .collect(Collectors.toList());
-        for (Map.Entry<String, File> entry : entries) {
-            File srcFile = entry.getValue();
-            log.info("Moving {} as {}.", srcFile, entry.getKey());
-            String suffix = FilenameUtils.getExtension(srcFile.getName());
-            File destFile = new File(entry.getKey() + Constants.FILE_EXTENSION_SEPARATOR + suffix);
-            FileUtils.moveFile(srcFile, destFile);
-        }
-        FileUtils.deleteDirectory(tempDir);
-        return VideoStatus.ARCHIVED;
-
+        return ifToArchive.apply(tempDir, videoFiles);
     }
 }

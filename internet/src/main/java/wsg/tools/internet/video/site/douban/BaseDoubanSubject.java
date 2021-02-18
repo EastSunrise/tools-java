@@ -14,7 +14,6 @@ import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.List;
 
 /**
@@ -68,7 +67,7 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     private String title;
     private String imdbId;
     private String originalTitle;
-    private Year year;
+    private int year;
     private boolean released;
     private List<LanguageEnum> languages;
     private List<Duration> durations;
@@ -117,7 +116,7 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
         this.originalTitle = originalTitle;
     }
 
-    void setYear(Year year) {
+    void setYear(int year) {
         this.year = year;
     }
 

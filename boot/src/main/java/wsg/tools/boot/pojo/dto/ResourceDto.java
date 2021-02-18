@@ -16,5 +16,6 @@ import java.util.List;
 public class ResourceDto extends BaseDto {
 
     private String title;
+    private String url;
     private List<LinkDto> links;
 }

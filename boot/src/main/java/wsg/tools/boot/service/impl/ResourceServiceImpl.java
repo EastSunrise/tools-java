@@ -215,6 +215,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         return items.stream().map(item -> {
             ResourceDto resource = new ResourceDto();
             resource.setTitle(item.getTitle());
+            resource.setUrl(item.getUrl());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
                 resource.setLinks(linkEntities.stream().map(link -> {

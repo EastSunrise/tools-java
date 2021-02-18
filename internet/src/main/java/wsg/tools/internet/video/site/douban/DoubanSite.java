@@ -36,7 +36,6 @@ import java.net.URLDecoder;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -160,7 +159,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         }
 
         String year = StringUtils.strip(document.selectFirst("span.year").html(), "()");
-        subject.setYear(Year.of(Integer.parseInt(year)));
+        subject.setYear(Integer.parseInt(year));
 
         Element rating = document.selectFirst("div.rating_right");
         subject.setReleased(!rating.hasClass("not_showed"));

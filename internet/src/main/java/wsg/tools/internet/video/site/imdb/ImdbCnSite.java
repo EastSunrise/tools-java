@@ -22,7 +22,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,7 +72,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
             Elements children = item.selectFirst(".choices").children();
             fields.put(children.get(2).attr(CssSelector.ATTR_NAME), children.get(1));
         }
-        Year year = Year.of(Integer.parseInt(fields.get("year").val()));
+        int year = Integer.parseInt(fields.get("year").val());
         Duration duration = null;
         String runtime = fields.get("runtime").val();
         if (StringUtils.isNotBlank(runtime)) {

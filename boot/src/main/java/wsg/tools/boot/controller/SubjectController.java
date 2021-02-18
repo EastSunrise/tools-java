@@ -21,7 +21,6 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
-import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
@@ -51,14 +50,12 @@ import java.util.stream.Collectors;
 public class SubjectController extends AbstractController {
 
     private final SubjectService subjectService;
-    private final ResourceService resourceService;
     private final VideoManager videoManager;
     private final DatabaseConfig databaseConfig;
 
     @Autowired
-    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager, DatabaseConfig databaseConfig) {
+    public SubjectController(SubjectService subjectService, VideoManager videoManager, DatabaseConfig databaseConfig) {
         this.subjectService = subjectService;
-        this.resourceService = resourceService;
         this.videoManager = videoManager;
         this.databaseConfig = databaseConfig;
     }
@@ -98,7 +95,7 @@ public class SubjectController extends AbstractController {
             movieDto.setImdbId(movie.getImdbId());
             movieDto.setTitle(movie.getTitle());
             movieDto.setOriginalTitle(movie.getOriginalTitle());
-            movieDto.setYear(movie.getYear().getValue());
+            movieDto.setYear(movie.getYear());
             movieDto.setLanguages(movie.getLanguages());
             movieDto.setDbId(movie.getDbId());
             movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
@@ -122,7 +119,7 @@ public class SubjectController extends AbstractController {
                 SeasonDto seasonDto = new SeasonDto();
                 seasonDto.setId(season.getId());
                 seasonDto.setTitle(season.getTitle());
-                seasonDto.setYear(season.getYear().getValue());
+                seasonDto.setYear(season.getYear());
                 seasonDto.setDbId(season.getDbId());
                 seasonDto.setDurations(season.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
                         .collect(Collectors.joining("/")));

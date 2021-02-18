@@ -2,8 +2,6 @@ package wsg.tools.internet.video.site.imdb.pojo.info;
 
 import lombok.Getter;
 
-import java.time.Year;
-
 /**
  * Info of year.
  *
@@ -13,15 +11,15 @@ import java.time.Year;
 public class YearInfo {
 
     @Getter
-    private final Year start;
-    private final Year end;
+    private final int start;
+    private final Integer end;
 
-    public YearInfo(Year start) {
+    public YearInfo(int start) {
         this.start = start;
         this.end = null;
     }
 
-    public YearInfo(Year start, Year end) {
+    public YearInfo(int start, Integer end) {
         this.start = start;
         this.end = end;
     }

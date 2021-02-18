@@ -91,7 +91,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
 
         if (imdbId == null) {
-            if (subject.getYear() != null && subject.getYear().compareTo(Year.now()) > 0) {
+            if (subject.getYear() > Year.now().getValue()) {
                 throw new DataIntegrityException("The subject isn't released yet.");
             }
             throw new DataIntegrityException("Can't save series without IMDb id.");
@@ -180,7 +180,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         try {
             return SingleResult.of(movieRepository.insert(movieEntity).getId());
         } catch (DataIntegrityViolationException e) {
-            if (movieEntity.getYear() != null && movieEntity.getYear().compareTo(Year.now()) > 0) {
+            if (movieEntity.getYear() != null && movieEntity.getYear() > Year.now().getValue()) {
                 throw new DataIntegrityException("The movie isn't released yet.");
             }
             if (doubanMovie != null && !doubanMovie.isReleased()) {
@@ -283,7 +283,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                     }
                 }
             } catch (DataIntegrityViolationException | IllegalArgumentException e) {
-                if (season.getYear() != null && season.getYear().compareTo(Year.now()) > 0) {
+                if (season.getYear() != null && season.getYear() > Year.now().getValue()) {
                     fails.put(season.getCurrentSeason(), "The season isn't released yet.");
                 } else {
                     fails.put(season.getCurrentSeason(), e.getMessage());

@@ -3,12 +3,13 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 
 import javax.persistence.*;
 import java.time.Duration;
-import java.time.Year;
 import java.util.List;
 
 /**
@@ -21,7 +22,7 @@ import java.util.List;
 @Getter
 @Entity
 @Table(name = "video_season")
-public class SeasonEntity extends IdentityEntity implements DoubanIdentifier {
+public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, YearSupplier, TitleSupplier {
 
     @Column(nullable = false, unique = true)
     private Long dbId;
@@ -33,7 +34,7 @@ public class SeasonEntity extends IdentityEntity implements DoubanIdentifier {
     private String title;
 
     @Column(nullable = false)
-    private Year year;
+    private Integer year;
 
     @Column(length = 63)
     private List<LanguageEnum> languages;

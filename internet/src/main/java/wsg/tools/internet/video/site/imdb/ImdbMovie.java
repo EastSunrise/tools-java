@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.imdb;
 
 import javax.annotation.Nullable;
-import java.time.Year;
 
 /**
  * IMDb Movie.
@@ -11,14 +10,14 @@ import java.time.Year;
  */
 public class ImdbMovie extends ImdbTitle {
 
-    private Year year;
+    private Integer year;
 
     @Nullable
-    public Year getYear() {
+    public Integer getYear() {
         return year;
     }
 
-    void setYear(Year year) {
+    void setYear(int year) {
         this.year = year;
     }
 }

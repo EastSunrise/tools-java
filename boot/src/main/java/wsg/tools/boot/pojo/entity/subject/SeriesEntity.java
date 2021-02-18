@@ -3,13 +3,14 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.time.Year;
 import java.util.List;
 import java.util.Objects;
 
@@ -23,7 +24,7 @@ import java.util.Objects;
 @Getter
 @Entity
 @Table(name = "video_series")
-public class SeriesEntity extends IdentityEntity implements ImdbIdentifier {
+public class SeriesEntity extends IdentityEntity implements ImdbIdentifier, YearSupplier, TitleSupplier {
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;
@@ -35,7 +36,7 @@ public class SeriesEntity extends IdentityEntity implements ImdbIdentifier {
     private String text;
 
     @Column(nullable = false)
-    private Year year;
+    private Integer year;
 
     @Column(length = 63)
     private List<LanguageEnum> languages;

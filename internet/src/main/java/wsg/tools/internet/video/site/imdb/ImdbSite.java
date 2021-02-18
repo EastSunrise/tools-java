@@ -97,14 +97,14 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             Matcher matcher = RegexUtils.matchesOrElseThrow(MOVIE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
-                ((ImdbMovie) title).setYear(Year.of(Integer.parseInt(year)));
+                ((ImdbMovie) title).setYear(Integer.parseInt(year));
             }
         } else if (title instanceof ImdbSeries) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(SERIES_PAGE_TITLE_REGEX, document.title());
             String end = matcher.group("end");
             ((ImdbSeries) title).setYearInfo(new YearInfo(
-                    Year.of(Integer.parseInt(matcher.group("start"))),
-                    end == null ? null : Year.of(Integer.parseInt(end))
+                    Integer.parseInt(matcher.group("start")),
+                    end == null ? null : Integer.parseInt(end)
             ));
             try {
                 ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
@@ -115,7 +115,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
-                ((ImdbEpisode) title).setYear(Year.of(Integer.parseInt(year)));
+                ((ImdbEpisode) title).setYear(Integer.parseInt(year));
             }
         } else if (title instanceof ImdbCreativeWork) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(WORK_PAGE_TITLE_REGEX, document.title());

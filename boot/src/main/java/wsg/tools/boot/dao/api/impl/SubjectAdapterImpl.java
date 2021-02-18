@@ -3,7 +3,7 @@ package wsg.tools.boot.dao.api.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
@@ -30,7 +30,7 @@ import java.util.Optional;
  * @since 2020/6/26
  */
 @Slf4j
-@Configuration
+@Component
 public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
 
     private static final String DOUBAN_SUBJECT = "douban subject";
