@@ -33,6 +33,7 @@ import wsg.tools.internet.video.enums.MarkEnum;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URLDecoder;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -200,14 +201,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         if (subject instanceof DoubanMovie) {
             DoubanMovie movie = (DoubanMovie) subject;
             final String plDuration = "片长:";
-            if ((span = spans.get(plDuration)) != null) {
-                Element element = span.nextElementSibling();
-                Node node = element.is(CssSelector.TAG_SPAN) ? element.nextSibling() : element.previousSibling();
-                if (node instanceof TextNode) {
-                    String[] parts = StringUtils.strip(((TextNode) node).text(), " /").split("/");
-                    movie.setDurations(Arrays.stream(parts).map(String::strip).map(Parsers::parseDuration).collect(Collectors.toList()));
-                }
-            }
+            movie.setDurations(getDurations(spans.get(plDuration)));
         }
 
         if (subject instanceof DoubanSeries) {
@@ -216,7 +210,21 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
             if ((span = spans.get(plEpisodes)) != null) {
                 series.setEpisodesCount(Integer.parseInt(((TextNode) span.nextSibling()).text().strip()));
             }
+            final String plDuration = "单集片长:";
+            series.setDurations(getDurations(spans.get(plDuration)));
         }
+    }
+
+    private List<Duration> getDurations(Element span) {
+        if (span != null) {
+            Element element = span.nextElementSibling();
+            Node node = element.is(CssSelector.TAG_SPAN) ? element.nextSibling() : element.previousSibling();
+            if (node instanceof TextNode) {
+                String[] parts = StringUtils.strip(((TextNode) node).text(), " /").split("/");
+                return Arrays.stream(parts).map(String::strip).map(Parsers::parseDuration).collect(Collectors.toList());
+            }
+        }
+        return null;
     }
 
     /**
@@ -360,7 +368,8 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         return document.select("div.item-root").stream()
                 .map(div -> {
                     Element a = div.selectFirst("a.title-text");
-                    return new SearchItem(a.text().strip(), a.attr(CssSelector.ATTR_HREF));
+                    String url = a.attr(CssSelector.ATTR_HREF);
+                    return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
                 }).collect(Collectors.toList());
     }
 
@@ -391,7 +400,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                     Element a = div.selectFirst(CssSelector.TAG_H3).selectFirst(CssSelector.TAG_A);
                     Matcher matcher = RegexUtils.matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(CssSelector.ATTR_HREF));
                     String url = URLDecoder.decode(matcher.group("url"), Constants.UTF_8);
-                    return new SearchItem(a.text().strip(), url);
+                    return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
                 }).collect(Collectors.toList());
     }
 

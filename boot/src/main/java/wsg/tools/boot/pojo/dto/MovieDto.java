@@ -17,6 +17,7 @@ import java.util.List;
 @Setter
 public class MovieDto extends SubjectDto implements ImdbIdentifier {
 
+    private String originalTitle;
     private String imdbId;
     private List<LanguageEnum> languages;
 }

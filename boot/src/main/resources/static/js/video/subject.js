@@ -1,42 +1,42 @@
 $(function () {
     $('.movie-search').on('click', function () {
-        search("/video/movie/resources", $(this).data('id'));
+        search("/video/resource/movie", getId($(this)));
     });
     $('.movie-input').on('click', function () {
-        let id = $(this).data('id');
+        let id = getId($(this));
         layui.layer.prompt(function (value, index) {
             layui.layer.close(index);
-            search("/video/movie/resources", id, value);
+            search("/video/resource/movie", id, value);
         })
-    });
-    $('.movie-archive').on('click', function () {
-        archive($(this), '/video/movie/archive');
     });
     $('.series-search').on('click', function () {
-        search("/video/series/resources", $(this).data('id'));
+        search("/video/resource/series", getId($(this)));
     });
     $('.series-input').on('click', function () {
-        let id = $(this).data('id');
+        let id = getId($(this));
         layui.layer.prompt(function (value, index) {
             layui.layer.close(index);
-            search("/video/series/resources", id, value);
+            search("/video/resource/series", id, value);
         })
     });
-    $('.season-archive').on('click', function () {
-        archive($(this), '/video/season/archive');
+
+    $('.video-archive').on('click', function () {
+        archive($(this), getId($(this)));
     });
-    $('.movie-open').on('click', function () {
+
+    $('.video-open').on('click', function () {
         $.post('/video/open', {
-            id: $(this).data("id")
+            id: getId($(this))
         });
     })
 });
 
+function getId(_this) {
+    return _this.parent().find("[name=id]").val();
+}
+
 /**
- * Search resources of the series of the given id
- * @param url
- * @param id
- * @param key
+ * Search resources of the given key
  */
 function search(url, id, key) {
     $.post(url, {
@@ -98,9 +98,9 @@ const ARCHIVED_CODE = 20;
 /**
  * Archive a subject
  * @param ele current element
- * @param url url to post
+ * @param id
  */
-function archive(ele, url) {
+function archive(ele, id) {
     if (!confirm('Are all files chosen?')) {
         return;
     }
@@ -122,10 +122,10 @@ function archive(ele, url) {
     ele.attr('hidden', true);
     tip.attr('hidden', false);
 
-    $.ajax(url, {
+    $.ajax('/video/subject/archive', {
         type: 'POST',
         data: {
-            id: ele.data('id'),
+            id: id,
         },
         'success': function (status) {
             clearInterval(timer);

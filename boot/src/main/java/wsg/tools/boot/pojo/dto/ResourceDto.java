@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Object of a resource.
@@ -16,8 +15,6 @@ import java.util.Map;
 @Setter
 public class ResourceDto extends BaseDto {
 
-    private String url;
     private String title;
-    private Map<String, List<LinkDto>> links;
-
+    private List<LinkDto> links;
 }

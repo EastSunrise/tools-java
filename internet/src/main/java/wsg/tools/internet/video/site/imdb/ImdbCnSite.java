@@ -2,6 +2,9 @@ package wsg.tools.internet.video.site.imdb;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -36,6 +39,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/");
     private static final Pattern CURRENT_EPISODE_REGEX = Pattern.compile("第(?<e>\\d+)集");
     private static final String NOT_FOUND = "404";
+    private static final String INTERNAL_SERVER_ERROR = "500";
 
     private static ImdbCnSite instance;
 
@@ -173,6 +177,9 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         String content = super.handleEntity(entity);
         if (NOT_FOUND.equals(content)) {
             throw new NotFoundException(NOT_FOUND);
+        }
+        if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server is limit to access.");
         }
         return content;
     }

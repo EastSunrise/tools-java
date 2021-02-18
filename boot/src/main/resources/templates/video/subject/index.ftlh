@@ -23,7 +23,6 @@
                     <tr>
                         <th>No.</th>
                         <th>Title</th>
-                        <th>Year</th>
                         <th>Language</th>
                         <th>Durations</th>
                         <th>Resources</th>
@@ -34,30 +33,26 @@
                         <tr>
                             <td>${movie_index+1}</td>
                             <td>
-                                <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}</a>
-                                <a href="https://www.baidu.com/s?wd=${movie.title}" target="_blank"><i class="layui-icon layui-icon-search"></i></a>
+                                <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}
+                                    <#if movie.originalTitle??>${movie.originalTitle}</#if> (${movie.year?c})</a>
+                                <a class="layui-icon layui-icon-search" href="https://www.baidu.com/s?wd=${movie.title}" target="_blank"></a>
                             </td>
-                            <td>${movie.year?c}</td>
                             <td>${(movie.languages[0].title)!""}</td>
                             <td>${movie.durations}</td>
                             <td>
+                                <input type="hidden" name="id" value="${movie.id?c}">
                                 <#assign sc = movie.status.code/>
-                                <a href="javascript:void(0);" class="movie-search" data-id="${movie.id?c}"
-                                   title="Query resources with the title"><i class="layui-icon layui-icon-search"></i></a>
+                                <i class="link movie-search layui-icon layui-icon-search" title="Query resources with the title"></i>
+                                <i class="link movie-input layui-icon layui-icon-edit" title="Query resources with input key"></i>
                                 &nbsp;
                                 <#if sc == 30>
-                                    <a href="javascript:void(0);" class="movie-input" data-id="${movie.id?c}"
-                                       title="Query resources with input key"><i class="layui-icon layui-icon-edit"></i> </a>
-                                    &nbsp;
                                     <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank"
-                                       title="Choose resources to download"><i class="layui-icon layui-icon-link"></i> </a>
+                                       class="link layui-icon layui-icon-link" title="Choose resources to download"></a>
                                 <#elseif sc==40>
                                     <span class="click-tip" hidden="hidden"></span>
-                                    <a href="javascript:void(0);" class="movie-archive link" data-id="${movie.id?c}"
-                                       title="Archived downloaded resources"> Archive </a>
+                                    <i class="link video-archive" title="Archived downloaded resources"> Archive </i>
                                 <#elseif sc==20>
-                                    <a href="javascript:void(0);" class="movie-open" data-id="${movie.id?c}" title="Click to open the video"><i
-                                                class="layui-icon layui-icon-video"></i> </a>
+                                    <i class="video-open layui-icon layui-icon-video" title="Open the video"></i>
                                 <#else>
                                     ${movie.status.text}
                                 </#if>
@@ -96,9 +91,9 @@
                             </td>
                             <td rowspan="${rows}">${(series.languages[0].title)!""}</td>
                             <td rowspan="${rows}">
-                                <a href="javascript:void(0);" class="series-search" data-id="${series.id?c}">Query</a>
-                                /
-                                <a href="javascript:void(0);" class="series-input" data-id="${series.id?c}">Input</a>
+                                <input type="hidden" name="id" value="${series.id?c}">
+                                <i class="link series-search layui-icon layui-icon-search" title="Query resources with the title"></i>
+                                <i class="link series-input layui-icon layui-icon-edit" title="Query resources with input key"></i>
                             </td>
                         </tr>
                         <#list seasons as season>
@@ -110,14 +105,16 @@
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
                                 <td>
+                                    <input type="hidden" name="id" value="${season.id?c}">
                                     <#assign sc = season.status.code/>
                                     <#if sc == 30>
-                                        <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true" target="_blank" class="link"
-                                           title="Choose resources to download">Download</a>
+                                        <a href="/video/resource/index?dbId=${season.dbId?c!''}&chosen=true" target="_blank"
+                                           class="link layui-icon layui-icon-link" title="Choose resources to download"></a>
                                     <#elseif sc==40>
                                         <span class="click-tip" hidden="hidden"></span>
-                                        <a href="javascript:void(0);" class="season-archive link" data-id="${season.id?c}"
-                                           title="Archived downloaded resources"> Archive </a>
+                                        <i class="link video-archive" title="Archived downloaded resources"> Archive </i>
+                                    <#elseif sc==20>
+                                        <i class="video-open layui-icon layui-icon-video" title="Open the video"></i>
                                     <#else>
                                         ${season.status.text}
                                     </#if>

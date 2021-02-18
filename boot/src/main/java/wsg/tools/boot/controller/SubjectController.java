@@ -1,7 +1,6 @@
 package wsg.tools.boot.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,21 +11,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.common.enums.VideoStatus;
+import wsg.tools.boot.config.DatabaseConfig;
 import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
-import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
-import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
+import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.enums.MarkEnum;
 
@@ -34,7 +33,10 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -51,18 +53,20 @@ public class SubjectController extends AbstractController {
     private final SubjectService subjectService;
     private final ResourceService resourceService;
     private final VideoManager videoManager;
+    private final DatabaseConfig databaseConfig;
 
     @Autowired
-    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager) {
+    public SubjectController(SubjectService subjectService, ResourceService resourceService, VideoManager videoManager, DatabaseConfig databaseConfig) {
         this.subjectService = subjectService;
         this.resourceService = resourceService;
         this.videoManager = videoManager;
+        this.databaseConfig = databaseConfig;
     }
 
     /**
      * Import subjects from Douban of the given user.
      */
-    @PostMapping(value = "/douban/import")
+    @PostMapping(value = "/import/douban")
     @ResponseBody
     public BatchResult<Long> importDouban(long user, LocalDate since) {
         BatchResult<Long> result = BatchResult.empty();
@@ -93,6 +97,7 @@ public class SubjectController extends AbstractController {
             movieDto.setId(movie.getId());
             movieDto.setImdbId(movie.getImdbId());
             movieDto.setTitle(movie.getTitle());
+            movieDto.setOriginalTitle(movie.getOriginalTitle());
             movieDto.setYear(movie.getYear().getValue());
             movieDto.setLanguages(movie.getLanguages());
             movieDto.setDbId(movie.getDbId());
@@ -141,63 +146,24 @@ public class SubjectController extends AbstractController {
         return "video/subject/index";
     }
 
-    @PostMapping(path = "/movie/resources")
-    public String movieResources(Long id, String key, Model model) {
-        Optional<MovieEntity> optional = subjectService.getMovie(id);
-        if (optional.isEmpty()) {
-            return "error/notFound";
+    @PostMapping(path = "/subject/archive")
+    @ResponseBody
+    public ResponseEntity<?> archive(long id) {
+        if (databaseConfig.isMovie(id)) {
+            return archive(subjectService.getMovie(id), videoManager::archive);
         }
-        MovieEntity movieEntity = optional.get();
-        model.addAttribute("movie", movieEntity);
-        if (StringUtils.isBlank(key)) {
-            key = movieEntity.getTitle();
+        if (databaseConfig.isSeason(id)) {
+            return archive(subjectService.getSeason(id), videoManager::archive);
         }
-        model.addAttribute("items", resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
-        return "video/movie/resources";
+        return ResponseEntity.notFound().build();
     }
 
-    @PostMapping(path = "/movie/archive")
-    @ResponseBody
-    public ResponseEntity<?> archiveMovie(Long id) {
-        Optional<MovieEntity> optional = subjectService.getMovie(id);
+    private <T extends IdentityEntity> ResponseEntity<?> archive(Optional<T> optional, ThrowableFunction<T, VideoStatus, IOException> archive) {
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         try {
-            return ResponseEntity.ok(videoManager.archive(optional.get()));
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @PostMapping(path = "/series/resources")
-    public String seriesResources(Long id, String key, Model model) {
-        BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
-        if (result.getLeft() == null) {
-            return "error/notFound";
-        }
-        SeriesEntity seriesEntity = result.getLeft();
-        model.addAttribute("series", seriesEntity);
-        List<SeasonEntity> seasons = result.getRight();
-        model.addAttribute("seasons", seasons);
-        if (StringUtils.isBlank(key)) {
-            key = seriesEntity.getTitle();
-        }
-        Set<ResourceItemEntity> items = new HashSet<>(resourceService.search(key, null, seriesEntity.getImdbId()));
-        seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
-        model.addAttribute("items", items);
-        return "video/series/resources";
-    }
-
-    @PostMapping(path = "/season/archive")
-    @ResponseBody
-    public ResponseEntity<?> archiveSeason(Long id) {
-        Optional<SeasonEntity> optional = subjectService.getSeason(id);
-        if (optional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        try {
-            return ResponseEntity.ok(videoManager.archive(optional.get()));
+            return ResponseEntity.ok(archive.apply(optional.get()));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
@@ -206,11 +172,20 @@ public class SubjectController extends AbstractController {
     @PostMapping(path = "/open")
     @ResponseBody
     public ResponseEntity<?> open(long id) {
-        Optional<MovieEntity> optional = subjectService.getMovie(id);
+        if (databaseConfig.isMovie(id)) {
+            return open(subjectService.getMovie(id), videoManager::getFile);
+        }
+        if (databaseConfig.isSeason(id)) {
+            return open(subjectService.getSeason(id), videoManager::getFile);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    private <T extends IdentityEntity> ResponseEntity<?> open(Optional<T> optional, Function<T, Optional<File>> getFile) {
         if (optional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        Optional<File> file = videoManager.getFile(optional.get());
+        Optional<File> file = getFile.apply(optional.get());
         if (file.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

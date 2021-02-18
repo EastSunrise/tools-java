@@ -1,8 +1,8 @@
 package wsg.tools.boot.service.intf;
 
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
+import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.SiteStatusException;
 import wsg.tools.internet.resource.item.IdentifiedItem;
@@ -48,6 +48,17 @@ public interface ResourceService {
     List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId);
 
     /**
+     * Search resources of the given key.
+     *
+     * @param key        key to search
+     * @param dbId       id of Douban
+     * @param imdbId     id of IMDb
+     * @param identified if identified
+     * @return result of list of resources
+     */
+    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId, @Nullable Boolean identified);
+
+    /**
      * Link the given item to the given identifiers.
      *
      * @param checkDtoList arguments
@@ -58,8 +69,8 @@ public interface ResourceService {
     /**
      * Obtains links of the given items.
      *
-     * @param itemIds ids of items
+     * @param items items
      * @return map of item-links
      */
-    List<ResourceLinkEntity> getLinks(Collection<Long> itemIds);
+    List<ResourceDto> getResources(Collection<ResourceItemEntity> items);
 }

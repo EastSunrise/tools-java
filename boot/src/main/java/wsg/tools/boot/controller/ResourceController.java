@@ -1,22 +1,25 @@
 package wsg.tools.boot.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import wsg.tools.boot.common.util.BeanUtilExt;
-import wsg.tools.boot.pojo.dto.LinkDto;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
+import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.dto.ResourceQueryDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
+import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
+import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.service.intf.ResourceService;
-import wsg.tools.internet.resource.download.Thunder;
+import wsg.tools.boot.service.intf.SubjectService;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * API of resources.
@@ -29,29 +32,53 @@ import java.util.stream.Stream;
 public class ResourceController extends AbstractController {
 
     private final ResourceService resourceService;
+    private final SubjectService subjectService;
 
     @Autowired
-    public ResourceController(ResourceService resourceService) {
+    public ResourceController(ResourceService resourceService, SubjectService subjectService) {
         this.resourceService = resourceService;
+        this.subjectService = subjectService;
+    }
+
+    @PostMapping(path = "/movie")
+    public String movieResources(Long id, String key, Model model) {
+        Optional<MovieEntity> optional = subjectService.getMovie(id);
+        if (optional.isEmpty()) {
+            return "error/notFound";
+        }
+        MovieEntity movieEntity = optional.get();
+        model.addAttribute("movie", movieEntity);
+        if (StringUtils.isBlank(key)) {
+            key = movieEntity.getTitle();
+        }
+        model.addAttribute("items", resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
+        return "video/movie/resources";
+    }
+
+    @PostMapping(path = "/series")
+    public String seriesResources(Long id, String key, Model model) {
+        BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
+        if (result.getLeft() == null) {
+            return "error/notFound";
+        }
+        SeriesEntity seriesEntity = result.getLeft();
+        model.addAttribute("series", seriesEntity);
+        List<SeasonEntity> seasons = result.getRight();
+        model.addAttribute("seasons", seasons);
+        if (StringUtils.isBlank(key)) {
+            key = seriesEntity.getTitle();
+        }
+        Set<ResourceItemEntity> items = new HashSet<>(resourceService.search(key, null, seriesEntity.getImdbId()));
+        seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
+        model.addAttribute("items", items);
+        return "video/series/resources";
     }
 
     @GetMapping(value = "/index")
     public String links(Model model, ResourceQueryDto query) {
-        Stream<ResourceItemEntity> items = resourceService.search(query.getKey(), query.getDbId(), query.getImdbId()).stream();
-        if (query.getChosen() != null) {
-            final boolean chosen = query.getChosen();
-            items = items.filter(item -> item.getIdentified() == chosen);
-        }
-        List<ResourceLinkEntity> linkEntities = resourceService.getLinks(items.map(ResourceItemEntity::getId).collect(Collectors.toList()));
-        Map<String, List<LinkDto>> links = linkEntities.stream().map(link -> {
-            LinkDto linkDto = BeanUtilExt.convert(link, LinkDto.class);
-            if (linkDto.getFilename() == null) {
-                linkDto.setFilename(linkDto.getTitle());
-            }
-            linkDto.setThunder(Thunder.encodeThunder(linkDto.getUrl()));
-            return linkDto;
-        }).distinct().collect(Collectors.groupingBy(linkDto -> linkDto.getType().getText()));
-        model.addAttribute("links", links);
+        List<ResourceItemEntity> items = resourceService.search(query.getKey(), query.getDbId(), query.getImdbId(), query.getChosen());
+        List<ResourceDto> resources = resourceService.getResources(items);
+        model.addAttribute("resources", resources);
         model.addAttribute("query", query);
         return "video/resource/index";
     }

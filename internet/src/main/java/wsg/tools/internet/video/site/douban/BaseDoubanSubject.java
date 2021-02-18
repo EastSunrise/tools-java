@@ -71,8 +71,18 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     private Year year;
     private boolean released;
     private List<LanguageEnum> languages;
+    private List<Duration> durations;
 
     BaseDoubanSubject() {
+    }
+
+    @Nullable
+    public List<Duration> getDurations() {
+        return durations;
+    }
+
+    void setDurations(List<Duration> durations) {
+        this.durations = durations;
     }
 
     @Override
@@ -96,6 +106,11 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
 
     void setTitle(String title) {
         this.title = title;
+    }
+
+    @Nullable
+    public String getOriginalTitle() {
+        return originalTitle;
     }
 
     void setOriginalTitle(String originalTitle) {

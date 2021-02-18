@@ -51,6 +51,8 @@
                         <td>${item_index+1}</td>
                         <td>
                             <a href="${item.url}" target="_blank">${item.title}</a>
+                            <a href="https://search.douban.com/movie/subject_search?search_text=${item.title}&cat=1002" class="layui-icon layui-icon-search"
+                               target="_blank"></a>
                         </td>
                         <td>
                             <#if item.year??>${item.year?c}</#if>

@@ -335,8 +335,13 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         seasonEntity.setOriginalTitle(subject.getOriginalTitle());
         seasonEntity.setYear(subject.getYear());
         seasonEntity.setLanguages(subject.getLanguages());
-        if (subject.getDuration() != null) {
-            seasonEntity.setDurations(Collections.singletonList(subject.getDuration()));
+        Set<Duration> durations = new HashSet<>();
+        if (subject.getDurations() != null) {
+            durations.addAll(subject.getDurations());
+        }
+        CollectionUtils.addIgnoreNull(durations, subject.getDuration());
+        if (!durations.isEmpty()) {
+            seasonEntity.setDurations(durations.stream().sorted().collect(Collectors.toList()));
         }
         seasonEntity.setEpisodesCount(((DoubanSeries) subject).getEpisodesCount());
         if (seasonEntity.getEpisodesCount() == null || seasonEntity.getEpisodesCount() < 1) {

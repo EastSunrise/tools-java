@@ -2,14 +2,18 @@ package wsg.tools.boot.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.common.enums.ResourceType;
+import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
+import wsg.tools.boot.pojo.dto.LinkDto;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
+import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
@@ -22,6 +26,7 @@ import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.base.LengthSupplier;
 import wsg.tools.internet.resource.base.PasswordProvider;
+import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
 import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
@@ -39,6 +44,7 @@ import java.time.LocalTime;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalQueries;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Kingen
@@ -155,18 +161,26 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId) {
+        return search(key, dbId, imdbId, null);
+    }
+
+    @Override
+    public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId, @Nullable Boolean identified) {
         Specification<ResourceItemEntity> specification = (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (dbId != null) {
                 predicates.add(builder.equal(root.get(ResourceItemEntity_.dbId), dbId));
             }
-            if (imdbId != null) {
+            if (StringUtils.isNotBlank(imdbId)) {
                 predicates.add(builder.equal(root.get(ResourceItemEntity_.imdbId), imdbId));
             }
-            if (key != null) {
+            if (StringUtils.isNotBlank(key)) {
                 predicates.add(builder.like(root.get(ResourceItemEntity_.title), "%" + key + "%", '%'));
             }
             Predicate predicate = builder.or(predicates.toArray(new Predicate[0]));
+            if (identified != null) {
+                predicate = builder.and(predicate, builder.equal(root.get(ResourceItemEntity_.identified), identified));
+            }
             return query.where(predicate).getRestriction();
         };
         return itemRepository.findAll(specification);
@@ -195,7 +209,24 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public List<ResourceLinkEntity> getLinks(Collection<Long> itemIds) {
-        return linkRepository.findAllByItemIdIsIn(itemIds);
+    public List<ResourceDto> getResources(Collection<ResourceItemEntity> items) {
+        List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
+        Map<Long, List<ResourceLinkEntity>> linkMap = links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
+        return items.stream().map(item -> {
+            ResourceDto resource = new ResourceDto();
+            resource.setTitle(item.getTitle());
+            List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
+            if (linkEntities != null) {
+                resource.setLinks(linkEntities.stream().map(link -> {
+                    LinkDto linkDto = BeanUtilExt.convert(link, LinkDto.class);
+                    if (linkDto.getFilename() == null) {
+                        linkDto.setFilename(linkDto.getTitle());
+                    }
+                    linkDto.setThunder(Thunder.encodeThunder(linkDto.getUrl()));
+                    return linkDto;
+                }).collect(Collectors.toList()));
+            }
+            return resource;
+        }).collect(Collectors.toList());
     }
 }

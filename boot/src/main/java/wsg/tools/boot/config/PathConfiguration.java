@@ -13,9 +13,7 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
 
-import javax.annotation.Nonnull;
 import java.io.File;
-import java.time.Year;
 
 /**
  * Configurations for video.
@@ -39,11 +37,15 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     private String tmpdir;
 
     public String getLocation(MovieEntity entity) {
-        return join(MOVIE_DIR, entity.getYear(), entity.getTitle());
+        String title = entity.getTitle();
+        if (entity.getOriginalTitle() != null) {
+            title += NAME_SEPARATOR + entity.getOriginalTitle();
+        }
+        return cdn + File.separator + MOVIE_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(title);
     }
 
     public String getLocation(SeriesEntity entity) {
-        return join(TV_DIR, entity.getYear(), entity.getTitle());
+        return cdn + File.separator + TV_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(entity.getTitle());
     }
 
     public String getLocation(SeasonEntity season) {
@@ -63,13 +65,6 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
     public File tmpdir(String title) {
         return new File(tmpdir, StringUtilsExt.toFilename(title));
-    }
-
-    /**
-     * Join parts of the path.
-     */
-    private String join(@Nonnull String dir, @Nonnull Year year, @Nonnull String title) {
-        return cdn + File.separator + dir + File.separator + year + NAME_SEPARATOR + StringUtilsExt.toFilename(title);
     }
 
     @Override
