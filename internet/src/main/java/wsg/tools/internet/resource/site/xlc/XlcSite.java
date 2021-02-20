@@ -19,7 +19,7 @@ import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.impl.ResourceFactory;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.site.AbstractRangeResourceSite;
-import wsg.tools.internet.video.VideoConstants;
+import wsg.tools.internet.video.common.VideoConstants;
 
 import java.time.LocalDate;
 import java.time.Year;

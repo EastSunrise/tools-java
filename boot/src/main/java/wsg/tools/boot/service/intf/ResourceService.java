@@ -1,8 +1,8 @@
 package wsg.tools.boot.service.intf;
 
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
-import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
+import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.exception.SiteStatusException;
 import wsg.tools.internet.resource.item.IdentifiedItem;

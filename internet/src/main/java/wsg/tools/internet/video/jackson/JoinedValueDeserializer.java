@@ -1,11 +1,10 @@
-package wsg.tools.internet.video.jackson.deserializer;
+package wsg.tools.internet.video.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.internet.video.jackson.annotation.JoinedValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,8 +18,9 @@ import java.util.List;
  */
 public class JoinedValueDeserializer extends JsonDeserializer<Object> implements ContextualDeserializer {
 
-    public static final JoinedValueDeserializer INSTANCE = new JoinedValueDeserializer();
-    private String separator = "";
+    static final String DEFAULT_SEPARATOR = ",";
+
+    private String separator = DEFAULT_SEPARATOR;
     private JavaType targetType;
     private BeanProperty property;
 

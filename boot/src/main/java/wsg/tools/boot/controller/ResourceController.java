@@ -6,13 +6,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
-import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.dto.ResourceQueryDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.result.BiResult;
+import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 

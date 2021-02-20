@@ -3,7 +3,6 @@ package wsg.tools.internet.video.site.imdb.pojo.object;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Object of images on IMDb.
@@ -12,7 +11,6 @@ import lombok.Setter;
  * @since 2020/9/1
  */
 @Getter
-@Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonTypeName("ImageObject")
 public class ImdbImageObject {

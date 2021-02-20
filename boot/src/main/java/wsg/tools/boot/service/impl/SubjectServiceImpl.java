@@ -25,6 +25,7 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
 import wsg.tools.internet.video.site.douban.DoubanMovie;
@@ -157,9 +158,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             movieEntity.setYear(doubanMovie.getYear());
             movieEntity.setLanguages(doubanMovie.getLanguages());
             CollectionUtils.addIgnoreNull(durations, doubanMovie.getDuration());
-            List<Duration> extDurations = doubanMovie.getDurations();
-            if (extDurations != null) {
-                durations.addAll(extDurations);
+            List<Runtime> runtimes = doubanMovie.getRuntimes();
+            if (runtimes != null) {
+                runtimes.stream().map(Runtime::getDuration).forEach(durations::add);
             }
         }
         if (imdbMovie != null) {
@@ -250,7 +251,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 SeriesEntity seriesEntity = new SeriesEntity();
                 seriesEntity.setImdbId(seriesImdbId);
                 seriesEntity.setText(imdbSeries.getText());
-                seriesEntity.setYear(imdbSeries.getYearInfo().getStart());
+                seriesEntity.setYear(imdbSeries.getRangeYear().getStart());
                 if (imdbSeries.getLanguages() != null) {
                     seriesEntity.setLanguages(imdbSeries.getLanguages());
                 }
@@ -336,8 +337,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         seasonEntity.setYear(subject.getYear());
         seasonEntity.setLanguages(subject.getLanguages());
         Set<Duration> durations = new HashSet<>();
-        if (subject.getDurations() != null) {
-            durations.addAll(subject.getDurations());
+        List<Runtime> runtimes = subject.getRuntimes();
+        if (runtimes != null) {
+            runtimes.stream().map(Runtime::getDuration).forEach(durations::add);
         }
         CollectionUtils.addIgnoreNull(durations, subject.getDuration());
         if (!durations.isEmpty()) {

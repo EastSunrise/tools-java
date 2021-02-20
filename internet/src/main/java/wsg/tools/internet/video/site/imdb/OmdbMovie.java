@@ -5,7 +5,6 @@ import lombok.Getter;
 import wsg.tools.common.lang.Money;
 
 import java.time.LocalDate;
-import java.time.Year;
 
 /**
  * OMDb movie.
@@ -16,7 +15,7 @@ import java.time.Year;
 @Getter
 public class OmdbMovie extends OmdbTitle {
 
-    private Year year;
+    private Integer year;
 
     @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate dvd;

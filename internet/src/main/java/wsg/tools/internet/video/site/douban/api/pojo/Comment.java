@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.douban.api.pojo;
 
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2020/7/17
  */
-@Setter
 @Getter
 public class Comment {
     private Rating rating;

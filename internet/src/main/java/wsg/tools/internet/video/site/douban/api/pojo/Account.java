@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Accounts of douban.
@@ -10,7 +9,6 @@ import lombok.Setter;
  * @author Kingen
  * @since 2020/9/19
  */
-@Setter
 @Getter
 public class Account extends User {
 

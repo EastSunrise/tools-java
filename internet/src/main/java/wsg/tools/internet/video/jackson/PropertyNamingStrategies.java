@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.jackson.extra;
+package wsg.tools.internet.video.jackson;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
  * @author Kingen
  * @since 2020/8/31
  */
-public class PropertyNamingStrategies {
+public final class PropertyNamingStrategies {
     /**
      * A {@link PropertyNamingStrategy} that translates typical camel case Java
      * property names to upper case JSON element names, separated by space, such as:

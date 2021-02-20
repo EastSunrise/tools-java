@@ -15,8 +15,8 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
-import wsg.tools.internet.video.site.imdb.pojo.info.ReleaseInfo;
-import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
+import wsg.tools.internet.video.common.RangeYear;
+import wsg.tools.internet.video.common.Release;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -93,7 +93,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
             String seriesId = RegexUtils.matchesOrElseThrow(EPISODE_LIST_REGEX, href).group("id");
             if (seriesId.equals(imdbId)) {
                 ImdbSeries series = new ImdbSeries();
-                series.setYearInfo(new YearInfo(year));
+                series.setRangeYear(new RangeYear(year));
                 try {
                     series.setEpisodes(getEpisodes(imdbId));
                 } catch (NotFoundException e) {
@@ -116,7 +116,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         String showdate = fields.get("showdate00").val();
         if (StringUtils.isNotBlank(showdate)) {
             String[] parts = showdate.split("/");
-            List<LocalDate> dates = Arrays.stream(parts).map(String::strip).map(ReleaseInfo::new).map(ReleaseInfo::getDate).collect(Collectors.toList());
+            List<LocalDate> dates = Arrays.stream(parts).map(String::strip).map(Release::of).map(Release::getDate).collect(Collectors.toList());
             imdbTitle.setReleases(dates);
         }
 

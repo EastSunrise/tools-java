@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.jackson.annotation.JoinedValue;
+import wsg.tools.internet.video.jackson.JoinedValue;
 import wsg.tools.internet.video.site.imdb.pojo.base.BaseImdbObject;
 import wsg.tools.internet.video.site.imdb.pojo.object.ImdbPerson;
 
@@ -41,7 +41,7 @@ public class ImdbTitle extends BaseImdbTitle {
     private LocalDate release;
     @JsonProperty("duration")
     private Duration duration;
-    @JoinedValue(separator = ",")
+    @JoinedValue
     private List<String> keywords;
     @JsonProperty("image")
     private String posterUrl;

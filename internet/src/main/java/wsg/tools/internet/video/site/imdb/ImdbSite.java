@@ -19,10 +19,10 @@ import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
+import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RatingEnum;
-import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -45,7 +45,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
     private static final Pattern MOVIE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
     private static final Pattern SERIES_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV (Mini-)?Series (?<start>\\d{4})(–((?<end>\\d{4})| )?)?\\) - IMDb");
+            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV (Mini-)?Series (?<s>\\d{4})(–((?<e>\\d{4})| )?)?\\) - IMDb");
     private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
     private static final Pattern EPISODE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
     private static final Pattern WORK_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
@@ -102,7 +102,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         } else if (title instanceof ImdbSeries) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(SERIES_PAGE_TITLE_REGEX, document.title());
             String end = matcher.group("end");
-            ((ImdbSeries) title).setYearInfo(new YearInfo(
+            ((ImdbSeries) title).setRangeYear(new RangeYear(
                     Integer.parseInt(matcher.group("start")),
                     end == null ? null : Integer.parseInt(end)
             ));

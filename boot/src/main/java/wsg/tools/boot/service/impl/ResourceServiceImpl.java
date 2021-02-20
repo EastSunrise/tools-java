@@ -13,7 +13,6 @@ import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.LinkDto;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
-import wsg.tools.boot.pojo.dto.ResourceDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
@@ -213,9 +212,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
         Map<Long, List<ResourceLinkEntity>> linkMap = links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
         return items.stream().map(item -> {
-            ResourceDto resource = new ResourceDto();
-            resource.setTitle(item.getTitle());
-            resource.setUrl(item.getUrl());
+            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
                 resource.setLinks(linkEntities.stream().map(link -> {

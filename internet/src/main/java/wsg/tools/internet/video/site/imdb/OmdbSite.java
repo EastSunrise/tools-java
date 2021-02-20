@@ -16,7 +16,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.enums.*;
-import wsg.tools.internet.video.jackson.handler.CommaSeparatedNumberDeserializationProblemHandler;
+import wsg.tools.internet.video.jackson.CommaSeparatedNumberDeserializationProblemHandler;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -146,6 +146,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
                         .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
                         .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
                         .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
+                        .addDeserializer(RatingSource.class, EnumDeserializers.getTextDeserializer(RatingSource.class))
                 )
                 .registerModule(new JavaTimeModule())
                 .addHandler(CommaSeparatedNumberDeserializationProblemHandler.INSTANCE);

@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.container;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -13,7 +12,6 @@ import java.util.List;
  * @author Kingen
  * @since 2020/7/25
  */
-@Setter
 @Getter
 class PageResult<C> {
 

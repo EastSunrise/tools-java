@@ -3,7 +3,6 @@ package wsg.tools.internet.video.site.imdb.pojo.base;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.internet.video.site.imdb.pojo.object.ImdbOrganization;
 import wsg.tools.internet.video.site.imdb.pojo.object.ImdbPerson;
 
@@ -14,7 +13,6 @@ import wsg.tools.internet.video.site.imdb.pojo.object.ImdbPerson;
  * @since 2020/8/31
  */
 @Getter
-@Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = ImdbPerson.class, name = "Person"),

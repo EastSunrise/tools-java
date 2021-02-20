@@ -25,6 +25,8 @@ import wsg.tools.internet.base.*;
 import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
+import wsg.tools.internet.video.common.Parsers;
+import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -33,7 +35,6 @@ import wsg.tools.internet.video.enums.MarkEnum;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URLDecoder;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -200,7 +201,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         if (subject instanceof DoubanMovie) {
             DoubanMovie movie = (DoubanMovie) subject;
             final String plDuration = "片长:";
-            movie.setDurations(getDurations(spans.get(plDuration)));
+            movie.setRuntimes(getRuntimes(spans.get(plDuration)));
         }
 
         if (subject instanceof DoubanSeries) {
@@ -210,17 +211,17 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                 series.setEpisodesCount(Integer.parseInt(((TextNode) span.nextSibling()).text().strip()));
             }
             final String plDuration = "单集片长:";
-            series.setDurations(getDurations(spans.get(plDuration)));
+            series.setRuntimes(getRuntimes(spans.get(plDuration)));
         }
     }
 
-    private List<Duration> getDurations(Element span) {
+    private List<Runtime> getRuntimes(Element span) {
         if (span != null) {
             Element element = span.nextElementSibling();
             Node node = element.is(CssSelector.TAG_SPAN) ? element.nextSibling() : element.previousSibling();
             if (node instanceof TextNode) {
                 String[] parts = StringUtils.strip(((TextNode) node).text(), " /").split("/");
-                return Arrays.stream(parts).map(String::strip).map(Parsers::parseDuration).collect(Collectors.toList());
+                return Arrays.stream(parts).map(String::strip).map(Runtime::of).collect(Collectors.toList());
             }
         }
         return null;

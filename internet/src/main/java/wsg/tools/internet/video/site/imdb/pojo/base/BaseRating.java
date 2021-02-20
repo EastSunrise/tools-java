@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.imdb.pojo.base;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Rating data.
@@ -10,7 +9,6 @@ import lombok.Setter;
  * @since 2020/8/31
  */
 @Getter
-@Setter
 public abstract class BaseRating {
     private Double bestRating;
     private Double ratingValue;

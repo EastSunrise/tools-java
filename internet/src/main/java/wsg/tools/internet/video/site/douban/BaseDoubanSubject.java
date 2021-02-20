@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
+import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.site.douban.pojo.AggregateRating;
@@ -70,18 +71,18 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     private int year;
     private boolean released;
     private List<LanguageEnum> languages;
-    private List<Duration> durations;
+    private List<Runtime> runtimes;
 
     BaseDoubanSubject() {
     }
 
     @Nullable
-    public List<Duration> getDurations() {
-        return durations;
+    public List<Runtime> getRuntimes() {
+        return runtimes;
     }
 
-    void setDurations(List<Duration> durations) {
-        this.durations = durations;
+    void setRuntimes(List<Runtime> runtimes) {
+        this.runtimes = runtimes;
     }
 
     @Override

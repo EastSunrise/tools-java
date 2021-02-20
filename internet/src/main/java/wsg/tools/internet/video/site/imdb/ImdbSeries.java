@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.site.imdb;
 
-import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
+import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.site.imdb.pojo.object.ImdbVideoObject;
 
 import java.util.List;
@@ -13,8 +13,8 @@ import java.util.List;
  */
 public class ImdbSeries extends ImdbTitle {
 
-    private YearInfo yearInfo;
     private ImdbVideoObject trailer;
+    private RangeYear rangeYear;
 
     /**
      * Index of a given episode is array[currentSeason-1][currentEpisode].
@@ -24,12 +24,12 @@ public class ImdbSeries extends ImdbTitle {
      */
     private List<String[]> episodes;
 
-    public YearInfo getYearInfo() {
-        return yearInfo;
+    public RangeYear getRangeYear() {
+        return rangeYear;
     }
 
-    void setYearInfo(YearInfo yearInfo) {
-        this.yearInfo = yearInfo;
+    void setRangeYear(RangeYear rangeYear) {
+        this.rangeYear = rangeYear;
     }
 
     public List<String[]> getEpisodes() {

@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
@@ -19,7 +18,6 @@ import java.util.List;
  * @since 2020/7/31
  */
 @Getter
-@Setter
 public class ImdbInfo {
     @JsonProperty("id")
     private String apiAlt;
@@ -35,7 +33,6 @@ public class ImdbInfo {
     private List<Tag> tags;
 
     @Getter
-    @Setter
     private static class Info {
         private List<String> title;
         private List<Year> year;
@@ -57,7 +54,6 @@ public class ImdbInfo {
         private List<String> writers;
     }
 
-    @Setter
     @Getter
     private static class Tag {
         private Integer count;

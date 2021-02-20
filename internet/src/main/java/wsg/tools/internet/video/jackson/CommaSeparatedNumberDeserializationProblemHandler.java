@@ -1,4 +1,4 @@
-package wsg.tools.internet.video.jackson.handler;
+package wsg.tools.internet.video.jackson;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;

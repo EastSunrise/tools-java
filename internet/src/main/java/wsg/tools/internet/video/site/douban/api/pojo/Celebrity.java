@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.douban.api.pojo;
 
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.internet.video.enums.ConstellationEnum;
 import wsg.tools.internet.video.enums.GenderEnum;
 
@@ -14,7 +13,6 @@ import java.util.List;
  * @author Kingen
  * @since 2020/6/30
  */
-@Setter
 @Getter
 public class Celebrity extends SimpleCelebrity {
 

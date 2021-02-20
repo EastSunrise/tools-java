@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.douban.api.container;
 
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.video.site.douban.api.pojo.SimpleSubject;
 
@@ -14,12 +13,10 @@ import java.util.List;
  * @since 2020/7/26
  */
 @Getter
-@Setter
 public class RankedResult implements TitleSupplier {
     private String title;
     private List<RankedSubject> subjects;
 
-    @Setter
     @Getter
     public static class RankedSubject {
         private int rank;

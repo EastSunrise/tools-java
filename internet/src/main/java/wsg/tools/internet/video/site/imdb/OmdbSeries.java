@@ -1,8 +1,6 @@
 package wsg.tools.internet.video.site.imdb;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
 
 /**
  * OMDb TV series.
@@ -13,7 +11,5 @@ import wsg.tools.internet.video.site.imdb.pojo.info.YearInfo;
 @Getter
 public class OmdbSeries extends OmdbTitle {
 
-    private YearInfo year;
-    @JsonProperty("TotalSeasons")
-    private Integer seasonsCount;
+    private Integer totalSeasons;
 }

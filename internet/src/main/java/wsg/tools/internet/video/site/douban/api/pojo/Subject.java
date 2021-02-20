@@ -3,7 +3,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
 
@@ -17,7 +16,6 @@ import java.util.List;
  * @since 2020/7/18
  */
 @Getter
-@Setter
 @JsonIgnoreProperties("collection")
 public class Subject extends SimpleSubject {
 
@@ -59,7 +57,6 @@ public class Subject extends SimpleSubject {
     private String scheduleUrl;
     private String website;
 
-    @Setter
     @Getter
     private static class Video {
         private Source source;
@@ -67,7 +64,6 @@ public class Subject extends SimpleSubject {
         private String videoId;
         private Boolean needPay;
 
-        @Setter
         @Getter
         private static class Source {
             private String literal;
@@ -79,7 +75,6 @@ public class Subject extends SimpleSubject {
     /**
      * for trailer and bloop
      */
-    @Setter
     @Getter
     private static class ShortItem {
         private String medium;

@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.Setter;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.SubtypeEnum;
 
@@ -18,7 +17,6 @@ import java.util.List;
  * @since 2020/7/27
  */
 @Getter
-@Setter
 public class SimpleSubject {
 
     private Long id;

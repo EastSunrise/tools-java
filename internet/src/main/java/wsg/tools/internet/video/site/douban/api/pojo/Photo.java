@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
  * @since 2020/7/17
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Setter
 @Getter
 public class Photo {
     private Long id;

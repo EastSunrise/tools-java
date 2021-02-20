@@ -2,8 +2,6 @@ package wsg.tools.internet.video.site.douban.api.container;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.video.site.douban.api.pojo.SimpleSubject;
 
@@ -20,30 +18,37 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/8/2
  */
-@Setter
 @Getter
 public class BoxResult {
 
-    private static final Pattern DATE_REGEX = Pattern.compile("(\\d+月\\d+日) - (\\d+月\\d+日)");
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M月d日").withLocale(Locale.CHINESE);
 
     private String title;
-    private MonthDay start;
-    private MonthDay end;
+    private RangeDate date;
     private List<BoxSubject> subjects;
 
-    @JsonProperty("date")
-    public void setDate(String date) {
-        if (StringUtils.isBlank(date)) {
-            return;
+    @Getter
+    public static class RangeDate {
+        private static final Pattern DATE_REGEX = Pattern.compile("(?<s>\\d+月\\d+日) - (?<e>\\d+月\\d+日)");
+        private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M月d日").withLocale(Locale.CHINESE);
+
+        private final MonthDay start;
+        private final MonthDay end;
+
+        private RangeDate(MonthDay start, MonthDay end) {
+            this.start = start;
+            this.end = end;
         }
-        Matcher matcher = RegexUtils.matchesOrElseThrow(DATE_REGEX, date);
-        this.setStart(MonthDay.parse(matcher.group(1), DATE_FORMATTER));
-        this.setEnd(MonthDay.parse(matcher.group(2), DATE_FORMATTER));
+
+        public static RangeDate of(String text) {
+            if (text == null) {
+                return null;
+            }
+            Matcher matcher = RegexUtils.matchesOrElseThrow(DATE_REGEX, text);
+            return new RangeDate(MonthDay.parse(matcher.group("s"), DATE_FORMATTER), MonthDay.parse(matcher.group("e"), DATE_FORMATTER));
+        }
     }
 
     @Getter
-    @Setter
     public static class BoxSubject {
         private Long box;
         @JsonProperty("new")

@@ -2,7 +2,6 @@ package wsg.tools.internet.video.site.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Map;
 
@@ -12,7 +11,6 @@ import java.util.Map;
  * @author Kingen
  * @since 2020/7/18
  */
-@Setter
 @Getter
 public class Rating {
 

@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.site.douban.api.pojo;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * A simple celebrity.
@@ -9,7 +8,6 @@ import lombok.Setter;
  * @author Kingen
  * @since 2020/7/27
  */
-@Setter
 @Getter
 public class SimpleCelebrity {
 

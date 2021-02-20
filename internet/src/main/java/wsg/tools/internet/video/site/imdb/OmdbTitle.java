@@ -2,12 +2,9 @@ package wsg.tools.internet.video.site.imdb;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.Getter;
-import wsg.tools.internet.video.enums.GenreEnum;
-import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.enums.RatingEnum;
-import wsg.tools.internet.video.enums.RegionEnum;
-import wsg.tools.internet.video.jackson.annotation.JoinedValue;
-import wsg.tools.internet.video.site.imdb.pojo.info.RuntimeInfo;
+import wsg.tools.internet.video.common.Runtime;
+import wsg.tools.internet.video.enums.*;
+import wsg.tools.internet.video.jackson.JoinedValue;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,42 +25,40 @@ import java.util.List;
 @JsonIgnoreProperties(value = {"Response", "Error"})
 public class OmdbTitle extends BaseImdbTitle {
 
-    private static final String LIST_SEPARATOR = ",";
-
     @JsonProperty("title")
     private String text;
     private RatingEnum rated;
     @JsonProperty("released")
     @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate release;
-    private RuntimeInfo runtime;
+    private Runtime runtime;
+    private String plot;
+
     @JsonProperty("Genre")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<GenreEnum> genres;
     @JsonProperty("Director")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<String> directors;
     @JsonProperty("Writer")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<String> writers;
     @JsonProperty("Actors")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<String> actors;
-    private String plot;
     @JsonProperty("Language")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<LanguageEnum> languages;
     @JsonProperty("Country")
-    @JoinedValue(separator = LIST_SEPARATOR)
+    @JoinedValue
     private List<RegionEnum> regions;
+
     private String awards;
-    @JsonProperty("poster")
-    private String posterUrl;
+    private String poster;
     private List<Rating> ratings;
     private Integer metascore;
     private Double imdbRating;
     private Integer imdbVotes;
-    private String imdbId;
 
     OmdbTitle() {
     }
@@ -71,6 +66,6 @@ public class OmdbTitle extends BaseImdbTitle {
     @Getter
     static class Rating {
         private String value;
-        private String source;
+        private RatingSource source;
     }
 }

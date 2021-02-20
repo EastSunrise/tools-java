@@ -20,8 +20,7 @@ public class OmdbSeason {
     private String title;
     @JsonProperty("Season")
     private Integer currentSeason;
-    @JsonProperty("TotalSeasons")
-    private Integer seasonsCount;
+    private Integer totalSeasons;
     private List<Episode> episodes;
 
     @Getter

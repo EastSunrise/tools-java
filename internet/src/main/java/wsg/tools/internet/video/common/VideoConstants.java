@@ -1,4 +1,4 @@
-package wsg.tools.internet.video;
+package wsg.tools.internet.video.common;
 
 /**
  * Constant values for video.

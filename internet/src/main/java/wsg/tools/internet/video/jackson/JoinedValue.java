@@ -1,8 +1,7 @@
-package wsg.tools.internet.video.jackson.annotation;
+package wsg.tools.internet.video.jackson;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import wsg.tools.internet.video.jackson.deserializer.JoinedValueDeserializer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,5 +23,5 @@ public @interface JoinedValue {
     /**
      * separator which deserialized string is joined with.
      */
-    String separator();
+    String separator() default JoinedValueDeserializer.DEFAULT_SEPARATOR;
 }
