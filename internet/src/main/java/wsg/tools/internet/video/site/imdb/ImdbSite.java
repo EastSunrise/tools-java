@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,7 +18,6 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.enums.GenreEnum;
@@ -77,7 +77,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     }
 
     @Override
-    public ImdbTitle getItemById(@Nonnull String tt) throws NotFoundException {
+    public ImdbTitle getItemById(@Nonnull String tt) throws HttpResponseException {
         Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.NEVER_UPDATE);
         ImdbTitle title;
         try {
@@ -106,11 +106,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
                     Integer.parseInt(matcher.group("start")),
                     end == null ? null : Integer.parseInt(end)
             ));
-            try {
-                ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
-            } catch (NotFoundException e) {
-                throw AssertUtils.runtimeException(e);
-            }
+            ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
         } else if (title instanceof ImdbEpisode) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
@@ -146,7 +142,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         return title;
     }
 
-    private List<String[]> getEpisodes(String seriesId) throws NotFoundException {
+    private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
         List<String[]> result = new ArrayList<>();
         int currentSeason = 0;
         while (true) {

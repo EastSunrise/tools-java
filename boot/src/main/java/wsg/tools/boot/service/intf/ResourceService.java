@@ -1,10 +1,10 @@
 package wsg.tools.boot.service.intf;
 
+import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.exception.SiteStatusException;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.site.BaseRepository;
 import wsg.tools.internet.resource.site.RangeRepository;
@@ -25,17 +25,17 @@ public interface ResourceService {
      * Import all resources from the given site.
      *
      * @param site an implementation of {@link BaseRepository}
-     * @throws SiteStatusException if the status of the site is abnormal
+     * @throws HttpResponseException if an error occurs when do request
      */
-    <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws SiteStatusException;
+    <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException;
 
     /**
      * Import latest resources from the given site.
      *
      * @param site an implementation of {@link BaseRepository}
-     * @throws SiteStatusException if the status of the site is abnormal
+     * @throws HttpResponseException if an error occurs when do request
      */
-    <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws SiteStatusException;
+    <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException;
 
     /**
      * Search resources of the given key.

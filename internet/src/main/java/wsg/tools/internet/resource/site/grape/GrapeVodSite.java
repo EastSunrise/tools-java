@@ -10,11 +10,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.impl.ResourceFactory;
@@ -56,7 +54,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
     }
 
     @Override
-    public List<GrapeVodItem> findAllByRangeClosed(@Nullable LocalDate startInclusive, @Nullable LocalDate endInclusive) {
+    public List<GrapeVodItem> findAllByRangeClosed(@Nullable LocalDate startInclusive, @Nullable LocalDate endInclusive) throws HttpResponseException {
         if (startInclusive == null || startInclusive.isBefore(START_DATE)) {
             startInclusive = START_DATE;
         }
@@ -71,7 +69,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
         return vodItems;
     }
 
-    private List<GrapeVodItem> getRangedVodItems(int typeId, LocalDate start, LocalDate end, VideoType type) {
+    private List<GrapeVodItem> getRangedVodItems(int typeId, LocalDate start, LocalDate end, VideoType type) throws HttpResponseException {
         List<GrapeVodItem> items = new LinkedList<>();
         for (int page = 1; ; page++) {
             VodList vodList = this.getVodList(typeId, page);
@@ -82,10 +80,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
                 if (item.update.isBefore(start)) {
                     return items;
                 }
-                try {
-                    items.add(getVodItem(item.path, type));
-                } catch (NotFoundException ignored) {
-                }
+                items.add(getVodItem(item.path, type));
             }
             if (vodList.currentPage >= vodList.pagesCount) {
                 break;
@@ -94,14 +89,9 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
         return items;
     }
 
-    private VodList getVodList(int typeId, int page) {
+    private VodList getVodList(int typeId, int page) throws HttpResponseException {
         URIBuilder builder = builder0("/index.php").addParameter("s", String.format("vod-type-id-%d-p-%d.html", typeId, page));
-        Document document;
-        try {
-            document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         VodList.VodListBuilder listBuilder = VodList.builder();
 
         Element prev = document.selectFirst(".short-page").child(0);
@@ -129,7 +119,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
         return listBuilder.build();
     }
 
-    private GrapeVodItem getVodItem(String path, VideoType type) throws NotFoundException {
+    private GrapeVodItem getVodItem(String path, VideoType type) throws HttpResponseException {
         URIBuilder builder = builder0(path);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 

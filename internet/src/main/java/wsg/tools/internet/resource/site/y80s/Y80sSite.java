@@ -2,18 +2,18 @@ package wsg.tools.internet.resource.site.y80s;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.enums.SchemeEnum;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -73,13 +73,8 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     @Override
-    protected int max() {
-        Document document;
-        try {
-            document = getDocument(builder("m", "/movie/1-0-0-0-0-0-0"), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected int max() throws HttpResponseException {
+        Document document = getDocument(builder("m", "/movie/1-0-0-0-0-0-0"), SnapshotStrategy.ALWAYS_UPDATE);
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
@@ -91,11 +86,11 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
     }
 
     @Override
-    protected Y80sItem getItem(int id) throws NotFoundException {
+    protected Y80sItem getItem(int id) throws HttpResponseException {
         URIBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         if (document.childNodes().size() == 1) {
-            throw new NotFoundException("Target page is empty.");
+            throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, "Target page is empty.");
         }
 
         Map<String, Element> info = document.select(".movie_attr").stream().collect(Collectors.toMap(Element::text, e -> e));

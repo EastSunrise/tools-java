@@ -1,7 +1,5 @@
 package wsg.tools.internet.base;
 
-import wsg.tools.internet.base.exception.SiteStatusException;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

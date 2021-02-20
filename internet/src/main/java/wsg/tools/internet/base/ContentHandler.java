@@ -1,6 +1,6 @@
 package wsg.tools.internet.base;
 
-import wsg.tools.internet.base.exception.NotFoundException;
+import org.apache.http.client.HttpResponseException;
 
 /**
  * Handle content of the response.
@@ -16,9 +16,9 @@ public interface ContentHandler<T> {
      *
      * @param content content to transfer
      * @return target object
-     * @throws NotFoundException if not found
+     * @throws HttpResponseException if an error occurs
      */
-    T handleContent(String content) throws NotFoundException;
+    T handleContent(String content) throws HttpResponseException;
 
     /**
      * Obtains suffix of the target type.

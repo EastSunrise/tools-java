@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
@@ -23,7 +24,6 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.*;
 import wsg.tools.internet.base.exception.LoginException;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.common.Parsers;
 import wsg.tools.internet.video.common.Runtime;
@@ -80,14 +80,9 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      *
      * @throws LoginException if the given user and password is invalid or a CAPTCHA is required.
      */
-    public final void login(String username, String password) throws LoginException {
+    public final void login(String username, String password) throws LoginException, HttpResponseException {
         logout();
-        try {
-            getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        LoginResult loginResult;
+        getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
         List<BasicNameValuePair> params = Arrays.asList(
                 new BasicNameValuePair("ck", ""),
                 new BasicNameValuePair("name", username),
@@ -95,11 +90,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                 new BasicNameValuePair("remember", String.valueOf(true))
         );
         RequestBuilder requestBuilder = RequestBuilder.post(builder("accounts", "/j/mobile/login/basic"), params);
-        try {
-            loginResult = request(requestBuilder, ContentHandlers.getJsonHandler(mapper, LoginResult.class), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        LoginResult loginResult = request(requestBuilder, ContentHandlers.getJsonHandler(mapper, LoginResult.class), SnapshotStrategy.ALWAYS_UPDATE);
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }
@@ -114,21 +105,13 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         return Integer.parseInt(RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id"));
     }
 
-    public final void logout() {
+    public final void logout() throws HttpResponseException {
         if (user() == null) {
             return;
         }
-        try {
-            getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        try {
-            getDocument(builder0("/accounts/logout").setParameter("source", "main")
-                    .setParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue()), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
+        getDocument(builder0("/accounts/logout").setParameter("source", "main")
+                .setParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue()), SnapshotStrategy.ALWAYS_UPDATE);
     }
 
     /**
@@ -136,7 +119,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      * <p>
      * Some x-rated subjects may be restricted to access without logging in.
      */
-    public final BaseDoubanSubject subject(long subjectId) throws NotFoundException {
+    public final BaseDoubanSubject subject(long subjectId) throws HttpResponseException {
         Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), SnapshotStrategy.NEVER_UPDATE);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
@@ -235,7 +218,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      * @param mark    wish/do/collect
      * @return map of (id, mark date)
      */
-    public final Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws NotFoundException {
+    public final Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, CatalogEnum catalog, MarkEnum mark) throws HttpResponseException {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
@@ -280,7 +263,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      * @param userId  id of the user which returned by {@link #user()}
      * @param catalog movie/book/music/...
      */
-    public final List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws NotFoundException {
+    public final List<Long> collectUserCreators(long userId, CatalogEnum catalog) throws HttpResponseException {
         log.info("Collect {} of user {}", catalog.getCreator().getPath(), userId);
         List<Long> ids = new LinkedList<>();
         int start = 0;
@@ -307,28 +290,24 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
     /**
      * Obtains id of Douban by searching id of IMDb.
      * <p>
-     * The method requires logging in first.
+     *
+     * @throws LoginException if not logged in first.
      */
     @Nullable
-    public final Long getDbIdByImdbId(String imdbId) throws LoginException {
+    public final Long getDbIdByImdbId(String imdbId) throws LoginException, HttpResponseException {
         if (user() == null) {
             throw new LoginException("Please log in first.");
         }
         AssertUtils.requireNotBlank(imdbId);
-        Document document;
-        try {
-            CatalogEnum cat = CatalogEnum.MOVIE;
-            document = postDocument(builder(cat.getPath(), "/new_subject"), Arrays.asList(
-                    new BasicNameValuePair("ck", Objects.requireNonNull(getCookie("ck")).getValue()),
-                    new BasicNameValuePair("type", "0"),
-                    new BasicNameValuePair("p_title", imdbId),
-                    new BasicNameValuePair("p_uid", imdbId),
-                    new BasicNameValuePair("cat", String.valueOf(cat.getCode())),
-                    new BasicNameValuePair("subject_submit", "下一步")
-            ), SnapshotStrategy.NEVER_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        CatalogEnum cat = CatalogEnum.MOVIE;
+        Document document = postDocument(builder(cat.getPath(), "/new_subject"), Arrays.asList(
+                new BasicNameValuePair("ck", Objects.requireNonNull(getCookie("ck")).getValue()),
+                new BasicNameValuePair("type", "0"),
+                new BasicNameValuePair("p_title", imdbId),
+                new BasicNameValuePair("p_uid", imdbId),
+                new BasicNameValuePair("cat", String.valueOf(cat.getCode())),
+                new BasicNameValuePair("subject_submit", "下一步")
+        ), SnapshotStrategy.NEVER_UPDATE);
 
         Element fieldset = document.selectFirst("div#content").selectFirst(CssSelector.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
@@ -351,20 +330,14 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      * @param catalog which catalog, not null
      * @param keyword not blank
      */
-    public List<SearchItem> searchSubject(@Nonnull CatalogEnum catalog, String keyword) {
+    public List<SearchItem> searchSubject(@Nonnull CatalogEnum catalog, String keyword) throws HttpResponseException {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
         URIBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
                 .setParameter("search_text", keyword)
                 .setParameter("cat", String.valueOf(catalog.getCode()));
-        Document document;
-        try {
-            document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-
+        Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         return document.select("div.item-root").stream()
                 .map(div -> {
                     Element a = div.selectFirst("a.title-text");
@@ -379,7 +352,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
      * @param catalog which catalog, may null
      * @param keyword not blank
      */
-    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) {
+    public List<SearchItem> search(@Nullable CatalogEnum catalog, String keyword) throws HttpResponseException {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
@@ -388,13 +361,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         if (catalog != null) {
             builder.setParameter("cat", String.valueOf(catalog.getCode()));
         }
-        Document document;
-        try {
-            document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-
+        Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         return document.selectFirst("div.search-result").select("div.result").stream()
                 .map(div -> {
                     Element a = div.selectFirst(CssSelector.TAG_H3).selectFirst(CssSelector.TAG_A);

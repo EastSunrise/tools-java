@@ -2,17 +2,16 @@ package wsg.tools.internet.resource.site.xlm;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -63,13 +62,8 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
      * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
      */
     @Override
-    protected int max() {
-        Document document;
-        try {
-            document = getDocument(builder0("/new.html"), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/new.html"), SnapshotStrategy.ALWAYS_UPDATE);
         Elements tits = document.select(".tit");
         int max = 1;
         for (Element tit : tits) {
@@ -80,7 +74,7 @@ public class XlmSite extends AbstractRangeResourceSite<XlmItem> {
     }
 
     @Override
-    protected XlmItem getItem(int id) throws NotFoundException {
+    protected XlmItem getItem(int id) throws HttpResponseException {
         URIBuilder builder = builder0("/dy/k%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 

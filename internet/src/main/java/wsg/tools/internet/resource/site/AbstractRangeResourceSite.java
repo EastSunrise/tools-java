@@ -1,8 +1,9 @@
 package wsg.tools.internet.resource.site;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.enums.SchemeEnum;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 
 import javax.annotation.Nullable;
@@ -29,7 +30,7 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
     }
 
     @Override
-    public List<T> findAllByRangeClosed(@Nullable Integer startInclusive, @Nullable Integer endInclusive) {
+    public List<T> findAllByRangeClosed(@Nullable Integer startInclusive, @Nullable Integer endInclusive) throws HttpResponseException {
         int min = getMin();
         if (startInclusive == null || startInclusive < min) {
             startInclusive = min;
@@ -42,28 +43,25 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
     }
 
     @Override
-    public List<T> findAll() {
+    public List<T> findAll() throws HttpResponseException {
         return findAllByRange(this, getMin(), getMax());
     }
 
     /**
      * Obtains items based on ranged ids.
      */
-    private List<T> findAllByRange(BaseRepository<Integer, T> repository, int startInclusive, int endInclusive) {
+    private List<T> findAllByRange(BaseRepository<Integer, T> repository, int startInclusive, int endInclusive) throws HttpResponseException {
         List<T> items = new ArrayList<>();
         for (int id = startInclusive; id <= endInclusive; id++) {
-            try {
-                items.add(repository.findById(id));
-            } catch (NotFoundException ignored) {
-            }
+            items.add(repository.findById(id));
         }
         return items;
     }
 
     @Override
-    public T findById(Integer id) throws NotFoundException {
+    public T findById(Integer id) throws HttpResponseException {
         if (id < getMin() || id > getMax()) {
-            throw new NotFoundException("Not a valid id.");
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a valid id.");
         }
         return getItem(id);
     }
@@ -75,7 +73,7 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
         return min;
     }
 
-    private synchronized int getMax() {
+    private synchronized int getMax() throws HttpResponseException {
         if (max == null) {
             max = max();
         }
@@ -95,15 +93,16 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
      * Supplies latest maximum id.
      *
      * @return maximum id
+     * @throws HttpResponseException if an error occurs
      */
-    protected abstract int max();
+    protected abstract int max() throws HttpResponseException;
 
     /**
      * Obtains the item of the given id.
      *
      * @param id identifier
      * @return item
-     * @throws NotFoundException if not found
+     * @throws HttpResponseException if an error occurs
      */
-    protected abstract T getItem(int id) throws NotFoundException;
+    protected abstract T getItem(int id) throws HttpResponseException;
 }

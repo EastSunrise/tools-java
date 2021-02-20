@@ -1,7 +1,4 @@
-package wsg.tools.internet.base.exception;
-
-import lombok.Getter;
-import wsg.tools.internet.base.SiteStatus;
+package wsg.tools.internet.base;
 
 /**
  * Exception if the status of the site is abnormal.
@@ -11,7 +8,6 @@ import wsg.tools.internet.base.SiteStatus;
  */
 public class SiteStatusException extends RuntimeException {
 
-    @Getter
     private final SiteStatus status;
 
     public SiteStatusException(SiteStatus status) {
@@ -19,8 +15,7 @@ public class SiteStatusException extends RuntimeException {
         this.status = status;
     }
 
-    public SiteStatusException(String message, SiteStatus status) {
-        super(message);
-        this.status = status;
+    public SiteStatus getStatus() {
+        return status;
     }
 }

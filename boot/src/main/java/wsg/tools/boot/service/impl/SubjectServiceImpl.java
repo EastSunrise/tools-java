@@ -3,8 +3,12 @@ package wsg.tools.boot.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.*;
 import wsg.tools.boot.pojo.entity.UserRecordEntity;
@@ -14,17 +18,15 @@ import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
-import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.error.UnexpectedException;
 import wsg.tools.boot.pojo.result.BatchResult;
-import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
@@ -75,7 +77,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public SingleResult<Long> importSubjectByDb(long dbId) throws NotFoundException, SiteException, DataIntegrityException {
+    public SingleResult<Long> importSubjectByDb(long dbId) throws HttpResponseException, DataIntegrityException, NotFoundException {
         Optional<IdView<Long>> optional = movieRepository.findByDbId(dbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getId());
@@ -88,7 +90,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         BaseDoubanSubject subject = adapter.doubanSubject(dbId).getRecord();
         String imdbId = subject.getImdbId();
         if (subject instanceof DoubanMovie) {
-            return insertMovie(BiResult.of(dbId, (DoubanMovie) subject), BiResult.of(imdbId, null));
+            return insertMovie(Pair.of(dbId, (DoubanMovie) subject), Pair.of(imdbId, null));
         }
 
         if (imdbId == null) {
@@ -103,19 +105,19 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public SingleResult<Long> importSubjectByImdb(String imdbId) throws NotFoundException, SiteException, DataIntegrityException {
+    public SingleResult<Long> importSubjectByImdb(String imdbId) throws HttpResponseException, DataIntegrityException, NotFoundException {
         ImdbTitle imdbTitle = adapter.imdbTitle(imdbId).getRecord();
         if (imdbTitle instanceof ImdbMovie) {
             Optional<IdView<Long>> optional = movieRepository.findByImdbId(imdbId);
             if (optional.isPresent()) {
                 return SingleResult.of(optional.get().getId());
             }
-            BiResult<String, ImdbMovie> imdbResult = BiResult.of(imdbId, (ImdbMovie) imdbTitle);
+            Pair<String, ImdbMovie> imdbResult = Pair.of(imdbId, (ImdbMovie) imdbTitle);
             try {
-                BiResult<Long, DoubanMovie> dbResult = BiResult.of(adapter.getDbIdByImdbId(imdbId).getRecord(), null);
-                return insertMovie(dbResult, imdbResult);
-            } catch (SiteException | NotFoundException ignored) {
-                return insertMovie(BiResult.empty(), imdbResult);
+                long dbId = adapter.getDbIdByImdbId(imdbId).getRecord();
+                return insertMovie(Pair.of(dbId, null), imdbResult);
+            } catch (NotFoundException e) {
+                return insertMovie(ImmutablePair.nullPair(), imdbResult);
             }
         }
 
@@ -124,8 +126,11 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     /**
      * Make sure at least one valid movie is provided.
+     *
+     * @throws DataIntegrityException if some required properties are lacking
+     * @throws HttpResponseException  if an error occurs
      */
-    private SingleResult<Long> insertMovie(BiResult<Long, DoubanMovie> dbResult, BiResult<String, ImdbMovie> imdbResult) throws DataIntegrityException {
+    private SingleResult<Long> insertMovie(Pair<Long, DoubanMovie> dbResult, Pair<String, ImdbMovie> imdbResult) throws DataIntegrityException, HttpResponseException {
         Long dbId = dbResult.getLeft();
         DoubanMovie doubanMovie = dbResult.getRight();
         if (dbId != null && doubanMovie == null) {
@@ -193,23 +198,25 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     /**
      * Id and title are both required not null.
+     *
+     * @throws DataIntegrityException if some required properties are lacking
+     * @throws HttpResponseException  if an error occurs when getting seasons
      */
-    private SingleResult<Long> insertSeries(@Nonnull String imdbId, @Nonnull ImdbTitle title)
-            throws SiteException, DataIntegrityException {
+    private SingleResult<Long> insertSeries(@Nonnull String imdbId, @Nonnull ImdbTitle title) throws DataIntegrityException, HttpResponseException {
         String seriesImdbId;
         ImdbSeries imdbSeries;
         if (title instanceof ImdbEpisode) {
             seriesImdbId = ((ImdbEpisode) title).getSeriesId();
             try {
                 imdbSeries = (ImdbSeries) adapter.imdbTitle(seriesImdbId).getRecord();
-            } catch (NotFoundException e) {
+            } catch (HttpResponseException | NotFoundException e) {
                 throw new UnexpectedException(e);
             }
         } else if (title instanceof ImdbSeries) {
             seriesImdbId = imdbId;
             imdbSeries = (ImdbSeries) title;
         } else {
-            throw new SiteException("IMDb", String.format("Unexpected type %s for title %s.", title.getClass().getSimpleName(), imdbId));
+            throw new UnexpectedContentException(String.format("Unexpected type %s for title %s.", title.getClass().getSimpleName(), imdbId));
         }
 
         List<String[]> allEpisodes = imdbSeries.getEpisodes();
@@ -218,32 +225,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             seasonsCount = 1;
         }
 
-        // get seasons and episodes
-        Map<Integer, String> fails = new HashMap<>(4);
-        List<BiResult<SeasonEntity, List<EpisodeEntity>>> seasons = new ArrayList<>();
-        String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
-        try {
-            seasons.add(getSeason(seriesImdbId, season1Episodes, 1));
-        } catch (NotFoundException | SiteException e) {
-            fails.put(1, e.getMessage());
-        }
-
-        if (allEpisodes.size() > 1) {
-            for (int index = 1; index < allEpisodes.size(); index++) {
-                String[] episodes = allEpisodes.get(index);
-                final int currentSeason = index + 1;
-                if (episodes == null || episodes[1] == null) {
-                    fails.put(currentSeason, "None id of IMDb exists.");
-                } else {
-                    try {
-                        seasons.add(getSeason(episodes[1], episodes, currentSeason));
-                    } catch (NotFoundException | SiteException e) {
-                        fails.put(currentSeason, e.getMessage());
-                    }
-                }
-            }
-        }
-
+        Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>> result = getSeasons(allEpisodes, seriesImdbId);
+        List<Pair<SeasonEntity, List<EpisodeEntity>>> seasons = result.getLeft();
+        Map<Integer, String> fails = result.getRight();
         SeriesEntity series;
         try {
             Optional<SeriesEntity> optional = seriesRepository.findByImdbId(seriesImdbId);
@@ -256,7 +240,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                     seriesEntity.setLanguages(imdbSeries.getLanguages());
                 }
                 seriesEntity.setSeasonsCount(seasonsCount);
-                seriesEntity.setTitle(extractTitle(seasons.stream().map(BiResult::getLeft).collect(Collectors.toList())));
+                seriesEntity.setTitle(extractTitle(seasons.stream().map(Pair::getLeft).collect(Collectors.toList())));
                 series = seriesRepository.insert(seriesEntity);
             } else {
                 series = optional.get();
@@ -265,8 +249,8 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             throw new DataIntegrityException("Data of the series aren't integral: " + e.getMessage());
         }
 
-        for (BiResult<SeasonEntity, List<EpisodeEntity>> result : seasons) {
-            SeasonEntity season = result.getLeft();
+        for (Pair<SeasonEntity, List<EpisodeEntity>> pair : seasons) {
+            SeasonEntity season = pair.getLeft();
             Optional<IdView<Long>> idViewOptional = seasonRepository.findByDbId(season.getDbId());
             try {
                 long seasonId;
@@ -276,7 +260,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 } else {
                     seasonId = idViewOptional.get().getId();
                 }
-                for (EpisodeEntity episode : result.getRight()) {
+                for (EpisodeEntity episode : pair.getRight()) {
                     Optional<EpisodeEntity> entityOptional = episodeRepository.findByImdbId(episode.getImdbId());
                     if (entityOptional.isEmpty()) {
                         episode.setSeasonId(seasonId);
@@ -293,40 +277,49 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         }
 
         if (!fails.isEmpty()) {
-            throw new DataIntegrityException(fails.entrySet().stream()
-                    .map(entry -> String.format("Season: %d, error: %s", entry.getKey(), entry.getValue()))
+            throw new DataIntegrityException(fails.entrySet().stream().map(entry -> String.format("Season: %d, error: %s", entry.getKey(), entry.getValue()))
                     .collect(Collectors.joining(Constants.LINE_SEPARATOR)));
         }
         return SingleResult.of(series.getId());
     }
 
-    private String extractTitle(List<SeasonEntity> seasons) throws DataIntegrityException {
-        seasons.sort(Comparator.comparingInt(SeasonEntity::getCurrentSeason));
-        String title = seasons.get(0).getTitle();
-        final String first = " 第一季";
-        if (title.endsWith(first)) {
-            title = title.substring(0, title.length() - 4);
+    private Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>> getSeasons(List<String[]> allEpisodes, String seriesImdbId)
+            throws HttpResponseException {
+        Map<Integer, String> fails = new HashMap<>(4);
+        List<Pair<SeasonEntity, List<EpisodeEntity>>> seasons = new ArrayList<>();
+        String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
+        try {
+            seasons.add(getSeason(seriesImdbId, season1Episodes, 1));
+        } catch (NotFoundException e) {
+            fails.put(1, e.getMessage());
         }
-        String encoded = StringUtilsExt.encodeAsPattern(title);
-        for (SeasonEntity season : seasons) {
-            Integer currentSeason = season.getCurrentSeason();
-            if (currentSeason == 1) {
-                continue;
-            }
-            String ji = "第" + StringUtilsExt.chineseNumeric(currentSeason) + "季";
-            Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
-            if (!pattern.matcher(season.getTitle()).matches()) {
-                throw new DataIntegrityException("Can't extract title of the series.");
+
+        if (allEpisodes.size() > 1) {
+            for (int index = 1; index < allEpisodes.size(); index++) {
+                String[] episodes = allEpisodes.get(index);
+                final int currentSeason = index + 1;
+                if (episodes == null || episodes[1] == null) {
+                    fails.put(currentSeason, "None id of IMDb exists.");
+                } else {
+                    try {
+                        seasons.add(getSeason(episodes[1], episodes, currentSeason));
+                    } catch (NotFoundException e) {
+                        fails.put(currentSeason, e.getMessage());
+                    }
+                }
             }
         }
-        return title;
+        return Pair.of(seasons, fails);
     }
 
     /**
      * All args are required not null.
+     *
+     * @throws HttpResponseException if an error occurs
+     * @throws NotFoundException     if the subject of the given IMDb id is not found from Douban
      */
-    private BiResult<SeasonEntity, List<EpisodeEntity>> getSeason(String seasonImdbId, String[] episodes, int currentSeason)
-            throws NotFoundException, SiteException {
+    private Pair<SeasonEntity, List<EpisodeEntity>> getSeason(String seasonImdbId, String[] episodes, int currentSeason)
+            throws HttpResponseException, NotFoundException {
         Long seasonDbId = adapter.getDbIdByImdbId(seasonImdbId).getRecord();
         BaseDoubanSubject subject = adapter.doubanSubject(seasonDbId).getRecord();
 
@@ -358,7 +351,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 episodeEntities.add(getEpisode(episodeImdbId, i));
             }
         }
-        return BiResult.of(seasonEntity, episodeEntities);
+        return Pair.of(seasonEntity, episodeEntities);
     }
 
     private EpisodeEntity getEpisode(String episodeImdbId, int currentEpisode) {
@@ -368,7 +361,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         ImdbTitle imdbTitle;
         try {
             imdbTitle = adapter.imdbTitle(episodeImdbId).getRecord();
-        } catch (NotFoundException e) {
+        } catch (HttpResponseException | NotFoundException e) {
             throw new UnexpectedException(e);
         }
         episodeEntity.setText(imdbTitle.getText());
@@ -380,28 +373,49 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return episodeEntity;
     }
 
+    /**
+     * @throws DataIntegrityException if can't extract a title
+     */
+    private String extractTitle(List<SeasonEntity> seasons) throws DataIntegrityException {
+        seasons.sort(Comparator.comparingInt(SeasonEntity::getCurrentSeason));
+        String title = seasons.get(0).getTitle();
+        final String first = " 第一季";
+        if (title.endsWith(first)) {
+            title = title.substring(0, title.length() - 4);
+        }
+        String encoded = StringUtilsExt.encodeAsPattern(title);
+        for (SeasonEntity season : seasons) {
+            Integer currentSeason = season.getCurrentSeason();
+            if (currentSeason == 1) {
+                continue;
+            }
+            String ji = "第" + StringUtilsExt.chineseNumeric(currentSeason) + "季";
+            Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
+            if (!pattern.matcher(season.getTitle()).matches()) {
+                throw new DataIntegrityException("Can't extract title of the series.");
+            }
+        }
+        return title;
+    }
+
     @Override
-    public BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark) {
+    public BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate().orElse(DoubanSite.DOUBAN_START_DATE);
         }
         log.info("Start to import douban subjects marked as {} of {} since {}", mark, userId, since);
-        Map<Long, LocalDate> map;
-        try {
-            map = adapter.collectUserSubjects(userId, since, mark).getRecord();
-        } catch (NotFoundException e) {
-            log.error(e.getMessage());
-            return new BatchResult<>(0, Collections.emptyMap());
-        }
+        Map<Long, LocalDate> map = adapter.collectUserSubjects(userId, since, mark).getRecord();
         int count = 0;
         Map<Long, String> fails = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Map.Entry<Long, LocalDate> entry : map.entrySet()) {
             Long id;
             try {
                 id = this.importSubjectByDb(entry.getKey()).getRecord();
-            } catch (SiteException | DataIntegrityException | NotFoundException e) {
+            } catch (DataIntegrityException e) {
                 fails.put(entry.getKey(), e.getMessage());
                 continue;
+            } catch (NotFoundException e) {
+                throw new UnexpectedException(e);
             }
             count++;
             UserRecordEntity entity = new UserRecordEntity();
@@ -431,17 +445,17 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     @Override
-    public BiResult<SeriesEntity, List<SeasonEntity>> getSeries(Long id) {
+    public Pair<SeriesEntity, List<SeasonEntity>> getSeries(Long id) {
         List<SeasonEntity> seasons = seasonRepository.findAllBySeriesId(id);
         if (seasons.isEmpty()) {
             Optional<SeriesEntity> optional = seriesRepository.findById(id);
             if (optional.isEmpty()) {
-                return BiResult.of(null, null);
+                return ImmutablePair.nullPair();
             } else {
-                return BiResult.of(optional.get(), seasons);
+                return Pair.of(optional.get(), seasons);
             }
         }
-        return BiResult.of(seasons.get(0).getSeries(), seasons);
+        return Pair.of(seasons.get(0).getSeries(), seasons);
     }
 
     @Override

@@ -9,7 +9,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
@@ -32,7 +31,6 @@ import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.enums.SchemeEnum;
-import wsg.tools.internet.base.exception.NotFoundException;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -84,6 +82,7 @@ public abstract class BaseSite implements Closeable {
      */
     private static final String TMPDIR = System.getProperty("java.io.tmpdir") + "tools";
     private static final int TIME_OUT = 30000;
+    private static final int MIN_ERROR_STATUS_CODE = 300;
 
     protected final ObjectMapper mapper;
     @Getter
@@ -149,49 +148,49 @@ public abstract class BaseSite implements Closeable {
     /**
      * Return the document of html content of get request.
      */
-    protected final Document getDocument(URIBuilder builder, SnapshotStrategy strategy) throws NotFoundException {
+    protected final Document getDocument(URIBuilder builder, SnapshotStrategy strategy) throws HttpResponseException {
         return request(RequestBuilder.get(builder), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
     }
 
     /**
      * Return the content of html content of post request.
      */
-    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, SnapshotStrategy strategy) throws NotFoundException {
+    protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, SnapshotStrategy strategy) throws HttpResponseException {
         return request(RequestBuilder.post(builder, params), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws HttpResponseException {
         return getObject(builder, clazz, SnapshotStrategy.NEVER_UPDATE);
     }
 
     /**
      * Return the content of response with a Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, SnapshotStrategy strategy) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, Class<T> clazz, SnapshotStrategy strategy) throws HttpResponseException {
         return request(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, clazz), strategy);
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws HttpResponseException {
         return getObject(builder, type, SnapshotStrategy.NEVER_UPDATE);
     }
 
     /**
      * Return the content of response with a generic Java object.
      */
-    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, SnapshotStrategy strategy) throws NotFoundException {
+    protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, SnapshotStrategy strategy) throws HttpResponseException {
         return request(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, type), strategy);
     }
 
     /**
      * Obtains target object by executing the request whose response can be written to a snapshot.
      */
-    protected final <T> T request(RequestBuilder builder, ContentHandler<T> handler, SnapshotStrategy strategy) throws NotFoundException {
+    protected final <T> T request(RequestBuilder builder, ContentHandler<T> handler, SnapshotStrategy strategy) throws HttpResponseException {
         String filepath = builder.filepath();
         if (this instanceof Loggable) {
             Object user = ((Loggable<?>) this).user();
@@ -276,7 +275,7 @@ public abstract class BaseSite implements Closeable {
     protected String handleResponse(HttpResponse response) throws IOException {
         final StatusLine statusLine = response.getStatusLine();
         final HttpEntity entity = response.getEntity();
-        if (statusLine.getStatusCode() >= 300) {
+        if (statusLine.getStatusCode() >= MIN_ERROR_STATUS_CODE) {
             EntityUtils.consume(entity);
             throw new HttpResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());
         }
@@ -308,7 +307,7 @@ public abstract class BaseSite implements Closeable {
         return new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath + ".cookie"));
     }
 
-    private String updateSnapshot(RequestBuilder builder, File file) throws NotFoundException {
+    private String updateSnapshot(RequestBuilder builder, File file) throws HttpResponseException {
         String content = execute(builder);
         try {
             FileUtils.write(file, content, UTF_8);
@@ -318,7 +317,7 @@ public abstract class BaseSite implements Closeable {
         return content;
     }
 
-    private String execute(RequestBuilder builder) throws NotFoundException {
+    private String execute(RequestBuilder builder) throws HttpResponseException {
         handleRequest(builder, context);
         log.info("{} from {}", builder.getMethod(), builder.displayUrl());
         limiters.get(builder.getMethod()).acquire();
@@ -334,10 +333,7 @@ public abstract class BaseSite implements Closeable {
             });
             return content;
         } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                throw new NotFoundException(e.getReasonPhrase());
-            }
-            throw AssertUtils.runtimeException(e);
+            throw e;
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
         }

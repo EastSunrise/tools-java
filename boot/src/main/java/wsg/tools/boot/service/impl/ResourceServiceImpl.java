@@ -3,6 +3,7 @@ package wsg.tools.boot.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,6 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.exception.SiteStatusException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.base.LengthSupplier;
@@ -65,7 +65,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws SiteStatusException {
+    public <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
         String name = site.getName();
         for (T item : site.findAll()) {
@@ -79,7 +79,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws SiteStatusException {
+    public <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
         String name = site.getName();
         Integer start = itemRepository.findMaxSid(name).orElse(null);

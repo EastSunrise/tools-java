@@ -14,7 +14,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.common.Release;
 
@@ -54,7 +53,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
     }
 
     @Override
-    public ImdbTitle getItemById(@Nonnull String imdbId) throws NotFoundException {
+    public ImdbTitle getItemById(@Nonnull String imdbId) throws HttpResponseException {
         Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.NEVER_UPDATE);
 
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
@@ -94,11 +93,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
             if (seriesId.equals(imdbId)) {
                 ImdbSeries series = new ImdbSeries();
                 series.setRangeYear(new RangeYear(year));
-                try {
-                    series.setEpisodes(getEpisodes(imdbId));
-                } catch (NotFoundException e) {
-                    throw AssertUtils.runtimeException(e);
-                }
+                series.setEpisodes(getEpisodes(imdbId));
                 imdbTitle = series;
             } else {
                 ImdbEpisode episode = new ImdbEpisode();
@@ -123,7 +118,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         return imdbTitle;
     }
 
-    private List<String[]> getEpisodes(String seriesId) throws NotFoundException {
+    private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
         Document document = getDocument(builder0("/title/%s/episodelist", seriesId)
                 .addParameter("season", "1"), SnapshotStrategy.NEVER_UPDATE);
         int seasonsCount = document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
@@ -175,7 +170,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
     protected String handleEntity(HttpEntity entity) throws IOException {
         String content = super.handleEntity(entity);
         if (NOT_FOUND.equals(content)) {
-            throw new NotFoundException(NOT_FOUND);
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
         }
         if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
             throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server is limit to access.");

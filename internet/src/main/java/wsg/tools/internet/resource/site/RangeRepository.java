@@ -1,5 +1,7 @@
 package wsg.tools.internet.resource.site;
 
+import org.apache.http.client.HttpResponseException;
+
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -17,6 +19,7 @@ public interface RangeRepository<T, C extends Comparable<? super C>> {
      * @param startInclusive the (inclusive) initial value
      * @param endInclusive   the inclusive upper bound
      * @return items
+     * @throws HttpResponseException if an error occurs.
      */
-    List<T> findAllByRangeClosed(@Nullable C startInclusive, @Nullable C endInclusive);
+    List<T> findAllByRangeClosed(@Nullable C startInclusive, @Nullable C endInclusive) throws HttpResponseException;
 }

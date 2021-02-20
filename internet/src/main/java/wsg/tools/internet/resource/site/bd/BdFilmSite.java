@@ -4,16 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.base.UnknownResourceException;
@@ -65,13 +65,8 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     @Override
-    protected int max() {
-        Document document;
-        try {
-            document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.ALWAYS_UPDATE);
         Elements lis = document.selectFirst("#content_list").select("li.list-item");
         int max = 1;
         for (Element li : lis) {
@@ -84,9 +79,9 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
     }
 
     @Override
-    protected BdFilmItem getItem(int id) throws NotFoundException {
+    protected BdFilmItem getItem(int id) throws HttpResponseException {
         if (id == EXCEPT_ID) {
-            throw new NotFoundException("Not a film page");
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a film page");
         }
         URIBuilder builder = builder0("/gy/%d.htm", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
@@ -101,7 +96,7 @@ public final class BdFilmSite extends AbstractRangeResourceSite<BdFilmItem> {
         }
         String location = Objects.requireNonNull(meta.get("og:url"));
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
-            throw new NotFoundException("Not a film page: " + location);
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a film page: " + location);
         }
         LocalDateTime updateTime = LocalDateTime.parse(meta.get("og:video:release_date"), Constants.STANDARD_DATE_TIME_FORMATTER);
         BdFilmItem item = new BdFilmItem(id, location, updateTime);

@@ -1,17 +1,17 @@
 package wsg.tools.boot.dao.api.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 import wsg.tools.boot.pojo.result.SingleResult;
-import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.exception.LoginException;
-import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
@@ -33,43 +33,34 @@ import java.util.Optional;
 @Component
 public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
 
-    private static final String DOUBAN_SUBJECT = "douban subject";
-    private static final String IMDB_TITLE = "imdb title";
-
     private final ImdbRepository<ImdbTitle> imdbRepository = ImdbCnSite.getInstance();
     private final DoubanSite doubanSite = DoubanSite.getInstance();
 
-    private IdRelationRepository relationRepository;
+    private final IdRelationRepository relationRepository;
 
-    @Override
-    public SingleResult<BaseDoubanSubject> doubanSubject(long dbId) throws NotFoundException {
-        try {
-            BaseDoubanSubject subject = doubanSite.subject(dbId);
-            if (subject.getImdbId() != null) {
-                saveIdRelation(dbId, subject.getImdbId());
-            }
-            return SingleResult.of(subject);
-        } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg(doubanSite, DOUBAN_SUBJECT, dbId, e));
-        }
+    @Autowired
+    public SubjectAdapterImpl(IdRelationRepository relationRepository) {
+        this.relationRepository = relationRepository;
     }
 
     @Override
-    public SingleResult<Long> getDbIdByImdbId(String imdbId) throws NotFoundException {
+    public SingleResult<BaseDoubanSubject> doubanSubject(long dbId) throws HttpResponseException, NotFoundException {
+        BaseDoubanSubject subject = handleException(dbId, doubanSite::subject);
+        if (subject.getImdbId() != null) {
+            saveIdRelation(dbId, subject.getImdbId());
+        }
+        return SingleResult.of(subject);
+    }
+
+    @Override
+    public SingleResult<Long> getDbIdByImdbId(String imdbId) throws HttpResponseException, NotFoundException {
         Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
         if (optional.isPresent()) {
             return SingleResult.of(optional.get().getDbId());
         }
-        if (doubanSite.user() != null) {
-            Long dbIdByImdbId;
-            try {
-                dbIdByImdbId = doubanSite.getDbIdByImdbId(imdbId);
-            } catch (LoginException e) {
-                throw AssertUtils.runtimeException(e);
-            }
-            if (dbIdByImdbId != null) {
-                return SingleResult.of(saveIdRelation(dbIdByImdbId, imdbId));
-            }
+        Long dbIdByImdbId = doubanSite.getDbIdByImdbId(imdbId);
+        if (dbIdByImdbId != null) {
+            return SingleResult.of(saveIdRelation(dbIdByImdbId, imdbId));
         }
         throw new NotFoundException("Can't find douban ID by IMDb ID: " + imdbId);
     }
@@ -86,36 +77,28 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
     }
 
     @Override
-    public SingleResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws NotFoundException {
-        try {
-            return SingleResult.of(doubanSite.collectUserSubjects(userId, since, CatalogEnum.MOVIE, mark));
-        } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg(doubanSite, "douban user subjects", userId, e));
-        }
+    public SingleResult<Map<Long, LocalDate>> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException {
+        return SingleResult.of(handleException(userId, user -> doubanSite.collectUserSubjects(user, since, CatalogEnum.MOVIE, mark)));
     }
 
     @Override
-    public SingleResult<ImdbTitle> imdbTitle(String imdbId) throws NotFoundException {
-        Objects.requireNonNull(imdbId);
+    public SingleResult<ImdbTitle> imdbTitle(String imdbId) throws HttpResponseException, NotFoundException {
+        return SingleResult.of(handleException(Objects.requireNonNull(imdbId), imdbRepository::getItemById));
+    }
+
+    private <T, R> R handleException(T t, ThrowableFunction<T, R, HttpResponseException> function) throws NotFoundException, HttpResponseException {
         try {
-            return SingleResult.of(imdbRepository.getItemById(imdbId));
-        } catch (NotFoundException e) {
-            throw new NotFoundException(errorMsg((BaseSite) imdbRepository, IMDB_TITLE, imdbId, e));
+            return function.apply(t);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                throw new NotFoundException(e.getMessage());
+            }
+            throw e;
         }
-    }
-
-    private String errorMsg(BaseSite site, String resource, Object resourceId, NotFoundException cause) {
-        return String.format("Can't get %s from %s, id: %s, reason: %s.", resource, site.getName(), resourceId, cause.getReasonPhrase());
-    }
-
-    @Autowired
-    public void setRelationRepository(IdRelationRepository relationRepository) {
-        this.relationRepository = relationRepository;
     }
 
     @Override
     public void destroy() throws Exception {
         doubanSite.close();
-
     }
 }

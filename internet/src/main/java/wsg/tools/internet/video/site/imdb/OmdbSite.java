@@ -8,13 +8,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.RequestBuilder;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.CommaSeparatedNumberDeserializationProblemHandler;
 
@@ -45,7 +46,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
     @Override
-    public OmdbTitle getItemById(@Nonnull String imdbId) throws NotFoundException {
+    public OmdbTitle getItemById(@Nonnull String imdbId) throws HttpResponseException {
         OmdbTitle title = getObject(builder0("/").addParameter("i", imdbId).addParameter("plot", "full"), OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
@@ -56,7 +57,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      *
      * @param season start with 1
      */
-    public OmdbSeason season(String seriesId, int season) throws NotFoundException {
+    public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
         return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season)), OmdbSeason.class);
@@ -67,7 +68,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      *
      * @param season start with 1
      */
-    public OmdbEpisode episode(String seriesId, int season, int episode) throws NotFoundException {
+    public OmdbEpisode episode(String seriesId, int season, int episode) throws HttpResponseException {
         return getObject(builder0("/")
                 .addParameter("i", seriesId)
                 .addParameter("season", String.valueOf(season))
@@ -77,7 +78,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     /**
      * Search subject fast.
      */
-    public OmdbTitle search(String s) {
+    public OmdbTitle search(String s) throws HttpResponseException {
         return search(s, null, null, 1);
     }
 
@@ -88,7 +89,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public OmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) {
+    public OmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
         URIBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
@@ -101,11 +102,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         } else {
             builder.addParameter("page", String.valueOf(page));
         }
-        try {
-            return getObject(builder, OmdbTitle.class);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+        return getObject(builder, OmdbTitle.class);
     }
 
     @Override
@@ -127,9 +124,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
             return content.replace("\"N/A\"", "null");
         } else {
             String error = node.get("Error").asText();
-            if (NOT_FOUND_MSG.equals(error) ||
-                    SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
-                throw new NotFoundException(error);
+            if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
             }
             throw new RuntimeException(error);
         }

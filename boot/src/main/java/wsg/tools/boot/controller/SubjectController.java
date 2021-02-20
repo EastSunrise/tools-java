@@ -1,6 +1,7 @@
 package wsg.tools.boot.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.DatabaseConfig;
 import wsg.tools.boot.pojo.dto.MovieDto;
@@ -19,13 +21,12 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
-import wsg.tools.boot.pojo.error.SiteException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
-import wsg.tools.internet.base.exception.NotFoundException;
+import wsg.tools.internet.base.exception.LoginException;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.io.File;
@@ -65,26 +66,39 @@ public class SubjectController extends AbstractController {
      */
     @PostMapping(value = "/import/douban")
     @ResponseBody
-    public BatchResult<Long> importDouban(long user, LocalDate since) {
+    public ResponseEntity<BatchResult<Long>> importDouban(Long user, LocalDate since) {
+        if (user == null) {
+            return BAD_REQUEST.build();
+        }
         BatchResult<Long> result = BatchResult.empty();
         for (MarkEnum mark : MarkEnum.values()) {
-            result = result.plus(subjectService.importDouban(user, since, mark));
+            try {
+                result = result.plus(subjectService.importDouban(user, since, mark));
+            } catch (HttpResponseException | LoginException e) {
+                log.error(e.getMessage());
+                return SERVER_ERROR.build();
+            } catch (NotFoundException e) {
+                log.error(e.getMessage());
+                return NOT_FOUND.build();
+            }
         }
-        return result;
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping(value = "/import")
     @ResponseBody
     public ResponseEntity<String> importSubject(Long id) {
         if (id == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID must be not null.");
+            return ResponseEntity.badRequest().body("ID must be not null");
         }
         try {
             subjectService.importSubjectByDb(id);
-            return ResponseEntity.ok("Success");
-        } catch (NotFoundException | SiteException | DataIntegrityException e) {
-            return ResponseEntity.ok(e.getMessage());
+        } catch (HttpResponseException | DataIntegrityException | LoginException e) {
+            return SERVER_ERROR.body(e.getMessage());
+        } catch (NotFoundException e) {
+            return NOT_FOUND.body(e.getMessage());
         }
+        return OK.body(HttpStatus.OK.getReasonPhrase());
     }
 
     @GetMapping(path = "/subject/index")
@@ -145,52 +159,53 @@ public class SubjectController extends AbstractController {
 
     @PostMapping(path = "/subject/archive")
     @ResponseBody
-    public ResponseEntity<?> archive(long id) {
+    public ResponseEntity<VideoStatus> archive(long id) {
         if (databaseConfig.isMovie(id)) {
             return archive(subjectService.getMovie(id), videoManager::archive);
         }
         if (databaseConfig.isSeason(id)) {
             return archive(subjectService.getSeason(id), videoManager::archive);
         }
-        return ResponseEntity.notFound().build();
+        return BAD_REQUEST.build();
     }
 
-    private <T extends IdentityEntity> ResponseEntity<?> archive(Optional<T> optional, ThrowableFunction<T, VideoStatus, IOException> archive) {
+    private <T extends IdentityEntity> ResponseEntity<VideoStatus> archive(Optional<T> optional, ThrowableFunction<T, VideoStatus, IOException> archive) {
         if (optional.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return NOT_FOUND.build();
         }
         try {
-            return ResponseEntity.ok(archive.apply(optional.get()));
+            return OK.body(archive.apply(optional.get()));
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return SERVER_ERROR.build();
         }
     }
 
     @PostMapping(path = "/open")
     @ResponseBody
-    public ResponseEntity<?> open(long id) {
+    public ResponseEntity<Void> open(long id) {
         if (databaseConfig.isMovie(id)) {
             return open(subjectService.getMovie(id), videoManager::getFile);
         }
         if (databaseConfig.isSeason(id)) {
             return open(subjectService.getSeason(id), videoManager::getFile);
         }
-        return ResponseEntity.notFound().build();
+        return BAD_REQUEST.build();
     }
 
-    private <T extends IdentityEntity> ResponseEntity<?> open(Optional<T> optional, Function<T, Optional<File>> getFile) {
+    private <T extends IdentityEntity> ResponseEntity<Void> open(Optional<T> optional, Function<T, Optional<File>> getFile) {
         if (optional.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return NOT_FOUND.build();
         }
         Optional<File> file = getFile.apply(optional.get());
         if (file.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return NOT_FOUND.build();
         }
         try {
             Rundll32.openFile(file.get());
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            log.error(e.getMessage());
+            return SERVER_ERROR.build();
         }
-        return ResponseEntity.ok().build();
+        return OK.build();
     }
 }

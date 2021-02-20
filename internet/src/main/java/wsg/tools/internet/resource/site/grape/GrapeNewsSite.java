@@ -1,6 +1,7 @@
 package wsg.tools.internet.resource.site.grape;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,7 +11,6 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.impl.Ed2kResource;
@@ -55,7 +55,7 @@ public class GrapeNewsSite extends AbstractRangeResourceSite<GrapeNewsItem> impl
     }
 
     @Override
-    protected GrapeNewsItem getItem(int id) throws NotFoundException {
+    protected GrapeNewsItem getItem(int id) throws HttpResponseException {
         URIBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 

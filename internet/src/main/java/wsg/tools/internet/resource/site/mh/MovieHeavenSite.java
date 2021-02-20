@@ -12,11 +12,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.NotFoundException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -53,6 +51,7 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
     private static final Pattern RESOURCE_REGEX = Pattern.compile("(?<title>(第\\d+集\\$)?[^$]+)\\$(?<url>[^$]*)");
     private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
     private static final String XUNLEI = "xunlei";
+    private static final String URL_SEPARATOR = "#";
     private static final VideoType[] TYPES = {
             null, VideoType.MOVIE, VideoType.TV, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
             VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
@@ -78,13 +77,8 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
      * @see <a href="https://www.993dy.com/">Home</a>
      */
     @Override
-    protected int max() {
-        Document document;
-        try {
-            document = getDocument(builder0("/"), SnapshotStrategy.ALWAYS_UPDATE);
-        } catch (NotFoundException e) {
-            throw AssertUtils.runtimeException(e);
-        }
+    protected int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/"), SnapshotStrategy.ALWAYS_UPDATE);
         Elements lis = document.selectFirst("div.newbox").select(CssSelector.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -95,12 +89,12 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
     }
 
     @Override
-    protected MovieHeavenItem getItem(int id) throws NotFoundException {
+    protected MovieHeavenItem getItem(int id) throws HttpResponseException {
         URIBuilder builder = builder0("/vod-detail-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
-            throw new NotFoundException(document.selectFirst("h4.infotitle1").text());
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, document.selectFirst("h4.infotitle1").text());
         }
 
         Map<String, Element> info = document.selectFirst("div.info").select(CssSelector.TAG_SPAN).stream().collect(Collectors.toMap(Element::text, e -> e));
@@ -132,7 +126,7 @@ public class MovieHeavenSite extends AbstractRangeResourceSite<MovieHeavenItem> 
             String varUrls = ul.selectFirst(CssSelector.TAG_SCRIPT).html().strip().split("\n")[0].strip();
             String entries = RegexUtils.matchesOrElseThrow(VAR_URL_REGEX, varUrls).group("entries");
             entries = StringEscapeUtils.unescapeHtml4(entries);
-            for (String entry : entries.split("#")) {
+            for (String entry : entries.split(URL_SEPARATOR)) {
                 Matcher matcher = RegexUtils.matchesOrElseThrow(RESOURCE_REGEX, entry);
                 String url = matcher.group("url");
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {

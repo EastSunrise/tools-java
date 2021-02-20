@@ -1,6 +1,7 @@
 package wsg.tools.boot.controller;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,7 +12,6 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
-import wsg.tools.boot.pojo.result.BiResult;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
@@ -57,13 +57,13 @@ public class ResourceController extends AbstractController {
 
     @PostMapping(path = "/series")
     public String seriesResources(Long id, String key, Model model) {
-        BiResult<SeriesEntity, List<SeasonEntity>> result = subjectService.getSeries(id);
-        if (result.getLeft() == null) {
+        Pair<SeriesEntity, List<SeasonEntity>> pair = subjectService.getSeries(id);
+        if (pair.getLeft() == null) {
             return "error/notFound";
         }
-        SeriesEntity seriesEntity = result.getLeft();
+        SeriesEntity seriesEntity = pair.getLeft();
         model.addAttribute("series", seriesEntity);
-        List<SeasonEntity> seasons = result.getRight();
+        List<SeasonEntity> seasons = pair.getRight();
         model.addAttribute("seasons", seasons);
         if (StringUtils.isBlank(key)) {
             key = seriesEntity.getTitle();

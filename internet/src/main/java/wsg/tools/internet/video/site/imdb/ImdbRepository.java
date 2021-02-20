@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.site.imdb;
 
-import wsg.tools.internet.base.exception.NotFoundException;
+import org.apache.http.client.HttpResponseException;
 
 import javax.annotation.Nonnull;
 
@@ -17,7 +17,7 @@ public interface ImdbRepository<T extends ImdbIdentifier> {
      *
      * @param imdbId identifier, starting with 'tt'
      * @return info of the item
-     * @throws NotFoundException if not found
+     * @throws HttpResponseException if an error occurs.
      */
-    T getItemById(@Nonnull String imdbId) throws NotFoundException;
+    T getItemById(@Nonnull String imdbId) throws HttpResponseException;
 }
