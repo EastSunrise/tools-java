@@ -3,6 +3,7 @@ package wsg.tools.boot.dao.jpa.converter;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import javax.persistence.Converter;
@@ -19,9 +20,9 @@ import javax.persistence.Converter;
 public class CodeEnumJpaConverters {
 
     @Converter(autoApply = true)
-    public static class MarkEnumConverter extends CodeEnumConverter<MarkEnum> {
+    public static class MarkEnumConverter extends CodeConverter<MarkEnum, MarkEnumAdapter> {
         public MarkEnumConverter() {
-            super(MarkEnum.class);
+            super(MarkEnumAdapter.class);
         }
     }
 
@@ -32,7 +33,10 @@ public class CodeEnumJpaConverters {
         }
     }
 
-    static class CodeEnumConverter<E extends Enum<E> & CodeSupplier<Integer>> extends BaseNonNullConverter<E, Integer> {
+    /**
+     * Converter between a code and an enum implementing {@code IntCodeSupplier}.
+     */
+    static class CodeEnumConverter<E extends Enum<E> & IntCodeSupplier> extends BaseNonNullConverter<E, Integer> {
 
         protected final Class<E> eClass;
 

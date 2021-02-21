@@ -46,7 +46,7 @@ public class ContainerJsonJpaConverters {
         }
     }
 
-    static class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
+    static abstract class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
 
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                 .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)

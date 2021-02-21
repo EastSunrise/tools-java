@@ -1,7 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import lombok.Getter;
-import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
@@ -12,30 +11,27 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/7/17
  */
-public enum CityEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier, PathParameterized {
+public enum CityEnum implements IntCodeSupplier, TextSupplier, TitleSupplier, PathParameterized {
     /**
      * Cities
      */
-    BEIJING(1101, "PEK", "Beijing", "北京"),
-    SHANGHAI(3101, "SHA", "Shanghai", "上海"),
-    NANJING(3201, "NKG", "Nanjing", "南京"),
+    PEK(1101, "Beijing", "北京"),
+    SHA(3101, "Shanghai", "上海"),
+    NKG(3201, "Nanjing", "南京"),
     ;
 
-    @Getter
-    private final int no;
-    private final String code;
+    private final int code;
     private final String text;
     private final String title;
 
-    CityEnum(int no, String code, String text, String title) {
-        this.no = no;
+    CityEnum(int code, String text, String title) {
         this.code = code;
         this.text = text;
         this.title = title;
     }
 
     @Override
-    public String getCode() {
+    public Integer getCode() {
         return code;
     }
 

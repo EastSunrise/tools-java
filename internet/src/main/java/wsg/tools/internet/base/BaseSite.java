@@ -109,7 +109,7 @@ public abstract class BaseSite implements Closeable {
     }
 
     public BaseSite(String name, SchemeEnum scheme, String domain, double permitsPerSecond, double postPermitsPerSecond) {
-        SiteStatus.Status.validateStatus(this);
+        SiteStatus.Status.validateStatus(this.getClass());
         this.name = name;
         this.scheme = scheme;
         this.domain = domain;

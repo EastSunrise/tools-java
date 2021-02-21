@@ -1,6 +1,5 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
@@ -18,7 +17,6 @@ import java.util.List;
  * @since 2020/8/5
  */
 @Setter
-@Getter
 @Entity
 @Table(name = "video_season")
 public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, YearSupplier {
@@ -50,4 +48,42 @@ public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, Ye
     @ManyToOne
     @JoinColumn(name = "series_id", nullable = false)
     private SeriesEntity series;
+
+    public String getZhTitle() {
+        return zhTitle;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public List<LanguageEnum> getLanguages() {
+        return languages;
+    }
+
+    public List<Duration> getDurations() {
+        return durations;
+    }
+
+    @Override
+    public Integer getYear() {
+        return year;
+    }
+
+    @Override
+    public Long getDbId() {
+        return dbId;
+    }
+
+    public Integer getCurrentSeason() {
+        return currentSeason;
+    }
+
+    public Integer getEpisodesCount() {
+        return episodesCount;
+    }
+
+    public SeriesEntity getSeries() {
+        return series;
+    }
 }

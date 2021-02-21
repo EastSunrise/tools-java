@@ -13,6 +13,7 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
 
+import javax.annotation.Nullable;
 import java.io.File;
 
 /**
@@ -35,6 +36,9 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
     @Value("${video.tmpdir}")
     private String tmpdir;
+
+    @Value("${omdb.key}")
+    private String omdbKey;
 
     public String getLocation(MovieEntity entity) {
         String title = entity.getZhTitle();
@@ -85,5 +89,10 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
             log.warn("Not a valid tmpdir: " + tmpdir);
             this.tmpdir = System.getProperty("java.io.tmpdir");
         }
+    }
+
+    @Nullable
+    public String getOmdbKey() {
+        return omdbKey;
     }
 }

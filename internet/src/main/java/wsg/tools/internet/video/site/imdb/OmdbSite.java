@@ -22,6 +22,7 @@ import wsg.tools.internet.video.jackson.CommaSeparatedNumberDeserializationProbl
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * @author Kingen
@@ -39,7 +40,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
 
     public OmdbSite(String apikey) {
         super("OMDb", "omdbapi.com");
-        this.apikey = apikey;
+        this.apikey = Objects.requireNonNull(apikey);
     }
 
     /**

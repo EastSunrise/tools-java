@@ -1,6 +1,5 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
@@ -20,7 +19,6 @@ import java.util.List;
  * @author Kingen
  * @since 2020/8/5
  */
-@Getter
 @Setter
 @Entity
 @Table(name = "video_movie")
@@ -49,4 +47,39 @@ public class MovieEntity extends IdentityEntity implements DoubanIdentifier, Imd
 
     @Column(nullable = false, length = 63)
     private List<Duration> durations;
+
+    public String getZhTitle() {
+        return zhTitle;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public List<LanguageEnum> getLanguages() {
+        return languages;
+    }
+
+    public List<Duration> getDurations() {
+        return durations;
+    }
+
+    public String getEnTitle() {
+        return enTitle;
+    }
+
+    @Override
+    public Integer getYear() {
+        return year;
+    }
+
+    @Override
+    public Long getDbId() {
+        return dbId;
+    }
+
+    @Override
+    public String getImdbId() {
+        return imdbId;
+    }
 }

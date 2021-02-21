@@ -1,6 +1,5 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
@@ -10,30 +9,23 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum MarkEnum implements TitleSupplier, IntCodeSupplier, PathParameterized {
+public enum MarkEnum implements TitleSupplier, PathParameterized {
     /**
      * wish/do/collect
      */
-    WISH(1, "想看"),
-    DO(2, "在看"),
-    COLLECT(3, "看过");
+    WISH("想看"),
+    DO("在看"),
+    COLLECT("看过");
 
-    private final int code;
     private final String title;
 
-    MarkEnum(int code, String title) {
-        this.code = code;
+    MarkEnum(String title) {
         this.title = title;
     }
 
     @Override
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public Integer getCode() {
-        return code;
     }
 
     @Override

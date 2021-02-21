@@ -2,7 +2,6 @@ package wsg.tools.internet.video.enums;
 
 import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 
@@ -12,7 +11,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/6/26
  */
-public enum RegionEnum implements CodeSupplier<String>, TextSupplier, TitleSupplier, AkaPredicate<String> {
+public enum RegionEnum implements TextSupplier, TitleSupplier, AkaPredicate<String> {
     /**
      * Extended ISO regions.
      */
@@ -288,11 +287,6 @@ public enum RegionEnum implements CodeSupplier<String>, TextSupplier, TitleSuppl
         this.text = text;
         this.title = title;
         this.aka = aka;
-    }
-
-    @Override
-    public String getCode() {
-        return name();
     }
 
     @Override

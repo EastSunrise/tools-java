@@ -29,7 +29,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = DoubanSeries.class, name = "TVSeries"),
         @JsonSubTypes.Type(value = DoubanMovie.class, name = "Movie")
 })
-@JsonIgnoreProperties(value = {"@context", "name"})
+@JsonIgnoreProperties(value = {"@context"})
 public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentifier {
 
     private long id;

@@ -40,8 +40,8 @@ public @interface SiteStatus {
          *
          * @throws SiteStatusException if the status is abnormal
          */
-        public static void validateStatus(BaseSite site) throws SiteStatusException {
-            SiteStatus annotation = site.getClass().getAnnotation(SiteStatus.class);
+        public static void validateStatus(Class<? extends BaseSite> clazz) throws SiteStatusException {
+            SiteStatus annotation = clazz.getAnnotation(SiteStatus.class);
             if (annotation != null) {
                 SiteStatus.Status status = annotation.status();
                 if (!SiteStatus.Status.NORMAL.equals(status)) {

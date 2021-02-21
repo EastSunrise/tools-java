@@ -1,9 +1,7 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,11 +16,10 @@ import java.util.List;
  * @author Kingen
  * @since 2020/8/7
  */
-@Getter
 @Setter
 @Entity
 @Table(name = "video_episode")
-public class EpisodeEntity extends IdentityEntity implements ImdbIdentifier {
+public class EpisodeEntity extends IdentityEntity {
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;
@@ -30,7 +27,9 @@ public class EpisodeEntity extends IdentityEntity implements ImdbIdentifier {
     @Column(nullable = false, length = 127)
     private String enTitle;
 
-    private LocalDate released;
+    private LocalDate release;
+
+    private Integer year;
 
     @Column(length = 63)
     private List<Duration> durations;
@@ -40,4 +39,32 @@ public class EpisodeEntity extends IdentityEntity implements ImdbIdentifier {
 
     @Column(nullable = false)
     private Integer currentEpisode;
+
+    public LocalDate getRelease() {
+        return release;
+    }
+
+    public List<Duration> getDurations() {
+        return durations;
+    }
+
+    public Long getSeasonId() {
+        return seasonId;
+    }
+
+    public Integer getCurrentEpisode() {
+        return currentEpisode;
+    }
+
+    public String getEnTitle() {
+        return enTitle;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
 }

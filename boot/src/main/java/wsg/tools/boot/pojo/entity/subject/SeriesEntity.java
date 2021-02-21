@@ -1,17 +1,13 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Entity of TV series.
@@ -20,10 +16,9 @@ import java.util.Objects;
  * @since 2020/8/5
  */
 @Setter
-@Getter
 @Entity
 @Table(name = "video_series")
-public class SeriesEntity extends IdentityEntity implements ImdbIdentifier, YearSupplier {
+public class SeriesEntity extends IdentityEntity {
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;
@@ -43,20 +38,27 @@ public class SeriesEntity extends IdentityEntity implements ImdbIdentifier, Year
     @Column(nullable = false)
     private Integer seasonsCount;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        SeriesEntity that = (SeriesEntity) o;
-        return Objects.equals(getId(), that.getId());
+    public String getImdbId() {
+        return imdbId;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId());
+    public String getZhTitle() {
+        return zhTitle;
+    }
+
+    public String getEnTitle() {
+        return enTitle;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public List<LanguageEnum> getLanguages() {
+        return languages;
+    }
+
+    public Integer getSeasonsCount() {
+        return seasonsCount;
     }
 }
