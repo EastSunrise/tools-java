@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * Supply a code, usually stored in the database.
+ * Represents a supplier of a code.
  *
  * @author Kingen
  * @since 2020/6/17

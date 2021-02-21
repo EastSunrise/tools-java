@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * Supply a setter for one property of the given type.
+ * Represents a supplier of a setter for one property of the given type.
  *
  * @author Kingen
  * @since 2020/7/23

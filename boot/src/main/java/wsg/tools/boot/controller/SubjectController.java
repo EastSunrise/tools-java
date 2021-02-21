@@ -107,7 +107,7 @@ public class SubjectController extends AbstractController {
             MovieDto movieDto = new MovieDto();
             movieDto.setId(movie.getId());
             movieDto.setImdbId(movie.getImdbId());
-            movieDto.setTitle(movie.getTitle());
+            movieDto.setZhTitle(movie.getZhTitle());
             movieDto.setOriginalTitle(movie.getOriginalTitle());
             movieDto.setYear(movie.getYear());
             movieDto.setLanguages(movie.getLanguages());
@@ -132,7 +132,7 @@ public class SubjectController extends AbstractController {
             List<SeasonDto> seasons = entry.getValue().stream().map(season -> {
                 SeasonDto seasonDto = new SeasonDto();
                 seasonDto.setId(season.getId());
-                seasonDto.setTitle(season.getTitle());
+                seasonDto.setZhTitle(season.getZhTitle());
                 seasonDto.setYear(season.getYear());
                 seasonDto.setDbId(season.getDbId());
                 seasonDto.setDurations(season.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)

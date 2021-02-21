@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * Supply an English text, usually used to display.
+ * Represents a supplier of an English text, usually used to display.
  *
  * @author Kingen
  * @since 2020/6/19

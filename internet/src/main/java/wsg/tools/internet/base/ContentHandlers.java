@@ -71,7 +71,7 @@ public final class ContentHandlers {
 
         @Override
         public String suffix() {
-            return null;
+            return "json";
         }
     }
 

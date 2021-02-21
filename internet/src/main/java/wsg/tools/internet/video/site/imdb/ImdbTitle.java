@@ -32,7 +32,7 @@ import java.util.List;
 public class ImdbTitle extends BaseImdbTitle {
 
     @JsonProperty("name")
-    private String text;
+    private String enTitle;
     @JsonProperty("url")
     private String url;
     @JsonProperty("genre")
@@ -81,8 +81,8 @@ public class ImdbTitle extends BaseImdbTitle {
         this.release = release;
     }
 
-    void setText(String text) {
-        this.text = text;
+    void setEnTitle(String enTitle) {
+        this.enTitle = enTitle;
     }
 
     void setDuration(Duration duration) {

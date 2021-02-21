@@ -37,7 +37,7 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     private String tmpdir;
 
     public String getLocation(MovieEntity entity) {
-        String title = entity.getTitle();
+        String title = entity.getZhTitle();
         if (entity.getOriginalTitle() != null) {
             title += NAME_SEPARATOR + entity.getOriginalTitle();
         }
@@ -45,7 +45,7 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     }
 
     public String getLocation(SeriesEntity entity) {
-        return cdn + File.separator + TV_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(entity.getTitle());
+        return cdn + File.separator + TV_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(entity.getZhTitle());
     }
 
     public String getLocation(SeasonEntity season) {

@@ -32,7 +32,7 @@ $(function () {
 });
 
 function getId(_this) {
-    return _this.parent().find("[name=id]").val();
+    return _this.parentsUntil("tbody", "tr").children(":first").attr("id");
 }
 
 /**

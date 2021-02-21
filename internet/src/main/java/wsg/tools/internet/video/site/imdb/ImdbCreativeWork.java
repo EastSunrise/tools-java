@@ -1,7 +1,5 @@
 package wsg.tools.internet.video.site.imdb;
 
-import java.time.Year;
-
 /**
  * IMDb creative works.
  *
@@ -10,16 +8,16 @@ import java.time.Year;
  */
 public class ImdbCreativeWork extends ImdbTitle {
 
-    private Year year;
+    private Integer year;
 
     ImdbCreativeWork() {
     }
 
-    public Year getYear() {
+    public Integer getYear() {
         return year;
     }
 
-    void setYear(Year year) {
+    void setYear(int year) {
         this.year = year;
     }
 }

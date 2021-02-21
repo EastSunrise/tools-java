@@ -158,7 +158,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         movieEntity.setImdbId(imdbId);
         Set<Duration> durations = new HashSet<>();
         if (doubanMovie != null) {
-            movieEntity.setTitle(doubanMovie.getTitle());
+            movieEntity.setZhTitle(doubanMovie.getZhTitle());
             movieEntity.setOriginalTitle(doubanMovie.getOriginalTitle());
             movieEntity.setYear(doubanMovie.getYear());
             movieEntity.setLanguages(doubanMovie.getLanguages());
@@ -169,7 +169,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             }
         }
         if (imdbMovie != null) {
-            movieEntity.setText(imdbMovie.getText());
+            movieEntity.setEnTitle(imdbMovie.getEnTitle());
             if (movieEntity.getYear() == null) {
                 movieEntity.setYear(imdbMovie.getYear());
             }
@@ -234,13 +234,13 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             if (optional.isEmpty()) {
                 SeriesEntity seriesEntity = new SeriesEntity();
                 seriesEntity.setImdbId(seriesImdbId);
-                seriesEntity.setText(imdbSeries.getText());
+                seriesEntity.setEnTitle(imdbSeries.getEnTitle());
                 seriesEntity.setYear(imdbSeries.getRangeYear().getStart());
                 if (imdbSeries.getLanguages() != null) {
                     seriesEntity.setLanguages(imdbSeries.getLanguages());
                 }
                 seriesEntity.setSeasonsCount(seasonsCount);
-                seriesEntity.setTitle(extractTitle(seasons.stream().map(Pair::getLeft).collect(Collectors.toList())));
+                seriesEntity.setZhTitle(extractTitle(seasons.stream().map(Pair::getLeft).collect(Collectors.toList())));
                 series = seriesRepository.insert(seriesEntity);
             } else {
                 series = optional.get();
@@ -325,7 +325,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
         SeasonEntity seasonEntity = new SeasonEntity();
         seasonEntity.setDbId(seasonDbId);
-        seasonEntity.setTitle(subject.getTitle());
+        seasonEntity.setZhTitle(subject.getZhTitle());
         seasonEntity.setOriginalTitle(subject.getOriginalTitle());
         seasonEntity.setYear(subject.getYear());
         seasonEntity.setLanguages(subject.getLanguages());
@@ -364,7 +364,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         } catch (HttpResponseException | NotFoundException e) {
             throw new UnexpectedException(e);
         }
-        episodeEntity.setText(imdbTitle.getText());
+        episodeEntity.setEnTitle(imdbTitle.getEnTitle());
         episodeEntity.setReleased(imdbTitle.getRelease());
         if (imdbTitle.getRuntimes() != null) {
             episodeEntity.setDurations(imdbTitle.getRuntimes().stream().sorted().collect(Collectors.toList()));
@@ -378,7 +378,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      */
     private String extractTitle(List<SeasonEntity> seasons) throws DataIntegrityException {
         seasons.sort(Comparator.comparingInt(SeasonEntity::getCurrentSeason));
-        String title = seasons.get(0).getTitle();
+        String title = seasons.get(0).getZhTitle();
         final String first = " 第一季";
         if (title.endsWith(first)) {
             title = title.substring(0, title.length() - 4);
@@ -391,7 +391,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             }
             String ji = "第" + StringUtilsExt.chineseNumeric(currentSeason) + "季";
             Pattern pattern = Pattern.compile(encoded + "(" + currentSeason + "[\u4E00-\u9FBF]*| " + ji + ")");
-            if (!pattern.matcher(season.getTitle()).matches()) {
+            if (!pattern.matcher(season.getZhTitle()).matches()) {
                 throw new DataIntegrityException("Can't extract title of the series.");
             }
         }

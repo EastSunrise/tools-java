@@ -3,7 +3,6 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
@@ -24,16 +23,16 @@ import java.util.Objects;
 @Getter
 @Entity
 @Table(name = "video_series")
-public class SeriesEntity extends IdentityEntity implements ImdbIdentifier, YearSupplier, TitleSupplier {
+public class SeriesEntity extends IdentityEntity implements ImdbIdentifier, YearSupplier {
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;
 
     @Column(nullable = false, length = 63)
-    private String title;
+    private String zhTitle;
 
     @Column(nullable = false, length = 127)
-    private String text;
+    private String enTitle;
 
     @Column(nullable = false)
     private Integer year;

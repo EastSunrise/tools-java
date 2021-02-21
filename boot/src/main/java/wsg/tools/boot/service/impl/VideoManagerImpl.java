@@ -16,7 +16,6 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
@@ -87,17 +86,17 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public VideoStatus getStatus(MovieEntity movie) {
-        return getStatus(movie, this::getFile, 1);
+        return getStatus(movie, this::getFile, 1, movie.getZhTitle());
     }
 
     @Override
     public VideoStatus getStatus(SeasonEntity season) {
-        return getStatus(season, this::getFile, season.getEpisodesCount());
+        return getStatus(season, this::getFile, season.getEpisodesCount(), season.getZhTitle());
     }
 
-    private <T extends YearSupplier & TitleSupplier> VideoStatus getStatus(T t, Function<T, Optional<File>> getFile, int count) {
+    private <T extends YearSupplier> VideoStatus getStatus(T t, Function<T, Optional<File>> getFile, int count, String zhTitle) {
         try {
-            return archive(t, getFile, count, null);
+            return archive(t, getFile, count, zhTitle, null);
         } catch (IOException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -105,7 +104,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public VideoStatus archive(MovieEntity movie) throws IOException {
-        return archive(movie, this::getFile, 1, (tempDir, videoFiles) -> {
+        return archive(movie, this::getFile, 1, movie.getZhTitle(), (tempDir, videoFiles) -> {
             File srcFile = videoFiles.iterator().next();
             String suffix = FilenameUtils.getExtension(srcFile.getName());
             File destFile = new File(pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
@@ -117,7 +116,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
 
     @Override
     public VideoStatus archive(SeasonEntity season) throws IOException {
-        return archive(season, this::getFile, season.getEpisodesCount(), (tempDir, videoFiles) -> {
+        return archive(season, this::getFile, season.getEpisodesCount(), season.getZhTitle(), (tempDir, videoFiles) -> {
             Map<String, File> movedFiles = new HashMap<>(season.getEpisodesCount());
             for (File srcFile : videoFiles) {
                 Matcher matcher = EPISODE_FILE_REGEX.matcher(FilenameUtils.getBaseName(srcFile.getName()));
@@ -162,8 +161,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         });
     }
 
-    private <T extends YearSupplier & TitleSupplier> VideoStatus archive(
-            T t, Function<T, Optional<File>> getFile, int count, @Nullable ThrowableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
+    private <T extends YearSupplier> VideoStatus archive(T t, Function<T, Optional<File>> getFile, int count, String zhTitle,
+                                                         @Nullable ThrowableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
             throws IOException {
         if (Year.now().getValue() < t.getYear()) {
             return VideoStatus.COMING;
@@ -172,7 +171,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (optional.isPresent()) {
             return VideoStatus.ARCHIVED;
         }
-        File tempDir = pathConfig.tmpdir(t.getTitle());
+        File tempDir = pathConfig.tmpdir(zhTitle);
         if (!tempDir.isDirectory()) {
             return VideoStatus.TO_DOWNLOAD;
         }

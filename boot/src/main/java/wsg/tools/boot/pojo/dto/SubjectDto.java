@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class SubjectDto extends BaseDto implements DoubanIdentifier {
 
     private Long id;
-    private String title;
+    private String zhTitle;
     private Integer year;
     private Long dbId;
     private String durations;

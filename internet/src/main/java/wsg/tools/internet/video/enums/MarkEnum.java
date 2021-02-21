@@ -1,6 +1,6 @@
 package wsg.tools.internet.video.enums;
 
-import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/23
  */
-public enum MarkEnum implements TitleSupplier, CodeSupplier<Integer>, PathParameterized {
+public enum MarkEnum implements TitleSupplier, IntCodeSupplier, PathParameterized {
     /**
      * wish/do/collect
      */

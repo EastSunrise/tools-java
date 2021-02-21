@@ -28,7 +28,7 @@ public class EpisodeEntity extends IdentityEntity implements ImdbIdentifier {
     private String imdbId;
 
     @Column(nullable = false, length = 127)
-    private String text;
+    private String enTitle;
 
     private LocalDate released;
 

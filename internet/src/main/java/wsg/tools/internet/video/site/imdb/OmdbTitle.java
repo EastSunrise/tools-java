@@ -26,7 +26,7 @@ import java.util.List;
 public class OmdbTitle extends BaseImdbTitle {
 
     @JsonProperty("title")
-    private String text;
+    private String enTitle;
     private RatingEnum rated;
     @JsonProperty("released")
     @JsonFormat(pattern = "dd MMM yyyy")

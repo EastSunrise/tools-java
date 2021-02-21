@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
 import lombok.Getter;
-import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.base.PathParameterized;
 
 /**
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.PathParameterized;
  * @author Kingen
  * @since 2020/6/29
  */
-public enum CatalogEnum implements CodeSupplier<Integer>, PathParameterized {
+public enum CatalogEnum implements IntCodeSupplier, PathParameterized {
     /**
      * movie/book/music
      */

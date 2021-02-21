@@ -10,7 +10,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/6/17
  */
-public enum GenreEnum implements TitleSupplier, TextSupplier, AkaPredicate<String> {
+public enum GenreEnum implements TextSupplier, TitleSupplier, AkaPredicate<String> {
     /**
      * Kinds of genres
      */

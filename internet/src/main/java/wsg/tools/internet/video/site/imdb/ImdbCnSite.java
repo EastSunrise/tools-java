@@ -104,7 +104,7 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
             }
         }
 
-        imdbTitle.setText(fields.get("etitle").val());
+        imdbTitle.setEnTitle(fields.get("etitle").val());
         if (duration != null) {
             imdbTitle.setRuntimes(Collections.singletonList(duration));
         }

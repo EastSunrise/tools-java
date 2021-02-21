@@ -3,7 +3,7 @@ package wsg.tools.common.util.function;
 import java.util.Map;
 
 /**
- * Supply an instance of the given type {@link T}.
+ * Represents a supplier of an instance of the given type {@link T}.
  *
  * @author Kingen
  * @since 2020/7/23

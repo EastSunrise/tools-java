@@ -26,7 +26,6 @@ import wsg.tools.internet.video.enums.RatingEnum;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.time.Year;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -115,7 +114,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             }
         } else if (title instanceof ImdbCreativeWork) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(WORK_PAGE_TITLE_REGEX, document.title());
-            ((ImdbCreativeWork) title).setYear(Year.of(Integer.parseInt(matcher.group("year"))));
+            ((ImdbCreativeWork) title).setYear(Integer.parseInt(matcher.group("year")));
         } else {
             throw new UnexpectedContentException("Unknown type of imdb title: " + tt);
         }

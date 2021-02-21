@@ -17,7 +17,8 @@ import java.util.List;
 @JsonIgnoreProperties(value = {"Response", "Error"})
 public class OmdbSeason {
 
-    private String title;
+    @JsonProperty("title")
+    private String enTitle;
     @JsonProperty("Season")
     private Integer currentSeason;
     private Integer totalSeasons;

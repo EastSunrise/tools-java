@@ -29,7 +29,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = DoubanSeries.class, name = "TVSeries"),
         @JsonSubTypes.Type(value = DoubanMovie.class, name = "Movie")
 })
-@JsonIgnoreProperties(value = "@context")
+@JsonIgnoreProperties(value = {"@context", "name"})
 public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentifier {
 
     private long id;
@@ -65,7 +65,7 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     @JsonProperty("aggregateRating")
     private AggregateRating rating;
 
-    private String title;
+    private String zhTitle;
     private String imdbId;
     private String originalTitle;
     private int year;
@@ -104,8 +104,8 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
         this.imdbId = imdbId;
     }
 
-    void setTitle(String title) {
-        this.title = title;
+    void setZhTitle(String zhTitle) {
+        this.zhTitle = zhTitle;
     }
 
     @Nullable

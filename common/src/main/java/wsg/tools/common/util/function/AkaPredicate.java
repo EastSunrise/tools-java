@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * Indicate what the object is also known as.
+ * Represents a predicate (boolean-valued function) of that the object is also known as.
  *
  * @author Kingen
  * @since 2020/6/19

@@ -131,15 +131,15 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         }
 
         subject.setId(subjectId);
-        String title = RegexUtils.matchesOrElseThrow(PAGE_TITLE_REGEX, document.title()).group("t");
-        subject.setTitle(title);
+        String zhTitle = RegexUtils.matchesOrElseThrow(PAGE_TITLE_REGEX, document.title()).group("t");
+        subject.setZhTitle(zhTitle);
         String name = subject.getName().replace("  ", " ");
-        if (name.startsWith(title)) {
-            if (name.length() > title.length()) {
-                subject.setOriginalTitle(StringEscapeUtils.unescapeHtml4(name.substring(title.length()).strip()));
+        if (name.startsWith(zhTitle)) {
+            if (name.length() > zhTitle.length()) {
+                subject.setOriginalTitle(StringEscapeUtils.unescapeHtml4(name.substring(zhTitle.length()).strip()));
             }
         } else {
-            throw new UnexpectedContentException("Name and title are not matched.");
+            throw new UnexpectedContentException("Name and zhTitle are not matched.");
         }
 
         String year = StringUtils.strip(document.selectFirst("span.year").html(), "()");

@@ -2,12 +2,8 @@
     <div>
         <table class="layui-table">
             <tr>
-                <td>${series.title}</td>
-                <#if series.imdbId??>
-                    <td>
-                        <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.text}</a>
-                    </td>
-                </#if>
+                <td>${series.zhTitle}</td>
+                <td><a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.enTitle}</a></td>
             </tr>
         </table>
         <table class="layui-table">
@@ -18,17 +14,15 @@
                 </#list>
             </tr>
             <tr>
-                <th>Douban</th>
+                <th>Title</th>
                 <#list seasons as season>
-                    <td>
-                        <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.title}</a>
-                    </td>
+                    <td><a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.zhTitle}</a></td>
                 </#list>
             </tr>
             <tr>
                 <th>Year</th>
                 <#list seasons as season>
-                    <td>${season.year}</td>
+                    <td>${season.year?c}</td>
                 </#list>
             </tr>
         </table>

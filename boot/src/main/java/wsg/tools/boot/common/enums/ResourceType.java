@@ -1,7 +1,7 @@
 package wsg.tools.boot.common.enums;
 
 import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.impl.*;
@@ -12,7 +12,7 @@ import wsg.tools.internet.resource.impl.*;
  * @author Kingen
  * @since 2020/11/3
  */
-public enum ResourceType implements CodeSupplier<Integer>, AkaPredicate<Class<? extends AbstractResource>>, TextSupplier {
+public enum ResourceType implements IntCodeSupplier, AkaPredicate<Class<? extends AbstractResource>>, TextSupplier {
 
     /**
      * all types, referring to subclasses of {@link AbstractResource}.

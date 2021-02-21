@@ -49,7 +49,7 @@ public class ResourceController extends AbstractController {
         MovieEntity movieEntity = optional.get();
         model.addAttribute("movie", movieEntity);
         if (StringUtils.isBlank(key)) {
-            key = movieEntity.getTitle();
+            key = movieEntity.getZhTitle();
         }
         model.addAttribute("items", resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
         return "video/movie/resources";
@@ -66,7 +66,7 @@ public class ResourceController extends AbstractController {
         List<SeasonEntity> seasons = pair.getRight();
         model.addAttribute("seasons", seasons);
         if (StringUtils.isBlank(key)) {
-            key = seriesEntity.getTitle();
+            key = seriesEntity.getZhTitle();
         }
         Set<ResourceItemEntity> items = new HashSet<>(resourceService.search(key, null, seriesEntity.getImdbId()));
         seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));

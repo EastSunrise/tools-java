@@ -9,7 +9,10 @@ import wsg.tools.common.util.function.TextSupplier;
  * @since 2021/2/20
  */
 public enum RatingSource implements TextSupplier {
-    IMDB("Internet Movie Database");
+    IMDB("Internet Movie Database"),
+    ROTTEN_TOMATOES("Rotten Tomatoes"),
+    METACRITIC("Metacritic"),
+    ;
 
     private final String text;
 

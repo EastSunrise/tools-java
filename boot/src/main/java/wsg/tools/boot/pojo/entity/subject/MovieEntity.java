@@ -3,7 +3,6 @@ package wsg.tools.boot.pojo.entity.subject;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.site.douban.DoubanIdentifier;
@@ -25,7 +24,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "video_movie")
-public class MovieEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier, YearSupplier, TitleSupplier {
+public class MovieEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier, YearSupplier {
 
     @Column(unique = true)
     private Long dbId;
@@ -33,11 +32,11 @@ public class MovieEntity extends IdentityEntity implements DoubanIdentifier, Imd
     @Column(unique = true, length = 10)
     private String imdbId;
 
-    @Column(nullable = false, length = 63)
-    private String title;
+    @Column(length = 63)
+    private String zhTitle;
 
     @Column(length = 127)
-    private String text;
+    private String enTitle;
 
     @Column(length = 127)
     private String originalTitle;

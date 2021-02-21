@@ -2,17 +2,12 @@
     <div>
         <table class="layui-table">
             <tr>
-                <td>${movie.title}</td>
-                <td>${movie.year}</td>
                 <#if movie.dbId??>
-                    <td>
-                        <a href="https://movie.douban.com/subject/${movie.dbId?c}/" target="_blank">${movie.title}</a>
-                    </td>
+                    <td><a href="https://movie.douban.com/subject/${movie.dbId?c}/" target="_blank">${movie.zhTitle}</a></td>
                 </#if>
+                <td>${movie.year?c}</td>
                 <#if movie.imdbId??>
-                    <td>
-                        <a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">${(movie.text)!""}</a>
-                    </td>
+                    <td><a href="https://imdb.cn/title/${movie.imdbId}/" target="_blank">${(movie.enTitle)!"NO_TEXT"}</a></td>
                 </#if>
             </tr>
         </table>
@@ -24,7 +19,6 @@
                 <tr>
                     <th>No.</th>
                     <th>Title</th>
-                    <th>Year</th>
                     <th>Type</th>
                     <th>Douban</th>
                     <th>IMDb</th>
@@ -36,12 +30,9 @@
                     <tr>
                         <td>${item_index+1}</td>
                         <td style="width: 400px">
-                            <a href="${item.url}" target="_blank">${item.title}</a>
+                            <a href="${item.url}" target="_blank">${item.title}<#if item.year??>(${item.year?c})</#if></a>
                             <a href="https://search.douban.com/movie/subject_search?search_text=${item.title}&cat=1002" class="layui-icon layui-icon-search"
                                target="_blank"></a>
-                        </td>
-                        <td>
-                            <#if item.year??>${item.year?c}</#if>
                         </td>
                         <td>${item.type}</td>
                         <td>

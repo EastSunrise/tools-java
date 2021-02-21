@@ -31,20 +31,21 @@
                     <tbody>
                     <#list movies as movie>
                         <tr>
+                            <td hidden="hidden" id="${movie.id?c}" title="${movie.zhTitle}"></td>
                             <td>${movie_index+1}</td>
                             <td>
-                                <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.title}
+                                <a href="https://movie.douban.com/subject/${movie.dbId?c}" target="_blank">${movie.zhTitle}
                                     <#if movie.originalTitle??>${movie.originalTitle}</#if> (${movie.year?c})</a>
-                                <a class="layui-icon layui-icon-search" href="https://www.baidu.com/s?wd=${movie.title}" target="_blank"></a>
+                                &nbsp;
+                                <a class="layui-icon layui-icon-search" href="https://www.baidu.com/s?wd=${movie.zhTitle}" target="_blank"
+                                   title="Search by Baidu"></a>
+                                <span class="link movie-search layui-icon layui-icon-search" title="Query resources with the title"></span>
+                                <span class="link movie-input layui-icon layui-icon-edit" title="Query resources with input key"></span>
                             </td>
                             <td>${(movie.languages[0].title)!""}</td>
                             <td>${movie.durations}</td>
                             <td>
-                                <input type="hidden" name="id" value="${movie.id?c}">
                                 <#assign sc = movie.status.code/>
-                                <i class="link movie-search layui-icon layui-icon-search" title="Query resources with the title"></i>
-                                <i class="link movie-input layui-icon layui-icon-edit" title="Query resources with input key"></i>
-                                &nbsp;
                                 <#if sc == 30>
                                     <a href="/video/resource/index?dbId=${movie.dbId?c!''}&imdbId=${movie.imdbId!''}&chosen=true" target="_blank"
                                        class="link layui-icon layui-icon-link" title="Choose resources to download"></a>
@@ -71,9 +72,7 @@
                         <th>No.</th>
                         <th>Title</th>
                         <th>Language</th>
-                        <th>Resources</th>
                         <th>Season</th>
-                        <th>Year</th>
                         <th>Episodes</th>
                         <th>Durations</th>
                         <th>Video</th>
@@ -84,24 +83,24 @@
                         <#assign series=tv.series>
                         <#assign seasons=tv.seasons?sort_by('currentSeason')>
                         <tr>
+                            <td hidden="hidden" id="${series.id?c}"></td>
                             <#assign rows=(seasons?size)+1>
                             <td rowspan="${rows}">${tv_index+1}</td>
                             <td rowspan="${rows}">
-                                <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.title}</a>
+                                <a href="https://imdb.cn/title/${series.imdbId}/" target="_blank">${series.zhTitle}</a>
+                                &nbsp;
+                                <a class="layui-icon layui-icon-search" href="https://www.baidu.com/s?wd=${series.zhTitle}" target="_blank"
+                                   title="Search by Baidu"></a>
+                                <span class="link series-search layui-icon layui-icon-search" title="Query resources with the title"></span>
+                                <span class="link series-input layui-icon layui-icon-edit" title="Query resources with input key"></span>
                             </td>
                             <td rowspan="${rows}">${(series.languages[0].title)!""}</td>
-                            <td rowspan="${rows}">
-                                <input type="hidden" name="id" value="${series.id?c}">
-                                <i class="link series-search layui-icon layui-icon-search" title="Query resources with the title"></i>
-                                <i class="link series-input layui-icon layui-icon-edit" title="Query resources with input key"></i>
-                            </td>
                         </tr>
                         <#list seasons as season>
                             <tr>
                                 <td>
-                                    <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.title}</a>
+                                    <a href="https://movie.douban.com/subject/${season.dbId?c}/" target="_blank">${season.zhTitle} (${season.year?c})</a>
                                 </td>
-                                <td>${season.year?c}</td>
                                 <td>${season.episodesCount?c}</td>
                                 <td>${season.durations}</td>
                                 <td>
@@ -114,7 +113,7 @@
                                         <span class="click-tip" hidden="hidden"></span>
                                         <i class="link video-archive" title="Archived downloaded resources"> Archive </i>
                                     <#elseif sc==20>
-                                        <i class="video-open layui-icon layui-icon-video" title="Open the video"></i>
+                                        <span class="link video-open layui-icon layui-icon-video" title="Open the video"></span>
                                     <#else>
                                         ${season.status.text}
                                     </#if>
