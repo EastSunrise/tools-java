@@ -93,7 +93,7 @@ function search(url, id, key) {
     })
 }
 
-const ARCHIVED_CODE = 20;
+const ARCHIVED = 'Archived';
 
 /**
  * Archive a subject
@@ -130,9 +130,9 @@ function archive(ele, id) {
         'success': function (status) {
             clearInterval(timer);
             ele.remove();
-            tip.text(status.text);
-            if (status.code !== ARCHIVED_CODE) {
-                alert('Failed to archive the subject: ' + (status.text.toUpperCase()));
+            tip.text(status);
+            if (status !== ARCHIVED) {
+                alert('Failed to archive the subject: ' + (status.toUpperCase()));
             }
         },
         error: function (xhr) {

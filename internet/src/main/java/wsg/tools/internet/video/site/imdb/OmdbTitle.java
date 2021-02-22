@@ -27,6 +27,7 @@ public class OmdbTitle extends BaseImdbTitle {
 
     @JsonProperty("title")
     private String enTitle;
+    private Integer year;
     private RatingEnum rated;
     @JsonProperty("released")
     @JsonFormat(pattern = "dd MMM yyyy")

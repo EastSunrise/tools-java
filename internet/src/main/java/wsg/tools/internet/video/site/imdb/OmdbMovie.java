@@ -15,8 +15,6 @@ import java.time.LocalDate;
 @Getter
 public class OmdbMovie extends OmdbTitle {
 
-    private Integer year;
-
     @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate dvd;
     private Money boxOffice;
