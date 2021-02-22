@@ -14,4 +14,9 @@ class OmdbMovieAdapter extends OmdbTitleAdapter<OmdbMovie> implements ImdbMovieV
     OmdbMovieAdapter(OmdbMovie omdbMovie) {
         super(omdbMovie);
     }
+
+    @Override
+    public Integer getYear() {
+        return t.getYear();
+    }
 }

@@ -7,7 +7,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -27,8 +26,6 @@ public class EpisodeEntity extends IdentityEntity {
     @Column(nullable = false, length = 127)
     private String enTitle;
 
-    private LocalDate release;
-
     private Integer year;
 
     @Column(length = 63)
@@ -39,10 +36,6 @@ public class EpisodeEntity extends IdentityEntity {
 
     @Column(nullable = false)
     private Integer currentEpisode;
-
-    public LocalDate getRelease() {
-        return release;
-    }
 
     public List<Duration> getDurations() {
         return durations;

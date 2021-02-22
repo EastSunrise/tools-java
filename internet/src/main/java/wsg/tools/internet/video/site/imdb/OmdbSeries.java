@@ -1,6 +1,7 @@
 package wsg.tools.internet.video.site.imdb;
 
 import lombok.Getter;
+import wsg.tools.internet.video.common.RangeYear;
 
 /**
  * OMDb TV series.
@@ -11,5 +12,6 @@ import lombok.Getter;
 @Getter
 public class OmdbSeries extends OmdbTitle {
 
+    private RangeYear year;
     private Integer totalSeasons;
 }

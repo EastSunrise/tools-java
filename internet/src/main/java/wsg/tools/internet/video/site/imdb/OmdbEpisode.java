@@ -12,6 +12,7 @@ import lombok.Getter;
 @Getter
 public class OmdbEpisode extends OmdbTitle {
 
+    private Integer year;
     @JsonProperty("Season")
     private Integer currentSeason;
     @JsonProperty("Episode")

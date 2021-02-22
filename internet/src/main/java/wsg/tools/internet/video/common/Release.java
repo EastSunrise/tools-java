@@ -23,6 +23,9 @@ public class Release {
     private final LocalDate date;
     private final String comment;
 
+    /**
+     * Constructs an instance from a text matching the pattern.
+     */
     public Release(@Nonnull String text) {
         Matcher matcher = RegexUtils.matchesOrElseThrow(RELEASE_REGEX, text);
         this.date = LocalDate.parse(matcher.group("l"));

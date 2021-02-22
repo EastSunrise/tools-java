@@ -350,7 +350,6 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             throw new UnexpectedException(e);
         }
         episodeEntity.setEnTitle(imdbEpisodeView.getEnTitle());
-        episodeEntity.setRelease(imdbEpisodeView.getRelease());
         episodeEntity.setDurations(imdbEpisodeView.getDurations());
         episodeEntity.setCurrentEpisode(currentEpisode);
         return episodeEntity;

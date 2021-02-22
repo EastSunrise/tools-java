@@ -20,6 +20,9 @@ public final class Runtime {
     private final Duration duration;
     private String comment;
 
+    /**
+     * Constructs an instance from a text matching the pattern.
+     */
     public Runtime(@Nonnull String text) {
         Matcher matcher = RUNTIME_REGEX.matcher(text);
         if (matcher.matches()) {

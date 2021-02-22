@@ -34,11 +34,6 @@ abstract class OmdbTitleAdapter<T extends OmdbTitle> implements ImdbView {
     }
 
     @Override
-    public Integer getYear() {
-        return t.getYear();
-    }
-
-    @Override
     public LocalDate getRelease() {
         return t.getRelease();
     }

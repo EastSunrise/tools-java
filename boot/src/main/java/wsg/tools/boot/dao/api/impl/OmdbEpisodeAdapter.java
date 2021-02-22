@@ -19,4 +19,9 @@ class OmdbEpisodeAdapter extends OmdbTitleAdapter<OmdbEpisode> implements ImdbEp
     public String getSeriesId() {
         return t.getSeriesId();
     }
+
+    @Override
+    public Integer getYear() {
+        return t.getYear();
+    }
 }
