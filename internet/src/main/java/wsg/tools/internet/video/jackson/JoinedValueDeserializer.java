@@ -34,7 +34,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
             if (StringUtils.isBlank(text) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
-            String[] values = StringUtils.split(text, separator);
+            String[] values = StringUtils.splitByWholeSeparator(text, separator);
             ObjectMapper mapper = (ObjectMapper) parser.getCodec();
             List<Object> list = new ArrayList<>();
             for (String value : values) {

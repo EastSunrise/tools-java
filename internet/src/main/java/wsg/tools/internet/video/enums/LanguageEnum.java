@@ -48,9 +48,12 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     FUR("Friulian", "弗留利语", new String[]{"Fur"}),
     SIO("Sioux", "苏语"),
     NAP("Neapolitan", "那不勒斯语"),
+    NAI("North American Indian", "北美印第安语"),
+    HUN("Huns", "匈奴语"),
     PAR("Parsee", "帕西语"),
     FLE("Flemish", "弗拉芒语"),
-    LAD("Ladakh", "拉达克语"),
+    PAW("Pawnee", "波尼语"),
+    LAD("Ladakh", "拉达克语", new String[]{"Ladakhi"}),
 
     /**
      * Manual languages, three-letter abbreviation as code
@@ -65,9 +68,6 @@ public enum LanguageEnum implements CodeSupplier<String>, TextSupplier, TitleSup
     DOT("Dothraki", "多斯拉克语"),
     KLI("Klingon", "克林贡语"),
     CRE("Creole", "克里奥尔语"),
-    PAW("Pawnee", "波尼语"),
-    NAI("North American Indian", "北美印第安语"),
-    HUN("Huns", "匈奴语"),
 
     /**
      * Other ISO languages

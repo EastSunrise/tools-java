@@ -387,7 +387,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     @Override
     public BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException {
         if (since == null) {
-            since = userRecordRepository.findMaxMarkDate().orElse(DoubanSite.DOUBAN_START_DATE);
+            since = userRecordRepository.findMaxMarkDate(userId).orElse(DoubanSite.DOUBAN_START_DATE);
         }
         log.info("Start to import douban subjects marked as {} of {} since {}", mark, userId, since);
         Map<Long, LocalDate> map = adapter.collectUserSubjects(userId, since, mark);
@@ -397,11 +397,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             Long id;
             try {
                 id = this.importSubjectByDb(entry.getKey()).getRecord();
-            } catch (DataIntegrityException e) {
+            } catch (DataIntegrityException | NotFoundException e) {
                 fails.put(entry.getKey(), e.getMessage());
                 continue;
-            } catch (NotFoundException e) {
-                throw new ShouldExistException(e);
             }
             count++;
             UserRecordEntity entity = new UserRecordEntity();

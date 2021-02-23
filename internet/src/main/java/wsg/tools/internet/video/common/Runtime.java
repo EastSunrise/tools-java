@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 public final class Runtime {
 
     private static final Pattern RUNTIME_REGEX = Pattern.compile("(?<m>\\d+) ?(分钟|min)?(\\((?<c>[^()\\d]+)\\))?");
+    private static final Pattern RUNTIME_REGEX2 = Pattern.compile("(?<c>[^()\\d]+): (?<m>\\d+) 分钟");
     private static final Pattern RANGE_RUNTIME_REGEX = Pattern.compile("(?<s>\\d+)[-–](?<e>\\d+)分钟");
 
     private final Duration duration;
@@ -25,6 +26,13 @@ public final class Runtime {
      */
     public Runtime(@Nonnull String text) {
         Matcher matcher = RUNTIME_REGEX.matcher(text);
+        if (matcher.matches()) {
+            this.duration = Duration.ofMinutes(Integer.parseInt(matcher.group("m")));
+            this.comment = matcher.group("c");
+            return;
+        }
+
+        matcher = RUNTIME_REGEX2.matcher(text);
         if (matcher.matches()) {
             this.duration = Duration.ofMinutes(Integer.parseInt(matcher.group("m")));
             this.comment = matcher.group("c");

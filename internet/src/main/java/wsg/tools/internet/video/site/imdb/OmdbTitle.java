@@ -25,6 +25,8 @@ import java.util.List;
 @JsonIgnoreProperties(value = {"Response", "Error"})
 public class OmdbTitle extends BaseImdbTitle {
 
+    private static final String SEPARATOR = ", ";
+
     @JsonProperty("title")
     private String enTitle;
     private RatingEnum rated;
@@ -35,22 +37,22 @@ public class OmdbTitle extends BaseImdbTitle {
     private String plot;
 
     @JsonProperty("Genre")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<GenreEnum> genres;
     @JsonProperty("Director")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<String> directors;
     @JsonProperty("Writer")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<String> writers;
     @JsonProperty("Actors")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<String> actors;
     @JsonProperty("Language")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<LanguageEnum> languages;
     @JsonProperty("Country")
-    @JoinedValue
+    @JoinedValue(separator = SEPARATOR)
     private List<RegionEnum> regions;
 
     private String awards;

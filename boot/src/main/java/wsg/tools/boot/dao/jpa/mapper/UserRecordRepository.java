@@ -18,10 +18,11 @@ public interface UserRecordRepository extends BaseRepository<UserRecordEntity, L
     /**
      * Query max of tag date
      *
+     * @param userId identifier of the user
      * @return max of tag date
      */
-    @Query("select max(markDate) from UserRecordEntity")
-    Optional<LocalDate> findMaxMarkDate();
+    @Query("select max(markDate) from UserRecordEntity where userId = ?1")
+    Optional<LocalDate> findMaxMarkDate(long userId);
 
     /**
      * Obtains an entity with the given subject id and user id.
