@@ -17,7 +17,7 @@ public class InvalidPasswordException extends InvalidResourceException {
      * If a required password is lacking.
      */
     public <T extends AbstractResource & PasswordProvider> InvalidPasswordException(Class<T> clazz, String title, String url) {
-        super("A password is required for " + clazz.getName(), title, url);
+        super("A password is required for " + clazz, title, url);
         this.password = null;
     }
 
@@ -25,7 +25,7 @@ public class InvalidPasswordException extends InvalidResourceException {
      * If the given password is invalid.
      */
     public <T extends AbstractResource & PasswordProvider> InvalidPasswordException(Class<T> clazz, String title, String url, String password) {
-        super("Not a valid password for " + clazz.getName(), title, url);
+        super("Not a valid password for " + clazz, title, url);
         this.password = password;
     }
 }

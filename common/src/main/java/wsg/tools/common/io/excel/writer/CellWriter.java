@@ -59,9 +59,9 @@ public class CellWriter<V> {
             if (setCellValue(cell, targetValue, targetType)) {
                 return;
             }
-            throw new IllegalArgumentException("Can't write type of " + targetType.getName() + " to a cell.");
+            throw new IllegalArgumentException("Can't write type of " + targetType + " to a cell.");
         }
-        throw new IllegalArgumentException("Can't write type of " + value.getClass().getName() + " to a cell.");
+        throw new IllegalArgumentException("Can't write type of " + value.getClass() + " to a cell.");
     }
 
     /**

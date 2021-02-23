@@ -18,7 +18,8 @@ import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
-import wsg.tools.boot.pojo.error.UnexpectedException;
+import wsg.tools.boot.pojo.error.ShouldExistException;
+import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
@@ -26,7 +27,6 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
@@ -81,6 +81,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             return SingleResult.of(optional.get().getId());
         }
 
+        log.info("Import a subject of Douban: {}", dbId);
         BaseDoubanSubject subject = adapter.doubanSubject(dbId);
         String imdbId = subject.getImdbId();
         if (subject instanceof DoubanMovie) {
@@ -130,7 +131,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             try {
                 doubanMovie = (DoubanMovie) adapter.doubanSubject(dbId);
             } catch (NotFoundException e) {
-                throw new UnexpectedException(e);
+                throw new ShouldExistException(e);
             }
         }
         String imdbId = imdbResult.getLeft();
@@ -139,7 +140,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             try {
                 imdbMovieView = (ImdbMovieView) adapter.imdbView(imdbId);
             } catch (NotFoundException e) {
-                throw new UnexpectedException(e);
+                throw new ShouldExistException(e);
             }
         }
         if (doubanMovie == null && imdbMovieView == null) {
@@ -202,14 +203,17 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             seriesImdbId = ((ImdbEpisodeView) imdbView).getSeriesId();
             try {
                 imdbSeriesView = (ImdbSeriesView) adapter.imdbView(seriesImdbId);
-            } catch (HttpResponseException | NotFoundException e) {
-                throw new UnexpectedException(e);
+            } catch (NotFoundException e) {
+                throw new ShouldExistException(e);
             }
         } else if (imdbView instanceof ImdbSeriesView) {
             seriesImdbId = imdbId;
             imdbSeriesView = (ImdbSeriesView) imdbView;
+        } else if (imdbView instanceof ImdbMovieView) {
+            throw new DataIntegrityException(String.format("Conflict type: %s or %s expected but %s provided.",
+                    ImdbSeriesView.class, ImdbEpisodeView.class, ImdbMovieView.class));
         } else {
-            throw new UnexpectedContentException(String.format("Unexpected type %s for title %s.", imdbView.getClass().getSimpleName(), imdbId));
+            throw new UnknownTypeException(imdbView.getClass());
         }
 
         Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>> result = getSeasons(imdbSeriesView.getEpisodes(), seriesImdbId);
@@ -339,15 +343,15 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return Pair.of(seasonEntity, episodeEntities);
     }
 
-    private EpisodeEntity getEpisode(String episodeImdbId, int currentEpisode) {
+    private EpisodeEntity getEpisode(String episodeImdbId, int currentEpisode) throws HttpResponseException {
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
 
         ImdbEpisodeView imdbEpisodeView;
         try {
             imdbEpisodeView = (ImdbEpisodeView) adapter.imdbView(episodeImdbId);
-        } catch (HttpResponseException | NotFoundException e) {
-            throw new UnexpectedException(e);
+        } catch (NotFoundException e) {
+            throw new ShouldExistException(e);
         }
         episodeEntity.setEnTitle(imdbEpisodeView.getEnTitle());
         episodeEntity.setDurations(imdbEpisodeView.getDurations());
@@ -397,7 +401,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 fails.put(entry.getKey(), e.getMessage());
                 continue;
             } catch (NotFoundException e) {
-                throw new UnexpectedException(e);
+                throw new ShouldExistException(e);
             }
             count++;
             UserRecordEntity entity = new UserRecordEntity();

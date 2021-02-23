@@ -1,5 +1,6 @@
 package wsg.tools.boot.dao.api.intf;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -15,6 +16,7 @@ public interface ImdbSeriesView extends ImdbView {
      *
      * @return the count
      */
+    @Nonnull
     Integer getSeasonsCount();
 
     /**

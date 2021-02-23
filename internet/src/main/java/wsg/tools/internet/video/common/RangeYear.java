@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class RangeYear {
 
-    private static final Pattern RANGE_YEAR_REGEX = Pattern.compile("(?<s>\\d{4})(–(?<e>\\d{4}))?");
+    private static final Pattern RANGE_YEAR_REGEX = Pattern.compile("(?<s>\\d{4})(–(?<e>\\d{4})?)?");
 
     private final int start;
     private final Integer end;

@@ -12,7 +12,7 @@ import lombok.Getter;
 public class UnknownResourceException extends InvalidResourceException {
 
     public UnknownResourceException(Class<? extends AbstractResource> clazz, String title, String url) {
-        super("Not a url of " + clazz.getName(), title, url);
+        super("Not a url of " + clazz, title, url);
     }
 
     public UnknownResourceException(String reason, String title, String url) {

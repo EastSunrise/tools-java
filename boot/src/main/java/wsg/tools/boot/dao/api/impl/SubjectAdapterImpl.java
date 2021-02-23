@@ -13,7 +13,7 @@ import wsg.tools.boot.dao.api.intf.ImdbView;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
-import wsg.tools.boot.pojo.error.UnexpectedException;
+import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.SiteStatusException;
@@ -104,7 +104,10 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
                 return new OmdbMovieAdapter((OmdbMovie) omdbTitle);
             }
             if (omdbTitle instanceof OmdbSeries) {
-                int totalSeasons = ((OmdbSeries) omdbTitle).getTotalSeasons();
+                Integer totalSeasons = ((OmdbSeries) omdbTitle).getTotalSeasons();
+                if (totalSeasons == null) {
+                    totalSeasons = 0;
+                }
                 List<String[]> allEpisodes = new ArrayList<>();
                 for (int i = 1; i <= totalSeasons; i++) {
                     OmdbSeason season = omdbSite.season(imdbId, i);
@@ -119,7 +122,7 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
             if (omdbTitle instanceof OmdbEpisode) {
                 return new OmdbEpisodeAdapter((OmdbEpisode) omdbTitle);
             }
-            throw new UnexpectedException("Unknown type '" + omdbTitle.getClass().getName() + "' from OMDb to project to ImdbView");
+            throw new UnknownTypeException(omdbTitle.getClass());
         }
         ImdbIdentifier identifier = handleException(imdbId, imdbRepository::getItemById);
         if (identifier instanceof ImdbTitle) {
@@ -133,7 +136,7 @@ public class SubjectAdapterImpl implements SubjectAdapter, DisposableBean {
                 return new ImdbEpisodeAdapter((ImdbEpisode) identifier);
             }
         }
-        throw new UnexpectedException("Unknown type '" + identifier.getClass().getName() + "' to project to ImdbView");
+        throw new UnknownTypeException(identifier.getClass());
     }
 
     private <T, R> R handleException(T t, ThrowableFunction<T, R, HttpResponseException> function) throws NotFoundException, HttpResponseException {

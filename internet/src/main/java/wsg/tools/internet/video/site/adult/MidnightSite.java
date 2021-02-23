@@ -11,7 +11,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.UnexpectedContentException;
 import wsg.tools.internet.resource.site.BaseRepository;
 import wsg.tools.internet.resource.site.RangeRepository;
 
@@ -118,10 +117,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
             for (Element li : lis) {
                 Element a = li.selectFirst(CssSelector.TAG_A);
                 String id = RegexUtils.matchesOrElseThrow(ACTRESS_ITEM_URL_REGEX, a.attr(CssSelector.ATTR_HREF)).group("id");
-                String prev = items.put(Integer.parseInt(id), a.attr("title"));
-                if (prev != null) {
-                    throw new UnexpectedContentException("Duplicate id: " + id);
-                }
+                items.put(Integer.parseInt(id), a.attr("title"));
             }
 
             Element next = document.selectFirst("div.pagination").selectFirst("a.next");

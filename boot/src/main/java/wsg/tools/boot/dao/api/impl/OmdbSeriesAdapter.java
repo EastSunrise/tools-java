@@ -3,7 +3,9 @@ package wsg.tools.boot.dao.api.impl;
 import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
 import wsg.tools.internet.video.site.imdb.OmdbSeries;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Projects {@link OmdbSeries} to {@link ImdbSeriesView}.
@@ -20,9 +22,10 @@ class OmdbSeriesAdapter extends OmdbTitleAdapter<OmdbSeries> implements ImdbSeri
         this.episodes = episodes;
     }
 
+    @Nonnull
     @Override
     public Integer getSeasonsCount() {
-        return t.getTotalSeasons();
+        return Objects.requireNonNullElse(t.getTotalSeasons(), 1);
     }
 
     @Override

@@ -3,6 +3,8 @@ package wsg.tools.internet.video.site.imdb;
 import lombok.Getter;
 import wsg.tools.internet.video.common.RangeYear;
 
+import javax.annotation.Nullable;
+
 /**
  * OMDb TV series.
  *
@@ -14,4 +16,9 @@ public class OmdbSeries extends OmdbTitle {
 
     private RangeYear year;
     private Integer totalSeasons;
+
+    @Nullable
+    public Integer getTotalSeasons() {
+        return totalSeasons;
+    }
 }

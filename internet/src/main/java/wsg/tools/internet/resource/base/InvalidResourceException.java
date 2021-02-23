@@ -18,7 +18,7 @@ public class InvalidResourceException extends Exception {
      * If the url is not a valid one of the given type {@code clazz}.
      */
     public InvalidResourceException(Class<? extends AbstractResource> clazz, String title, String url) {
-        super("Not a valid url of " + clazz.getName());
+        super("Not a valid url of " + clazz);
         this.title = title;
         this.url = url;
     }

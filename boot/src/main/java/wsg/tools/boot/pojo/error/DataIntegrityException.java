@@ -1,7 +1,7 @@
 package wsg.tools.boot.pojo.error;
 
 /**
- * Exceptions when data is lacking.
+ * Exceptions thrown when data are lacking.
  *
  * @author Kingen
  * @since 2020/11/22

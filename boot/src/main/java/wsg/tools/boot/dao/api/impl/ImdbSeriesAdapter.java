@@ -3,6 +3,7 @@ package wsg.tools.boot.dao.api.impl;
 import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
 import wsg.tools.internet.video.site.imdb.ImdbSeries;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -17,6 +18,7 @@ class ImdbSeriesAdapter extends ImdbTitleAdapter<ImdbSeries> implements ImdbSeri
         super(imdbSeries);
     }
 
+    @Nonnull
     @Override
     public Integer getSeasonsCount() {
         return Math.max(t.getEpisodes().size(), 1);
