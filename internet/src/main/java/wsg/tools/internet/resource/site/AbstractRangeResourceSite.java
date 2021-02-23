@@ -21,12 +21,12 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
     private Integer min;
     private Integer max;
 
-    protected AbstractRangeResourceSite(String name, String host) {
-        super(name, host);
+    protected AbstractRangeResourceSite(String name, String domain) {
+        super(name, domain);
     }
 
-    protected AbstractRangeResourceSite(String name, SchemeEnum scheme, String host) {
-        super(name, scheme, host);
+    protected AbstractRangeResourceSite(String name, SchemeEnum scheme, String domain) {
+        super(name, scheme, domain);
     }
 
     @Override

@@ -7,15 +7,16 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
@@ -35,37 +36,25 @@ import wsg.tools.internet.base.enums.SchemeEnum;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Base class for a website.
  * <p>
- * Steps to complete a request are as follows:
- * <ul>
- *      <li>Construct a {@link HttpRequestBase} which is based on scheme, host of the site and given arguments like path, query parameters.</li>
- *      <li>Execute the request to obtain target content which can be stored as a snapshot in case of next access.</li>
- *      <li>Transfer obtained content to target format, such as Java object, {@link Document}, or else.</li>
- * </ul>
- * Following methods are called to construct a request and transfer format of the content.
- * <ul>
- *     <li>{@link #getDocument}</li>
- *     <li>{@link #postDocument}</li>
- *     <li>{@link #getObject}</li>
- * </ul>
+ * Its core method is {@link #execute(RequestBuilder, ResponseHandler)} which executes the given request, handles the response
+ * by the given handler and returns the response as an object of target type: request → response → {@code <T>}.
+ * Methods {@link #handleRequest(RequestBuilder, HttpContext)} is overrideable to handle request before executing.
  * <p>
- * Method {@link #request} is main method to handle the snapshots which will be updated based on the {@code SnapshotStrategy}.
- * Method {@link #execute(RequestBuilder)} is called to execute a real request for target content.
+ * Method {@link #getContent(RequestBuilder, ContentHandler, SnapshotStrategy)} is an extension of {@link #execute}. It executes
+ * the given request, handles the response as a String, handles the String by the given {@code ContentHandler}, and finally
+ * returns the Sting as an object of target type: request → response → String → {@code T}.
+ * Methods {@link #handleResponse(HttpResponse)} and {@link #handleEntity(HttpEntity)} are overrideable to handle the response
+ * of the request before returning the content.
  * <p>
- * Following methods is overrideable to handle request or response in the process:
- * <ul>
- *     <li>{@link #handleEntity(HttpEntity)}</li>
- *     <li>{@link #handleRequest(RequestBuilder, HttpContext)}</li>
- *     <li>{@link #handleResponse(HttpResponse)}</li>
- *     <li>{@link ContentHandler#handleContent(String)}</li>
- * </ul>
+ * Methods {@link #getObject} are to obtain the json content and return as a given Java object.
+ * Methods {@link #getDocument} and {@link #postDocument} are to obtain the html content and return as a {@link Document}.
  * <p>
  * todo concurrency of requests
  *
@@ -81,6 +70,8 @@ public abstract class BaseSite implements Closeable {
      * temporary directory for snapshots and cookies.
      */
     private static final String TMPDIR = System.getProperty("java.io.tmpdir") + "tools";
+    private static final Header USER_AGENT = new BasicHeader(HTTP.USER_AGENT,
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
     private static final int TIME_OUT = 30000;
     private static final int MIN_ERROR_STATUS_CODE = 300;
 
@@ -94,7 +85,8 @@ public abstract class BaseSite implements Closeable {
     private final HttpClientContext context;
     private final Map<String, RateLimiter> limiters;
     private final CloseableHttpClient client;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor =
+            new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), Executors.defaultThreadFactory());
 
     public BaseSite(String name, String domain) {
         this(name, domain, DEFAULT_PERMITS_PER_SECOND);
@@ -117,10 +109,8 @@ public abstract class BaseSite implements Closeable {
         this.limiters = new HashMap<>(2);
         this.limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
         this.limiters.put(HttpPost.METHOD_NAME, RateLimiter.create(postPermitsPerSecond));
-        this.client =
-                HttpClientBuilder.create().setDefaultHeaders(Collections.singletonList(new BasicHeader(HTTP.USER_AGENT,
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                                + "(KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"))).setConnectionManager(new PoolingHttpClientConnectionManager()).build();
+        this.client = HttpClientBuilder.create().setDefaultHeaders(Collections.singletonList(USER_AGENT))
+                .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
         this.context = HttpClientContext.create();
         this.context.setRequestConfig(RequestConfig.custom().setConnectTimeout(TIME_OUT).setSocketTimeout(TIME_OUT).build());
         File file = cookieFile();
@@ -146,51 +136,54 @@ public abstract class BaseSite implements Closeable {
     }
 
     /**
-     * Return the document of html content of get request.
+     * Return the html content of the response as a {code Document}.
      */
     protected final Document getDocument(URIBuilder builder, SnapshotStrategy strategy) throws HttpResponseException {
-        return request(RequestBuilder.get(builder), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
+        return getContent(RequestBuilder.get(builder), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
     }
 
     /**
-     * Return the content of html content of post request.
+     * Return the html content of the response as a {code Document}.
      */
     protected final Document postDocument(URIBuilder builder, final List<BasicNameValuePair> params, SnapshotStrategy strategy) throws HttpResponseException {
-        return request(RequestBuilder.post(builder, params), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
+        return getContent(RequestBuilder.post(builder, params), ContentHandlers.DOCUMENT_CONTENT_HANDLER, strategy);
     }
 
     /**
-     * Return the content of response with a Java object.
+     * Return the json content of the response as a Java object.
      */
     protected final <T> T getObject(URIBuilder builder, Class<T> clazz) throws HttpResponseException {
         return getObject(builder, clazz, SnapshotStrategy.NEVER_UPDATE);
     }
 
     /**
-     * Return the content of response with a Java object.
+     * Return the json content of the response as a Java object.
      */
     protected final <T> T getObject(URIBuilder builder, Class<T> clazz, SnapshotStrategy strategy) throws HttpResponseException {
-        return request(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, clazz), strategy);
+        return getContent(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, clazz), strategy);
     }
 
     /**
-     * Return the content of response with a generic Java object.
+     * Return the json content of the response as a generic Java object.
      */
     protected final <T> T getObject(URIBuilder builder, TypeReference<T> type) throws HttpResponseException {
         return getObject(builder, type, SnapshotStrategy.NEVER_UPDATE);
     }
 
     /**
-     * Return the content of response with a generic Java object.
+     * Return the json content of the response as a generic Java object.
      */
     protected final <T> T getObject(URIBuilder builder, TypeReference<T> type, SnapshotStrategy strategy) throws HttpResponseException {
-        return request(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, type), strategy);
+        return getContent(RequestBuilder.get(builder), ContentHandlers.getJsonHandler(mapper, type), strategy);
     }
 
     /**
-     * Obtains target object by executing the request whose response can be written to a snapshot.
+     * Obtains the content of the response of the request and returns it as an object of type {@code T} by the given handler.
+     *
+     * @param handler  how to handle the content and return as an object of type {@code T}
+     * @param strategy the strategy of updating the snapshot
      */
-    protected final <T> T request(RequestBuilder builder, ContentHandler<T> handler, SnapshotStrategy strategy) throws HttpResponseException {
+    protected final <T> T getContent(RequestBuilder builder, ContentHandler<T> handler, SnapshotStrategy strategy) throws HttpResponseException {
         String filepath = builder.filepath();
         if (this instanceof Loggable) {
             Object user = ((Loggable<?>) this).user();
@@ -229,9 +222,8 @@ public abstract class BaseSite implements Closeable {
      * Obtains builder of request uri, including scheme, host, and path.
      */
     protected final URIBuilder builder(String subDomain, String path, Object... pathArgs) {
-        URIBuilder builder = new URIBuilder().setScheme(scheme.toString()).setHost(StringUtils.isBlank(subDomain) ?
-                domain :
-                subDomain + "." + domain);
+        URIBuilder builder = new URIBuilder().setScheme(scheme.toString())
+                .setHost(StringUtils.isBlank(subDomain) ? domain : subDomain + "." + domain);
         if (StringUtils.isNotBlank(path)) {
             builder.setPath(String.format(path, pathArgs));
         }
@@ -307,8 +299,11 @@ public abstract class BaseSite implements Closeable {
         return new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath + ".cookie"));
     }
 
+    /**
+     * Executes the request, handle the response, return it as a String, and write to the file as a snapshot.
+     */
     private String updateSnapshot(RequestBuilder builder, File file) throws HttpResponseException {
-        String content = execute(builder);
+        String content = execute(builder, this::handleResponse);
         try {
             FileUtils.write(file, content, UTF_8);
         } catch (IOException e) {
@@ -317,12 +312,17 @@ public abstract class BaseSite implements Closeable {
         return content;
     }
 
-    private String execute(RequestBuilder builder) throws HttpResponseException {
+    /**
+     * Executes the request and handle the response by the given handler.
+     *
+     * @return entity from the response
+     */
+    protected final <T> T execute(RequestBuilder builder, ResponseHandler<T> handler) throws HttpResponseException {
         handleRequest(builder, context);
         log.info("{} from {}", builder.getMethod(), builder.displayUrl());
         limiters.get(builder.getMethod()).acquire();
         try {
-            String content = client.execute(builder.build(), this::handleResponse, context);
+            T entity = client.execute(builder.build(), handler, context);
             executor.execute(() -> {
                 try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(cookieFile()))) {
                     log.info("Synchronize cookies of {}.", getName());
@@ -331,7 +331,7 @@ public abstract class BaseSite implements Closeable {
                     log.error(e.getMessage());
                 }
             });
-            return content;
+            return entity;
         } catch (HttpResponseException e) {
             throw e;
         } catch (IOException e) {

@@ -90,7 +90,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                 new BasicNameValuePair("remember", String.valueOf(true))
         );
         RequestBuilder requestBuilder = RequestBuilder.post(builder("accounts", "/j/mobile/login/basic"), params);
-        LoginResult loginResult = request(requestBuilder, ContentHandlers.getJsonHandler(mapper, LoginResult.class), SnapshotStrategy.ALWAYS_UPDATE);
+        LoginResult loginResult = getContent(requestBuilder, ContentHandlers.getJsonHandler(mapper, LoginResult.class), SnapshotStrategy.ALWAYS_UPDATE);
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }

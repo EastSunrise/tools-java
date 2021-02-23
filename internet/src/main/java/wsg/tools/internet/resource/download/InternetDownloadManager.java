@@ -1,9 +1,9 @@
 package wsg.tools.internet.resource.download;
 
-import org.apache.commons.io.FilenameUtils;
 import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.internet.resource.impl.HttpResource;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -22,7 +22,7 @@ public class InternetDownloadManager extends CommandExecutor implements Download
     private boolean hangupAfter;
     private boolean silent;
     private boolean manual;
-    private boolean ignored;
+    private FileExistStrategy strategy = FileExistStrategy.RENAME;
 
     public InternetDownloadManager(String idman) {
         super(idman);
@@ -35,33 +35,11 @@ public class InternetDownloadManager extends CommandExecutor implements Download
         execute("/s");
     }
 
-    /**
-     * If destination file exists and {@link #ignored} is false when downloading silently,
-     * the file will be downloaded with filename appended a number to.
-     */
     @Override
     public boolean addTask(File dir, HttpResource resource) throws IOException {
-        if (!dir.isDirectory() && !dir.mkdirs()) {
-            throw new SecurityException("Can't create dir " + dir.getPath());
-        }
-
-        String filename = resource.getFilename();
-        File dest = new File(dir, filename);
-        if (dest.isFile()) {
-            if (ignored) {
-                return true;
-            }
-
-            int count = 1;
-            String baseName = FilenameUtils.getBaseName(filename);
-            String extension = FilenameUtils.getExtension(filename);
-            if (!"".equals(extension)) {
-                extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
-            }
-            do {
-                count++;
-                dest = new File(dir, baseName + "_" + count + extension);
-            } while (dest.isFile());
+        File dest = Downloader.destination(dir, resource.getFilename(), strategy);
+        if (dest == null) {
+            return true;
         }
 
         List<String> args = new LinkedList<>();
@@ -122,8 +100,8 @@ public class InternetDownloadManager extends CommandExecutor implements Download
      * Whether to ignore the task when a file with the same filename already exists under the target directory.
      * If not, rename file of the task with a number appended to.
      */
-    public InternetDownloadManager ignored(boolean ignored) {
-        this.ignored = ignored;
+    public InternetDownloadManager strategy(@Nonnull FileExistStrategy strategy) {
+        this.strategy = strategy;
         return this;
     }
 }
