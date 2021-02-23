@@ -17,11 +17,13 @@ public class ResourceDto extends BaseDto {
 
     private final String title;
     private final String url;
+    private final boolean identified;
     private List<LinkDto> links;
 
-    ResourceDto(String title, String url) {
+    ResourceDto(String title, String url, boolean identified) {
         this.title = title;
         this.url = url;
+        this.identified = identified;
     }
 
     void setLinks(List<LinkDto> links) {

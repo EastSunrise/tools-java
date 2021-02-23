@@ -67,9 +67,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Override
     public <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
-        String name = site.getName();
+        String domain = site.getDomain();
         for (T item : site.findAll()) {
-            int count = saveItem(item, name);
+            int count = saveItem(item, domain);
             if (count >= 0) {
                 itemsCount++;
                 linksCount += count;
@@ -81,11 +81,11 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Override
     public <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
-        String name = site.getName();
-        Integer start = itemRepository.findMaxSid(name).orElse(null);
+        String domain = site.getDomain();
+        Integer start = itemRepository.findMaxSid(domain).orElse(null);
         List<T> items = site.findAllByRangeClosed(start, null);
         for (T item : items) {
-            int count = saveItem(item, name);
+            int count = saveItem(item, domain);
             if (count >= 0) {
                 itemsCount++;
                 linksCount += count;
@@ -94,17 +94,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         log.info("Finished importing: {} items, {} links.", itemsCount, linksCount);
     }
 
-    private <T extends IdentifiedItem> int saveItem(T item, String name) {
+    private <T extends IdentifiedItem> int saveItem(T item, String domain) {
         List<AbstractResource> resources = item.getResources();
         if (CollectionUtils.isEmpty(resources)) {
             return -1;
         }
-        if (itemRepository.findBySiteAndSid(name, item.getId()).isPresent()) {
+        if (itemRepository.findBySiteAndSid(domain, item.getId()).isPresent()) {
             return -1;
         }
 
         ResourceItemEntity itemEntity = new ResourceItemEntity();
-        itemEntity.setSite(name);
+        itemEntity.setSite(domain);
         itemEntity.setSid(item.getId());
         itemEntity.setUrl(item.getUrl());
         itemEntity.setTitle(item.getTitle());
@@ -212,7 +212,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
         Map<Long, List<ResourceLinkEntity>> linkMap = links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
         return items.stream().map(item -> {
-            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl());
+            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl(), item.getIdentified());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
                 resource.setLinks(linkEntities.stream().map(link -> {

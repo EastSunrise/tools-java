@@ -48,12 +48,18 @@ public abstract class AbstractRangeResourceSite<T extends IdentifiedItem> extend
     }
 
     /**
-     * Obtains items based on ranged ids.
+     * Obtains items based on ranged ids, ignoring those not found.
      */
     private List<T> findAllByRange(BaseRepository<Integer, T> repository, int startInclusive, int endInclusive) throws HttpResponseException {
         List<T> items = new ArrayList<>();
         for (int id = startInclusive; id <= endInclusive; id++) {
-            items.add(repository.findById(id));
+            try {
+                items.add(repository.findById(id));
+            } catch (HttpResponseException e) {
+                if (e.getStatusCode() != HttpStatus.SC_NOT_FOUND) {
+                    throw e;
+                }
+            }
         }
         return items;
     }

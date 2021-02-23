@@ -325,7 +325,7 @@ public abstract class BaseSite implements Closeable {
             T entity = client.execute(builder.build(), handler, context);
             executor.execute(() -> {
                 try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(cookieFile()))) {
-                    log.info("Synchronize cookies of {}.", getName());
+                    log.info("Synchronize cookies of {}.", getDomain());
                     stream.writeObject(context.getCookieStore());
                 } catch (IOException e) {
                     log.error(e.getMessage());

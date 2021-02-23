@@ -111,7 +111,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
 
     Map<Integer, String> getAllItems() throws HttpResponseException {
         Map<Integer, String> items = new HashMap<>(32);
-        Document document = getDocument(builder0("/youyou"), SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder0("/youyou"), SnapshotStrategy.ALWAYS_UPDATE);
         while (true) {
             Elements lis = document.selectFirst("div[role=main]").select(CssSelector.TAG_LI);
             for (Element li : lis) {

@@ -90,7 +90,7 @@ public class Y80sSite extends AbstractRangeResourceSite<Y80sItem> {
         URIBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         if (document.childNodes().size() == 1) {
-            throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, "Target page is empty.");
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Target page is empty.");
         }
 
         Map<String, Element> info = document.select(".movie_attr").stream().collect(Collectors.toMap(Element::text, e -> e));

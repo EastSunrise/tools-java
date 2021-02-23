@@ -53,7 +53,7 @@
         <#list resources as resource>
             <div class="layui-colla-item">
                 <h2 class="layui-colla-title">
-                    ${resource_index+1}. <a href="${resource.url}" target="_blank">${resource.title}</a>
+                    ${resource_index+1}. <a href="${resource.url}" target="_blank" <#if !resource.identified>style="color: blue" </#if>>${resource.title}</a>
                     <a href="https://search.douban.com/movie/subject_search?search_text=${resource.title}&cat=1002" class="layui-icon layui-icon-search"
                        target="_blank"></a>
                 </h2>
