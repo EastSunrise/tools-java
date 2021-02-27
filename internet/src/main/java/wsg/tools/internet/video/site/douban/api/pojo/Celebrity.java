@@ -1,8 +1,8 @@
 package wsg.tools.internet.video.site.douban.api.pojo;
 
 import lombok.Getter;
-import wsg.tools.internet.video.enums.ConstellationEnum;
-import wsg.tools.internet.video.enums.GenderEnum;
+import wsg.tools.internet.video.enums.Constellation;
+import wsg.tools.internet.video.enums.Gender;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 public class Celebrity extends SimpleCelebrity {
 
-    private GenderEnum gender;
+    private Gender gender;
     private List<String> aka;
     private List<String> akaEn;
 
@@ -26,7 +26,7 @@ public class Celebrity extends SimpleCelebrity {
     private String summary;
     private LocalDate birthday;
     private String bornPlace;
-    private ConstellationEnum constellation;
+    private Constellation constellation;
     private String website;
     private String mobileUrl;
 

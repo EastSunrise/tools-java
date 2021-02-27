@@ -8,13 +8,9 @@ import org.springframework.stereotype.Service;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.RangeRepository;
 import wsg.tools.internet.resource.item.IdentifiedItem;
-import wsg.tools.internet.resource.site.RangeRepository;
-import wsg.tools.internet.resource.site.bd.BdFilmSite;
-import wsg.tools.internet.resource.site.mh.MovieHeavenSite;
-import wsg.tools.internet.resource.site.xlc.XlcSite;
-import wsg.tools.internet.resource.site.xlm.XlmSite;
-import wsg.tools.internet.resource.site.y80s.Y80sSite;
+import wsg.tools.internet.resource.site.*;
 
 /**
  * Scheduled tasks.

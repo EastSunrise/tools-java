@@ -6,13 +6,12 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.internet.resource.item.BaseItem;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
-import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
 import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.temporal.Temporal;
 
 /**
  * Items of resources.
@@ -29,7 +28,7 @@ import java.time.LocalDateTime;
 }, indexes = {
         @Index(name = "index_imdb", columnList = "imdbId")
 })
-public class ResourceItemEntity extends IdentityEntity implements TypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier, UpdateTimeSupplier<LocalDateTime> {
+public class ResourceItemEntity extends IdentityEntity implements TypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
 
     @Column(nullable = false, length = 15)
     private String site;
@@ -53,7 +52,7 @@ public class ResourceItemEntity extends IdentityEntity implements TypeSupplier, 
     private String imdbId;
 
     @Column(length = 0)
-    private LocalDateTime updateTime;
+    private Temporal updateTime;
 
     @Column(nullable = false)
     private Boolean identified;

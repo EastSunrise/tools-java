@@ -10,7 +10,7 @@ import wsg.tools.boot.pojo.entity.AdultSeriesEntity;
 import wsg.tools.boot.pojo.entity.AdultVideoEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
-import wsg.tools.internet.video.site.adult.AdultVideo;
+import wsg.tools.internet.video.site.adult.BasicAdultVideo;
 import wsg.tools.internet.video.site.adult.MidnightItem;
 import wsg.tools.internet.video.site.adult.MidnightSite;
 
@@ -52,7 +52,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             seriesRepository.insert(seriesEntity);
             itemsCount++;
 
-            for (AdultVideo work : item.getWorks()) {
+            for (BasicAdultVideo work : item.getWorks()) {
                 AdultVideoEntity videoEntity = new AdultVideoEntity();
                 videoEntity.setSid(item.getId());
                 videoEntity.setImage(work.getImage());

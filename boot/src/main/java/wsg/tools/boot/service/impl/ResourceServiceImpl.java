@@ -20,7 +20,9 @@ import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.internet.base.BaseRepository;
 import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.RangeRepository;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.base.LengthSupplier;
@@ -28,20 +30,14 @@ import wsg.tools.internet.resource.base.PasswordProvider;
 import wsg.tools.internet.resource.download.Thunder;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
-import wsg.tools.internet.resource.item.intf.UpdateTimeSupplier;
+import wsg.tools.internet.resource.item.intf.UpdateDateSupplier;
+import wsg.tools.internet.resource.item.intf.UpdateDatetimeSupplier;
 import wsg.tools.internet.resource.item.intf.YearSupplier;
-import wsg.tools.internet.resource.site.BaseRepository;
-import wsg.tools.internet.resource.site.RangeRepository;
 import wsg.tools.internet.video.site.douban.DoubanIdentifier;
 import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
 
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalQueries;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -121,16 +117,10 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (item instanceof ImdbIdentifier) {
             itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
         }
-        if (item instanceof UpdateTimeSupplier) {
-            Temporal temporal = ((UpdateTimeSupplier<?>) item).getUpdateTime();
-            LocalDate date = temporal.query(TemporalQueries.localDate());
-            if (date != null) {
-                LocalTime time = temporal.query(TemporalQueries.localTime());
-                if (time == null) {
-                    time = LocalTime.MIN;
-                }
-                itemEntity.setUpdateTime(LocalDateTime.of(date, time));
-            }
+        if (item instanceof UpdateDatetimeSupplier) {
+            itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
+        } else if (item instanceof UpdateDateSupplier) {
+            itemEntity.setUpdateTime(((UpdateDateSupplier) item).lastUpdate());
         }
 
         return Objects.requireNonNull(template.execute(status -> {

@@ -1,6 +1,6 @@
 package wsg.tools.internet.resource.item;
 
-import wsg.tools.common.lang.Identifier;
+import wsg.tools.common.lang.IntIdentifier;
 
 import javax.annotation.Nonnull;
 
@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/1/10
  */
-public class IdentifiedItem extends BaseItem implements Identifier<Integer> {
+public class IdentifiedItem extends BaseItem implements IntIdentifier {
 
     private final int id;
     private final String url;
@@ -21,7 +21,7 @@ public class IdentifiedItem extends BaseItem implements Identifier<Integer> {
     }
 
     @Override
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 

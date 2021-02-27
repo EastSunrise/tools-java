@@ -8,11 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CssSelector;
-import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.resource.site.BaseRepository;
-import wsg.tools.internet.resource.site.RangeRepository;
+import wsg.tools.internet.base.*;
 
 import javax.annotation.Nullable;
 import java.net.URI;
@@ -82,7 +78,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
     public MidnightItem findById(Integer id) throws HttpResponseException {
         Document document = getDocument(builder0("/youyou/%d.html", id), SnapshotStrategy.NEVER_UPDATE);
         String title = document.selectFirst("h1.title").text();
-        List<AdultVideo> works = new ArrayList<>();
+        List<BasicAdultVideo> works = new ArrayList<>();
         while (true) {
             Elements ps = document.selectFirst("div.single-content").select("p");
             for (Element p : ps) {
@@ -93,7 +89,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
                         alt = alt.substring(0, alt.length() - 4);
                     }
                     Matcher matcher = IMG_SRC_REGEX.matcher(img.attr(CssSelector.ATTR_SRC));
-                    works.add(new AdultVideo(StringUtils.isBlank(alt) ? null : alt, matcher.find() ? matcher.group() : null));
+                    works.add(new BasicAdultVideo(StringUtils.isBlank(alt) ? null : alt, matcher.find() ? matcher.group() : null));
                 }
             }
             Element next = document.selectFirst("div.pagination").selectFirst("a.next");
