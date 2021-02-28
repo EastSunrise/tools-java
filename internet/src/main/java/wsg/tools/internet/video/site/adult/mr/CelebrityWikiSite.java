@@ -133,7 +133,7 @@ public class CelebrityWikiSite extends AbstractRangeSite<Celebrity> {
      *
      * @param code ignore case
      */
-    public AdultVideo findAdultVideo(String code) throws HttpResponseException {
+    public CelebrityAdultVideo findAdultVideo(String code) throws HttpResponseException {
         code = AssertUtils.requireNotBlank(code).toUpperCase();
         Document document = getDocument(builder0("/fanhao/%s.html", code), SnapshotStrategy.NEVER_UPDATE);
         Element div = document.selectFirst("div.fanhao");
@@ -141,7 +141,7 @@ public class CelebrityWikiSite extends AbstractRangeSite<Celebrity> {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
         }
         String cover = div.selectFirst("img").attr(CssSelector.ATTR_SRC);
-        AdultVideo video = new AdultVideo(code, cover);
+        CelebrityAdultVideo video = new CelebrityAdultVideo(code, cover);
         Element current = document.selectFirst("a.current");
         if (current != null) {
             video.setCelebrity(initCelebrity(document, SimpleCelebrity::new));

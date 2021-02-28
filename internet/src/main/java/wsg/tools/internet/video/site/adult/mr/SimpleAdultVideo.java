@@ -1,6 +1,7 @@
 package wsg.tools.internet.video.site.adult.mr;
 
 import lombok.Getter;
+import wsg.tools.internet.video.site.adult.BaseAdultVideo;
 import wsg.tools.internet.video.site.adult.mr.enums.Mosaic;
 
 import java.time.Duration;
@@ -13,9 +14,8 @@ import java.time.LocalDate;
  * @since 2021/2/24
  */
 @Getter
-public class SimpleAdultVideo {
+public class SimpleAdultVideo extends BaseAdultVideo {
 
-    private final String code;
     /**
      * May be blocked to null
      */
@@ -26,7 +26,7 @@ public class SimpleAdultVideo {
     private String distributor;
 
     SimpleAdultVideo(String code) {
-        this.code = code;
+        super(code);
     }
 
     void setTitle(String title) {

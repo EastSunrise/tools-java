@@ -1,14 +1,12 @@
 package wsg.tools.internet.video.site.adult;
 
 import lombok.Getter;
-import org.jsoup.nodes.Element;
 import wsg.tools.internet.resource.item.intf.UpdateDatetimeSupplier;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Adult videos on the {@link LaymanCatSite}.
@@ -17,13 +15,13 @@ import java.util.Map;
  * @since 2021/2/28
  */
 @Getter
-public class LaymanAdultVideo extends BasicAdultVideo implements UpdateDatetimeSupplier {
+public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetimeSupplier {
 
+    private final String cover;
     private final LocalDateTime published;
     private final LocalDateTime updated;
     private final String author;
 
-    private Map<String, List<Element>> content;
     private String title;
     private String description;
     private Duration duration;
@@ -34,13 +32,13 @@ public class LaymanAdultVideo extends BasicAdultVideo implements UpdateDatetimeS
     private String distributor;
     private String producer;
     private List<String> tags;
-    private Map<String, String> info;
 
     private String previous;
     private String next;
 
-    LaymanAdultVideo(String code, String cover, LocalDateTime published, LocalDateTime updated, String author) {
-        super(code, cover);
+    LaymanCatAdultVideo(String code, String cover, LocalDateTime published, LocalDateTime updated, String author) {
+        super(code);
+        this.cover = cover;
         this.published = published;
         this.updated = updated;
         this.author = author;
@@ -53,10 +51,6 @@ public class LaymanAdultVideo extends BasicAdultVideo implements UpdateDatetimeS
 
     public boolean hasNext() {
         return next != null;
-    }
-
-    void setContent(Map<String, List<Element>> content) {
-        this.content = content;
     }
 
     void setTitle(String title) {
@@ -97,10 +91,6 @@ public class LaymanAdultVideo extends BasicAdultVideo implements UpdateDatetimeS
 
     void setTags(List<String> tags) {
         this.tags = tags;
-    }
-
-    void setInfo(Map<String, String> info) {
-        this.info = info;
     }
 
     void setPrevious(String previous) {

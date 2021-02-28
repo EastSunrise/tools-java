@@ -18,11 +18,11 @@ public class MidnightItem implements IntIdentifier, UpdateDatetimeSupplier {
 
     private final int id;
     private final String title;
-    private final List<BasicAdultVideo> works;
+    private final List<MidnightAdultVideo> works;
     private final LocalDateTime release;
     private String keyword;
 
-    MidnightItem(int id, String title, List<BasicAdultVideo> works, LocalDateTime release) {
+    MidnightItem(int id, String title, List<MidnightAdultVideo> works, LocalDateTime release) {
         this.id = id;
         this.title = title;
         this.works = works;

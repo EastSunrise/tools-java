@@ -78,7 +78,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
     public MidnightItem findById(Integer id) throws HttpResponseException {
         Document document = getDocument(builder0("/youyou/%d.html", id), SnapshotStrategy.NEVER_UPDATE);
         String title = document.selectFirst("h1.title").text();
-        List<BasicAdultVideo> works = new ArrayList<>();
+        List<MidnightAdultVideo> works = new ArrayList<>();
         while (true) {
             Elements ps = document.selectFirst("div.single-content").select("p");
             for (Element p : ps) {
@@ -89,7 +89,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
                         alt = alt.substring(0, alt.length() - 4);
                     }
                     Matcher matcher = IMG_SRC_REGEX.matcher(img.attr(CssSelector.ATTR_SRC));
-                    works.add(new BasicAdultVideo(StringUtils.isBlank(alt) ? null : alt, matcher.find() ? matcher.group() : null));
+                    works.add(new MidnightAdultVideo(StringUtils.isBlank(alt) ? null : alt, matcher.find() ? matcher.group() : null));
                 }
             }
             Element next = document.selectFirst("div.pagination").selectFirst("a.next");

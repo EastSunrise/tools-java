@@ -5,13 +5,13 @@ import lombok.Getter;
 import java.util.List;
 
 /**
- * An adult video.
+ * An adult video of a celebrity.
  *
  * @author Kingen
  * @since 2021/2/24
  */
 @Getter
-public class AdultVideo extends SimpleAdultVideo {
+public class CelebrityAdultVideo extends SimpleAdultVideo {
 
     private final String cover;
     private SimpleCelebrity celebrity;
@@ -21,7 +21,7 @@ public class AdultVideo extends SimpleAdultVideo {
     private String series;
     private List<String> tags;
 
-    AdultVideo(String code, String cover) {
+    CelebrityAdultVideo(String code, String cover) {
         super(code);
         this.cover = cover;
     }

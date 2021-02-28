@@ -24,14 +24,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Videos on the site are related like a list with sibling videos found by {@link LaymanAdultVideo#getPrevious()}
- * and {@link LaymanAdultVideo#getNext()}.
+ * Videos on the site are related like a list with sibling videos found by {@link LaymanCatAdultVideo#getPrevious()}
+ * and {@link LaymanCatAdultVideo#getNext()}.
  *
  * @author Kingen
  * @see <a href="http://www.surenmao.com/">Layman Cat</a>
  * @since 2021/2/28
  */
-public class LaymanCatSite extends BaseSite implements BaseRepository<String, LaymanAdultVideo> {
+public class LaymanCatSite extends BaseSite implements BaseRepository<String, LaymanCatAdultVideo> {
 
     private static final Pattern HREF_REGEX = Pattern.compile("http://www\\.surenmao\\.com/(?<c>[0-9a-z-]+)/");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
@@ -53,9 +53,9 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
     }
 
     @Override
-    public List<LaymanAdultVideo> findAll() throws HttpResponseException {
-        List<LaymanAdultVideo> videos = new ArrayList<>();
-        LaymanAdultVideo video = findById(FIRST_CODE);
+    public List<LaymanCatAdultVideo> findAll() throws HttpResponseException {
+        List<LaymanCatAdultVideo> videos = new ArrayList<>();
+        LaymanCatAdultVideo video = findById(FIRST_CODE);
         while (true) {
             videos.add(video);
             if (!video.hasNext()) {
@@ -67,7 +67,7 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
     }
 
     @Override
-    public LaymanAdultVideo findById(String code) throws HttpResponseException {
+    public LaymanCatAdultVideo findById(String code) throws HttpResponseException {
         Document document = getDocument(builder0("/%s/", code), SnapshotStrategy.NEVER_UPDATE);
         Element main = document.selectFirst("#main");
         String title = main.selectFirst("h1.entry-title").text();
@@ -75,7 +75,7 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
         LocalDateTime published = LocalDateTime.parse(main.selectFirst("time.published").attr("datetime"), DATETIME_FORMATTER);
         LocalDateTime updated = LocalDateTime.parse(main.selectFirst("time.updated").attr("datetime"), DATETIME_FORMATTER);
         String author = main.selectFirst("span.author").text();
-        LaymanAdultVideo video = new LaymanAdultVideo(title, cover, published, updated, author);
+        LaymanCatAdultVideo video = new LaymanCatAdultVideo(title, cover, published, updated, author);
 
         Element prev = document.selectFirst("div.nav-previous");
         if (prev != null) {
@@ -90,7 +90,6 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
 
         Elements children = main.selectFirst("div.entry-content").children();
         Map<String, List<Element>> map = children.stream().collect(Collectors.groupingBy(Element::tagName));
-        video.setContent(map);
         if (map.size() == 1) {
             Element current = children.first();
             if (current.childNodeSize() == 1) {
@@ -117,7 +116,7 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
         return video;
     }
 
-    private void setInfo(LaymanAdultVideo video, List<String> lines) {
+    private void setInfo(LaymanCatAdultVideo video, List<String> lines) {
         Map<String, String> info = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Iterator<String> iterator = lines.iterator();
         String[] parts = StringUtils.split(StringUtils.stripStart(iterator.next(), " ・"), ":：", 2);
@@ -141,7 +140,6 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
         video.setDistributor(getValue(info, "レーベル", Function.identity()));
         video.setProducer(getValue(info, "メーカー", Function.identity()));
         video.setTags(getValue(info, "ジャンル", text -> Arrays.asList(text.split(" "))));
-        video.setInfo(info);
     }
 
     private <T> T getValue(Map<String, String> map, String key, Function<String, T> function) {
