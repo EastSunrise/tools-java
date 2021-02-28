@@ -55,7 +55,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             for (BasicAdultVideo work : item.getWorks()) {
                 AdultVideoEntity videoEntity = new AdultVideoEntity();
                 videoEntity.setSid(item.getId());
-                videoEntity.setImage(work.getImage());
+                videoEntity.setImage(work.getCover());
                 videoEntity.setCode(work.getCode());
                 videoRepository.insert(videoEntity);
                 videoCount++;

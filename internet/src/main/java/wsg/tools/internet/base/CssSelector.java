@@ -13,6 +13,7 @@ public final class CssSelector {
      */
     public static final String TAG_A = "a";
     public static final String TAG_LI = "li";
+    public static final String TAG_DIV = "div";
     public static final String TAG_SPAN = "span";
 
     public static final String TAG_SCRIPT = "script";

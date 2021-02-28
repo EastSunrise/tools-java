@@ -12,10 +12,10 @@ import lombok.Getter;
 public class BasicAdultVideo {
 
     private final String code;
-    private final String image;
+    private final String cover;
 
-    BasicAdultVideo(String code, String image) {
+    BasicAdultVideo(String code, String cover) {
         this.code = code;
-        this.image = image;
+        this.cover = cover;
     }
 }
