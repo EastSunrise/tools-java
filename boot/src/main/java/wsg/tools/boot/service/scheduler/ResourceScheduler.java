@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
-import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.base.RangeRepository;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.site.*;
@@ -36,7 +36,7 @@ public class ResourceScheduler extends BaseServiceImpl {
         handleException(Y80sSite.getInstance());
     }
 
-    private <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void handleException(S site) {
+    private <T extends IdentifiedItem, S extends HttpSession & RangeRepository<T, Integer>> void handleException(S site) {
         try {
             resourceService.importLatest(site);
         } catch (HttpResponseException e) {

@@ -6,16 +6,18 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -40,7 +42,7 @@ import java.util.stream.Collectors;
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends AbstractRangeSite<MovieHeavenItem> {
+public class MovieHeavenSite extends IntRangeRepositoryImpl<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
@@ -63,7 +65,16 @@ public class MovieHeavenSite extends AbstractRangeSite<MovieHeavenItem> {
     private static MovieHeavenSite instance;
 
     private MovieHeavenSite() {
-        super("Movie Heaven", "993dy.com");
+        super("Movie Heaven", "993dy.com", new AbstractResponseHandler<>() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                String content = EntityUtils.toString(entity);
+                if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
+                    throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
+                }
+                return content;
+            }
+        });
     }
 
     public static MovieHeavenSite getInstance() {
@@ -90,7 +101,7 @@ public class MovieHeavenSite extends AbstractRangeSite<MovieHeavenItem> {
 
     @Override
     protected MovieHeavenItem getItem(int id) throws HttpResponseException {
-        URIBuilder builder = builder0("/vod-detail-id-%d.html", id);
+        RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
@@ -147,14 +158,5 @@ public class MovieHeavenSite extends AbstractRangeSite<MovieHeavenItem> {
         item.setResources(resources);
         item.setExceptions(exceptions);
         return item;
-    }
-
-    @Override
-    protected String handleEntity(HttpEntity entity) throws IOException {
-        String content = super.handleEntity(entity);
-        if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
-            throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
-        }
-        return content;
     }
 }

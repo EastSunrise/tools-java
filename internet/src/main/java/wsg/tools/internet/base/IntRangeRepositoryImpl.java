@@ -2,37 +2,48 @@ package wsg.tools.internet.base;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.ResponseHandler;
 import wsg.tools.common.lang.IntIdentifier;
-import wsg.tools.internet.base.enums.SchemeEnum;
+import wsg.tools.internet.common.Scheme;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base resource site implementing {@code RangeRepository} and each of its items contains an integer identifier.
+ * Base resource site implementing both {@link BaseRepository} and {@link RangeRepository} and each of its items contains an integer identifier.
+ * <p>
+ * The maximum id of the repository is changing continuously, so it's necessary to call {@link #max()} to obtain the latest one
+ * and then store it in the field {@link #max}.
  *
  * @author Kingen
  * @since 2021/1/12
  */
-public abstract class AbstractRangeSite<T extends IntIdentifier> extends BaseSite implements BaseRepository<Integer, T>, RangeRepository<T, Integer> {
+public abstract class IntRangeRepositoryImpl<T extends IntIdentifier> extends BaseRepositoryImpl<Integer, T> implements RangeRepository<T, Integer> {
 
-    private Integer min;
+    private static final int MIN = 1;
     private Integer max;
 
-    protected AbstractRangeSite(String name, String domain) {
+    protected IntRangeRepositoryImpl(String name, String domain) {
         super(name, domain);
     }
 
-    protected AbstractRangeSite(String name, SchemeEnum scheme, String domain) {
+    protected IntRangeRepositoryImpl(String name, Scheme scheme, String domain) {
         super(name, scheme, domain);
+    }
+
+    protected IntRangeRepositoryImpl(String name, String domain, ResponseHandler<String> handler) {
+        super(name, domain, handler);
+    }
+
+    protected IntRangeRepositoryImpl(String name, Scheme scheme, String domain, ResponseHandler<String> handler) {
+        super(name, scheme, domain, handler);
     }
 
     @Override
     public List<T> findAllByRangeClosed(@Nullable Integer startInclusive, @Nullable Integer endInclusive) throws HttpResponseException {
-        int min = getMin();
-        if (startInclusive == null || startInclusive < min) {
-            startInclusive = min;
+        if (startInclusive == null || startInclusive < MIN) {
+            startInclusive = MIN;
         }
         int max = getMax();
         if (endInclusive == null || endInclusive > max) {
@@ -43,7 +54,7 @@ public abstract class AbstractRangeSite<T extends IntIdentifier> extends BaseSit
 
     @Override
     public List<T> findAll() throws HttpResponseException {
-        return findAllByRange(this, getMin(), getMax());
+        return findAllByRange(this, MIN, getMax());
     }
 
     /**
@@ -65,17 +76,10 @@ public abstract class AbstractRangeSite<T extends IntIdentifier> extends BaseSit
 
     @Override
     public T findById(Integer id) throws HttpResponseException {
-        if (id < getMin() || id > getMax()) {
+        if (id < MIN || id > getMax()) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a valid id.");
         }
         return getItem(id);
-    }
-
-    protected final synchronized int getMin() {
-        if (min == null) {
-            min = min();
-        }
-        return min;
     }
 
     protected final synchronized int getMax() throws HttpResponseException {

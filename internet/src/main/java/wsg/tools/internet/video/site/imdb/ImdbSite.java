@@ -14,11 +14,11 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CssSelector;
-import wsg.tools.internet.base.SiteStatus;
+import wsg.tools.internet.base.RepositoryImpl;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.exception.UnexpectedContentException;
+import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.SiteStatus;
+import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.enums.GenreEnum;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/16
  */
 @SiteStatus(status = SiteStatus.Status.BLOCKED)
-public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
+public final class ImdbSite extends RepositoryImpl implements ImdbRepository<ImdbTitle> {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
@@ -49,6 +49,14 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     private static final Pattern EPISODE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
     private static final Pattern WORK_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .setLocale(Locale.ENGLISH)
+            .registerModule(new SimpleModule()
+                    .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
+                    .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
+                    .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
+            ).registerModule(new JavaTimeModule());
 
     private static ImdbSite instance;
 
@@ -64,23 +72,11 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     }
 
     @Override
-    protected ObjectMapper objectMapper() {
-        return super.objectMapper()
-                .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-                .setLocale(Locale.ENGLISH)
-                .registerModule(new SimpleModule()
-                        .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
-                        .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
-                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                ).registerModule(new JavaTimeModule());
-    }
-
-    @Override
     public ImdbTitle getItemById(@Nonnull String tt) throws HttpResponseException {
         Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.NEVER_UPDATE);
         ImdbTitle title;
         try {
-            title = mapper.readValue(document.selectFirst("script[type=application/ld+json]").html(), ImdbTitle.class);
+            title = MAPPER.readValue(document.selectFirst("script[type=application/ld+json]").html(), ImdbTitle.class);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }

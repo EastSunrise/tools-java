@@ -6,15 +6,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.base.UnknownResourceException;
@@ -33,7 +32,7 @@ import java.util.stream.Collectors;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends AbstractRangeSite<BdFilmItem> {
+public final class BdFilmSite extends IntRangeRepositoryImpl<BdFilmItem> {
 
     private static final int EXCEPT_ID = 30508;
     private static final Pattern ITEM_URL_REGEX = Pattern.compile("https://www\\.bd2020\\.com(?<p>/(?<t>gy|dh|gq|jd|zx|zy)/(?<i>\\d+)\\.htm)");
@@ -83,8 +82,7 @@ public final class BdFilmSite extends AbstractRangeSite<BdFilmItem> {
         if (id == EXCEPT_ID) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a film page");
         }
-        URIBuilder builder = builder0("/gy/%d.htm", id);
-        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder0("/gy/%d.htm", id), SnapshotStrategy.NEVER_UPDATE);
 
         Map<String, String> meta = document.select("meta[property]").stream()
                 .collect(Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));

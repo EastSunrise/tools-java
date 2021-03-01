@@ -5,15 +5,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CssSelector;
 import wsg.tools.internet.base.RangeRepository;
+import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.impl.ResourceFactory;
@@ -36,14 +36,14 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2021/2/4
  */
-public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodItem, LocalDate> {
+public class GrapeVodSite extends RepositoryImpl implements RangeRepository<GrapeVodItem, LocalDate> {
 
     private static final LocalDate START_DATE = LocalDate.of(2014, 1, 1);
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static GrapeVodSite instance;
 
     private GrapeVodSite() {
-        super("Grape Vod", "putaoys.com");
+        super("Grape Vod", "putaoys.com", GrapeVodSite::handleResponse);
     }
 
     public static GrapeVodSite getInstance() {
@@ -51,6 +51,17 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
             instance = new GrapeVodSite();
         }
         return instance;
+    }
+
+    protected static String handleResponse(HttpResponse response) throws IOException {
+        try {
+            return DEFAULT_RESPONSE_HANDLER.handleResponse(response);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -90,7 +101,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
     }
 
     private VodList getVodList(int typeId, int page) throws HttpResponseException {
-        URIBuilder builder = builder0("/index.php").addParameter("s", String.format("vod-type-id-%d-p-%d.html", typeId, page));
+        RequestBuilder builder = builder0("/index.php").addParameter("s", String.format("vod-type-id-%d-p-%d.html", typeId, page));
         Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         VodList.VodListBuilder listBuilder = VodList.builder();
 
@@ -120,7 +131,7 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
     }
 
     private GrapeVodItem getVodItem(String path, VideoType type) throws HttpResponseException {
-        URIBuilder builder = builder0(path);
+        RequestBuilder builder = builder0(path);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         LocalDateTime addTime = LocalDateTime.parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
@@ -154,18 +165,6 @@ public class GrapeVodSite extends BaseSite implements RangeRepository<GrapeVodIt
         item.setExceptions(exceptions);
 
         return item;
-    }
-
-    @Override
-    public String handleResponse(HttpResponse response) throws IOException {
-        try {
-            return super.handleResponse(response);
-        } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
-            }
-            throw e;
-        }
     }
 
     @Builder

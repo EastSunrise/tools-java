@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.common;
 
 /**
  * Constants for css selector.

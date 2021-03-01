@@ -5,6 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,10 +19,10 @@ import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.enums.SchemeEnum;
+import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.video.enums.Constellation;
 import wsg.tools.internet.video.enums.Gender;
 import wsg.tools.internet.video.enums.LanguageEnum;
@@ -42,7 +44,7 @@ import java.util.stream.Collectors;
  * @see <a href="http://www.mrenbaike.net/">Wiki of Celebrities</a>
  * @since 2021/2/24
  */
-public class CelebrityWikiSite extends AbstractRangeSite<Celebrity> {
+public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
 
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
@@ -80,7 +82,17 @@ public class CelebrityWikiSite extends AbstractRangeSite<Celebrity> {
     }
 
     private CelebrityWikiSite() {
-        super("Wiki of Celebrities", SchemeEnum.HTTP, "mrenbaike.net");
+        super("Wiki of Celebrities", Scheme.HTTP, "mrenbaike.net", new AbstractResponseHandler<>() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                String content = EntityUtils.toString(entity);
+                Document document = Jsoup.parse(content);
+                if (TIP_MSG.equals(document.title())) {
+                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, document.selectFirst("div.content").text());
+                }
+                return content;
+            }
+        });
     }
 
     public static CelebrityWikiSite getInstance() {
@@ -465,15 +477,5 @@ public class CelebrityWikiSite extends AbstractRangeSite<Celebrity> {
             albums.add(new SimpleAlbum(albumId, type, title));
         }
         return albums;
-    }
-
-    @Override
-    protected String handleEntity(HttpEntity entity) throws IOException {
-        String content = super.handleEntity(entity);
-        Document document = Jsoup.parse(content);
-        if (TIP_MSG.equals(document.title())) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, document.selectFirst("div.content").text());
-        }
-        return content;
     }
 }

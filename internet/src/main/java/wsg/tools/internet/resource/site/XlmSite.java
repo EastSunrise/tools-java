@@ -3,16 +3,17 @@ package wsg.tools.internet.resource.site;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.xleimi.com/">XLM</a>
  * @since 2020/12/2
  */
-public class XlmSite extends AbstractRangeSite<XlmItem> {
+public class XlmSite extends IntRangeRepositoryImpl<XlmItem> {
 
     private static final String DOWNLOAD_ASP = "/download.asp";
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/dy/k(?<id>\\d+)\\.html");
@@ -48,7 +49,12 @@ public class XlmSite extends AbstractRangeSite<XlmItem> {
     private static XlmSite instance;
 
     private XlmSite() {
-        super("Xlm", "xleimi.com");
+        super("Xlm", "xleimi.com", new AbstractResponseHandler<>() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                return EntityUtils.toString(entity, Constants.GBK);
+            }
+        });
     }
 
     public static XlmSite getInstance() {
@@ -75,7 +81,7 @@ public class XlmSite extends AbstractRangeSite<XlmItem> {
 
     @Override
     protected XlmItem getItem(int id) throws HttpResponseException {
-        URIBuilder builder = builder0("/dy/k%d.html", id);
+        RequestBuilder builder = builder0("/dy/k%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         String typeHref = document.selectFirst("div.conpath").select(CssSelector.TAG_A).get(1).attr(CssSelector.ATTR_HREF);
@@ -106,10 +112,5 @@ public class XlmSite extends AbstractRangeSite<XlmItem> {
         item.setResources(resources);
         item.setExceptions(exceptions);
         return item;
-    }
-
-    @Override
-    protected String handleEntity(HttpEntity entity) throws IOException {
-        return EntityUtils.toString(entity, Constants.GBK);
     }
 }

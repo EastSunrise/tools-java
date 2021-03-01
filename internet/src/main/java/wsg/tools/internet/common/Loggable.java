@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.common;
 
 /**
  * Indicates the site is loggable.

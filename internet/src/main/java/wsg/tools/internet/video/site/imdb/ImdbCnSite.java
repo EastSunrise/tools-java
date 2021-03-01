@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,9 +13,9 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.RepositoryImpl;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.video.common.RangeYear;
 import wsg.tools.internet.video.common.Release;
 
@@ -31,7 +33,7 @@ import java.util.stream.Collectors;
  * @author Kingen
  * @since 2020/12/12
  */
-public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
+public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTitle> {
 
     private static final Pattern EPISODE_LIST_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/episodelist\\?season=\\d+");
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/");
@@ -42,7 +44,19 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
     private static ImdbCnSite instance;
 
     private ImdbCnSite() {
-        super("IMDb CN", "imdb.cn");
+        super("IMDb CN", "imdb.cn", new AbstractResponseHandler<>() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                String content = EntityUtils.toString(entity);
+                if (NOT_FOUND.equals(content)) {
+                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
+                }
+                if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
+                    throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server is limit to access.");
+                }
+                return content;
+            }
+        });
     }
 
     public static ImdbCnSite getInstance() {
@@ -58,8 +72,8 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
         Document editForm = getDocument(builder0("/index/video.editform/index.html")
-                .setParameter("m_id", dataset.get("movie_id"))
-                .setParameter("location", dataset.get("location")), SnapshotStrategy.NEVER_UPDATE);
+                .addParameter("m_id", dataset.get("movie_id"))
+                .addParameter("location", dataset.get("location")), SnapshotStrategy.NEVER_UPDATE);
         Map<String, Element> fields = new HashMap<>(16);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -164,17 +178,5 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
                     .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.NEVER_UPDATE);
         }
         return result;
-    }
-
-    @Override
-    protected String handleEntity(HttpEntity entity) throws IOException {
-        String content = super.handleEntity(entity);
-        if (NOT_FOUND.equals(content)) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
-        }
-        if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
-            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server is limit to access.");
-        }
-        return content;
     }
 }

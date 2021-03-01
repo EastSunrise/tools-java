@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.common;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -33,21 +33,7 @@ public @interface SiteStatus {
         /**
          * If the site is invalid.
          */
-        INVALID;
+        INVALID
 
-        /**
-         * Validate the status of the site based on the annotation {@link SiteStatus}.
-         *
-         * @throws SiteStatusException if the status is abnormal
-         */
-        public static void validateStatus(Class<? extends BaseSite> clazz) throws SiteStatusException {
-            SiteStatus annotation = clazz.getAnnotation(SiteStatus.class);
-            if (annotation != null) {
-                SiteStatus.Status status = annotation.status();
-                if (!SiteStatus.Status.NORMAL.equals(status)) {
-                    throw new SiteStatusException(annotation);
-                }
-            }
-        }
     }
 }

@@ -9,9 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -22,9 +21,13 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.*;
-import wsg.tools.internet.base.exception.LoginException;
-import wsg.tools.internet.base.exception.UnexpectedContentException;
+import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.Loggable;
+import wsg.tools.internet.common.LoginException;
+import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.video.common.Parsers;
 import wsg.tools.internet.video.common.Runtime;
 import wsg.tools.internet.video.enums.CatalogEnum;
@@ -49,7 +52,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends BaseSite implements Loggable<Integer> {
+public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     public static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
@@ -62,10 +65,16 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
     private static final Pattern SEARCH_ITEM_HREF_REGEX =
             Pattern.compile("https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-Za-z%.-]+)&query=(?<q>[0-9A-Za-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
 
+    protected static ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new SimpleModule()
+                    .addDeserializer(GenreEnum.class, EnumDeserializers.getTitleDeserializer(GenreEnum.class))
+            ).registerModule(new JavaTimeModule()
+                    .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
+            );
     private static DoubanSite instance;
 
     protected DoubanSite() {
-        super("Douban", "douban.com", 1);
+        super("Douban", "douban.com");
     }
 
     public static DoubanSite getInstance() {
@@ -83,14 +92,12 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
     public final void login(String username, String password) throws LoginException, HttpResponseException {
         logout();
         getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
-        List<BasicNameValuePair> params = Arrays.asList(
-                new BasicNameValuePair("ck", ""),
-                new BasicNameValuePair("name", username),
-                new BasicNameValuePair("password", password),
-                new BasicNameValuePair("remember", String.valueOf(true))
-        );
-        RequestBuilder requestBuilder = RequestBuilder.post(builder("accounts", "/j/mobile/login/basic"), params);
-        LoginResult loginResult = getContent(requestBuilder, ContentHandlers.getJsonHandler(mapper, LoginResult.class), SnapshotStrategy.ALWAYS_UPDATE);
+        RequestBuilder builder = create(HttpPost.METHOD_NAME, "accounts", "/j/mobile/login/basic")
+                .addParameter("ck", "")
+                .addParameter("name", username)
+                .addParameter("password", password)
+                .addParameter("remember", String.valueOf(true));
+        LoginResult loginResult = getObject(builder, mapper, LoginResult.class, SnapshotStrategy.ALWAYS_UPDATE);
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }
@@ -110,8 +117,10 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
             return;
         }
         getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
-        getDocument(builder0("/accounts/logout").setParameter("source", "main")
-                .setParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue()), SnapshotStrategy.ALWAYS_UPDATE);
+        RequestBuilder builder = builder0("/accounts/logout")
+                .addParameter("source", "main")
+                .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
+        getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
     }
 
     /**
@@ -226,7 +235,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
-            URIBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, mark.getPath())
+            RequestBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, mark.getPath())
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
@@ -268,7 +277,7 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
-            URIBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
+            RequestBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
             Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
             String itemClass = ".item";
@@ -300,14 +309,14 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         }
         AssertUtils.requireNotBlank(imdbId);
         CatalogEnum cat = CatalogEnum.MOVIE;
-        Document document = postDocument(builder(cat.getPath(), "/new_subject"), Arrays.asList(
-                new BasicNameValuePair("ck", Objects.requireNonNull(getCookie("ck")).getValue()),
-                new BasicNameValuePair("type", "0"),
-                new BasicNameValuePair("p_title", imdbId),
-                new BasicNameValuePair("p_uid", imdbId),
-                new BasicNameValuePair("cat", String.valueOf(cat.getCode())),
-                new BasicNameValuePair("subject_submit", "下一步")
-        ), SnapshotStrategy.NEVER_UPDATE);
+        RequestBuilder builder = create(HttpPost.METHOD_NAME, cat.getPath(), "/new_subject")
+                .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue())
+                .addParameter("type", "0")
+                .addParameter("p_title", imdbId)
+                .addParameter("p_uid", imdbId)
+                .addParameter("cat", String.valueOf(cat.getCode()))
+                .addParameter("subject_submit", "下一步");
+        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         Element fieldset = document.selectFirst("div#content").selectFirst(CssSelector.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
@@ -334,9 +343,9 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
-                .setParameter("search_text", keyword)
-                .setParameter("cat", String.valueOf(catalog.getCode()));
+        RequestBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
+                .addParameter("search_text", keyword)
+                .addParameter("cat", String.valueOf(catalog.getCode()));
         Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         return document.select("div.item-root").stream()
                 .map(div -> {
@@ -356,10 +365,9 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        URIBuilder builder = builder0("/search")
-                .setParameter("q", keyword);
+        RequestBuilder builder = builder0("/search").addParameter("q", keyword);
         if (catalog != null) {
-            builder.setParameter("cat", String.valueOf(catalog.getCode()));
+            builder.addParameter("cat", String.valueOf(catalog.getCode()));
         }
         Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
         return document.selectFirst("div.search-result").select("div.result").stream()
@@ -369,15 +377,5 @@ public class DoubanSite extends BaseSite implements Loggable<Integer> {
                     String url = URLDecoder.decode(matcher.group("url"), Constants.UTF_8);
                     return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
                 }).collect(Collectors.toList());
-    }
-
-    @Override
-    protected ObjectMapper objectMapper() {
-        return super.objectMapper()
-                .registerModule(new SimpleModule()
-                        .addDeserializer(GenreEnum.class, EnumDeserializers.getTitleDeserializer(GenreEnum.class))
-                ).registerModule(new JavaTimeModule()
-                        .addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER))
-                );
     }
 }

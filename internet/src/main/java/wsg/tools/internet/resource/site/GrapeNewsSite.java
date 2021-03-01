@@ -2,17 +2,17 @@ package wsg.tools.internet.resource.site;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
 import wsg.tools.internet.base.BaseRepository;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.impl.Ed2kResource;
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2021/2/4
  */
-public class GrapeNewsSite extends AbstractRangeSite<GrapeNewsItem> implements BaseRepository<Integer, GrapeNewsItem> {
+public final class GrapeNewsSite extends IntRangeRepositoryImpl<GrapeNewsItem> implements BaseRepository<Integer, GrapeNewsItem> {
 
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern YEAR_REGEX = Pattern.compile("◎年\\s*代\\s+(?<y>\\d{4})\\s*◎");
@@ -56,7 +56,7 @@ public class GrapeNewsSite extends AbstractRangeSite<GrapeNewsItem> implements B
 
     @Override
     protected GrapeNewsItem getItem(int id) throws HttpResponseException {
-        URIBuilder builder = builder0("/movie/%d.html", id);
+        RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         LocalDate releaseDate = LocalDate.parse(RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text()).group("s"));

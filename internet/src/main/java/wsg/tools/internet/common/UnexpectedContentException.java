@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.exception;
+package wsg.tools.internet.common;
 
 /**
  * Exceptions thrown when getting unexpected content.

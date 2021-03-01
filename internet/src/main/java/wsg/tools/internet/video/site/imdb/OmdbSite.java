@@ -10,12 +10,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.protocol.HttpContext;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.util.EntityUtils;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.RepositoryImpl;
 import wsg.tools.internet.base.RequestBuilder;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.video.enums.*;
 import wsg.tools.internet.video.jackson.CommaSeparatedNumberDeserializationProblemHandler;
 
@@ -29,17 +30,51 @@ import java.util.Objects;
  * @see <a href="https://www.omdbapi.com/">OMDb</a>
  * @since 2020/6/18
  */
-public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle> {
+public final class OmdbSite extends RepositoryImpl implements ImdbRepository<OmdbTitle> {
 
     private static final int MAX_PAGE = 100;
     private static final String NOT_FOUND_MSG = "Error getting data.";
     private static final String SEASON_NOT_FOUND_MSG = "Series or season not found!";
     private static final String EPISODE_NOT_FOUND_MSG = "Series or episode not found!";
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+            .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
+            .setLocale(Locale.ENGLISH)
+            .registerModule(new SimpleModule()
+                    .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
+                    .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
+                    .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
+                    .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
+                    .addDeserializer(RatingSource.class, EnumDeserializers.getTextDeserializer(RatingSource.class))
+            )
+            .registerModule(new JavaTimeModule())
+            .addHandler(CommaSeparatedNumberDeserializationProblemHandler.INSTANCE);
 
     private final String apikey;
 
     public OmdbSite(String apikey) {
-        super("OMDb", "omdbapi.com");
+        super("OMDb", "omdbapi.com", new AbstractResponseHandler<>() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                String content = EntityUtils.toString(entity);
+                JsonNode node;
+                try {
+                    node = MAPPER.readTree(content);
+                } catch (JsonProcessingException e) {
+                    throw AssertUtils.runtimeException(e);
+                }
+                boolean response = Boolean.parseBoolean(node.get("Response").asText());
+                if (response) {
+                    return content.replace("\"N/A\"", "null");
+                } else {
+                    String error = node.get("Error").asText();
+                    if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
+                        throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
+                    }
+                    throw new RuntimeException(error);
+                }
+            }
+        });
         this.apikey = Objects.requireNonNull(apikey);
     }
 
@@ -91,7 +126,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
     public OmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
-        URIBuilder builder = builder0("/").addParameter("s", s);
+        RequestBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
         }
@@ -106,47 +141,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         return getObject(builder, OmdbTitle.class);
     }
 
-    @Override
-    public void handleRequest(RequestBuilder builder, HttpContext context) {
-        builder.addToken("apikey", apikey);
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
+        builder.setToken("apikey", apikey);
+        return getObject(builder, MAPPER, clazz, SnapshotStrategy.NEVER_UPDATE);
     }
-
-    @Override
-    protected String handleEntity(HttpEntity entity) throws IOException {
-        String content = super.handleEntity(entity);
-        JsonNode node;
-        try {
-            node = mapper.readTree(content);
-        } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
-        }
-        boolean response = Boolean.parseBoolean(node.get("Response").asText());
-        if (response) {
-            return content.replace("\"N/A\"", "null");
-        } else {
-            String error = node.get("Error").asText();
-            if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
-            }
-            throw new RuntimeException(error);
-        }
-    }
-
-    @Override
-    protected ObjectMapper objectMapper() {
-        return super.objectMapper()
-                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-                .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
-                .setLocale(Locale.ENGLISH)
-                .registerModule(new SimpleModule()
-                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                        .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
-                        .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
-                        .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
-                        .addDeserializer(RatingSource.class, EnumDeserializers.getTextDeserializer(RatingSource.class))
-                )
-                .registerModule(new JavaTimeModule())
-                .addHandler(CommaSeparatedNumberDeserializationProblemHandler.INSTANCE);
-    }
-
 }

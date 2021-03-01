@@ -3,16 +3,16 @@ package wsg.tools.internet.resource.site;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends AbstractRangeSite<XlcItem> {
+public class XlcSite extends IntRangeRepositoryImpl<XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
@@ -80,7 +80,7 @@ public class XlcSite extends AbstractRangeSite<XlcItem> {
 
     @Override
     protected XlcItem getItem(int id) throws HttpResponseException {
-        URIBuilder builder = builder0("/vod-read-id-%d.html", id);
+        RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
 
         Map<String, Node> infos = new HashMap<>(8);

@@ -4,17 +4,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.AbstractRangeSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.enums.SchemeEnum;
+import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends AbstractRangeSite<Y80sItem> {
+public class Y80sSite extends IntRangeRepositoryImpl<Y80sItem> {
 
     private static final Map<String, VideoType> TYPE_AKA = Map.of(
             "movie", VideoType.MOVIE,
@@ -59,7 +59,7 @@ public class Y80sSite extends AbstractRangeSite<Y80sItem> {
     private static Y80sSite instance;
 
     private Y80sSite() {
-        super("80s", SchemeEnum.HTTP, "y80s.org");
+        super("80s", Scheme.HTTP, "y80s.org");
     }
 
     public static Y80sSite getInstance() {
@@ -87,7 +87,7 @@ public class Y80sSite extends AbstractRangeSite<Y80sItem> {
 
     @Override
     protected Y80sItem getItem(int id) throws HttpResponseException {
-        URIBuilder builder = builder("m", "/movie/%d", id);
+        RequestBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
         if (document.childNodes().size() == 1) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Target page is empty.");
@@ -128,7 +128,7 @@ public class Y80sSite extends AbstractRangeSite<Y80sItem> {
                 continue;
             }
             if (PLAY_HREF_REGEX.matcher(href).matches()) {
-                href = this.getScheme().toString() + Constants.URL_SCHEME_SEPARATOR + href;
+                href = Scheme.HTTP.toString() + Constants.URL_SCHEME_SEPARATOR + href;
             }
             String title = a.text().strip();
             try {

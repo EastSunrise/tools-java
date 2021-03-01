@@ -2,7 +2,7 @@ package wsg.tools.internet.video.enums;
 
 import lombok.Getter;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.PathParameterized;
+import wsg.tools.internet.common.PathParameterized;
 
 /**
  * Type of subject

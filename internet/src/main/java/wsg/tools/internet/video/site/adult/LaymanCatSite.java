@@ -8,11 +8,10 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseRepository;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.CssSelector;
+import wsg.tools.internet.base.BaseRepositoryImpl;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.enums.SchemeEnum;
+import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.Scheme;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
  * @see <a href="http://www.surenmao.com/">Layman Cat</a>
  * @since 2021/2/28
  */
-public class LaymanCatSite extends BaseSite implements BaseRepository<String, LaymanCatAdultVideo> {
+public class LaymanCatSite extends BaseRepositoryImpl<String, LaymanCatAdultVideo> {
 
     private static final Pattern HREF_REGEX = Pattern.compile("http://www\\.surenmao\\.com/(?<c>[0-9a-z-]+)/");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
@@ -42,7 +41,7 @@ public class LaymanCatSite extends BaseSite implements BaseRepository<String, La
     private static LaymanCatSite instance;
 
     private LaymanCatSite() {
-        super("Layman Cat", SchemeEnum.HTTP, "surenmao.com");
+        super("Layman Cat", Scheme.HTTP, "surenmao.com");
     }
 
     public static LaymanCatSite getInstance() {

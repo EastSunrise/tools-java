@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.enums;
+package wsg.tools.internet.common;
 
 /**
  * Scheme of the website.
@@ -6,7 +6,7 @@ package wsg.tools.internet.base.enums;
  * @author Kingen
  * @since 2020/6/15
  */
-public enum SchemeEnum {
+public enum Scheme {
     /**
      * Protocol of the url
      */

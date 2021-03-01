@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.common;
 
 /**
  * Exception if the status of the site is abnormal.

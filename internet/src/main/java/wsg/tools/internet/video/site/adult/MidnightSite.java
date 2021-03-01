@@ -2,13 +2,16 @@ package wsg.tools.internet.video.site.adult;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.*;
+import wsg.tools.internet.base.BaseRepository;
+import wsg.tools.internet.base.RangeRepository;
+import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.common.CssSelector;
 
 import javax.annotation.Nullable;
 import java.net.URI;
@@ -25,7 +28,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://www.shenyequ.com/">Midnight Zone</a>
  * @since 2021/2/22
  */
-public class MidnightSite extends BaseSite implements BaseRepository<Integer, MidnightItem>, RangeRepository<MidnightItem, LocalDateTime> {
+public class MidnightSite extends RepositoryImpl implements BaseRepository<Integer, MidnightItem>, RangeRepository<MidnightItem, LocalDateTime> {
 
     private static final LocalDateTime START_TIME = LocalDateTime.of(2019, 1, 1, 0, 0);
     private static final Pattern ACTRESS_ITEM_URL_REGEX = Pattern.compile("https://www\\.shenyequ\\.com/youyou/(?<id>\\d+).html");
@@ -96,7 +99,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
             if (next == null) {
                 break;
             }
-            document = getDocument(new URIBuilder(URI.create(next.attr(CssSelector.ATTR_HREF))), SnapshotStrategy.NEVER_UPDATE);
+            document = getDocument(builder0(URI.create(next.attr(CssSelector.ATTR_HREF)).getPath()), SnapshotStrategy.NEVER_UPDATE);
         }
         LocalDateTime release = LocalDateTime.parse(document.selectFirst("time.data-time").text(), Constants.STANDARD_DATE_TIME_FORMATTER);
         MidnightItem item = new MidnightItem(id, title, works, release);
@@ -120,7 +123,7 @@ public class MidnightSite extends BaseSite implements BaseRepository<Integer, Mi
             if (next == null) {
                 break;
             }
-            document = getDocument(new URIBuilder(URI.create(next.attr(CssSelector.ATTR_HREF))), SnapshotStrategy.NEVER_UPDATE);
+            document = getDocument(builder0(URI.create(next.attr(CssSelector.ATTR_HREF)).getPath()), SnapshotStrategy.NEVER_UPDATE);
         }
         return items;
     }

@@ -1,7 +1,7 @@
 package wsg.tools.internet.video.enums;
 
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.PathParameterized;
+import wsg.tools.internet.common.PathParameterized;
 
 /**
  * Enum of marking type.

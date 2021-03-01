@@ -21,7 +21,7 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.BaseRepository;
-import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.base.RangeRepository;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.FilenameSupplier;
@@ -61,7 +61,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem, S extends BaseSite & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException {
+    public <T extends IdentifiedItem, S extends HttpSession & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
         String domain = site.getDomain();
         for (T item : site.findAll()) {
@@ -75,7 +75,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem, S extends BaseSite & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException {
+    public <T extends IdentifiedItem, S extends HttpSession & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
         String domain = site.getDomain();
         Integer start = itemRepository.findMaxSid(domain).orElse(null);

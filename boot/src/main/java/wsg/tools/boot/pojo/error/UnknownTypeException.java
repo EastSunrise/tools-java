@@ -1,6 +1,6 @@
 package wsg.tools.boot.pojo.error;
 
-import wsg.tools.internet.base.exception.UnexpectedContentException;
+import wsg.tools.internet.common.UnexpectedContentException;
 
 /**
  * Exceptions thrown when the type is unknown.

@@ -26,7 +26,7 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
-import wsg.tools.internet.base.exception.LoginException;
+import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.video.enums.MarkEnum;
 
 import java.io.File;

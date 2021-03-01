@@ -1,14 +1,12 @@
 package wsg.tools.internet.video.site.douban.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.protocol.HttpContext;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.video.enums.CityEnum;
@@ -33,17 +31,8 @@ import java.util.List;
  */
 public class ApiDoubanSite extends DoubanSite {
 
-    private final String apikey;
-
-    public ApiDoubanSite(String apikey) {
-        super();
-        this.apikey = apikey;
-    }
-
-    @Override
-    protected ObjectMapper objectMapper() {
-        return super.objectMapper()
-                .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+    static {
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
                 .registerModule(new SimpleModule()
                         .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
                         .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
@@ -51,49 +40,56 @@ public class ApiDoubanSite extends DoubanSite {
                 );
     }
 
+    private final String apikey;
+
+    public ApiDoubanSite(String apikey) {
+        super();
+        this.apikey = AssertUtils.requireNotBlank(apikey);
+    }
+
     /**
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
      */
     public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
-        return getObject(uriBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
+        return getObject(apiBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
     public ImdbInfo apiMovieImdb(String imdbId) throws HttpResponseException {
-        return getObject(uriBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
+        return getObject(apiBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
     public Celebrity apiMovieCelebrity(long celebrityId) throws HttpResponseException {
-        return getObject(uriBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
+        return getObject(apiBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
-        return getObject(uriBuilder("/v2/movie/weekly"), RankedResult.class, SnapshotStrategy.ALWAYS_UPDATE);
+        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class, SnapshotStrategy.ALWAYS_UPDATE);
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws HttpResponseException {
-        return getObject(uriBuilder("/v2/movie/us_box"), BoxResult.class, SnapshotStrategy.NEVER_UPDATE);
+        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class, SnapshotStrategy.NEVER_UPDATE);
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
-        return getApiChart(uriBuilder("/v2/movie/top250"));
+        return getApiChart(apiBuilder("/v2/movie/top250"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws HttpResponseException {
-        return getApiChart(uriBuilder("/v2/movie/new_movies"));
+        return getApiChart(apiBuilder("/v2/movie/new_movies"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
-        return getApiChart(uriBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
+        return getApiChart(apiBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {
-        return getApiChart(uriBuilder("/v2/movie/coming_soon"));
+        return getApiChart(apiBuilder("/v2/movie/coming_soon"));
     }
 
     /**
@@ -101,13 +97,13 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(URIBuilder builder) throws HttpResponseException {
+    private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder) throws HttpResponseException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
         builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
-            builder.setParameter("start", String.valueOf(start));
+            builder.addParameter("start", String.valueOf(start));
             ChartResult chartResult = getObject(builder, ChartResult.class, SnapshotStrategy.ALWAYS_UPDATE);
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
@@ -152,7 +148,7 @@ public class ApiDoubanSite extends DoubanSite {
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
-            URIBuilder builder = uriBuilder(path, ownerId)
+            RequestBuilder builder = apiBuilder(path, ownerId)
                     .addParameter("start", String.valueOf(start))
                     .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
             ContentResult<O, C> contentResult = getObject(builder, type);
@@ -166,12 +162,21 @@ public class ApiDoubanSite extends DoubanSite {
         return Pair.of(owner, content);
     }
 
-    @Override
-    public void handleRequest(RequestBuilder builder, HttpContext context) {
-        builder.addToken("apikey", apikey);
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
+        return getObject(builder, clazz, SnapshotStrategy.NEVER_UPDATE);
     }
 
-    private URIBuilder uriBuilder(String path, Object... pathArgs) {
-        return super.builder("api", path, pathArgs);
+    private <T> T getObject(RequestBuilder builder, TypeReference<T> type) throws HttpResponseException {
+        builder.setToken("apikey", apikey);
+        return getObject(builder, mapper, type, SnapshotStrategy.NEVER_UPDATE);
+    }
+
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy strategy) throws HttpResponseException {
+        builder.setToken("apikey", apikey);
+        return getObject(builder, mapper, clazz, strategy);
+    }
+
+    private RequestBuilder apiBuilder(String path, Object... pathArgs) {
+        return builder("api", path, pathArgs);
     }
 }

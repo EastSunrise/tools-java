@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.common;
 
 /**
  * Indicate the object can be converted as a parameter in the url.

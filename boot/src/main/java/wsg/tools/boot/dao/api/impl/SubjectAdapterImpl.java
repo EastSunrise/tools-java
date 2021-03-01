@@ -15,15 +15,16 @@ import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.SiteStatusException;
+import wsg.tools.internet.base.HttpSession;
+import wsg.tools.internet.common.SiteStatusException;
+import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.video.enums.CatalogEnum;
 import wsg.tools.internet.video.enums.MarkEnum;
 import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
 import wsg.tools.internet.video.site.douban.DoubanSite;
 import wsg.tools.internet.video.site.imdb.*;
 
+import java.io.Closeable;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -34,7 +35,7 @@ import java.util.*;
  */
 @Slf4j
 @Component
-public class SubjectAdapterImpl<S extends BaseSite & ImdbRepository<? extends ImdbIdentifier>> implements SubjectAdapter, DisposableBean {
+public class SubjectAdapterImpl<S extends HttpSession & Closeable & ImdbRepository<? extends ImdbIdentifier>> implements SubjectAdapter, DisposableBean {
 
     private final DoubanSite doubanSite = DoubanSite.getInstance();
     private final IdRelationRepository relationRepository;
@@ -46,7 +47,7 @@ public class SubjectAdapterImpl<S extends BaseSite & ImdbRepository<? extends Im
         this.relationRepository = relationRepository;
         S imdbRepository;
         try {
-            SiteStatus.Status.validateStatus(ImdbSite.class);
+            SiteUtils.validateStatus(ImdbSite.class);
             imdbRepository = (S) ImdbSite.getInstance();
         } catch (SiteStatusException ignored) {
             String omdbKey = configuration.getOmdbKey();
