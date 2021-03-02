@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.site;
 
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
@@ -14,12 +15,13 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2021/1/9
  */
-public class XlmItem extends IdentifiedItem implements TypeSupplier, UpdateDatetimeSupplier {
+public class XlmItem extends IdentifiedItem implements TypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime releaseTime;
-    private final VideoType type;
+    private final XlmType type;
+    private Integer next;
 
-    XlmItem(int id, @Nonnull String url, LocalDateTime releaseTime, VideoType type) {
+    XlmItem(int id, @Nonnull String url, LocalDateTime releaseTime, XlmType type) {
         super(id, url);
         this.releaseTime = releaseTime;
         this.type = type;
@@ -27,11 +29,20 @@ public class XlmItem extends IdentifiedItem implements TypeSupplier, UpdateDatet
 
     @Override
     public VideoType getType() {
-        return type;
+        return type.getVideoType();
     }
 
     @Override
     public LocalDateTime lastUpdate() {
         return releaseTime;
+    }
+
+    void setNext(Integer next) {
+        this.next = next;
+    }
+
+    @Override
+    public Integer next() {
+        return next;
     }
 }

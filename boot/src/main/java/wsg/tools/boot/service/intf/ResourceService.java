@@ -4,9 +4,9 @@ import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
-import wsg.tools.internet.base.BaseRepository;
-import wsg.tools.internet.base.HttpSession;
-import wsg.tools.internet.base.RangeRepository;
+import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.intf.RangeRepository;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 
 import javax.annotation.Nullable;
@@ -22,20 +22,24 @@ import java.util.List;
 public interface ResourceService {
 
     /**
-     * Import all resources from the given site.
+     * Import all resources from the given iterator.
      *
-     * @param site an implementation of {@link BaseRepository}
+     * @param iterator     iterator over the resources
+     * @param repositoryId the identifier of the repository
      * @throws HttpResponseException if an error occurs when do request
      */
-    <T extends IdentifiedItem, S extends HttpSession & BaseRepository<Integer, T>> void importAll(S site) throws HttpResponseException;
+    <T extends IdentifiedItem>
+    void importIterator(RecordIterator<T> iterator, String repositoryId) throws HttpResponseException;
 
     /**
-     * Import latest resources from the given site.
+     * Import all resources from the given repository.
      *
-     * @param site an implementation of {@link BaseRepository}
+     * @param repository   an implementation of {@link RangeRepository}
+     * @param repositoryId the identifier of the repository
      * @throws HttpResponseException if an error occurs when do request
      */
-    <T extends IdentifiedItem, S extends HttpSession & RangeRepository<T, Integer>> void importLatest(S site) throws HttpResponseException;
+    <T extends IdentifiedItem, R extends Repository<Integer, T> & RangeRepository<T, Integer>>
+    void importRangeRepository(R repository, String repositoryId) throws HttpResponseException;
 
     /**
      * Search resources of the given key.

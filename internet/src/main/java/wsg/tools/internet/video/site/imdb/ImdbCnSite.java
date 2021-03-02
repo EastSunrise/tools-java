@@ -13,7 +13,8 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.video.common.RangeYear;
@@ -28,12 +29,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * <a href="https://imdb.cn">IMDb CN</a>
+ * <a href="https://www.imdb.cn">IMDb CN</a>
  *
  * @author Kingen
  * @since 2020/12/12
  */
-public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTitle> {
+public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final Pattern EPISODE_LIST_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/episodelist\\?season=\\d+");
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/");
@@ -44,7 +45,7 @@ public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTit
     private static ImdbCnSite instance;
 
     private ImdbCnSite() {
-        super("IMDb CN", "imdb.cn", new AbstractResponseHandler<>() {
+        super("IMDb CN", new BasicHttpSession("imdb.cn"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
                 String content = EntityUtils.toString(entity);
@@ -67,13 +68,13 @@ public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTit
     }
 
     @Override
-    public ImdbTitle getItemById(@Nonnull String imdbId) throws HttpResponseException {
-        Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.NEVER_UPDATE);
+    public ImdbTitle findById(@Nonnull String imdbId) throws HttpResponseException {
+        Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.never());
 
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
         Document editForm = getDocument(builder0("/index/video.editform/index.html")
                 .addParameter("m_id", dataset.get("movie_id"))
-                .addParameter("location", dataset.get("location")), SnapshotStrategy.NEVER_UPDATE);
+                .addParameter("location", dataset.get("location")), SnapshotStrategy.never());
         Map<String, Element> fields = new HashMap<>(16);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -134,7 +135,7 @@ public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTit
 
     private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
         Document document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                .addParameter("season", "1"), SnapshotStrategy.NEVER_UPDATE);
+                .addParameter("season", "1"), SnapshotStrategy.never());
         int seasonsCount = document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
 
         List<String[]> result = new ArrayList<>();
@@ -161,7 +162,7 @@ public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTit
                 }
                 document = getDocument(builder0("/title/%s/episodelist", seriesId)
                         .addParameter("season", String.valueOf(currentSeason))
-                        .addParameter("page", String.valueOf(++page)), SnapshotStrategy.NEVER_UPDATE);
+                        .addParameter("page", String.valueOf(++page)), SnapshotStrategy.never());
             }
             if (map.isEmpty()) {
                 result.add(new String[1]);
@@ -175,7 +176,7 @@ public class ImdbCnSite extends RepositoryImpl implements ImdbRepository<ImdbTit
                 break;
             }
             document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.NEVER_UPDATE);
+                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.never());
         }
         return result;
     }

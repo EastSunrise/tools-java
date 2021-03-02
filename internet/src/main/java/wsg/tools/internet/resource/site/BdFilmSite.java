@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.site;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -10,15 +11,21 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.IntRangeRepositoryImpl;
-import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
+import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IterableRepositoryImpl;
 import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.WithoutNextDocument;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.base.UnknownResourceException;
 import wsg.tools.internet.resource.impl.ResourceFactory;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -32,10 +39,9 @@ import java.util.stream.Collectors;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends IntRangeRepositoryImpl<BdFilmItem> {
+public final class BdFilmSite extends BaseSite {
 
-    private static final int EXCEPT_ID = 30508;
-    private static final Pattern ITEM_URL_REGEX = Pattern.compile("https://www\\.bd2020\\.com(?<p>/(?<t>gy|dh|gq|jd|zx|zy)/(?<i>\\d+)\\.htm)");
+    private static final Pattern ITEM_URL_REGEX = Pattern.compile("https://www\\.bd2020\\.com(?<p>/(?<t>gy|dh|gq|jd|zx|zy)/(?<id>\\d+)\\.htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
     private static final Pattern VAR_REGEX = Pattern.compile("var urls = \"(?<urls>[0-9A-Za-z+/=]*)\", " +
             "adsUrls = \"[0-9A-Za-z+/=]*\", " +
@@ -49,41 +55,30 @@ public final class BdFilmSite extends IntRangeRepositoryImpl<BdFilmItem> {
 
     private static BdFilmSite instance;
 
+    @Getter
+    private final Map<BdFilmType, IterableRepository<BdFilmItem>> repositories;
+
     private BdFilmSite() {
-        super("BD-Film", "bd2020.com");
+        super("BD-Film", new BasicHttpSession("bd2020.com"));
+        repositories = new HashMap<>(BdFilmType.values().length);
+        for (BdFilmType type : BdFilmType.values()) {
+            repositories.put(type, new IterableRepositoryImpl<>(id -> getItem(type, id), type.getFirst()));
+        }
     }
 
-    public static BdFilmSite getInstance() {
+    public synchronized static BdFilmSite getInstance() {
         if (instance == null) {
             instance = new BdFilmSite();
         }
         return instance;
     }
 
-    /**
-     * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
-     */
-    @Override
-    protected int max() throws HttpResponseException {
-        Document document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.ALWAYS_UPDATE);
-        Elements lis = document.selectFirst("#content_list").select("li.list-item");
-        int max = 1;
-        for (Element li : lis) {
-            Matcher matcher = ITEM_URL_REGEX.matcher(li.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF));
-            if (matcher.matches()) {
-                max = Math.max(max, Integer.parseInt(matcher.group("i")));
-            }
-        }
-        return max;
+    public RecordIterator<BdFilmItem> iterator(BdFilmType type) throws HttpResponseException {
+        return repositories.get(type).iterator();
     }
 
-    @Override
-    protected BdFilmItem getItem(int id) throws HttpResponseException {
-        if (id == EXCEPT_ID) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a film page");
-        }
-        Document document = getDocument(builder0("/gy/%d.htm", id), SnapshotStrategy.NEVER_UPDATE);
-
+    public BdFilmItem getItem(@Nonnull BdFilmType type, @Nonnull Integer id) throws HttpResponseException {
+        Document document = getDocument(builder0("/%s/%d.htm", type.getText(), id), new WithoutNextDocument<>(this::getNext));
         Map<String, String> meta = document.select("meta[property]").stream()
                 .collect(Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));
         Elements elements = document.select("meta[name]");
@@ -99,6 +94,7 @@ public final class BdFilmSite extends IntRangeRepositoryImpl<BdFilmItem> {
         LocalDateTime updateTime = LocalDateTime.parse(meta.get("og:video:release_date"), Constants.STANDARD_DATE_TIME_FORMATTER);
         BdFilmItem item = new BdFilmItem(id, location, updateTime);
 
+        item.setNext(getNext(document));
         String[] keywords = document.selectFirst("meta[name=keywords]").attr(CssSelector.ATTR_CONTENT).split(",免费下载");
         item.setTitle(keywords[0].strip());
 
@@ -150,6 +146,16 @@ public final class BdFilmSite extends IntRangeRepositoryImpl<BdFilmItem> {
             }
         }
         return item;
+    }
+
+    private Integer getNext(Document document) {
+        Elements children = document.selectFirst("div-neighbour").children();
+        AssertUtils.requireEquals(children.size(), 2);
+        Element next = children.get(0).selectFirst(CssSelector.TAG_A);
+        if (next == null) {
+            return null;
+        }
+        return Integer.parseInt(RegexUtils.matchesOrElseThrow(ITEM_URL_REGEX, next.attr(CssSelector.ATTR_HREF)).group("id"));
     }
 
     private Pair<List<AbstractResource>, List<InvalidResourceException>> parseDiskResources(String diskStr) {

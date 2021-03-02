@@ -1,5 +1,6 @@
 package wsg.tools.internet.resource.site;
 
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.resource.item.intf.TypeSupplier;
@@ -16,11 +17,12 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2020/10/27
  */
-public class BdFilmItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier, TypeSupplier, UpdateDatetimeSupplier {
+public class BdFilmItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier, TypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private Long dbId;
     private String imdbId;
+    private Integer next;
 
     BdFilmItem(int id, @Nonnull String url, LocalDateTime updateTime) {
         super(id, url);
@@ -53,5 +55,14 @@ public class BdFilmItem extends IdentifiedItem implements DoubanIdentifier, Imdb
     @Override
     public LocalDateTime lastUpdate() {
         return updateTime;
+    }
+
+    void setNext(Integer next) {
+        this.next = next;
+    }
+
+    @Override
+    public Integer next() {
+        return next;
     }
 }

@@ -7,9 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
-import wsg.tools.internet.base.HttpSession;
-import wsg.tools.internet.base.RangeRepository;
-import wsg.tools.internet.resource.item.IdentifiedItem;
+import wsg.tools.common.util.function.throwable.ThrowableConsumer;
 import wsg.tools.internet.resource.site.*;
 
 /**
@@ -29,16 +27,26 @@ public class ResourceScheduler extends BaseServiceImpl {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void importLatestResources() {
-        handleException(BdFilmSite.getInstance());
-        handleException(MovieHeavenSite.getInstance());
-        handleException(XlcSite.getInstance());
-        handleException(XlmSite.getInstance());
-        handleException(Y80sSite.getInstance());
+        // todo latest
+        handleException(BdFilmSite.getInstance(), site -> {
+            for (BdFilmType type : BdFilmType.values()) {
+                resourceService.importIterator(site.iterator(type), site.getDomain());
+            }
+        });
+        handleException(XlmSite.getInstance(), site -> {
+            for (XlmType type : XlmType.values()) {
+                resourceService.importIterator(site.iterator(type), site.getDomain());
+            }
+        });
+        // todo if one is not found
+        handleException(MovieHeavenSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
+        handleException(XlcSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
+        handleException(Y80sSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
     }
 
-    private <T extends IdentifiedItem, S extends HttpSession & RangeRepository<T, Integer>> void handleException(S site) {
+    private <T> void handleException(T t, ThrowableConsumer<T, HttpResponseException> function) {
         try {
-            resourceService.importLatest(site);
+            function.accept(t);
         } catch (HttpResponseException e) {
             log.error(e.getMessage());
         }

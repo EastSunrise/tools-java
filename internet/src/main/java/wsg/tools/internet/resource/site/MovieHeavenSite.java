@@ -14,10 +14,12 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.IntRangeRepositoryImpl;
-import wsg.tools.internet.base.RequestBuilder;
-import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.*;
+import wsg.tools.internet.base.intf.IntRangeRepository;
+import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -25,6 +27,7 @@ import wsg.tools.internet.resource.impl.ResourceFactory;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.video.common.VideoConstants;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Year;
@@ -42,7 +45,7 @@ import java.util.stream.Collectors;
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends IntRangeRepositoryImpl<MovieHeavenItem> {
+public class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>, IntRangeRepository<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
@@ -55,17 +58,19 @@ public class MovieHeavenSite extends IntRangeRepositoryImpl<MovieHeavenItem> {
     private static final String XUNLEI = "xunlei";
     private static final String URL_SEPARATOR = "#";
     private static final VideoType[] TYPES = {
-            null, VideoType.MOVIE, VideoType.TV, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
+            null, VideoType.MOVIE, VideoType.SERIES, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
             VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
             VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.TV, VideoType.TV, VideoType.TV, VideoType.TV,
-            VideoType.TV, VideoType.FOUR_K
+            VideoType.MOVIE, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES,
+            VideoType.SERIES, VideoType.FOUR_K
     };
 
     private static MovieHeavenSite instance;
 
+    private final IntRangeRepository<MovieHeavenItem> repository = new IntRangeRepositoryImpl<>(this, this::max);
+
     private MovieHeavenSite() {
-        super("Movie Heaven", "993dy.com", new AbstractResponseHandler<>() {
+        super("Movie Heaven", new BasicHttpSession("993dy.com"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
                 String content = EntityUtils.toString(entity);
@@ -77,19 +82,31 @@ public class MovieHeavenSite extends IntRangeRepositoryImpl<MovieHeavenItem> {
         });
     }
 
-    public static MovieHeavenSite getInstance() {
+    public synchronized static MovieHeavenSite getInstance() {
         if (instance == null) {
             instance = new MovieHeavenSite();
         }
         return instance;
     }
 
+    @Nonnull
+    @Override
+    public Integer min() {
+        return repository.min();
+    }
+
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
+    @Nonnull
     @Override
-    protected int max() throws HttpResponseException {
-        Document document = getDocument(builder0("/"), SnapshotStrategy.ALWAYS_UPDATE);
+    public Integer max() {
+        Document document;
+        try {
+            document = getDocument(builder0("/"), SnapshotStrategy.always());
+        } catch (HttpResponseException e) {
+            throw new UnexpectedException(e);
+        }
         Elements lis = document.selectFirst("div.newbox").select(CssSelector.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -100,9 +117,19 @@ public class MovieHeavenSite extends IntRangeRepositoryImpl<MovieHeavenItem> {
     }
 
     @Override
-    protected MovieHeavenItem getItem(int id) throws HttpResponseException {
+    public List<MovieHeavenItem> findAllByRangeClosed(@Nonnull Integer startInclusive, @Nonnull Integer endInclusive) throws HttpResponseException {
+        return repository.findAllByRangeClosed(startInclusive, endInclusive);
+    }
+
+    @Override
+    public RecordIterator<MovieHeavenItem> iterator() throws HttpResponseException {
+        return repository.iterator();
+    }
+
+    @Override
+    public MovieHeavenItem findById(@Nonnull Integer id) throws HttpResponseException {
         RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
-        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.never());
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, document.selectFirst("h4.infotitle1").text());

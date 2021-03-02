@@ -21,9 +21,11 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Loggable;
 import wsg.tools.internet.common.LoginException;
@@ -52,7 +54,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
+public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanSubject>, Loggable<Long> {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
     public static final Pattern URL_MOVIE_SUBJECT_REGEX = Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
@@ -74,7 +76,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
     private static DoubanSite instance;
 
     protected DoubanSite() {
-        super("Douban", "douban.com");
+        super("Douban", new BasicHttpSession("douban.com"));
     }
 
     public static DoubanSite getInstance() {
@@ -91,36 +93,36 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
      */
     public final void login(String username, String password) throws LoginException, HttpResponseException {
         logout();
-        getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
+        getDocument(builder0(null), SnapshotStrategy.always());
         RequestBuilder builder = create(HttpPost.METHOD_NAME, "accounts", "/j/mobile/login/basic")
                 .addParameter("ck", "")
                 .addParameter("name", username)
                 .addParameter("password", password)
                 .addParameter("remember", String.valueOf(true));
-        LoginResult loginResult = getObject(builder, mapper, LoginResult.class, SnapshotStrategy.ALWAYS_UPDATE);
+        LoginResult loginResult = getObject(builder, mapper, LoginResult.class, SnapshotStrategy.always());
         if (!loginResult.isSuccess()) {
             throw new LoginException(loginResult.getMessage());
         }
     }
 
     @Override
-    public final Integer user() {
+    public final Long user() {
         Cookie cookie = getCookie("dbcl2");
         if (cookie == null) {
             return null;
         }
-        return Integer.parseInt(RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id"));
+        return Long.parseLong(RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id"));
     }
 
     public final void logout() throws HttpResponseException {
         if (user() == null) {
             return;
         }
-        getDocument(builder0(null), SnapshotStrategy.ALWAYS_UPDATE);
+        getDocument(builder0(null), SnapshotStrategy.always());
         RequestBuilder builder = builder0("/accounts/logout")
                 .addParameter("source", "main")
                 .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
+        getDocument(builder, SnapshotStrategy.always());
     }
 
     /**
@@ -128,8 +130,9 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
      * <p>
      * Some x-rated subjects may be restricted to access without logging in.
      */
-    public final BaseDoubanSubject subject(long subjectId) throws HttpResponseException {
-        Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", subjectId), SnapshotStrategy.NEVER_UPDATE);
+    @Override
+    public BaseDoubanSubject findById(@Nonnull Long id) throws HttpResponseException {
+        Document document = getDocument(builder(CatalogEnum.MOVIE.getPath(), "/subject/%d", id), SnapshotStrategy.never());
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -139,7 +142,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
             throw AssertUtils.runtimeException(e);
         }
 
-        subject.setId(subjectId);
+        subject.setId(id);
         String zhTitle = RegexUtils.matchesOrElseThrow(PAGE_TITLE_REGEX, document.title()).group("t");
         subject.setZhTitle(zhTitle);
         String name = subject.getName().replace("  ", " ");
@@ -239,7 +242,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
                     .addParameter("sort", "time")
                     .addParameter("start", String.valueOf(start))
                     .addParameter("mode", "list");
-            Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
+            Document document = getDocument(builder, SnapshotStrategy.always());
             boolean done = false;
             String listClass = ".list-view";
             for (Element li : document.selectFirst(listClass).select(CssSelector.TAG_LI)) {
@@ -279,7 +282,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
         while (true) {
             RequestBuilder builder = builder(catalog.getPath(), "/people/%d/%s", userId, catalog.getCreator().getPath())
                     .addParameter("start", String.valueOf(start));
-            Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
+            Document document = getDocument(builder, SnapshotStrategy.always());
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
                 Element a = div.selectFirst(".title").selectFirst(CssSelector.TAG_A);
@@ -316,7 +319,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
                 .addParameter("p_uid", imdbId)
                 .addParameter("cat", String.valueOf(cat.getCode()))
                 .addParameter("subject_submit", "下一步");
-        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.never());
 
         Element fieldset = document.selectFirst("div#content").selectFirst(CssSelector.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
@@ -346,7 +349,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
         RequestBuilder builder = builder("search", "/%s/subject_search", catalog.getPath())
                 .addParameter("search_text", keyword)
                 .addParameter("cat", String.valueOf(catalog.getCode()));
-        Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.always());
         return document.select("div.item-root").stream()
                 .map(div -> {
                     Element a = div.selectFirst("a.title-text");
@@ -369,7 +372,7 @@ public class DoubanSite extends RepositoryImpl implements Loggable<Integer> {
         if (catalog != null) {
             builder.addParameter("cat", String.valueOf(catalog.getCode()));
         }
-        Document document = getDocument(builder, SnapshotStrategy.ALWAYS_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.always());
         return document.selectFirst("div.search-result").select("div.result").stream()
                 .map(div -> {
                     Element a = div.selectFirst(CssSelector.TAG_H3).selectFirst(CssSelector.TAG_A);

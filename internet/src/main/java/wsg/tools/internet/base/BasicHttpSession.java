@@ -110,27 +110,27 @@ public class BasicHttpSession implements HttpSession, Closeable {
     }
 
     @Override
-    public final <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler, ContentHandler<T> contentHandler, SnapshotStrategy strategy)
+    public final <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler, ContentHandler<T> contentHandler, SnapshotStrategy<T> strategy)
             throws HttpResponseException {
         String filepath = builder.filepath();
         filepath += Constants.FILE_EXTENSION_SEPARATOR + contentHandler.suffix();
         File file = new File(TMPDIR + filepath);
 
         String content;
-        if (file.isFile()) {
-            log.info("Read from {}", file.getPath());
-            try {
-                content = FileUtils.readFileToString(file, UTF_8);
-            } catch (IOException e) {
-                throw AssertUtils.runtimeException(e);
-            }
-            if (strategy.ifUpdate(content)) {
-                content = updateSnapshot(builder, responseHandler, file);
-            }
-        } else {
-            content = updateSnapshot(builder, responseHandler, file);
+        if (!file.isFile()) {
+            return contentHandler.handleContent(updateSnapshot(builder, responseHandler, file));
         }
-        return contentHandler.handleContent(content);
+        log.info("Read from {}", file.getPath());
+        try {
+            content = FileUtils.readFileToString(file, UTF_8);
+        } catch (IOException e) {
+            throw AssertUtils.runtimeException(e);
+        }
+        T t = contentHandler.handleContent(content);
+        if (!strategy.ifUpdate(t)) {
+            return t;
+        }
+        return contentHandler.handleContent(updateSnapshot(builder, responseHandler, file));
     }
 
     /**

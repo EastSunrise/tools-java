@@ -1,5 +1,6 @@
 package wsg.tools.internet.video.site.adult.mr;
 
+import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -19,8 +20,10 @@ import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
 import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.intf.*;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.video.enums.Constellation;
@@ -44,7 +47,7 @@ import java.util.stream.Collectors;
  * @see <a href="http://www.mrenbaike.net/">Wiki of Celebrities</a>
  * @since 2021/2/24
  */
-public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
+public class CelebrityWikiSite extends BaseSite {
 
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
@@ -54,6 +57,7 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
     private static final Pattern ALBUM_HREF_REGEX;
     private static final int CENTIMETERS_PER_METER = 100;
     private static final String HOME_PAGE = "http://www.mrenbaike.net";
+    private static final String LAST_PAGE = "javascript:alert('最后一页');";
     private static final String NO_PERSON_IMG = "http://www.mrenbaike.net/statics/images/noperson.jpg";
     private static final Pattern LOCAL_DATE_REGEX =
             Pattern.compile("(?<y>(18|19|20)\\d{2})([年./-])(?<m>0?[1-9]|1[012])(月|\\3)(?<d>0?[1-9]|[12][0-9]|3[01])(?!\\d)");
@@ -81,8 +85,15 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
         ALBUM_HREF_REGEX = Pattern.compile("http://www\\.mrenbaike\\.net/tuku/(?<t>" + albumTypes + ")/(?<id>\\d+)(_(?<i>\\d+))?\\.html");
     }
 
+    @Getter
+    private final IntRangeRepository<Celebrity> celebrityRepository = new IntRangeRepositoryImpl<>(this::findCelebrity, () -> 9601);
+    @Getter
+    private final Repository<String, CelebrityAdultVideo> videoRepository = this::findAdultVideo;
+    @Getter
+    private final Map<AlbumType, IterableRepository<Album>> albumRepositories;
+
     private CelebrityWikiSite() {
-        super("Wiki of Celebrities", Scheme.HTTP, "mrenbaike.net", new AbstractResponseHandler<>() {
+        super("Wiki of Celebrities", new BasicHttpSession(Scheme.HTTP, "mrenbaike.net"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
                 String content = EntityUtils.toString(entity);
@@ -93,35 +104,21 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
                 return content;
             }
         });
+        albumRepositories = new HashMap<>(AlbumType.values().length);
+        for (AlbumType type : AlbumType.values()) {
+            albumRepositories.put(type, new IterableRepositoryImpl<>(id -> this.findAlbum(id, type), type.getFirst()));
+        }
     }
 
-    public static CelebrityWikiSite getInstance() {
+    public synchronized static CelebrityWikiSite getInstance() {
         if (instance == null) {
             instance = new CelebrityWikiSite();
         }
         return instance;
     }
 
-    public List<SimpleAlbum> findAllAlbumsByType(AlbumType type) throws HttpResponseException {
-        Document document = getDocument(builder0("/tuku/%s/", type.getText()), SnapshotStrategy.NEVER_UPDATE);
-        List<SimpleAlbum> albums = new ArrayList<>();
-        while (true) {
-            albums.addAll(Objects.requireNonNull(getAlbums(document)));
-            Element current = document.selectFirst("div.pg").selectFirst(CssSelector.TAG_SPAN);
-            if (current == null) {
-                break;
-            }
-            Element next = current.nextElementSibling();
-            if (next.hasClass("a1")) {
-                break;
-            }
-            document = getDocument(builder0("/tuku/%s/index_%s.html", type.getText(), next.text()), SnapshotStrategy.NEVER_UPDATE);
-        }
-        return albums;
-    }
-
     public Album findAlbum(int id, AlbumType type) throws HttpResponseException {
-        Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id), SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id), SnapshotStrategy.never());
         Element show = document.selectFirst("div.picshow");
         String title = show.selectFirst(CssSelector.TAG_H1).text();
         LocalDateTime updateTime = LocalDateTime.parse(((TextNode) show.selectFirst("div.info").childNode(0)).text(), Constants.STANDARD_DATE_TIME_FORMATTER);
@@ -137,6 +134,10 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
         if (tags != null) {
             album.setTags(tags.select(CssSelector.TAG_A).eachText());
         }
+        String next = show.selectFirst("div.next").selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+        if (!LAST_PAGE.equals(next)) {
+            album.setNext(Integer.parseInt(RegexUtils.matchesOrElseThrow(ALBUM_HREF_REGEX, next).group("id")));
+        }
         return album;
     }
 
@@ -147,7 +148,7 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
      */
     public CelebrityAdultVideo findAdultVideo(String code) throws HttpResponseException {
         code = AssertUtils.requireNotBlank(code).toUpperCase();
-        Document document = getDocument(builder0("/fanhao/%s.html", code), SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder0("/fanhao/%s.html", code), SnapshotStrategy.never());
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
@@ -175,14 +176,8 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
         return video;
     }
 
-    @Override
-    protected int max() throws HttpResponseException {
-        return 9601;
-    }
-
-    @Override
-    protected Celebrity getItem(int id) throws HttpResponseException {
-        Document document = getDocument(builder0("/yule/m%d/info.html", id), SnapshotStrategy.NEVER_UPDATE);
+    public Celebrity findCelebrity(int id) throws HttpResponseException {
+        Document document = getDocument(builder0("/yule/m%d/info.html", id), SnapshotStrategy.never());
         Elements ems = document.selectFirst("div.datacon").select("em");
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -217,7 +212,7 @@ public class CelebrityWikiSite extends IntRangeRepositoryImpl<Celebrity> {
             }
             extInfo.remove("hotfanghao");
         }
-        celebrity.setAlbums(getAlbums(getDocument(builder0("/yule/m%s/pic.html", id), SnapshotStrategy.NEVER_UPDATE)));
+        celebrity.setAlbums(getAlbums(getDocument(builder0("/yule/m%s/pic.html", id), SnapshotStrategy.never())));
         return celebrity;
     }
 

@@ -14,7 +14,8 @@ import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.util.EntityUtils;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.video.enums.*;
@@ -30,7 +31,7 @@ import java.util.Objects;
  * @see <a href="https://www.omdbapi.com/">OMDb</a>
  * @since 2020/6/18
  */
-public final class OmdbSite extends RepositoryImpl implements ImdbRepository<OmdbTitle> {
+public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle> {
 
     private static final int MAX_PAGE = 100;
     private static final String NOT_FOUND_MSG = "Error getting data.";
@@ -53,7 +54,7 @@ public final class OmdbSite extends RepositoryImpl implements ImdbRepository<Omd
     private final String apikey;
 
     public OmdbSite(String apikey) {
-        super("OMDb", "omdbapi.com", new AbstractResponseHandler<>() {
+        super("OMDb", new BasicHttpSession("omdbapi.com"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
                 String content = EntityUtils.toString(entity);
@@ -82,7 +83,7 @@ public final class OmdbSite extends RepositoryImpl implements ImdbRepository<Omd
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
     @Override
-    public OmdbTitle getItemById(@Nonnull String imdbId) throws HttpResponseException {
+    public OmdbTitle findById(@Nonnull String imdbId) throws HttpResponseException {
         OmdbTitle title = getObject(builder0("/").addParameter("i", imdbId).addParameter("plot", "full"), OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
@@ -143,6 +144,6 @@ public final class OmdbSite extends RepositoryImpl implements ImdbRepository<Omd
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, MAPPER, clazz, SnapshotStrategy.NEVER_UPDATE);
+        return getObject(builder, MAPPER, clazz, SnapshotStrategy.never());
     }
 }

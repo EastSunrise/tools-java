@@ -14,7 +14,8 @@ import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.RepositoryImpl;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.SiteStatus;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
  * @since 2020/6/16
  */
 @SiteStatus(status = SiteStatus.Status.BLOCKED)
-public final class ImdbSite extends RepositoryImpl implements ImdbRepository<ImdbTitle> {
+public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
@@ -61,7 +62,7 @@ public final class ImdbSite extends RepositoryImpl implements ImdbRepository<Imd
     private static ImdbSite instance;
 
     private ImdbSite() {
-        super("IMDb", "imdb.com");
+        super("IMDb", new BasicHttpSession("imdb.com"));
     }
 
     public static ImdbSite getInstance() {
@@ -72,8 +73,8 @@ public final class ImdbSite extends RepositoryImpl implements ImdbRepository<Imd
     }
 
     @Override
-    public ImdbTitle getItemById(@Nonnull String tt) throws HttpResponseException {
-        Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.NEVER_UPDATE);
+    public ImdbTitle findById(@Nonnull String tt) throws HttpResponseException {
+        Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.never());
         ImdbTitle title;
         try {
             title = MAPPER.readValue(document.selectFirst("script[type=application/ld+json]").html(), ImdbTitle.class);
@@ -143,7 +144,7 @@ public final class ImdbSite extends RepositoryImpl implements ImdbRepository<Imd
         while (true) {
             currentSeason++;
             Document document = getDocument(builder0("/title/%s/episodes", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.NEVER_UPDATE);
+                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.never());
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;

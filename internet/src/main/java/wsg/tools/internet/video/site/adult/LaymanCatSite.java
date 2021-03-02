@@ -8,11 +8,17 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseRepositoryImpl;
-import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.BaseSite;
+import wsg.tools.internet.base.BasicHttpSession;
+import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IterableRepositoryImpl;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Scheme;
+import wsg.tools.internet.common.WithoutNextDocument;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,28 +29,26 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Videos on the site are related like a list with sibling videos found by {@link LaymanCatAdultVideo#getPrevious()}
- * and {@link LaymanCatAdultVideo#getNext()}.
- *
  * @author Kingen
  * @see <a href="http://www.surenmao.com/">Layman Cat</a>
  * @since 2021/2/28
  */
-public class LaymanCatSite extends BaseRepositoryImpl<String, LaymanCatAdultVideo> {
+public class LaymanCatSite extends BaseSite implements Repository<String, LaymanCatAdultVideo>, IterableRepository<LaymanCatAdultVideo> {
 
     private static final Pattern HREF_REGEX = Pattern.compile("http://www\\.surenmao\\.com/(?<c>[0-9a-z-]+)/");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d+)(min|分)");
     private static final String FIRST_KEY = "収録時間";
-    private static final String FIRST_CODE = "200gana-1829";
     private static LaymanCatSite instance;
 
+    private final IterableRepository<LaymanCatAdultVideo> repository = new IterableRepositoryImpl<>(this, "200gana-1829");
+
     private LaymanCatSite() {
-        super("Layman Cat", Scheme.HTTP, "surenmao.com");
+        super("Layman Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
     }
 
-    public static LaymanCatSite getInstance() {
+    public synchronized static LaymanCatSite getInstance() {
         if (instance == null) {
             instance = new LaymanCatSite();
         }
@@ -52,22 +56,13 @@ public class LaymanCatSite extends BaseRepositoryImpl<String, LaymanCatAdultVide
     }
 
     @Override
-    public List<LaymanCatAdultVideo> findAll() throws HttpResponseException {
-        List<LaymanCatAdultVideo> videos = new ArrayList<>();
-        LaymanCatAdultVideo video = findById(FIRST_CODE);
-        while (true) {
-            videos.add(video);
-            if (!video.hasNext()) {
-                break;
-            }
-            video = findById(video.getNext());
-        }
-        return videos;
+    public RecordIterator<LaymanCatAdultVideo> iterator() throws HttpResponseException {
+        return repository.iterator();
     }
 
     @Override
-    public LaymanCatAdultVideo findById(String code) throws HttpResponseException {
-        Document document = getDocument(builder0("/%s/", code), SnapshotStrategy.NEVER_UPDATE);
+    public LaymanCatAdultVideo findById(@Nonnull String code) throws HttpResponseException {
+        Document document = getDocument(builder0("/%s/", code), new WithoutNextDocument<>(this::getNext));
         Element main = document.selectFirst("#main");
         String title = main.selectFirst("h1.entry-title").text();
         String cover = main.selectFirst("img.size-full").attr("src");
@@ -76,17 +71,7 @@ public class LaymanCatSite extends BaseRepositoryImpl<String, LaymanCatAdultVide
         String author = main.selectFirst("span.author").text();
         LaymanCatAdultVideo video = new LaymanCatAdultVideo(title, cover, published, updated, author);
 
-        Element prev = document.selectFirst("div.nav-previous");
-        if (prev != null) {
-            String href = prev.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-            video.setPrevious(RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("c"));
-        }
-        Element next = document.selectFirst("div.nav-next");
-        if (next != null) {
-            String href = next.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-            video.setNext(RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("c"));
-        }
-
+        video.setNext(getNext(document));
         Elements children = main.selectFirst("div.entry-content").children();
         Map<String, List<Element>> map = children.stream().collect(Collectors.groupingBy(Element::tagName));
         if (map.size() == 1) {
@@ -113,6 +98,15 @@ public class LaymanCatSite extends BaseRepositoryImpl<String, LaymanCatAdultVide
             setInfo(video, map.get(CssSelector.TAG_DIV).stream().map(Element::text).collect(Collectors.toList()));
         }
         return video;
+    }
+
+    private String getNext(Document document) {
+        Element next = document.selectFirst("div.nav-next");
+        if (next == null) {
+            return null;
+        }
+        String href = next.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("c");
     }
 
     private void setInfo(LaymanCatAdultVideo video, List<String> lines) {

@@ -1,6 +1,7 @@
 package wsg.tools.internet.video.site.adult;
 
 import lombok.Getter;
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.resource.item.intf.UpdateDatetimeSupplier;
 
 import java.time.Duration;
@@ -15,7 +16,7 @@ import java.util.List;
  * @since 2021/2/28
  */
 @Getter
-public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetimeSupplier {
+public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetimeSupplier, NextSupplier<String> {
 
     private final String cover;
     private final LocalDateTime published;
@@ -33,7 +34,6 @@ public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetim
     private String producer;
     private List<String> tags;
 
-    private String previous;
     private String next;
 
     LaymanCatAdultVideo(String code, String cover, LocalDateTime published, LocalDateTime updated, String author) {
@@ -49,8 +49,9 @@ public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetim
         return updated;
     }
 
-    public boolean hasNext() {
-        return next != null;
+    @Override
+    public String next() {
+        return next;
     }
 
     void setTitle(String title) {
@@ -91,10 +92,6 @@ public class LaymanCatAdultVideo extends BaseAdultVideo implements UpdateDatetim
 
     void setTags(List<String> tags) {
         this.tags = tags;
-    }
-
-    void setPrevious(String previous) {
-        this.previous = previous;
     }
 
     void setNext(String next) {

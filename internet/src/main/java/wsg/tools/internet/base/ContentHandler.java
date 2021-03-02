@@ -1,7 +1,5 @@
 package wsg.tools.internet.base;
 
-import org.apache.http.client.HttpResponseException;
-
 /**
  * Handle content of the response.
  *
@@ -16,14 +14,13 @@ public interface ContentHandler<T> {
      *
      * @param content content to transfer
      * @return target object
-     * @throws HttpResponseException if an error occurs
      */
-    T handleContent(String content) throws HttpResponseException;
+    T handleContent(String content);
 
     /**
      * Obtains suffix of the target type.
      *
-     * @return suffix
+     * @return the suffix
      */
     String suffix();
 }

@@ -12,7 +12,7 @@ public enum VideoType {
      * types
      */
     MOVIE,
-    TV,
+    SERIES,
     VARIETY,
     ANIME,
 

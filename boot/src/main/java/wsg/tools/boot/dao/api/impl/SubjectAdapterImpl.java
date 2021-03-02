@@ -15,7 +15,6 @@ import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
-import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.video.enums.CatalogEnum;
@@ -35,7 +34,7 @@ import java.util.*;
  */
 @Slf4j
 @Component
-public class SubjectAdapterImpl<S extends HttpSession & Closeable & ImdbRepository<? extends ImdbIdentifier>> implements SubjectAdapter, DisposableBean {
+public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends ImdbIdentifier>> implements SubjectAdapter, DisposableBean {
 
     private final DoubanSite doubanSite = DoubanSite.getInstance();
     private final IdRelationRepository relationRepository;
@@ -62,7 +61,7 @@ public class SubjectAdapterImpl<S extends HttpSession & Closeable & ImdbReposito
 
     @Override
     public BaseDoubanSubject doubanSubject(long dbId) throws HttpResponseException, NotFoundException {
-        BaseDoubanSubject subject = handleException(dbId, doubanSite::subject, "Douban subject of " + dbId);
+        BaseDoubanSubject subject = handleException(dbId, doubanSite::findById, "Douban subject of " + dbId);
         if (subject.getImdbId() != null) {
             saveIdRelation(dbId, subject.getImdbId());
         }
@@ -103,7 +102,7 @@ public class SubjectAdapterImpl<S extends HttpSession & Closeable & ImdbReposito
         Objects.requireNonNull(imdbId);
         if (imdbRepository instanceof OmdbSite) {
             OmdbSite omdbSite = (OmdbSite) imdbRepository;
-            OmdbTitle omdbTitle = handleException(imdbId, omdbSite::getItemById, "OMDb title of " + imdbId);
+            OmdbTitle omdbTitle = handleException(imdbId, omdbSite::findById, "OMDb title of " + imdbId);
             if (omdbTitle instanceof OmdbMovie) {
                 return new OmdbMovieAdapter((OmdbMovie) omdbTitle);
             }
@@ -128,7 +127,7 @@ public class SubjectAdapterImpl<S extends HttpSession & Closeable & ImdbReposito
             }
             throw new UnknownTypeException(omdbTitle.getClass());
         }
-        ImdbIdentifier identifier = handleException(imdbId, imdbRepository::getItemById, "IMDb title of " + imdbId);
+        ImdbIdentifier identifier = handleException(imdbId, imdbRepository::findById, "IMDb title of " + imdbId);
         if (identifier instanceof ImdbTitle) {
             if (identifier instanceof ImdbMovie) {
                 return new ImdbMovieAdapter((ImdbMovie) identifier);

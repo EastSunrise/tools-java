@@ -66,14 +66,14 @@ public class ApiDoubanSite extends DoubanSite {
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
-        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class, SnapshotStrategy.ALWAYS_UPDATE);
+        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class, SnapshotStrategy.always());
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws HttpResponseException {
-        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class, SnapshotStrategy.NEVER_UPDATE);
+        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class, SnapshotStrategy.always());
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
@@ -104,7 +104,7 @@ public class ApiDoubanSite extends DoubanSite {
         builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
             builder.addParameter("start", String.valueOf(start));
-            ChartResult chartResult = getObject(builder, ChartResult.class, SnapshotStrategy.ALWAYS_UPDATE);
+            ChartResult chartResult = getObject(builder, ChartResult.class, SnapshotStrategy.always());
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -163,15 +163,15 @@ public class ApiDoubanSite extends DoubanSite {
     }
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
-        return getObject(builder, clazz, SnapshotStrategy.NEVER_UPDATE);
+        return getObject(builder, clazz, SnapshotStrategy.never());
     }
 
     private <T> T getObject(RequestBuilder builder, TypeReference<T> type) throws HttpResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, mapper, type, SnapshotStrategy.NEVER_UPDATE);
+        return getObject(builder, mapper, type, SnapshotStrategy.never());
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy strategy) throws HttpResponseException {
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy) throws HttpResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, mapper, clazz, strategy);
     }

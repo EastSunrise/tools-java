@@ -1,6 +1,7 @@
 package wsg.tools.internet.base;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.cookie.Cookie;
@@ -11,6 +12,8 @@ import java.io.Closeable;
 
 /**
  * A http session to execute requests under a domain.
+ * <p>
+ * This is similar to {@link HttpClient}, but limited under a specified domain.
  * <p>
  * {@link #getDomain()} appoints the target domain.
  * <p>
@@ -57,7 +60,7 @@ public interface HttpSession extends Closeable {
      * @return an object generated from the string response
      * @throws HttpResponseException if an error occurs when receive the response
      */
-    <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler, ContentHandler<T> contentHandler, SnapshotStrategy strategy)
+    <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler, ContentHandler<T> contentHandler, SnapshotStrategy<T> strategy)
             throws HttpResponseException;
 
     /**

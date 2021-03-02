@@ -1,6 +1,7 @@
 package wsg.tools.internet.video.site.adult.mr;
 
 import lombok.Getter;
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.resource.item.intf.UpdateDatetimeSupplier;
 import wsg.tools.internet.video.site.adult.mr.enums.AlbumType;
 
@@ -14,13 +15,15 @@ import java.util.List;
  * @since 2021/2/26
  */
 @Getter
-public class Album extends SimpleAlbum implements UpdateDatetimeSupplier {
+public class Album extends SimpleAlbum implements UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private final List<String> images;
 
     private List<Integer> relatedCelebrities;
     private List<String> tags;
+
+    private Integer next;
 
     Album(int id, AlbumType type, String title, LocalDateTime updateTime, List<String> images) {
         super(id, type, title);
@@ -36,8 +39,17 @@ public class Album extends SimpleAlbum implements UpdateDatetimeSupplier {
         this.tags = tags;
     }
 
+    void setNext(Integer next) {
+        this.next = next;
+    }
+
     @Override
     public LocalDateTime lastUpdate() {
         return updateTime;
+    }
+
+    @Override
+    public Integer next() {
+        return next;
     }
 }

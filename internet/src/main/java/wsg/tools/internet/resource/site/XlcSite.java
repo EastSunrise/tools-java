@@ -9,10 +9,12 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.IntRangeRepositoryImpl;
-import wsg.tools.internet.base.RequestBuilder;
-import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.*;
+import wsg.tools.internet.base.intf.IntRangeRepository;
+import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.download.Thunder;
@@ -20,6 +22,7 @@ import wsg.tools.internet.resource.impl.ResourceFactory;
 import wsg.tools.internet.resource.item.VideoType;
 import wsg.tools.internet.video.common.VideoConstants;
 
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
@@ -36,39 +39,53 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends IntRangeRepositoryImpl<XlcItem> {
+public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, IntRangeRepository<XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/vod-read-id-(?<id>\\d+)\\.html");
     private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<index>\\d+)\\.html");
     private static final VideoType[] TYPES = {
-            null, VideoType.MOVIE, VideoType.TV, VideoType.ANIME, VideoType.VARIETY, VideoType.FOUR_K,
+            null, VideoType.MOVIE, VideoType.SERIES, VideoType.ANIME, VideoType.VARIETY, VideoType.FOUR_K,
             VideoType.FHD, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.TV,
-            VideoType.TV, VideoType.TV, VideoType.TV, VideoType.TV, VideoType.THREE_D,
+            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.SERIES,
+            VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.THREE_D,
             VideoType.MANDARIN
     };
 
     private static XlcSite instance;
 
+    private final IntRangeRepository<XlcItem> repository = new IntRangeRepositoryImpl<>(this, this::max);
+
     private XlcSite() {
-        super("XLC", "xunleicang.in");
+        super("XLC", new BasicHttpSession("xunleicang.in"));
     }
 
-    public static synchronized XlcSite getInstance() {
+    public synchronized static XlcSite getInstance() {
         if (instance == null) {
             instance = new XlcSite();
         }
         return instance;
     }
 
+    @Nonnull
+    @Override
+    public Integer min() {
+        return repository.min();
+    }
+
     /**
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
+    @Nonnull
     @Override
-    protected int max() throws HttpResponseException {
-        Document document = getDocument(builder0("/ajax-show-id-new.html"), SnapshotStrategy.ALWAYS_UPDATE);
+    public Integer max() {
+        Document document;
+        try {
+            document = getDocument(builder0("/ajax-show-id-new.html"), SnapshotStrategy.always());
+        } catch (HttpResponseException e) {
+            throw new UnexpectedException(e);
+        }
         Elements as = document.selectFirst("ul.f6").select(CssSelector.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -79,9 +96,19 @@ public class XlcSite extends IntRangeRepositoryImpl<XlcItem> {
     }
 
     @Override
-    protected XlcItem getItem(int id) throws HttpResponseException {
+    public List<XlcItem> findAllByRangeClosed(@Nonnull Integer startInclusive, @Nonnull Integer endInclusive) throws HttpResponseException {
+        return repository.findAllByRangeClosed(startInclusive, endInclusive);
+    }
+
+    @Override
+    public RecordIterator<XlcItem> iterator() throws HttpResponseException {
+        return repository.iterator();
+    }
+
+    @Override
+    public XlcItem findById(@Nonnull Integer id) throws HttpResponseException {
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
-        Document document = getDocument(builder, SnapshotStrategy.NEVER_UPDATE);
+        Document document = getDocument(builder, SnapshotStrategy.never());
 
         Map<String, Node> infos = new HashMap<>(8);
         Elements elements = document.selectFirst(".moviecont").select(CssSelector.TAG_STRONG);
