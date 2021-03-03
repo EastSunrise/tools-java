@@ -10,21 +10,21 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.BasicHttpSession;
-import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.IterableRepositoryImpl;
 import wsg.tools.internet.base.intf.IterableRepository;
-import wsg.tools.internet.base.intf.IterableRepositoryImpl;
 import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.WithoutNextDocument;
 
 import javax.annotation.Nonnull;
-import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.function.Function;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -33,16 +33,14 @@ import java.util.stream.Collectors;
  * @see <a href="http://www.surenmao.com/">Layman Cat</a>
  * @since 2021/2/28
  */
-public class LaymanCatSite extends BaseSite implements Repository<String, LaymanCatAdultVideo>, IterableRepository<LaymanCatAdultVideo> {
+public class LaymanCatSite extends BaseSite implements Repository<String, LaymanCatItem>, IterableRepository<LaymanCatItem> {
 
-    private static final Pattern HREF_REGEX = Pattern.compile("http://www\\.surenmao\\.com/(?<c>[0-9a-z-]+)/");
+    private static final Pattern HREF_REGEX = Pattern.compile("http://www\\.surenmao\\.com/(?<id>[0-9a-z-]+)/");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-    private static final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d+)(min|分)");
     private static final String FIRST_KEY = "収録時間";
     private static LaymanCatSite instance;
 
-    private final IterableRepository<LaymanCatAdultVideo> repository = new IterableRepositoryImpl<>(this, "200gana-1829");
+    private final IterableRepository<LaymanCatItem> repository = new IterableRepositoryImpl<>(this, "200gana-1829");
 
     private LaymanCatSite() {
         super("Layman Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
@@ -56,22 +54,20 @@ public class LaymanCatSite extends BaseSite implements Repository<String, Layman
     }
 
     @Override
-    public RecordIterator<LaymanCatAdultVideo> iterator() throws HttpResponseException {
+    public RepositoryIterator<LaymanCatItem> iterator() {
         return repository.iterator();
     }
 
     @Override
-    public LaymanCatAdultVideo findById(@Nonnull String code) throws HttpResponseException {
-        Document document = getDocument(builder0("/%s/", code), new WithoutNextDocument<>(this::getNext));
+    public LaymanCatItem findById(@Nonnull String id) throws HttpResponseException {
+        Document document = getDocument(builder0("/%s/", id), new WithoutNextDocument<>(this::getNext));
         Element main = document.selectFirst("#main");
-        String title = main.selectFirst("h1.entry-title").text();
+        String code = main.selectFirst("h1.entry-title").text();
         String cover = main.selectFirst("img.size-full").attr("src");
         LocalDateTime published = LocalDateTime.parse(main.selectFirst("time.published").attr("datetime"), DATETIME_FORMATTER);
         LocalDateTime updated = LocalDateTime.parse(main.selectFirst("time.updated").attr("datetime"), DATETIME_FORMATTER);
         String author = main.selectFirst("span.author").text();
-        LaymanCatAdultVideo video = new LaymanCatAdultVideo(title, cover, published, updated, author);
 
-        video.setNext(getNext(document));
         Elements children = main.selectFirst("div.entry-content").children();
         Map<String, List<Element>> map = children.stream().collect(Collectors.groupingBy(Element::tagName));
         if (map.size() == 1) {
@@ -82,22 +78,21 @@ public class LaymanCatSite extends BaseSite implements Repository<String, Layman
             StringBuilder description = new StringBuilder(current.text());
             current = current.nextElementSibling();
             if (current == null) {
-                video.setDescription(description.toString());
-                return video;
+                return new LaymanCatItem(id, new AdultEntry(code, cover), author, published, updated, description.toString(), getNext(document));
             }
             while (current.childNodeSize() == 1) {
                 description.append(current.text());
                 current = current.nextElementSibling();
             }
-            video.setDescription(description.toString());
-            setInfo(video, current.childNodes().stream().filter(n -> n instanceof TextNode).map(n -> (TextNode) n).map(TextNode::text).collect(Collectors.toList()));
-            return video;
+            AdultEntry entry = getEntry(code, cover, current.childNodes().stream().filter(n -> n instanceof TextNode).map(n -> (TextNode) n)
+                    .map(TextNode::text).collect(Collectors.toList()));
+            return new LaymanCatItem(id, entry, author, published, updated, description.toString(), getNext(document));
         }
         if (map.containsKey(CssSelector.TAG_DIV)) {
-            video.setDescription(children.get(1).text());
-            setInfo(video, map.get(CssSelector.TAG_DIV).stream().map(Element::text).collect(Collectors.toList()));
+            AdultEntry entry = getEntry(code, cover, map.get(CssSelector.TAG_DIV).stream().map(Element::text).collect(Collectors.toList()));
+            return new LaymanCatItem(id, entry, author, published, updated, children.get(1).text(), getNext(document));
         }
-        return video;
+        return new LaymanCatItem(id, new AdultEntry(code, cover), author, published, updated, getNext(document));
     }
 
     private String getNext(Document document) {
@@ -106,10 +101,10 @@ public class LaymanCatSite extends BaseSite implements Repository<String, Layman
             return null;
         }
         String href = next.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("c");
+        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("id");
     }
 
-    private void setInfo(LaymanCatAdultVideo video, List<String> lines) {
+    private AdultEntry getEntry(@Nonnull String code, @Nonnull String cover, List<String> lines) {
         Map<String, String> info = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Iterator<String> iterator = lines.iterator();
         String[] parts = StringUtils.split(StringUtils.stripStart(iterator.next(), " ・"), ":：", 2);
@@ -123,20 +118,6 @@ public class LaymanCatSite extends BaseSite implements Repository<String, Layman
                 info.put(kv[0], kv[1].strip());
             }
         }
-        String title = getValue(info, "出演", Function.identity());
-        video.setTitle(title != null ? title : getValue(info, "出演者", Function.identity()));
-        video.setDuration(getValue(info, "収録時間", s -> Duration.ofMinutes(Integer.parseInt(RegexUtils.matchesOrElseThrow(DURATION_REGEX, s).group("d")))));
-        video.setReleased(getValue(info, "商品発売日", text -> false));
-        video.setPost(getValue(info, "公開日", text -> LocalDate.parse(text.substring(3), DATE_FORMATTER)));
-        video.setRelease(getValue(info, "配信開始日", text -> LocalDate.parse(text, DATE_FORMATTER)));
-        video.setSeries(getValue(info, "シリーズ", Function.identity()));
-        video.setDistributor(getValue(info, "レーベル", Function.identity()));
-        video.setProducer(getValue(info, "メーカー", Function.identity()));
-        video.setTags(getValue(info, "ジャンル", text -> Arrays.asList(text.split(" "))));
-    }
-
-    private <T> T getValue(Map<String, String> map, String key, Function<String, T> function) {
-        String value = map.remove(key);
-        return value == null ? null : function.apply(value);
+        return AdultEntryUtils.getAdultEntry(info, code, cover, " ");
     }
 }

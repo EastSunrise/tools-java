@@ -15,7 +15,7 @@ import java.util.List;
  * @since 2021/2/26
  */
 @Getter
-public class Album extends SimpleAlbum implements UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private final List<String> images;
@@ -25,7 +25,7 @@ public class Album extends SimpleAlbum implements UpdateDatetimeSupplier, NextSu
 
     private Integer next;
 
-    Album(int id, AlbumType type, String title, LocalDateTime updateTime, List<String> images) {
+    CelebrityAlbum(int id, AlbumType type, String title, LocalDateTime updateTime, List<String> images) {
         super(id, type, title);
         this.updateTime = updateTime;
         this.images = images;

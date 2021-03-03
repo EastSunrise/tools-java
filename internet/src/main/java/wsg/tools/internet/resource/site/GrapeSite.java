@@ -1,7 +1,6 @@
 package wsg.tools.internet.resource.site;
 
 import lombok.Builder;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -11,30 +10,23 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.BasicHttpSession;
-import wsg.tools.internet.base.RequestBuilder;
-import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.intf.IntRangeRepository;
-import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
-import wsg.tools.internet.base.intf.RangeRepository;
+import wsg.tools.internet.base.*;
+import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.InvalidResourceException;
 import wsg.tools.internet.resource.impl.Ed2kResource;
 import wsg.tools.internet.resource.impl.ResourceFactory;
-import wsg.tools.internet.resource.item.VideoType;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -50,43 +42,12 @@ public class GrapeSite extends BaseSite {
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern YEAR_REGEX = Pattern.compile("◎年\\s*代\\s+(?<y>\\d{4})\\s*◎");
     private static final Pattern VOD_REGEX = Pattern.compile("tt\\d+/?|/vod/\\d+/?|/vod/[a-z]+/[a-z]+/?|/html/\\d+\\.html");
+    private static final Pattern VOD_GENRE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>[a-z]+)");
     private static final String BT_ATTACH = "url_btbtt";
 
     private static GrapeSite instance;
 
-    /**
-     * The repository including downloadable resources.
-     */
-    @Getter
-    private final IntRangeRepository<GrapeNewsItem> newsRepository = new IntRangeRepositoryImpl<>(this::findNewsItem, () -> 16132);
-
-    /**
-     * The repository including vod resource.
-     */
-    @Getter
-    private final RangeRepository<GrapeVodItem, LocalDate> vodRepository = new RangeRepository<>() {
-        @Nonnull
-        @Override
-        public LocalDate min() {
-            return LocalDate.of(2001, 9, 11);
-        }
-
-        @Nonnull
-        @Override
-        public LocalDate max() {
-            return LocalDate.now();
-        }
-
-        @Override
-        public List<GrapeVodItem> findAllByRangeClosed(@Nonnull LocalDate startInclusive, @Nonnull LocalDate endInclusive) throws HttpResponseException {
-            List<GrapeVodItem> vodItems = new LinkedList<>();
-            vodItems.addAll(getRangedVodItems(1, startInclusive, endInclusive, VideoType.MOVIE));
-            vodItems.addAll(getRangedVodItems(2, startInclusive, endInclusive, VideoType.SERIES));
-            vodItems.addAll(getRangedVodItems(3, startInclusive, endInclusive, VideoType.ANIME));
-            vodItems.addAll(getRangedVodItems(4, startInclusive, endInclusive, VideoType.VARIETY));
-            return vodItems;
-        }
-    };
+    private final IterableRepository<GrapeNewsItem> newsRepository = new IntRangeIterableRepositoryImpl<>(this::findNewsItem, 16132);
 
     private GrapeSite() {
         super("Grape Vod", new BasicHttpSession("putaoys.com"), GrapeSite::handleResponse);
@@ -110,7 +71,22 @@ public class GrapeSite extends BaseSite {
         }
     }
 
-    private GrapeNewsItem findNewsItem(@Nonnull Integer id) throws HttpResponseException {
+    /**
+     * The repository including downloadable resources.
+     */
+    public IterableRepository<GrapeNewsItem> getNewsRepository() {
+        return newsRepository;
+    }
+
+    /**
+     * The repository including vod resource.
+     */
+    public IterableRepository<GrapeVodItem> getVodRepository(GrapeVodType type) throws HttpResponseException {
+        Iterator<String> iterator = getAllVodIndexes(type).stream().map(i -> i.path).iterator();
+        return new IdentifiedIterableRepositoryImpl<>(this::findVodItem, iterator);
+    }
+
+    public GrapeNewsItem findNewsItem(@Nonnull Integer id) throws HttpResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         LocalDate releaseDate = LocalDate.parse(RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text()).group("s"));
@@ -155,19 +131,11 @@ public class GrapeSite extends BaseSite {
         return item;
     }
 
-    private List<GrapeVodItem> getRangedVodItems(int typeId, LocalDate start, LocalDate end, VideoType type) throws HttpResponseException {
-        List<GrapeVodItem> items = new LinkedList<>();
+    private List<SimpleItem> getAllVodIndexes(GrapeVodType type) throws HttpResponseException {
+        List<SimpleItem> items = new ArrayList<>();
         for (int page = 1; ; page++) {
-            VodList vodList = this.getVodList(typeId, page);
-            for (SimpleItem item : vodList.items) {
-                if (item.update.isAfter(end)) {
-                    continue;
-                }
-                if (item.update.isBefore(start)) {
-                    return items;
-                }
-                items.add(getVodItem(item.path, type));
-            }
+            VodList vodList = this.getIndexes(type, page);
+            items.addAll(vodList.items);
             if (vodList.currentPage >= vodList.pagesCount) {
                 break;
             }
@@ -175,8 +143,9 @@ public class GrapeSite extends BaseSite {
         return items;
     }
 
-    private VodList getVodList(int typeId, int page) throws HttpResponseException {
-        RequestBuilder builder = builder0("/index.php").addParameter("s", String.format("vod-type-id-%d-p-%d.html", typeId, page));
+    private VodList getIndexes(GrapeVodType type, int page) throws HttpResponseException {
+        String arg = String.format("vod-type-id-%d-p-%d", type.getCode(), page);
+        RequestBuilder builder = builder0("/index.php").addParameter("s", arg);
         Document document = getDocument(builder, SnapshotStrategy.always());
         VodList.VodListBuilder listBuilder = VodList.builder();
 
@@ -205,12 +174,17 @@ public class GrapeSite extends BaseSite {
         return listBuilder.build();
     }
 
-    private GrapeVodItem getVodItem(String path, VideoType type) throws HttpResponseException {
+    public GrapeVodItem findVodItem(String path) throws HttpResponseException {
         RequestBuilder builder = builder0(path);
         Document document = getDocument(builder, SnapshotStrategy.never());
 
+        Elements heads = document.selectFirst("ul.bread-crumbs").select(CssSelector.TAG_A);
+        AssertUtils.requireEquals(heads.size(), 3);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, heads.get(1).attr(CssSelector.ATTR_HREF));
+        GrapeVodGenre genre = EnumUtilExt.deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
         LocalDateTime addTime = LocalDateTime.parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
-        GrapeVodItem item = new GrapeVodItem(builder.toString(), type, addTime);
+        GrapeVodItem item = new GrapeVodItem(builder.toString(), genre, addTime);
+
         Element div = document.selectFirst(".detail-title");
         Element h1 = div.selectFirst(CssSelector.TAG_H);
         item.setTitle(h1.text().strip());

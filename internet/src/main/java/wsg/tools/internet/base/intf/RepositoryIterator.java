@@ -1,17 +1,18 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.base.intf;
 
 import org.apache.http.client.HttpResponseException;
 
 import java.util.NoSuchElementException;
 
 /**
- * An iterator over linked records.
+ * An iterator over records in the {@link IterableRepository}.
  *
  * @param <T> type of the record
  * @author Kingen
+ * @see IterableRepository
  * @since 2021/3/1
  */
-public interface RecordIterator<T> {
+public interface RepositoryIterator<T> {
 
     /**
      * Returns {@code true} if the next record exists in the repository.

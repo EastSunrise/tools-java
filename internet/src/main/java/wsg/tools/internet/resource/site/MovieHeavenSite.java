@@ -15,9 +15,9 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.*;
-import wsg.tools.internet.base.intf.IntRangeRepository;
-import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.resource.base.AbstractResource;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>, IntRangeRepository<MovieHeavenItem> {
+public class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>, IterableRepository<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
@@ -67,7 +67,7 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
 
     private static MovieHeavenSite instance;
 
-    private final IntRangeRepository<MovieHeavenItem> repository = new IntRangeRepositoryImpl<>(this, this::max);
+    private final IterableRepository<MovieHeavenItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
 
     private MovieHeavenSite() {
         super("Movie Heaven", new BasicHttpSession("993dy.com"), new AbstractResponseHandler<>() {
@@ -89,17 +89,10 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
         return instance;
     }
 
-    @Nonnull
-    @Override
-    public Integer min() {
-        return repository.min();
-    }
-
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
     @Nonnull
-    @Override
     public Integer max() {
         Document document;
         try {
@@ -117,12 +110,7 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
     }
 
     @Override
-    public List<MovieHeavenItem> findAllByRangeClosed(@Nonnull Integer startInclusive, @Nonnull Integer endInclusive) throws HttpResponseException {
-        return repository.findAllByRangeClosed(startInclusive, endInclusive);
-    }
-
-    @Override
-    public RecordIterator<MovieHeavenItem> iterator() throws HttpResponseException {
+    public RepositoryIterator<MovieHeavenItem> iterator() {
         return repository.iterator();
     }
 
@@ -148,7 +136,7 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
         String text = ((TextNode) span.nextSibling()).text();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
             int year = Integer.parseInt(text);
-            if (year >= VideoConstants.FILM_START_YEAR && year <= Year.now().getValue()) {
+            if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
                 item.setYear(year);
             }
         }

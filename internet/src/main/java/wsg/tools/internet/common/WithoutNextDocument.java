@@ -12,7 +12,7 @@ import java.util.function.Function;
  *
  * @author Kingen
  * @see wsg.tools.internet.base.intf.IterableRepository
- * @see wsg.tools.internet.base.RecordIterator
+ * @see wsg.tools.internet.base.intf.RepositoryIterator
  * @see wsg.tools.internet.base.NextSupplier
  * @since 2021/3/2
  */

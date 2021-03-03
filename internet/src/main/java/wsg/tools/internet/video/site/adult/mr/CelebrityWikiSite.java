@@ -1,6 +1,5 @@
 package wsg.tools.internet.video.site.adult.mr;
 
-import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -20,16 +19,17 @@ import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.BasicHttpSession;
-import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.intf.*;
+import wsg.tools.internet.base.*;
+import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.video.enums.Constellation;
 import wsg.tools.internet.video.enums.Gender;
 import wsg.tools.internet.video.enums.LanguageEnum;
 import wsg.tools.internet.video.enums.RegionEnum;
+import wsg.tools.internet.video.site.adult.AdultEntry;
+import wsg.tools.internet.video.site.adult.AdultEntryUtils;
 import wsg.tools.internet.video.site.adult.mr.enums.*;
 
 import java.io.IOException;
@@ -69,7 +69,8 @@ public class CelebrityWikiSite extends BaseSite {
     private static final Pattern FIGURE_REGEX =
             Pattern.compile("(?<b>\\d{2,3})(?<c>[A-L])?([^\\d]+)(?<w>\\d{2})\\3(?<h>\\d{2,3})[^\\d]{0,4}", Pattern.CASE_INSENSITIVE);
     private static final Pattern FIGURE_REGEX2 =
-            Pattern.compile("B?([.:]?)(?<b>\\d{2,3})([(（]?(?<c>[A-L])[）)]?)?([^\\d]*)W\\1(?<w>\\d{2})\\5H\\1(?<h>\\d{2,3})[^\\d]{0,3}", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("B?([.:]?)(?<b>\\d{2,3})([(（]?(?<c>[A-L])[）)]?)?([^\\d]*)W\\1(?<w>\\d{2})\\5H\\1(?<h>\\d{2,3})[^\\d]{0,3}",
+                    Pattern.CASE_INSENSITIVE);
     private static final Pattern CUP_REGEX = Pattern.compile("(?<c>[A-P])(罩?杯?|-\\d{2,3})");
     private static final Pattern BLOOD_REGEX = Pattern.compile("(?<t>[ABO0]|AB)( ?型)?", Pattern.CASE_INSENSITIVE);
     private static final String BLOCKED_TITLE = "****名人百科网根据服务器要求进行屏蔽****";
@@ -85,13 +86,6 @@ public class CelebrityWikiSite extends BaseSite {
         ALBUM_HREF_REGEX = Pattern.compile("http://www\\.mrenbaike\\.net/tuku/(?<t>" + albumTypes + ")/(?<id>\\d+)(_(?<i>\\d+))?\\.html");
     }
 
-    @Getter
-    private final IntRangeRepository<Celebrity> celebrityRepository = new IntRangeRepositoryImpl<>(this::findCelebrity, () -> 9601);
-    @Getter
-    private final Repository<String, CelebrityAdultVideo> videoRepository = this::findAdultVideo;
-    @Getter
-    private final Map<AlbumType, IterableRepository<Album>> albumRepositories;
-
     private CelebrityWikiSite() {
         super("Wiki of Celebrities", new BasicHttpSession(Scheme.HTTP, "mrenbaike.net"), new AbstractResponseHandler<>() {
             @Override
@@ -104,10 +98,6 @@ public class CelebrityWikiSite extends BaseSite {
                 return content;
             }
         });
-        albumRepositories = new HashMap<>(AlbumType.values().length);
-        for (AlbumType type : AlbumType.values()) {
-            albumRepositories.put(type, new IterableRepositoryImpl<>(id -> this.findAlbum(id, type), type.getFirst()));
-        }
     }
 
     public synchronized static CelebrityWikiSite getInstance() {
@@ -117,63 +107,20 @@ public class CelebrityWikiSite extends BaseSite {
         return instance;
     }
 
-    public Album findAlbum(int id, AlbumType type) throws HttpResponseException {
-        Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id), SnapshotStrategy.never());
-        Element show = document.selectFirst("div.picshow");
-        String title = show.selectFirst(CssSelector.TAG_H1).text();
-        LocalDateTime updateTime = LocalDateTime.parse(((TextNode) show.selectFirst("div.info").childNode(0)).text(), Constants.STANDARD_DATE_TIME_FORMATTER);
-        List<String> images = show.selectFirst("#pictureurls").select("img").eachAttr("rel");
-        Album album = new Album(id, type, title, updateTime, images);
-        Element text = show.selectFirst("div.text");
-        List<String> hrefs = text.select(">a").eachAttr(CssSelector.ATTR_HREF).stream().filter(s -> !HOME_PAGE.equals(s)).collect(Collectors.toList());
-        if (!hrefs.isEmpty()) {
-            album.setRelatedCelebrities(hrefs.stream().map(s -> RegexUtils.matchesOrElseThrow(CELEBRITY_HREF_REGEX, s).group("id")).map(Integer::parseInt)
-                    .collect(Collectors.toList()));
-        }
-        Element tags = text.selectFirst("div.ptags");
-        if (tags != null) {
-            album.setTags(tags.select(CssSelector.TAG_A).eachText());
-        }
-        String next = show.selectFirst("div.next").selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-        if (!LAST_PAGE.equals(next)) {
-            album.setNext(Integer.parseInt(RegexUtils.matchesOrElseThrow(ALBUM_HREF_REGEX, next).group("id")));
-        }
-        return album;
+    /**
+     * Obtains the repository of celebrities based on identifiers.
+     * May that some records are not found.
+     */
+    public IterableRepository<Celebrity> getCelebrityRepository() {
+        return new IntRangeIterableRepositoryImpl<>(this::findCelebrity, 9601);
     }
 
-    /**
-     * Obtains details of the adult video of the given code
-     *
-     * @param code ignore case
-     */
-    public CelebrityAdultVideo findAdultVideo(String code) throws HttpResponseException {
-        code = AssertUtils.requireNotBlank(code).toUpperCase();
-        Document document = getDocument(builder0("/fanhao/%s.html", code), SnapshotStrategy.never());
-        Element div = document.selectFirst("div.fanhao");
-        if (div.childNodeSize() == 1) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
-        }
-        String cover = div.selectFirst("img").attr(CssSelector.ATTR_SRC);
-        CelebrityAdultVideo video = new CelebrityAdultVideo(code, cover);
-        Element current = document.selectFirst("a.current");
-        if (current != null) {
-            video.setCelebrity(initCelebrity(document, SimpleCelebrity::new));
-        }
+    public IterableRepository<CelebrityAlbum> getAlbumRepository(AlbumType type) {
+        return new IterableRepositoryImpl<>(id -> this.findAlbum(id, type), type.first());
+    }
 
-        Elements ems = div.select("em");
-        Map<String, String> info = ems.stream()
-                .collect(Collectors.toMap(e -> e.text().replace(" ", ""), em -> ((TextNode) em.nextSibling()).text().substring(1)));
-        video.setActress(getString(info, "演员"));
-        video.setTitle(getString(info, "名称"));
-        video.setRelease(getValue(info, "发行时间", LocalDate::parse));
-        video.setDuration(getValue(info, "播放时间", s -> Duration.ofMinutes(Long.parseLong(RegexUtils.matchesOrElseThrow(DURATION_REGEX, s).group("d")))));
-        video.setDirector(getValue(info, "导演", s -> "TODO".equals(s) ? null : s));
-        video.setMosaic(getValue(info, "是否有码", s -> EnumUtilExt.deserializeTitle(s, Mosaic.class, false)));
-        video.setProducer(getString(info, "制作商"));
-        video.setDistributor(getString(info, "发行商"));
-        video.setSeries(getString(info, "系列"));
-        video.setTags(getStringList(info, "类别"));
-        return video;
+    public Repository<String, CelebrityAdultEntry> getEntryRepository() {
+        return this::findAdultEntry;
     }
 
     public Celebrity findCelebrity(int id) throws HttpResponseException {
@@ -216,6 +163,55 @@ public class CelebrityWikiSite extends BaseSite {
         return celebrity;
     }
 
+    public CelebrityAlbum findAlbum(int id, AlbumType type) throws HttpResponseException {
+        Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id), SnapshotStrategy.never());
+        Element show = document.selectFirst("div.picshow");
+        String title = show.selectFirst(CssSelector.TAG_H1).text();
+        LocalDateTime updateTime = LocalDateTime.parse(((TextNode) show.selectFirst("div.info").childNode(0)).text(), Constants.STANDARD_DATE_TIME_FORMATTER);
+        List<String> images = show.selectFirst("#pictureurls").select("img").eachAttr("rel");
+        CelebrityAlbum album = new CelebrityAlbum(id, type, title, updateTime, images);
+        Element text = show.selectFirst("div.text");
+        List<String> hrefs = text.select(">a").eachAttr(CssSelector.ATTR_HREF).stream().filter(s -> !HOME_PAGE.equals(s)).collect(Collectors.toList());
+        if (!hrefs.isEmpty()) {
+            album.setRelatedCelebrities(hrefs.stream().map(s -> RegexUtils.matchesOrElseThrow(CELEBRITY_HREF_REGEX, s).group("id")).map(Integer::parseInt)
+                    .collect(Collectors.toList()));
+        }
+        Element tags = text.selectFirst("div.ptags");
+        if (tags != null) {
+            album.setTags(tags.select(CssSelector.TAG_A).eachText());
+        }
+        String next = show.selectFirst("div.next").selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+        if (!LAST_PAGE.equals(next)) {
+            album.setNext(Integer.parseInt(RegexUtils.matchesOrElseThrow(ALBUM_HREF_REGEX, next).group("id")));
+        }
+        return album;
+    }
+
+    /**
+     * Obtains details of the adult video of the given code
+     *
+     * @param id ignore case
+     */
+    public CelebrityAdultEntry findAdultEntry(String id) throws HttpResponseException {
+        id = AssertUtils.requireNotBlank(id).toUpperCase();
+        Document document = getDocument(builder0("/fanhao/%s.html", id), SnapshotStrategy.never());
+        Element div = document.selectFirst("div.fanhao");
+        if (div.childNodeSize() == 1) {
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
+        }
+        String cover = div.selectFirst("img").attr(CssSelector.ATTR_SRC);
+
+        Elements ems = div.select("em");
+        Map<String, String> info = ems.stream()
+                .collect(Collectors.toMap(e -> e.text().replace(" ", ""), em -> ((TextNode) em.nextSibling()).text().substring(1)));
+        AdultEntry entry = Objects.requireNonNull(AdultEntryUtils.getAdultEntry(info, cover, SEPARATOR));
+        Element current = document.selectFirst("a.current");
+        if (current != null) {
+            return new CelebrityAdultEntry(entry, initCelebrity(document, SimpleCelebrity::new));
+        }
+        return new CelebrityAdultEntry(entry);
+    }
+
     /**
      * Initializes basic properties of a celebrity.
      */
@@ -239,43 +235,52 @@ public class CelebrityWikiSite extends BaseSite {
 
     private BasicInfo getBasicInfo(Map<String, String> map) {
         BasicInfo info = new BasicInfo();
-        info.setGender(getValue(map, "性别", s -> FAKE_FEMALE.equals(s) ? Gender.MALE : EnumUtilExt.deserializeTitle(s, Gender.class, false)));
-        info.setBirthday(getValue(map, "出生日期", this::parseBirthday));
-        info.setFullName(getString(map, "姓名"));
-        info.setZhNames(getStringList(map, "中文名"));
-        info.setJaNames(getStringList(map, "日文名"));
-        info.setEnNames(getStringList(map, "英文名"));
-        info.setAka(getStringList(map, "别名"));
-        info.setZodiac(getValue(map, "生肖", text -> EnumUtilExt.deserializeTitle(text.substring(0, 1), Zodiac.class, false)));
-        info.setConstellation(getValue(map, "星座", text -> deserializeAka(text, Constellation.class)));
-        List<String> interests = getStringList(map, "兴趣");
-        info.setInterests(interests != null ? interests : getStringList(map, "爱好"));
+        info.setGender(AdultEntryUtils.getValue(map, s -> {
+            if (FAKE_FEMALE.equals(s)) {
+                return Gender.MALE;
+            }
+            return EnumUtilExt.deserializeTitle(s, Gender.class, false);
+        }, "性别"));
+        info.setBirthday(AdultEntryUtils.getValue(map, this::parseBirthday, "出生日期"));
+        info.setFullName(AdultEntryUtils.getString(map, "姓名"));
+        info.setZhNames(AdultEntryUtils.getValues(map, Function.identity(), SEPARATOR, "中文名"));
+        info.setJaNames(AdultEntryUtils.getStringList(map, SEPARATOR, "日文名"));
+        info.setEnNames(AdultEntryUtils.getStringList(map, SEPARATOR, "英文名"));
+        info.setAka(AdultEntryUtils.getStringList(map, SEPARATOR, "别名"));
+        info.setZodiac(AdultEntryUtils.getValue(map, text -> EnumUtilExt.deserializeTitle(text.substring(0, 1), Zodiac.class, false), "生肖"));
+        info.setConstellation(AdultEntryUtils.getValue(map, text -> deserializeAka(text, Constellation.class), "星座"));
+        info.setInterests(AdultEntryUtils.getStringList(map, SEPARATOR, "兴趣", "爱好"));
 
-        info.setHeight(getValueMatched(map, "身高", HEIGHT_REGEX, matcher -> {
+        info.setHeight(AdultEntryUtils.getValueIfMatched(map, HEIGHT_REGEX, matcher -> {
             double height = Double.parseDouble(matcher.group("h"));
             if (height < CENTIMETERS_PER_METER) {
                 height *= CENTIMETERS_PER_METER;
             }
             return (int) Math.round(height);
-        }));
-        info.setWeight(getValueMatched(map, "体重", WEIGHT_REGEX, matcher -> (int) Math.round(Double.parseDouble(matcher.group("w")))));
-        info.setCup(getValue(map, "罩杯", text -> Enum.valueOf(CupEnum.class, RegexUtils.matchesOrElseThrow(CUP_REGEX, text.strip()).group("c"))));
-        info.setFigure(getValue(map, "三围", this::parseFigure));
-        info.setBloodType(getValueMatched(map, "血型", BLOOD_REGEX, matcher -> {
+        }, "身高"));
+        info.setWeight(AdultEntryUtils.getValueIfMatched(map, WEIGHT_REGEX,
+                matcher -> (int) Math.round(Double.parseDouble(matcher.group("w"))), "体重"));
+        info.setCup(AdultEntryUtils.getValue(map,
+                text -> Enum.valueOf(CupEnum.class, RegexUtils.matchesOrElseThrow(CUP_REGEX, text.strip()).group("c")), "罩杯"));
+        info.setFigure(AdultEntryUtils.getValue(map, this::parseFigure, "三围"));
+        info.setBloodType(AdultEntryUtils.getValueIfMatched(map, BLOOD_REGEX, matcher -> {
             String type = matcher.group("t");
             return "0".equals(type) ? BloodType.O : Enum.valueOf(BloodType.class, type.toUpperCase());
-        }));
+        }, "血型"));
 
-        info.setOccupations(getValue(map, "职业", text -> deserializeAkaList(text, Occupation.class, "、，/., ")));
-        info.setStart(getValue(map, "出道时间", text -> parsePartDate(text.replace(" ", ""))));
-        info.setRetire(getValue(map, "隐退时间", this::parsePartDate));
-        info.setAgency(getString(map, "经纪公司"));
-        info.setFirm(getString(map, "事务所"));
-        info.setSchool(getString(map, "毕业院校"));
-        info.setBirthplace(getString(map, "出生地"));
-        info.setNation(getValue(map, "民族", text -> text.contains(Nation.MIXED_KEY) ? Nation.MIXED : deserializeAka(text, Nation.class)));
-        info.setNationalities(getValue(map, "国籍", text -> deserializeAkaList(text.replace(" ", ""), RegionEnum.class, "、,")));
-        info.setLanguages(getValue(map, "语言", text -> deserializeAkaList(StringUtils.stripEnd(text, "等"), LanguageEnum.class, "、/ ，及")));
+        info.setOccupations(AdultEntryUtils.getValue(map, text -> deserializeAkaList(text, Occupation.class, "、，/., "), "职业"));
+        info.setStart(AdultEntryUtils.getValue(map, text -> parsePartDate(text.replace(" ", "")), "出道时间"));
+        info.setRetire(AdultEntryUtils.getValue(map, this::parsePartDate, "隐退时间"));
+        info.setAgency(AdultEntryUtils.getString(map, "经纪公司"));
+        info.setFirm(AdultEntryUtils.getString(map, "事务所"));
+        info.setSchool(AdultEntryUtils.getString(map, "毕业院校"));
+        info.setBirthplace(AdultEntryUtils.getString(map, "出生地"));
+        info.setNation(AdultEntryUtils.getValue(map, text ->
+                text.contains(Nation.MIXED_KEY) ? Nation.MIXED : deserializeAka(text, Nation.class), "民族"));
+        info.setNationalities(AdultEntryUtils.getValue(map,
+                text -> deserializeAkaList(text.replace(" ", ""), RegionEnum.class, "、,"), "国籍"));
+        info.setLanguages(AdultEntryUtils.getValue(map,
+                text -> deserializeAkaList(StringUtils.stripEnd(text, "等"), LanguageEnum.class, "、/ ，及"), "语言"));
 
         info.setOthers(new HashSet<>(map.keySet()));
         return info;
@@ -308,32 +313,6 @@ public class CelebrityWikiSite extends BaseSite {
             CollectionUtils.addIgnoreNull(ts, deserializeAka(s, clazz));
         }
         return ts.isEmpty() ? null : new ArrayList<>(ts);
-    }
-
-    private String getString(Map<String, String> map, String key) {
-        return getValue(map, key, Function.identity());
-    }
-
-    private <T> T getValueMatched(Map<String, String> map, String key, Pattern pattern, Function<Matcher, T> function) {
-        return getValue(map, key, text -> {
-            Matcher matcher = pattern.matcher(text);
-            if (matcher.matches()) {
-                return function.apply(matcher);
-            }
-            return null;
-        });
-    }
-
-    private List<String> getStringList(Map<String, String> map, String key) {
-        return getValue(map, key, text -> Arrays.asList(StringUtils.split(text, SEPARATOR)));
-    }
-
-    private <T> T getValue(Map<String, String> map, String key, Function<String, T> function) {
-        String value = map.remove(key);
-        if (value == null) {
-            return null;
-        }
-        return function.apply(value);
     }
 
     private Temporal parsePartDate(String text) {
@@ -392,8 +371,8 @@ public class CelebrityWikiSite extends BaseSite {
         return ps.eachText();
     }
 
-    private List<SimpleAdultVideo> getWorks(Element icon) {
-        List<SimpleAdultVideo> works = new ArrayList<>();
+    private List<SimpleAdultEntry> getWorks(Element icon) {
+        List<SimpleAdultEntry> works = new ArrayList<>();
         Element tbody = icon.selectFirst("tbody");
         if (tbody != null) {
             Elements trs = tbody.select(CssSelector.TAG_TR);
@@ -406,7 +385,7 @@ public class CelebrityWikiSite extends BaseSite {
                 if (values[0] == null) {
                     continue;
                 }
-                SimpleAdultVideo work = new SimpleAdultVideo(values[0]);
+                SimpleAdultEntry work = new SimpleAdultEntry(values[0]);
                 if (!BLOCKED_TITLE.equals(values[1])) {
                     work.setTitle(values[1]);
                 }
@@ -438,7 +417,7 @@ public class CelebrityWikiSite extends BaseSite {
         }
         Elements labels = icon.select("label.born");
         if (!labels.isEmpty()) {
-            labels.eachText().stream().map(SimpleAdultVideo::new).forEach(works::add);
+            labels.eachText().stream().map(SimpleAdultEntry::new).forEach(works::add);
         }
         return works.isEmpty() ? null : works;
     }

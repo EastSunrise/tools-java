@@ -1,20 +1,20 @@
 package wsg.tools.internet.video.site.adult.mr;
 
 import lombok.Getter;
-import wsg.tools.internet.video.site.adult.BaseAdultVideo;
+import wsg.tools.internet.video.site.adult.BaseAdultEntry;
 import wsg.tools.internet.video.site.adult.mr.enums.Mosaic;
 
 import java.time.Duration;
 import java.time.LocalDate;
 
 /**
- * An adult video with simple information.
+ * An adult entry with simple information.
  *
  * @author Kingen
  * @since 2021/2/24
  */
 @Getter
-public class SimpleAdultVideo extends BaseAdultVideo {
+public class SimpleAdultEntry extends BaseAdultEntry {
 
     /**
      * May be blocked to null
@@ -25,7 +25,7 @@ public class SimpleAdultVideo extends BaseAdultVideo {
     private LocalDate release;
     private String distributor;
 
-    SimpleAdultVideo(String code) {
+    SimpleAdultEntry(String code) {
         super(code);
     }
 

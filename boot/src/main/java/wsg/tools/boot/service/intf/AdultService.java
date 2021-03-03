@@ -1,7 +1,7 @@
 package wsg.tools.boot.service.intf;
 
 import org.apache.http.client.HttpResponseException;
-import wsg.tools.internet.video.site.adult.MidnightSite;
+import wsg.tools.internet.video.site.adult.midnight.MidnightSite;
 
 /**
  * Interface of service for adult videos.

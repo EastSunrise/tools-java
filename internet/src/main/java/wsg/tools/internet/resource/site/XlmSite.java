@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.site;
 
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
@@ -15,10 +14,9 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.BasicHttpSession;
-import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.IterableRepositoryImpl;
 import wsg.tools.internet.base.RequestBuilder;
 import wsg.tools.internet.base.intf.IterableRepository;
-import wsg.tools.internet.base.intf.IterableRepositoryImpl;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.WithoutNextDocument;
@@ -31,10 +29,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -52,9 +48,6 @@ public class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
 
     private static XlmSite instance;
 
-    @Getter
-    private final Map<XlmType, IterableRepository<XlmItem>> repositories;
-
     private XlmSite() {
         super("Xlm", new BasicHttpSession("xleimi.com"), new AbstractResponseHandler<>() {
             @Override
@@ -62,10 +55,6 @@ public class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
                 return EntityUtils.toString(entity, Constants.GBK);
             }
         });
-        repositories = new HashMap<>(XlmType.values().length);
-        for (XlmType type : XlmType.values()) {
-            repositories.put(type, new IterableRepositoryImpl<>(this, type.getFirst()));
-        }
     }
 
     public synchronized static XlmSite getInstance() {
@@ -75,8 +64,8 @@ public class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
         return instance;
     }
 
-    public RecordIterator<XlmItem> iterator(@Nonnull XlmType type) throws HttpResponseException {
-        return repositories.get(type).iterator();
+    public IterableRepository<XlmItem> getRepository(@Nonnull XlmType type) {
+        return new IterableRepositoryImpl<>(this, type.first());
     }
 
     @Override

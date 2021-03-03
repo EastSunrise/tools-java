@@ -4,9 +4,7 @@ import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
-import wsg.tools.internet.base.RecordIterator;
-import wsg.tools.internet.base.intf.RangeRepository;
-import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.resource.item.IdentifiedItem;
 
 import javax.annotation.Nullable;
@@ -22,24 +20,14 @@ import java.util.List;
 public interface ResourceService {
 
     /**
-     * Import all resources from the given iterator.
+     * Import all resources from the given iterable repository.
      *
-     * @param iterator     iterator over the resources
+     * @param repository   an iterable repository
      * @param repositoryId the identifier of the repository
      * @throws HttpResponseException if an error occurs when do request
      */
     <T extends IdentifiedItem>
-    void importIterator(RecordIterator<T> iterator, String repositoryId) throws HttpResponseException;
-
-    /**
-     * Import all resources from the given repository.
-     *
-     * @param repository   an implementation of {@link RangeRepository}
-     * @param repositoryId the identifier of the repository
-     * @throws HttpResponseException if an error occurs when do request
-     */
-    <T extends IdentifiedItem, R extends Repository<Integer, T> & RangeRepository<T, Integer>>
-    void importRangeRepository(R repository, String repositoryId) throws HttpResponseException;
+    void importIterableRepository(IterableRepository<T> repository, String repositoryId) throws HttpResponseException;
 
     /**
      * Search resources of the given key.

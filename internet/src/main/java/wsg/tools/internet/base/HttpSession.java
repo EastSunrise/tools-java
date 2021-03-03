@@ -1,14 +1,18 @@
 package wsg.tools.internet.base;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.util.EntityUtils;
+import wsg.tools.common.constant.Constants;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * A http session to execute requests under a domain.
@@ -31,7 +35,12 @@ import java.io.Closeable;
  */
 public interface HttpSession extends Closeable {
 
-    ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler();
+    ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler() {
+        @Override
+        public String handleEntity(HttpEntity entity) throws IOException {
+            return EntityUtils.toString(entity, Constants.UTF_8);
+        }
+    };
 
     /**
      * Obtains the domain of the session.

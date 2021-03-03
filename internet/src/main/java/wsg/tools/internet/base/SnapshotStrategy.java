@@ -25,7 +25,7 @@ public interface SnapshotStrategy<T> {
      * @return the strategy
      */
     static <V> SnapshotStrategy<V> always() {
-        return v -> false;
+        return v -> true;
     }
 
     /**

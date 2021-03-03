@@ -10,9 +10,9 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.*;
-import wsg.tools.internet.base.intf.IntRangeRepository;
-import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.resource.base.AbstractResource;
@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, IntRangeRepository<XlcItem> {
+public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, IterableRepository<XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
@@ -55,7 +55,7 @@ public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, I
 
     private static XlcSite instance;
 
-    private final IntRangeRepository<XlcItem> repository = new IntRangeRepositoryImpl<>(this, this::max);
+    private final IterableRepository<XlcItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
 
     private XlcSite() {
         super("XLC", new BasicHttpSession("xunleicang.in"));
@@ -68,17 +68,10 @@ public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, I
         return instance;
     }
 
-    @Nonnull
-    @Override
-    public Integer min() {
-        return repository.min();
-    }
-
     /**
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
     @Nonnull
-    @Override
     public Integer max() {
         Document document;
         try {
@@ -96,12 +89,7 @@ public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, I
     }
 
     @Override
-    public List<XlcItem> findAllByRangeClosed(@Nonnull Integer startInclusive, @Nonnull Integer endInclusive) throws HttpResponseException {
-        return repository.findAllByRangeClosed(startInclusive, endInclusive);
-    }
-
-    @Override
-    public RecordIterator<XlcItem> iterator() throws HttpResponseException {
+    public RepositoryIterator<XlcItem> iterator() {
         return repository.iterator();
     }
 
@@ -128,7 +116,7 @@ public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, I
         Element font = as.last().selectFirst(CssSelector.TAG_FONT);
         if (font != null) {
             int year = Integer.parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("year"));
-            if (year >= VideoConstants.FILM_START_YEAR && year <= Year.now().getValue()) {
+            if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
                 item.setYear(year);
             }
         }

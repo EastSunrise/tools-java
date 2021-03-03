@@ -11,9 +11,9 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.*;
-import wsg.tools.internet.base.intf.IntRangeRepository;
-import wsg.tools.internet.base.intf.IntRangeRepositoryImpl;
+import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.UnexpectedException;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>, IntRangeRepository<Y80sItem> {
+public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>, IterableRepository<Y80sItem> {
 
     private static final Map<String, VideoType> TYPE_AKA = Map.of(
             "movie", VideoType.MOVIE,
@@ -61,7 +61,7 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
     private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
     private static Y80sSite instance;
 
-    private final IntRangeRepository<Y80sItem> repository = new IntRangeRepositoryImpl<>(this, this::max);
+    private final IterableRepository<Y80sItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
 
     private Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
@@ -74,17 +74,10 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
         return instance;
     }
 
-    @Nonnull
-    @Override
-    public Integer min() {
-        return repository.min();
-    }
-
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     @Nonnull
-    @Override
     public Integer max() {
         Document document;
         try {
@@ -103,12 +96,7 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
     }
 
     @Override
-    public List<Y80sItem> findAllByRangeClosed(@Nonnull Integer startInclusive, @Nonnull Integer endInclusive) throws HttpResponseException {
-        return repository.findAllByRangeClosed(startInclusive, endInclusive);
-    }
-
-    @Override
-    public RecordIterator<Y80sItem> iterator() throws HttpResponseException {
+    public RepositoryIterator<Y80sItem> iterator() {
         return repository.iterator();
     }
 

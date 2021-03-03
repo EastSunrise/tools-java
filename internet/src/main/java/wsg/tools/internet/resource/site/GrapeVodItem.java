@@ -19,20 +19,20 @@ import java.time.LocalDateTime;
 public class GrapeVodItem extends BaseItem implements TypeSupplier, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
 
     private final String url;
-    private final VideoType type;
+    private final GrapeVodGenre genre;
     private final LocalDateTime addTime;
     private String state;
     private Integer year;
 
-    GrapeVodItem(@Nonnull String url, VideoType type, LocalDateTime addTime) {
+    GrapeVodItem(@Nonnull String url, GrapeVodGenre genre, LocalDateTime addTime) {
         this.url = url;
-        this.type = type;
+        this.genre = genre;
         this.addTime = addTime;
     }
 
     @Override
     public VideoType getType() {
-        return type;
+        return genre.getType();
     }
 
     @Override

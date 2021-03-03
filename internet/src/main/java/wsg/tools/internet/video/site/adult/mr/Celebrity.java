@@ -16,7 +16,7 @@ import java.util.Set;
 public class Celebrity extends SimpleCelebrity {
 
     private final BasicInfo info;
-    private List<SimpleAdultVideo> works;
+    private List<SimpleAdultEntry> works;
     private List<String> descriptions;
     private List<String> experiences;
     private List<String> groupLives;
@@ -28,7 +28,7 @@ public class Celebrity extends SimpleCelebrity {
         this.info = info;
     }
 
-    void setWorks(List<SimpleAdultVideo> works) {
+    void setWorks(List<SimpleAdultEntry> works) {
         this.works = works;
     }
 

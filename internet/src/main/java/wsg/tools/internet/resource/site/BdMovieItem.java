@@ -12,19 +12,19 @@ import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
 
 /**
- * Items of {@link BdFilmSite}.
+ * Items of {@link BdMovieSite}.
  *
  * @author Kingen
  * @since 2020/10/27
  */
-public class BdFilmItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier, TypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class BdMovieItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier, TypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private Long dbId;
     private String imdbId;
     private Integer next;
 
-    BdFilmItem(int id, @Nonnull String url, LocalDateTime updateTime) {
+    BdMovieItem(int id, @Nonnull String url, LocalDateTime updateTime) {
         super(id, url);
         this.updateTime = updateTime;
     }

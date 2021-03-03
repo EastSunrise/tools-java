@@ -17,7 +17,6 @@ import wsg.tools.common.lang.StringUtilsExt;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -67,7 +66,7 @@ public class RequestBuilder {
     public RequestBuilder addParameter(final NameValuePair pair) {
         Objects.requireNonNull(pair, "Name value pair");
         if (parameters == null) {
-            parameters = new LinkedList<>();
+            parameters = new ArrayList<>();
         }
         parameters.add(pair);
         return this;
@@ -78,6 +77,21 @@ public class RequestBuilder {
      */
     public RequestBuilder addParameter(final String name, final String value) {
         return addParameter(new BasicNameValuePair(name, value));
+    }
+
+    /**
+     * Sets the parameter of the given name to the given value.
+     * Remove the previous value if exists.
+     */
+    public RequestBuilder setParameter(final String name, final String value) {
+        if (parameters == null) {
+            parameters = new ArrayList<>();
+        }
+        if (!parameters.isEmpty()) {
+            parameters.removeIf(pair -> pair.getName().equals(name));
+        }
+        parameters.add(new BasicNameValuePair(name, value));
+        return this;
     }
 
     /**

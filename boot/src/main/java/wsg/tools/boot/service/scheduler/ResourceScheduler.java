@@ -28,20 +28,21 @@ public class ResourceScheduler extends BaseServiceImpl {
     @Scheduled(cron = "0 0 0 * * ?")
     public void importLatestResources() {
         // todo latest
-        handleException(BdFilmSite.getInstance(), site -> {
-            for (BdFilmType type : BdFilmType.values()) {
-                resourceService.importIterator(site.iterator(type), site.getDomain());
+        handleException(BdMovieSite.getInstance(), site -> {
+            for (BdMovieType type : BdMovieType.values()) {
+                resourceService.importIterableRepository(site.getRepository(type), site.getDomain());
             }
         });
         handleException(XlmSite.getInstance(), site -> {
             for (XlmType type : XlmType.values()) {
-                resourceService.importIterator(site.iterator(type), site.getDomain());
+                resourceService.importIterableRepository(site.getRepository(type), site.getDomain());
             }
         });
         // todo if one is not found
-        handleException(MovieHeavenSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
-        handleException(XlcSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
-        handleException(Y80sSite.getInstance(), site -> resourceService.importIterator(site.iterator(), site.getDomain()));
+        handleException(MovieHeavenSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(XlcSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(Y80sSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(GrapeSite.getInstance(), site -> resourceService.importIterableRepository(site.getNewsRepository(), site.getDomain()));
     }
 
     private <T> void handleException(T t, ThrowableConsumer<T, HttpResponseException> function) {

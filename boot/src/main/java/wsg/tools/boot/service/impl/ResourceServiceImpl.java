@@ -20,9 +20,8 @@ import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.internet.base.RecordIterator;
-import wsg.tools.internet.base.intf.RangeRepository;
-import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.resource.base.AbstractResource;
 import wsg.tools.internet.resource.base.FilenameSupplier;
 import wsg.tools.internet.resource.base.LengthSupplier;
@@ -61,8 +60,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem> void importIterator(RecordIterator<T> iterator, String repositoryId) throws HttpResponseException {
+    public <T extends IdentifiedItem> void importIterableRepository(IterableRepository<T> repository, String repositoryId) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
+        RepositoryIterator<T> iterator = repository.iterator();
         while (iterator.hasNext()) {
             int count = saveItem(iterator.next(), repositoryId);
             if (count >= 0) {
@@ -72,22 +72,6 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
         }
         log.info("Finished importing resources of {}: {} items, {} links.", repositoryId, itemsCount, linksCount);
-    }
-
-    @Override
-    public <T extends IdentifiedItem, R extends Repository<Integer, T> & RangeRepository<T, Integer>>
-    void importRangeRepository(R repository, String repositoryId) throws HttpResponseException {
-        int itemsCount = 0, linksCount = 0;
-        int start = itemRepository.findMaxSid(repositoryId).orElse(repository.min());
-        List<T> items = repository.findAllByRangeClosed(start, repository.max());
-        for (T item : items) {
-            int count = saveItem(item, repositoryId);
-            if (count >= 0) {
-                itemsCount++;
-                linksCount += count;
-            }
-        }
-        log.info("Finished importing: {} items, {} links.", itemsCount, linksCount);
     }
 
     private <T extends IdentifiedItem> int saveItem(T item, String domain) {

@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.site;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -15,9 +14,8 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.BasicHttpSession;
-import wsg.tools.internet.base.RecordIterator;
+import wsg.tools.internet.base.IterableRepositoryImpl;
 import wsg.tools.internet.base.intf.IterableRepository;
-import wsg.tools.internet.base.intf.IterableRepositoryImpl;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.WithoutNextDocument;
 import wsg.tools.internet.resource.base.AbstractResource;
@@ -35,11 +33,11 @@ import java.util.stream.Collectors;
 
 /**
  * @author Kingen
- * @see <a href="https://www.bd2020.com/">BD Film</a>
+ * @see <a href="https://www.bd2020.com/">BD Movies</a>
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdFilmSite extends BaseSite {
+public final class BdMovieSite extends BaseSite {
 
     private static final Pattern ITEM_URL_REGEX = Pattern.compile("https://www\\.bd2020\\.com(?<p>/(?<t>gy|dh|gq|jd|zx|zy)/(?<id>\\d+)\\.htm)");
     private static final Pattern IMDB_INFO_REGEX = Pattern.compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
@@ -53,31 +51,27 @@ public final class BdFilmSite extends BaseSite {
                     "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com|pan\\.xunlei\\.com)(?<path>/[\\w-./?=&]+)\\s*"
     );
 
-    private static BdFilmSite instance;
+    private static BdMovieSite instance;
 
-    @Getter
-    private final Map<BdFilmType, IterableRepository<BdFilmItem>> repositories;
-
-    private BdFilmSite() {
-        super("BD-Film", new BasicHttpSession("bd2020.com"));
-        repositories = new HashMap<>(BdFilmType.values().length);
-        for (BdFilmType type : BdFilmType.values()) {
-            repositories.put(type, new IterableRepositoryImpl<>(id -> getItem(type, id), type.getFirst()));
-        }
+    private BdMovieSite() {
+        super("BD-Movie", new BasicHttpSession("bd2020.com"));
     }
 
-    public synchronized static BdFilmSite getInstance() {
+    public synchronized static BdMovieSite getInstance() {
         if (instance == null) {
-            instance = new BdFilmSite();
+            instance = new BdMovieSite();
         }
         return instance;
     }
 
-    public RecordIterator<BdFilmItem> iterator(BdFilmType type) throws HttpResponseException {
-        return repositories.get(type).iterator();
+    public IterableRepository<BdMovieItem> getRepository(BdMovieType type) {
+        return new IterableRepositoryImpl<>(id -> findItem(type, id), type.first());
     }
 
-    public BdFilmItem getItem(@Nonnull BdFilmType type, @Nonnull Integer id) throws HttpResponseException {
+    /**
+     * Obtains an item by the given type and id.
+     */
+    public BdMovieItem findItem(@Nonnull BdMovieType type, @Nonnull Integer id) throws HttpResponseException {
         Document document = getDocument(builder0("/%s/%d.htm", type.getText(), id), new WithoutNextDocument<>(this::getNext));
         Map<String, String> meta = document.select("meta[property]").stream()
                 .collect(Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));
@@ -89,10 +83,10 @@ public final class BdFilmSite extends BaseSite {
         }
         String location = Objects.requireNonNull(meta.get("og:url"));
         if (!ITEM_URL_REGEX.matcher(location).matches()) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a film page: " + location);
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a movie page: " + location);
         }
         LocalDateTime updateTime = LocalDateTime.parse(meta.get("og:video:release_date"), Constants.STANDARD_DATE_TIME_FORMATTER);
-        BdFilmItem item = new BdFilmItem(id, location, updateTime);
+        BdMovieItem item = new BdMovieItem(id, location, updateTime);
 
         item.setNext(getNext(document));
         String[] keywords = document.selectFirst("meta[name=keywords]").attr(CssSelector.ATTR_CONTENT).split(",免费下载");
