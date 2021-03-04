@@ -2,8 +2,8 @@ package wsg.tools.boot.pojo.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.common.enums.LanguageEnum;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 import java.util.List;
 

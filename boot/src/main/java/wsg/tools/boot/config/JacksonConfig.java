@@ -12,7 +12,7 @@ import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.jackson.serializer.TextSerializer;
 import wsg.tools.common.jackson.serializer.TitleSerializer;
-import wsg.tools.internet.video.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
 
 import java.time.format.DateTimeFormatter;
 

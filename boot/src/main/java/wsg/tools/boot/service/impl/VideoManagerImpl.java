@@ -17,8 +17,8 @@ import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
-import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.item.intf.YearSupplier;
+import wsg.tools.internet.download.impl.Thunder;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 import javax.annotation.Nullable;
 import java.io.File;

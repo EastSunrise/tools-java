@@ -10,7 +10,7 @@ import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
-import wsg.tools.internet.video.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
 
 import javax.annotation.Nullable;
 import java.time.LocalDate;

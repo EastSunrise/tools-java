@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.api.impl;
 
 import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
-import wsg.tools.internet.video.site.imdb.OmdbSeries;
+import wsg.tools.internet.movie.imdb.OmdbSeries;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.Objects;
  * @author Kingen
  * @since 2021/2/21
  */
-class OmdbSeriesAdapter extends OmdbTitleAdapter<OmdbSeries> implements ImdbSeriesView {
+class OmdbSeriesAdapter extends AbstractOmdbTitleAdapter<OmdbSeries> implements ImdbSeriesView {
 
     private final List<String[]> episodes;
 

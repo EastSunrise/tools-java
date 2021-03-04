@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.util.function.throwable.ThrowableConsumer;
-import wsg.tools.internet.resource.site.*;
+import wsg.tools.internet.resource.movie.*;
 
 /**
  * Scheduled tasks.

@@ -17,11 +17,11 @@ import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.video.enums.CatalogEnum;
-import wsg.tools.internet.video.enums.MarkEnum;
-import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
-import wsg.tools.internet.video.site.douban.DoubanSite;
-import wsg.tools.internet.video.site.imdb.*;
+import wsg.tools.internet.movie.common.enums.CatalogEnum;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
+import wsg.tools.internet.movie.douban.BaseDoubanSubject;
+import wsg.tools.internet.movie.douban.DoubanSite;
+import wsg.tools.internet.movie.imdb.*;
 
 import java.io.Closeable;
 import java.time.LocalDate;

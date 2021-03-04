@@ -3,12 +3,12 @@ package wsg.tools.boot.pojo.entity.resource;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.resource.item.BaseItem;
-import wsg.tools.internet.resource.item.VideoType;
-import wsg.tools.internet.resource.item.intf.TypeSupplier;
-import wsg.tools.internet.resource.item.intf.YearSupplier;
-import wsg.tools.internet.video.site.douban.DoubanIdentifier;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.VideoType;
+import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import wsg.tools.internet.resource.common.YearSupplier;
+import wsg.tools.internet.resource.movie.BasicItem;
 
 import javax.persistence.*;
 import java.time.temporal.Temporal;
@@ -17,7 +17,7 @@ import java.time.temporal.Temporal;
  * Items of resources.
  *
  * @author Kingen
- * @see BaseItem
+ * @see BasicItem
  * @since 2020/11/3
  */
 @Getter
@@ -28,7 +28,7 @@ import java.time.temporal.Temporal;
 }, indexes = {
         @Index(name = "index_imdb", columnList = "imdbId")
 })
-public class ResourceItemEntity extends IdentityEntity implements TypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
+public class ResourceItemEntity extends IdentityEntity implements VideoTypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
 
     @Column(nullable = false, length = 15)
     private String site;

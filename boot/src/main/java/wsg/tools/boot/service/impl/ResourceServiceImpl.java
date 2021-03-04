@@ -22,18 +22,18 @@ import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
-import wsg.tools.internet.resource.base.AbstractResource;
-import wsg.tools.internet.resource.base.FilenameSupplier;
-import wsg.tools.internet.resource.base.LengthSupplier;
-import wsg.tools.internet.resource.base.PasswordProvider;
-import wsg.tools.internet.resource.download.Thunder;
-import wsg.tools.internet.resource.item.IdentifiedItem;
-import wsg.tools.internet.resource.item.intf.TypeSupplier;
-import wsg.tools.internet.resource.item.intf.UpdateDateSupplier;
-import wsg.tools.internet.resource.item.intf.UpdateDatetimeSupplier;
-import wsg.tools.internet.resource.item.intf.YearSupplier;
-import wsg.tools.internet.video.site.douban.DoubanIdentifier;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
+import wsg.tools.internet.download.base.AbstractLink;
+import wsg.tools.internet.download.base.FilenameSupplier;
+import wsg.tools.internet.download.base.LengthSupplier;
+import wsg.tools.internet.download.base.PasswordProvider;
+import wsg.tools.internet.download.impl.Thunder;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.UpdateDateSupplier;
+import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import wsg.tools.internet.resource.common.YearSupplier;
+import wsg.tools.internet.resource.movie.IdentifiedItem;
 
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
@@ -75,7 +75,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     private <T extends IdentifiedItem> int saveItem(T item, String domain) {
-        List<AbstractResource> resources = item.getResources();
+        List<AbstractLink> resources = item.getResources();
         if (itemRepository.findBySiteAndSid(domain, item.getId()).isPresent()) {
             return -1;
         }
@@ -86,8 +86,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         itemEntity.setUrl(item.getUrl());
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
-        if (item instanceof TypeSupplier) {
-            itemEntity.setType(((TypeSupplier) item).getType());
+        if (item instanceof VideoTypeSupplier) {
+            itemEntity.setType(((VideoTypeSupplier) item).getType());
         }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());
@@ -107,7 +107,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         return Objects.requireNonNull(template.execute(status -> {
             Long itemId = itemRepository.insert(itemEntity).getId();
             List<ResourceLinkEntity> links = new LinkedList<>();
-            for (AbstractResource resource : resources) {
+            for (AbstractLink resource : resources) {
                 ResourceLinkEntity linkEntity = new ResourceLinkEntity();
                 linkEntity.setItemId(itemId);
                 linkEntity.setTitle(resource.getTitle());

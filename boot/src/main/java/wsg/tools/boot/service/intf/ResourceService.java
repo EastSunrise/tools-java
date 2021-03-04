@@ -5,7 +5,7 @@ import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.intf.IterableRepository;
-import wsg.tools.internet.resource.item.IdentifiedItem;
+import wsg.tools.internet.resource.movie.IdentifiedItem;
 
 import javax.annotation.Nullable;
 import java.util.Collection;

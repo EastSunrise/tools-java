@@ -2,7 +2,7 @@ package wsg.tools.boot.dao.jpa.converter;
 
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.video.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
 
 import java.util.function.Supplier;
 
@@ -13,6 +13,9 @@ import java.util.function.Supplier;
  * @since 2021/2/21
  */
 enum MarkEnumAdapter implements IntCodeSupplier, Supplier<MarkEnum>, AkaPredicate<MarkEnum> {
+    /**
+     * wish/do/collect
+     */
     WISH(1, MarkEnum.WISH),
     DO(2, MarkEnum.DO),
     COLLECT(3, MarkEnum.COLLECT),

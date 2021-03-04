@@ -27,12 +27,12 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.video.common.Runtime;
-import wsg.tools.internet.video.enums.MarkEnum;
-import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
-import wsg.tools.internet.video.site.douban.DoubanMovie;
-import wsg.tools.internet.video.site.douban.DoubanSeries;
-import wsg.tools.internet.video.site.douban.DoubanSite;
+import wsg.tools.internet.movie.common.Runtime;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
+import wsg.tools.internet.movie.douban.BaseDoubanSubject;
+import wsg.tools.internet.movie.douban.DoubanMovie;
+import wsg.tools.internet.movie.douban.DoubanSeries;
+import wsg.tools.internet.movie.douban.DoubanSite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

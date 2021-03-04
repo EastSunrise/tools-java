@@ -3,7 +3,7 @@ package wsg.tools.boot.pojo.dto;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.common.enums.VideoStatus;
-import wsg.tools.internet.video.site.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
 
 import java.time.LocalDateTime;
 

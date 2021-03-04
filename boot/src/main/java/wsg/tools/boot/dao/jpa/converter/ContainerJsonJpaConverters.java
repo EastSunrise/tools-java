@@ -9,7 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.CodeSerializer;
-import wsg.tools.internet.video.enums.LanguageEnum;
+import wsg.tools.internet.movie.common.enums.LanguageEnum;
 
 import javax.persistence.Converter;
 import java.time.Duration;

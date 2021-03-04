@@ -1,7 +1,7 @@
 package wsg.tools.boot.dao.api.impl;
 
 import wsg.tools.boot.dao.api.intf.ImdbEpisodeView;
-import wsg.tools.internet.video.site.imdb.ImdbEpisode;
+import wsg.tools.internet.movie.imdb.ImdbEpisode;
 
 /**
  * Projects {@link ImdbEpisode} to {@link ImdbEpisodeView}.
@@ -9,7 +9,7 @@ import wsg.tools.internet.video.site.imdb.ImdbEpisode;
  * @author Kingen
  * @since 2021/2/21
  */
-class ImdbEpisodeAdapter extends ImdbTitleAdapter<ImdbEpisode> implements ImdbEpisodeView {
+class ImdbEpisodeAdapter extends AbstractImdbTitleAdapter<ImdbEpisode> implements ImdbEpisodeView {
 
     ImdbEpisodeAdapter(ImdbEpisode imdbEpisode) {
         super(imdbEpisode);

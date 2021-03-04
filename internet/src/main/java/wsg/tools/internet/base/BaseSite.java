@@ -8,8 +8,12 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
-import wsg.tools.internet.common.ContentHandlers;
-import wsg.tools.internet.common.JsonHandler;
+import wsg.tools.internet.base.impl.ContentHandlers;
+import wsg.tools.internet.base.impl.JsonHandler;
+import wsg.tools.internet.base.impl.RequestBuilder;
+import wsg.tools.internet.base.intf.ContentHandler;
+import wsg.tools.internet.base.intf.HttpSession;
+import wsg.tools.internet.base.intf.SnapshotStrategy;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;

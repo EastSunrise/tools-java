@@ -4,7 +4,7 @@ import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.video.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
 
 import javax.persistence.Converter;
 

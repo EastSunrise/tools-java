@@ -2,9 +2,10 @@ package wsg.tools.boot.dao.api.intf;
 
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.internet.video.enums.MarkEnum;
-import wsg.tools.internet.video.site.douban.BaseDoubanSubject;
-import wsg.tools.internet.video.site.douban.DoubanSite;
+import wsg.tools.internet.movie.common.enums.MarkEnum;
+import wsg.tools.internet.movie.douban.BaseDoubanSubject;
+import wsg.tools.internet.movie.douban.DoubanSite;
+import wsg.tools.internet.movie.imdb.ImdbRepository;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -50,7 +51,7 @@ public interface SubjectAdapter {
     Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException;
 
     /**
-     * Obtains a view of a title from {@link wsg.tools.internet.video.site.imdb.ImdbRepository}.
+     * Obtains a view of a title from {@link ImdbRepository}.
      *
      * @param imdbId id of IMDb
      * @return result

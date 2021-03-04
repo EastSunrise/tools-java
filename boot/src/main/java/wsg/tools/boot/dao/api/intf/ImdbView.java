@@ -1,8 +1,8 @@
 package wsg.tools.boot.dao.api.intf;
 
-import wsg.tools.internet.resource.item.intf.YearSupplier;
-import wsg.tools.internet.video.enums.LanguageEnum;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.common.enums.LanguageEnum;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 import java.time.Duration;
 import java.time.LocalDate;

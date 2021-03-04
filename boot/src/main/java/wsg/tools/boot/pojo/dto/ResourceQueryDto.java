@@ -2,8 +2,8 @@ package wsg.tools.boot.pojo.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-import wsg.tools.internet.video.site.douban.DoubanIdentifier;
-import wsg.tools.internet.video.site.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 /**
  * Condition of querying resources.

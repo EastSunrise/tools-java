@@ -1,5 +1,7 @@
 package wsg.tools.internet.common;
 
+import wsg.tools.internet.base.SiteStatus;
+
 /**
  * Exception if the status of the site is abnormal.
  *
