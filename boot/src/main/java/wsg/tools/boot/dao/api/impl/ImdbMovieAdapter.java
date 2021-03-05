@@ -17,6 +17,6 @@ class ImdbMovieAdapter extends AbstractImdbTitleAdapter<ImdbMovie> implements Im
 
     @Override
     public Integer getYear() {
-        return t.getYear();
+        return getT().getYear();
     }
 }

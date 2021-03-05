@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import lombok.Getter;
-
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * Rating of douban.

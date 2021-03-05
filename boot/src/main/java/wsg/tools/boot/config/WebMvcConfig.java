@@ -17,17 +17,17 @@ import wsg.tools.boot.config.converter.StringToEnumIgnoreCaseConverterFactory;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private StringToEnumIgnoreCaseConverterFactory converterFactory;
+    private final StringToEnumIgnoreCaseConverterFactory converterFactory;
+
+    @Autowired
+    public WebMvcConfig(StringToEnumIgnoreCaseConverterFactory converterFactory) {
+        this.converterFactory = converterFactory;
+    }
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
         registry.addConverterFactory(converterFactory);
         Jsr310Converters.getConvertersToRegister().forEach(registry::addConverter);
-    }
-
-    @Autowired
-    public void setConverterFactory(StringToEnumIgnoreCaseConverterFactory converterFactory) {
-        this.converterFactory = converterFactory;
     }
 
     @Override

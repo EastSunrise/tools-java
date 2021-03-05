@@ -6,6 +6,7 @@ package wsg.tools.internet.base.intf;
  * @author Kingen
  * @since 2021/2/4
  */
+@FunctionalInterface
 public interface SnapshotStrategy<T> {
 
     /**

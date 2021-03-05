@@ -17,6 +17,6 @@ class OmdbMovieAdapter extends AbstractOmdbTitleAdapter<OmdbMovie> implements Im
 
     @Override
     public Integer getYear() {
-        return t.getYear();
+        return getT().getYear();
     }
 }

@@ -1,8 +1,7 @@
 package wsg.tools.boot.pojo.result;
 
-import lombok.Getter;
-
 import java.util.Objects;
+import lombok.Getter;
 
 /**
  * Result with a single not-null record.
@@ -11,7 +10,7 @@ import java.util.Objects;
  * @since 2020/6/30
  */
 @Getter
-public class SingleResult<T> extends BaseResult {
+public final class SingleResult<T> extends BaseResult {
 
     private final T record;
 
@@ -21,7 +20,7 @@ public class SingleResult<T> extends BaseResult {
     }
 
     /**
-     * Obtains a successful instance of {@link SingleResult}.
+     * Obtains a successful instance.
      */
     public static <T> SingleResult<T> of(T data) {
         return new SingleResult<>(data);

@@ -8,6 +8,8 @@ package wsg.tools.boot.common;
  */
 public class NotFoundException extends Exception {
 
+    private static final long serialVersionUID = 5856760359416898520L;
+
     public NotFoundException(String message) {
         super(message);
     }

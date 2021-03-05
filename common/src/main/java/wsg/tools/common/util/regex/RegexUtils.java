@@ -3,6 +3,7 @@ package wsg.tools.common.util.regex;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.experimental.UtilityClass;
 
 /**
  * Utility for regex.
@@ -10,7 +11,8 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/10/29
  */
-public final class RegexUtils {
+@UtilityClass
+public class RegexUtils {
 
     /**
      * Check if the text is full-matched for the pattern.
@@ -18,19 +20,20 @@ public final class RegexUtils {
      * @return an matcher if full-matched.
      * @throws IllegalArgumentException if not full-matched
      */
-    public static Matcher matchesOrElseThrow(Pattern pattern, String text) {
+    public Matcher matchesOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.matches()) {
             return matcher;
         }
-        throw new IllegalArgumentException(String.format("Not matched string: '%s' for pattern: '%s'", text, pattern.pattern()));
+        throw new IllegalArgumentException(
+            String.format("Not matched string: '%s' for pattern: '%s'", text, pattern.pattern()));
     }
 
     /**
-     * If the pattern is found in the text, performs the given action with the value,
-     * otherwise does nothing.
+     * If the pattern is found in the text, performs the given action with the value, otherwise does
+     * nothing.
      */
-    public static void ifFind(Pattern pattern, String text, Consumer<Matcher> consumer) {
+    public void ifFind(Pattern pattern, String text, Consumer<Matcher> consumer) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             consumer.accept(matcher);
@@ -43,12 +46,13 @@ public final class RegexUtils {
      * @return an matcher if found
      * @throws IllegalArgumentException if not found
      */
-    public static Matcher findOrElseThrow(Pattern pattern, String text) {
+    public Matcher findOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher;
         }
-        throw new IllegalArgumentException(String.format("Not found pattern: '%s' in the text: '%s'", pattern.pattern(), text));
+        throw new IllegalArgumentException(
+            String.format("Not found pattern: '%s' in the text: '%s'", pattern.pattern(), text));
     }
 
     /**
@@ -57,11 +61,13 @@ public final class RegexUtils {
      * @return an matcher if starting with
      * @throws IllegalArgumentException if not start
      */
-    public static Matcher lookingAtOrElseThrow(Pattern pattern, String text) {
+    public Matcher lookingAtOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.lookingAt()) {
             return matcher;
         }
-        throw new IllegalArgumentException(String.format("Not start with pattern: '%s' do the text: '%s'", pattern.pattern(), text));
+        throw new IllegalArgumentException(
+            String
+                .format("Not start with pattern: '%s' do the text: '%s'", pattern.pattern(), text));
     }
 }

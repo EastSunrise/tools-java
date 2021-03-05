@@ -8,7 +8,14 @@ import org.springframework.stereotype.Service;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.util.function.throwable.ThrowableConsumer;
-import wsg.tools.internet.resource.movie.*;
+import wsg.tools.internet.resource.movie.BdMovieSite;
+import wsg.tools.internet.resource.movie.BdMovieType;
+import wsg.tools.internet.resource.movie.GrapeSite;
+import wsg.tools.internet.resource.movie.MovieHeavenSite;
+import wsg.tools.internet.resource.movie.XlcSite;
+import wsg.tools.internet.resource.movie.XlmSite;
+import wsg.tools.internet.resource.movie.XlmType;
+import wsg.tools.internet.resource.movie.Y80sSite;
 
 /**
  * Scheduled tasks.
@@ -23,33 +30,43 @@ public class ResourceScheduler extends BaseServiceImpl {
     private final ResourceService resourceService;
 
     @Autowired
-    public ResourceScheduler(ResourceService resourceService) {this.resourceService = resourceService;}
-
-    @Scheduled(cron = "0 0 0 * * ?")
-    public void importLatestResources() {
-        // todo latest
-        handleException(BdMovieSite.getInstance(), site -> {
-            for (BdMovieType type : BdMovieType.values()) {
-                resourceService.importIterableRepository(site.getRepository(type), site.getDomain());
-            }
-        });
-        handleException(XlmSite.getInstance(), site -> {
-            for (XlmType type : XlmType.values()) {
-                resourceService.importIterableRepository(site.getRepository(type), site.getDomain());
-            }
-        });
-        // todo if one is not found
-        handleException(MovieHeavenSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
-        handleException(XlcSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
-        handleException(Y80sSite.getInstance(), site -> resourceService.importIterableRepository(site, site.getDomain()));
-        handleException(GrapeSite.getInstance(), site -> resourceService.importIterableRepository(site.getNewsRepository(), site.getDomain()));
+    public ResourceScheduler(ResourceService resourceService) {
+        this.resourceService = resourceService;
     }
 
-    private <T> void handleException(T t, ThrowableConsumer<T, HttpResponseException> function) {
+    private static <T> void handleException(T t,
+        ThrowableConsumer<T, HttpResponseException> function) {
         try {
             function.accept(t);
         } catch (HttpResponseException e) {
             log.error(e.getMessage());
         }
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void importLatestResources() {
+        // todo latest
+        handleException(new BdMovieSite(), site -> {
+            for (BdMovieType type : BdMovieType.values()) {
+                resourceService
+                    .importIterableRepository(site.getRepository(type), site.getDomain());
+            }
+        });
+        handleException(new XlmSite(), site -> {
+            for (XlmType type : XlmType.values()) {
+                resourceService
+                    .importIterableRepository(site.getRepository(type), site.getDomain());
+            }
+        });
+        // todo if one is not found
+        handleException(new MovieHeavenSite(),
+            site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(new XlcSite(),
+            site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(new Y80sSite(),
+            site -> resourceService.importIterableRepository(site, site.getDomain()));
+        handleException(new GrapeSite(),
+            site -> resourceService
+                .importIterableRepository(site.getNewsRepository(), site.getDomain()));
     }
 }

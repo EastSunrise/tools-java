@@ -1,13 +1,12 @@
 package wsg.tools.boot.pojo.entity.base;
 
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import javax.persistence.Column;
-import javax.persistence.MappedSuperclass;
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * Base class for entities queried from database.
@@ -20,6 +19,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 public class BaseEntity implements Serializable {
 
+    private static final long serialVersionUID = 1923844612718234234L;
     @UpdateTimestamp
     @Column(nullable = false, length = 6)
     private LocalDateTime gmtModified;

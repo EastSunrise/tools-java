@@ -1,12 +1,11 @@
 package wsg.tools.boot.dao.api.intf;
 
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * View of a subject from IMDb.
@@ -35,7 +34,7 @@ public interface ImdbView extends ImdbIdentifier, YearSupplier {
      *
      * @return list of languages
      */
-    List<LanguageEnum> getLanguages();
+    List<Language> getLanguages();
 
     /**
      * Obtains durations of the subject

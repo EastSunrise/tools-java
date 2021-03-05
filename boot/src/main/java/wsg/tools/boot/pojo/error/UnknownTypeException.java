@@ -10,6 +10,8 @@ import wsg.tools.internet.common.UnexpectedContentException;
  */
 public class UnknownTypeException extends UnexpectedContentException {
 
+    private static final long serialVersionUID = -7454306106132573083L;
+
     public UnknownTypeException(Class<?> clazz) {
         super("Unknown type: " + clazz);
     }

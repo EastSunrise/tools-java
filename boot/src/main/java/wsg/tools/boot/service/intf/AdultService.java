@@ -9,6 +9,7 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
  * @author Kingen
  * @since 2021/2/23
  */
+@FunctionalInterface
 public interface AdultService {
 
     /**

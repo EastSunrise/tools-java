@@ -1,9 +1,8 @@
 package wsg.tools.internet.info.adult.mr;
 
+import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.common.FirstSupplier;
-
-import javax.annotation.Nonnull;
 
 /**
  * Type of an album.

@@ -13,7 +13,7 @@ public class CommandExecutor {
     /**
      * path of the executable.
      */
-    protected final String executablePath;
+    final String executablePath;
 
     public CommandExecutor(String executablePath) {
         // todo if executable

@@ -1,15 +1,14 @@
 package wsg.tools.internet.download.impl;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.UnknownResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.FilenameSupplier;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
 
 /**
  * A link of http/https/ftp, except {@link BaiduDiskLink}, {@link UcDiskLink} or {@link ThunderDiskLink}.
@@ -19,7 +18,7 @@ import java.util.Arrays;
  */
 public class HttpLink extends AbstractLink implements FilenameSupplier {
 
-    public static final String[] HTTP_PREFIXES = new String[]{"https://", "http://", "ftp://"};
+    public static final String[] HTTP_PREFIXES = {"https://", "http://", "ftp://"};
 
     private final URL url;
 
@@ -41,12 +40,12 @@ public class HttpLink extends AbstractLink implements FilenameSupplier {
 
     @Override
     public String getUrl() {
-        return this.url.toString();
+        return url.toString();
     }
 
     @Override
     public String getFilename() {
-        String path = this.url.getPath();
+        String path = url.getPath();
         if (path == null || path.endsWith(Constants.URL_PATH_SEPARATOR)) {
             return "index.html";
         } else {

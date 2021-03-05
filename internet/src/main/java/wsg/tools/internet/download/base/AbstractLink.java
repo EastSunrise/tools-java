@@ -1,8 +1,7 @@
 package wsg.tools.internet.download.base;
 
-import lombok.Getter;
-
 import java.util.Objects;
+import lombok.Getter;
 
 /**
  * An abstract link pointing to a resource.
@@ -31,7 +30,7 @@ public abstract class AbstractLink {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (null == o || getClass() != o.getClass()) {
             return false;
         }
         AbstractLink that = (AbstractLink) o;

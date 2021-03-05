@@ -1,5 +1,13 @@
 package wsg.tools.boot.dao.api.impl;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -17,15 +25,24 @@ import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.movie.common.enums.CatalogEnum;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.DoubanCatalog;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.BaseDoubanSubject;
 import wsg.tools.internet.movie.douban.DoubanSite;
-import wsg.tools.internet.movie.imdb.*;
-
-import java.io.Closeable;
-import java.time.LocalDate;
-import java.util.*;
+import wsg.tools.internet.movie.imdb.ImdbCnSite;
+import wsg.tools.internet.movie.imdb.ImdbEpisode;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbMovie;
+import wsg.tools.internet.movie.imdb.ImdbRepository;
+import wsg.tools.internet.movie.imdb.ImdbSeries;
+import wsg.tools.internet.movie.imdb.ImdbSite;
+import wsg.tools.internet.movie.imdb.ImdbTitle;
+import wsg.tools.internet.movie.imdb.OmdbEpisode;
+import wsg.tools.internet.movie.imdb.OmdbMovie;
+import wsg.tools.internet.movie.imdb.OmdbSeason;
+import wsg.tools.internet.movie.imdb.OmdbSeries;
+import wsg.tools.internet.movie.imdb.OmdbSite;
+import wsg.tools.internet.movie.imdb.OmdbTitle;
 
 /**
  * @param <S> type of {@link ImdbRepository}
@@ -34,34 +51,51 @@ import java.util.*;
  */
 @Slf4j
 @Component
-public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends ImdbIdentifier>> implements SubjectAdapter, DisposableBean {
+public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends ImdbIdentifier>>
+    implements SubjectAdapter, DisposableBean {
 
-    private final DoubanSite doubanSite = DoubanSite.getInstance();
+    private final DoubanSite doubanSite = new DoubanSite();
     private final IdRelationRepository relationRepository;
     private final S imdbRepository;
 
     @Autowired
     @SuppressWarnings("unchecked")
-    public SubjectAdapterImpl(IdRelationRepository relationRepository, PathConfiguration configuration) {
+    public SubjectAdapterImpl(IdRelationRepository relationRepository,
+        PathConfiguration configuration) {
         this.relationRepository = relationRepository;
-        S imdbRepository;
+        S repository;
         try {
             SiteUtils.validateStatus(ImdbSite.class);
-            imdbRepository = (S) ImdbSite.getInstance();
+            repository = (S) new ImdbSite();
         } catch (SiteStatusException ignored) {
             String omdbKey = configuration.getOmdbKey();
             if (StringUtils.isNotBlank(omdbKey)) {
-                imdbRepository = (S) new OmdbSite(omdbKey);
+                repository = (S) new OmdbSite(omdbKey);
             } else {
-                imdbRepository = (S) ImdbCnSite.getInstance();
+                repository = (S) new ImdbCnSite();
             }
         }
-        this.imdbRepository = imdbRepository;
+        this.imdbRepository = repository;
+    }
+
+    private static <T, R> R handleException(T t,
+        ThrowableFunction<T, R, HttpResponseException> function, String msg)
+        throws NotFoundException, HttpResponseException {
+        try {
+            return function.apply(t);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                throw new NotFoundException("Not found: " + msg);
+            }
+            throw e;
+        }
     }
 
     @Override
-    public BaseDoubanSubject doubanSubject(long dbId) throws HttpResponseException, NotFoundException {
-        BaseDoubanSubject subject = handleException(dbId, doubanSite::findById, "Douban subject of " + dbId);
+    public BaseDoubanSubject doubanSubject(long dbId)
+        throws HttpResponseException, NotFoundException {
+        BaseDoubanSubject subject = handleException(dbId, doubanSite::findById,
+            "Douban subject of " + dbId);
         if (subject.getImdbId() != null) {
             saveIdRelation(dbId, subject.getImdbId());
         }
@@ -93,8 +127,11 @@ public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends I
     }
 
     @Override
-    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException {
-        return handleException(userId, user -> doubanSite.collectUserSubjects(user, since, CatalogEnum.MOVIE, mark), "collections of " + userId);
+    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, DoubanMark mark)
+        throws HttpResponseException, NotFoundException {
+        return handleException(userId,
+            user -> doubanSite.collectUserSubjects(user, since, DoubanCatalog.MOVIE, mark),
+            "collections of " + userId);
     }
 
     @Override
@@ -102,7 +139,8 @@ public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends I
         Objects.requireNonNull(imdbId);
         if (imdbRepository instanceof OmdbSite) {
             OmdbSite omdbSite = (OmdbSite) imdbRepository;
-            OmdbTitle omdbTitle = handleException(imdbId, omdbSite::findById, "OMDb title of " + imdbId);
+            OmdbTitle omdbTitle = handleException(imdbId, omdbSite::findById,
+                "OMDb title of " + imdbId);
             if (omdbTitle instanceof OmdbMovie) {
                 return new OmdbMovieAdapter((OmdbMovie) omdbTitle);
             }
@@ -113,9 +151,13 @@ public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends I
                 }
                 List<String[]> allEpisodes = new ArrayList<>();
                 for (int i = 1; i <= totalSeasons; i++) {
-                    OmdbSeason season = handleException(i, s -> omdbSite.season(imdbId, s), "OMDb season " + i + " of " + imdbId);
+                    OmdbSeason season =
+                        handleException(i, s -> omdbSite.season(imdbId, s),
+                            "OMDb season " + i + " of " + imdbId);
                     List<OmdbSeason.Episode> episodes = season.getEpisodes();
-                    int maxEpisode = episodes.stream().mapToInt(OmdbSeason.Episode::getCurrentEpisode).max().orElseThrow();
+                    int maxEpisode =
+                        episodes.stream().mapToInt(OmdbSeason.Episode::getCurrentEpisode).max()
+                            .orElseThrow();
                     String[] episodeIds = new String[maxEpisode + 1];
                     episodes.forEach(e -> episodeIds[e.getCurrentEpisode()] = e.getImdbId());
                     allEpisodes.add(episodeIds);
@@ -127,7 +169,8 @@ public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends I
             }
             throw new UnknownTypeException(omdbTitle.getClass());
         }
-        ImdbIdentifier identifier = handleException(imdbId, imdbRepository::findById, "IMDb title of " + imdbId);
+        ImdbIdentifier identifier = handleException(imdbId, imdbRepository::findById,
+            "IMDb title of " + imdbId);
         if (identifier instanceof ImdbTitle) {
             if (identifier instanceof ImdbMovie) {
                 return new ImdbMovieAdapter((ImdbMovie) identifier);
@@ -142,19 +185,8 @@ public class SubjectAdapterImpl<S extends Closeable & ImdbRepository<? extends I
         throw new UnknownTypeException(identifier.getClass());
     }
 
-    private <T, R> R handleException(T t, ThrowableFunction<T, R, HttpResponseException> function, String msg) throws NotFoundException, HttpResponseException {
-        try {
-            return function.apply(t);
-        } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                throw new NotFoundException("Not found: " + msg);
-            }
-            throw e;
-        }
-    }
-
     @Override
-    public void destroy() throws Exception {
+    public void destroy() throws IOException {
         doubanSite.close();
         imdbRepository.close();
     }

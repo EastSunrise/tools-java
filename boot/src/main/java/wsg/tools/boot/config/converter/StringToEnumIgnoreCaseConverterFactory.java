@@ -3,12 +3,12 @@ package wsg.tools.boot.config.converter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
-import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 /**
- * Convert a string to an instance of {@link Order}.
+ * Convert a string to an instance of {@link Sort.Order}.
  *
  * @author Kingen
  * @since 2020/7/14
@@ -26,7 +26,7 @@ public class StringToEnumIgnoreCaseConverterFactory implements ConverterFactory<
 
         private final Class<T> enumType;
 
-        public StringToEnumConverter(Class<T> enumType) {
+        StringToEnumConverter(Class<T> enumType) {
             this.enumType = enumType;
         }
 
@@ -41,7 +41,8 @@ public class StringToEnumIgnoreCaseConverterFactory implements ConverterFactory<
                     return t;
                 }
             }
-            throw new IllegalArgumentException(String.format("Unknown name %s for %s", source, enumType));
+            throw new IllegalArgumentException(
+                String.format("Unknown name %s for %s", source, enumType));
         }
     }
 }

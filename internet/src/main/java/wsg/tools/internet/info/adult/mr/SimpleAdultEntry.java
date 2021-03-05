@@ -1,11 +1,10 @@
 package wsg.tools.internet.info.adult.mr;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import lombok.Getter;
 import wsg.tools.internet.info.adult.BasicAdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
-
-import java.time.Duration;
-import java.time.LocalDate;
 
 /**
  * An adult entry with simple information.

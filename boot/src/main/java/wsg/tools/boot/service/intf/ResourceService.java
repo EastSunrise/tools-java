@@ -1,15 +1,14 @@
 package wsg.tools.boot.service.intf;
 
+import java.util.Collection;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
-
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Interface of resource service.
@@ -26,8 +25,9 @@ public interface ResourceService {
      * @param repositoryId the identifier of the repository
      * @throws HttpResponseException if an error occurs when do request
      */
-    <T extends IdentifiedItem>
-    void importIterableRepository(IterableRepository<T> repository, String repositoryId) throws HttpResponseException;
+    <T extends IdentifiedItem> void importIterableRepository(IterableRepository<T> repository,
+        String repositoryId)
+        throws HttpResponseException;
 
     /**
      * Search resources of the given key.
@@ -37,7 +37,8 @@ public interface ResourceService {
      * @param imdbId id of IMDb
      * @return result of list of resources
      */
-    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId);
+    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
+        @Nullable String imdbId);
 
     /**
      * Search resources of the given key.
@@ -48,7 +49,9 @@ public interface ResourceService {
      * @param identified if identified
      * @return result of list of resources
      */
-    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId, @Nullable Boolean identified);
+    List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
+        @Nullable String imdbId,
+        @Nullable Boolean identified);
 
     /**
      * Link the given item to the given identifiers.
@@ -56,7 +59,7 @@ public interface ResourceService {
      * @param checkDtoList arguments
      * @return result of checked count
      */
-    long check(List<ResourceCheckDto> checkDtoList);
+    long identifyResources(List<ResourceCheckDto> checkDtoList);
 
     /**
      * Obtains links of the given items.

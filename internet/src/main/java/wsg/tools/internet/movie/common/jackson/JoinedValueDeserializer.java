@@ -2,13 +2,17 @@ package wsg.tools.internet.movie.common.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.BeanProperty;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Deserialize joined string into list.
@@ -31,7 +35,8 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
     public Object deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         if (targetType.isCollectionLikeType() && parser.hasToken(JsonToken.VALUE_STRING)) {
             String text = parser.getText();
-            if (StringUtils.isBlank(text) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+            if (StringUtils.isBlank(text)
+                && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
             String[] values = StringUtils.splitByWholeSeparator(text, separator);

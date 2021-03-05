@@ -5,12 +5,13 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 
 /**
- * Enum for genres of subjects, with text as English display name and title as Chinese display name.
+ * Enum for genres of a movie or series, with text as English display name and title as Chinese
+ * display name.
  *
  * @author Kingen
  * @since 2020/6/17
  */
-public enum GenreEnum implements TextSupplier, TitleSupplier, AkaPredicate<String> {
+public enum MovieGenre implements TextSupplier, TitleSupplier, AkaPredicate<String> {
     /**
      * Kinds of genres
      */
@@ -52,7 +53,7 @@ public enum GenreEnum implements TextSupplier, TitleSupplier, AkaPredicate<Strin
     private final String text;
     private final String title;
 
-    GenreEnum(String text, String title) {
+    MovieGenre(String text, String title) {
         this.text = text;
         this.title = title;
     }

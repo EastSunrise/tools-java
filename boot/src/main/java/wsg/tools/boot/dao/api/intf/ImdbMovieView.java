@@ -7,4 +7,5 @@ package wsg.tools.boot.dao.api.intf;
  * @since 2021/2/21
  */
 public interface ImdbMovieView extends ImdbView {
+
 }

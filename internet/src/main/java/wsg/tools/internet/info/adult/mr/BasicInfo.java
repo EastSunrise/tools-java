@@ -1,20 +1,18 @@
 package wsg.tools.internet.info.adult.mr;
 
-import lombok.Getter;
-import wsg.tools.internet.common.enums.BloodType;
-import wsg.tools.internet.common.enums.Nation;
-import wsg.tools.internet.common.enums.Zodiac;
-import wsg.tools.internet.info.adult.common.CupEnum;
-import wsg.tools.internet.info.adult.common.Occupation;
-import wsg.tools.internet.movie.common.enums.Constellation;
-import wsg.tools.internet.movie.common.enums.Gender;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.enums.RegionEnum;
-
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
+import wsg.tools.internet.enums.BloodType;
+import wsg.tools.internet.enums.Constellation;
+import wsg.tools.internet.enums.Gender;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Nation;
+import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.enums.Zodiac;
+import wsg.tools.internet.info.adult.common.CupEnum;
 
 /**
  * Basic information of a celebrity.
@@ -23,7 +21,7 @@ import java.util.Set;
  * @since 2021/2/26
  */
 @Getter
-public class BasicInfo {
+class BasicInfo {
 
     private Gender gender;
     private TemporalAccessor birthday;
@@ -40,7 +38,7 @@ public class BasicInfo {
     private CupEnum cup;
     private Figure figure;
     private BloodType bloodType;
-    private List<Occupation> occupations;
+    private List<String> occupations;
     private Temporal start;
     private Temporal retire;
     private String agency;
@@ -48,8 +46,8 @@ public class BasicInfo {
     private String school;
     private String birthplace;
     private Nation nation;
-    private List<RegionEnum> nationalities;
-    private List<LanguageEnum> languages;
+    private List<Region> nationalities;
+    private List<Language> languages;
 
     private Set<String> others;
 
@@ -116,7 +114,7 @@ public class BasicInfo {
         this.bloodType = bloodType;
     }
 
-    void setOccupations(List<Occupation> occupations) {
+    void setOccupations(List<String> occupations) {
         this.occupations = occupations;
     }
 
@@ -148,11 +146,11 @@ public class BasicInfo {
         this.nation = nation;
     }
 
-    void setNationalities(List<RegionEnum> nationalities) {
+    void setNationalities(List<Region> nationalities) {
         this.nationalities = nationalities;
     }
 
-    void setLanguages(List<LanguageEnum> languages) {
+    void setLanguages(List<Language> languages) {
         this.languages = languages;
     }
 

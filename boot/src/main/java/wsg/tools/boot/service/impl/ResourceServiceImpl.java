@@ -1,5 +1,16 @@
 package wsg.tools.boot.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,11 +46,6 @@ import wsg.tools.internet.resource.common.VideoTypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
-import javax.annotation.Nullable;
-import javax.persistence.criteria.Predicate;
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
  * @author Kingen
  * @since 2020/11/13
@@ -49,18 +55,24 @@ import java.util.stream.Collectors;
 public class ResourceServiceImpl extends BaseServiceImpl implements ResourceService {
 
     private final ResourceItemRepository itemRepository;
+
     private final ResourceLinkRepository linkRepository;
+
     private final TransactionTemplate template;
 
     @Autowired
-    public ResourceServiceImpl(ResourceItemRepository itemRepository, ResourceLinkRepository linkRepository, TransactionTemplate template) {
+    public ResourceServiceImpl(ResourceItemRepository itemRepository,
+        ResourceLinkRepository linkRepository,
+        TransactionTemplate template) {
         this.itemRepository = itemRepository;
         this.linkRepository = linkRepository;
         this.template = template;
     }
 
     @Override
-    public <T extends IdentifiedItem> void importIterableRepository(IterableRepository<T> repository, String repositoryId) throws HttpResponseException {
+    public <T extends IdentifiedItem> void importIterableRepository(
+        IterableRepository<T> repository,
+        String repositoryId) throws HttpResponseException {
         int itemsCount = 0, linksCount = 0;
         RepositoryIterator<T> iterator = repository.iterator();
         while (iterator.hasNext()) {
@@ -69,9 +81,10 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                 itemsCount++;
                 linksCount += count;
             }
-
         }
-        log.info("Finished importing resources of {}: {} items, {} links.", repositoryId, itemsCount, linksCount);
+        log.info("Finished importing resources of {}: {} items, {} links.", repositoryId,
+            itemsCount,
+            linksCount);
     }
 
     private <T extends IdentifiedItem> int saveItem(T item, String domain) {
@@ -101,41 +114,49 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (item instanceof UpdateDatetimeSupplier) {
             itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
         } else if (item instanceof UpdateDateSupplier) {
-            itemEntity.setUpdateTime(((UpdateDateSupplier) item).lastUpdate());
+            itemEntity
+                .setUpdateTime(
+                    LocalDateTime.of(((UpdateDateSupplier) item).lastUpdate(), LocalTime.MIN));
         }
 
-        return Objects.requireNonNull(template.execute(status -> {
-            Long itemId = itemRepository.insert(itemEntity).getId();
-            List<ResourceLinkEntity> links = new LinkedList<>();
-            for (AbstractLink resource : resources) {
-                ResourceLinkEntity linkEntity = new ResourceLinkEntity();
-                linkEntity.setItemId(itemId);
-                linkEntity.setTitle(resource.getTitle());
-                linkEntity.setUrl(resource.getUrl());
-                linkEntity.setType(EnumUtilExt.deserializeAka(resource.getClass(), ResourceType.class));
-                if (resource instanceof FilenameSupplier) {
-                    linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
-                }
-                if (resource instanceof LengthSupplier) {
-                    linkEntity.setLength(((LengthSupplier) resource).length());
-                }
-                if (resource instanceof PasswordProvider) {
-                    linkEntity.setPassword(((PasswordProvider) resource).getPassword());
-                }
-                links.add(linkEntity);
+        return Objects
+            .requireNonNull(template.execute(status -> insertResource(itemEntity, resources)));
+    }
+
+    private int insertResource(ResourceItemEntity itemEntity, List<AbstractLink> resources) {
+        Long itemId = itemRepository.insert(itemEntity).getId();
+        List<ResourceLinkEntity> links = new LinkedList<>();
+        for (AbstractLink resource : resources) {
+            ResourceLinkEntity linkEntity = new ResourceLinkEntity();
+            linkEntity.setItemId(itemId);
+            linkEntity.setTitle(resource.getTitle());
+            linkEntity.setUrl(resource.getUrl());
+            linkEntity.setType(EnumUtilExt.deserializeAka(resource.getClass(), ResourceType.class));
+            if (resource instanceof FilenameSupplier) {
+                linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
             }
-            linkRepository.saveAll(links);
-            return resources.size();
-        }));
+            if (resource instanceof LengthSupplier) {
+                linkEntity.setLength(((LengthSupplier) resource).length());
+            }
+            if (resource instanceof PasswordProvider) {
+                linkEntity.setPassword(((PasswordProvider) resource).getPassword());
+            }
+            links.add(linkEntity);
+        }
+        linkRepository.saveAll(links);
+        return resources.size();
     }
 
     @Override
-    public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId) {
+    public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
+        @Nullable String imdbId) {
         return search(key, dbId, imdbId, null);
     }
 
     @Override
-    public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId, @Nullable String imdbId, @Nullable Boolean identified) {
+    public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
+        @Nullable String imdbId,
+        @Nullable Boolean identified) {
         Specification<ResourceItemEntity> specification = (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (dbId != null) {
@@ -145,11 +166,13 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                 predicates.add(builder.equal(root.get(ResourceItemEntity_.imdbId), imdbId));
             }
             if (StringUtils.isNotBlank(key)) {
-                predicates.add(builder.like(root.get(ResourceItemEntity_.title), "%" + key + "%", '%'));
+                predicates.add(like(builder, root.get(ResourceItemEntity_.title), key));
             }
-            Predicate predicate = builder.or(predicates.toArray(new Predicate[0]));
+            Predicate predicate = builder.or(predicates.toArray(new Predicate[1]));
             if (identified != null) {
-                predicate = builder.and(predicate, builder.equal(root.get(ResourceItemEntity_.identified), identified));
+                predicate = builder
+                    .and(predicate,
+                        builder.equal(root.get(ResourceItemEntity_.identified), identified));
             }
             return query.where(predicate).getRestriction();
         };
@@ -157,16 +180,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public long check(List<ResourceCheckDto> checkDtoList) {
+    public long identifyResources(List<ResourceCheckDto> checkDtoList) {
         if (CollectionUtils.isEmpty(checkDtoList)) {
-            return 0;
+            return 0L;
         }
-        return checkDtoList.stream().filter(checkDto -> {
+        long count = 0L;
+        for (ResourceCheckDto checkDto : checkDtoList) {
             if (checkDto == null) {
-                return false;
+                continue;
             }
             if (checkDto.getId() == null) {
-                return false;
+                continue;
             }
             ResourceItemEntity entity = new ResourceItemEntity();
             entity.setId(checkDto.getId());
@@ -174,28 +198,37 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             entity.setImdbId(checkDto.getImdbId());
             entity.setIdentified(true);
             itemRepository.updateById(entity);
-            return true;
-        }).count();
+            count++;
+        }
+        return count;
     }
 
     @Override
     public List<ResourceDto> getResources(Collection<ResourceItemEntity> items) {
-        List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
-        Map<Long, List<ResourceLinkEntity>> linkMap = links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
-        return items.stream().map(item -> {
-            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl(), item.getIdentified());
+        List<ResourceLinkEntity> links = linkRepository
+            .findAllByItemIdIsIn(
+                items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
+        Map<Long, List<ResourceLinkEntity>> linkMap =
+            links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
+        List<ResourceDto> resources = new ArrayList<>();
+        for (ResourceItemEntity item : items) {
+            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl(),
+                item.getIdentified());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
-                resource.setLinks(linkEntities.stream().map(link -> {
+                List<LinkDto> linkDtos = new ArrayList<>();
+                for (ResourceLinkEntity link : linkEntities) {
                     LinkDto linkDto = BeanUtilExt.convert(link, LinkDto.class);
                     if (linkDto.getFilename() == null) {
                         linkDto.setFilename(linkDto.getTitle());
                     }
                     linkDto.setThunder(Thunder.encodeThunder(linkDto.getUrl()));
-                    return linkDto;
-                }).collect(Collectors.toList()));
+                    linkDtos.add(linkDto);
+                }
+                resource.setLinks(linkDtos);
             }
-            return resource;
-        }).collect(Collectors.toList());
+            resources.add(resource);
+        }
+        return resources;
     }
 }

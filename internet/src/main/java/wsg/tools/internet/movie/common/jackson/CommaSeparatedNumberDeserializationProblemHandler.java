@@ -2,9 +2,8 @@ package wsg.tools.internet.movie.common.jackson;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
-import wsg.tools.common.lang.NumberUtilsExt;
-
 import java.io.IOException;
+import wsg.tools.common.lang.NumberUtilsExt;
 
 /**
  * Deserialize numbers from string separated with comma every three digits.
@@ -14,13 +13,10 @@ import java.io.IOException;
  */
 public class CommaSeparatedNumberDeserializationProblemHandler extends DeserializationProblemHandler {
 
-    public static final CommaSeparatedNumberDeserializationProblemHandler INSTANCE = new CommaSeparatedNumberDeserializationProblemHandler();
-
-    protected CommaSeparatedNumberDeserializationProblemHandler() {
-    }
-
     @Override
-    public Object handleWeirdStringValue(DeserializationContext context, Class<?> targetType, String text, String failureMsg) throws IOException {
+    public Object handleWeirdStringValue(DeserializationContext context, Class<?> targetType,
+        String text,
+        String failureMsg) throws IOException {
         if (Integer.class.equals(targetType) || int.class.equals(targetType)) {
             return (int) NumberUtilsExt.parseCommaSeparatedNumber(text);
         }

@@ -1,8 +1,7 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.common.util.function.TitleSupplier;
-
 import java.util.List;
+import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * An album in the {@link MidnightSite}.

@@ -1,13 +1,20 @@
 package wsg.tools.internet.movie.imdb;
 
-import com.fasterxml.jackson.annotation.*;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.Runtime;
-import wsg.tools.internet.movie.common.enums.*;
-import wsg.tools.internet.movie.common.jackson.JoinedValue;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.movie.common.Runtime;
+import wsg.tools.internet.movie.common.enums.ImdbRating;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
+import wsg.tools.internet.movie.common.enums.RatingSource;
+import wsg.tools.internet.movie.common.jackson.JoinedValue;
 
 /**
  * Base class of titles from OMDb.
@@ -17,19 +24,17 @@ import java.util.List;
  */
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "Type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = OmdbMovie.class, name = "movie"),
-        @JsonSubTypes.Type(value = OmdbSeries.class, name = "series"),
-        @JsonSubTypes.Type(value = OmdbEpisode.class, name = "episode"),
-})
-@JsonIgnoreProperties(value = {"Response", "Error"})
+@JsonSubTypes({@JsonSubTypes.Type(value = OmdbMovie.class, name = "movie"),
+    @JsonSubTypes.Type(value = OmdbSeries.class, name = "series"),
+    @JsonSubTypes.Type(value = OmdbEpisode.class, name = "episode"),})
+@JsonIgnoreProperties({"Response", "Error"})
 public class OmdbTitle extends BaseImdbTitle {
 
     private static final String SEPARATOR = ", ";
 
     @JsonProperty("title")
     private String enTitle;
-    private RatingEnum rated;
+    private ImdbRating rated;
     @JsonProperty("released")
     @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate release;
@@ -38,7 +43,7 @@ public class OmdbTitle extends BaseImdbTitle {
 
     @JsonProperty("Genre")
     @JoinedValue(separator = SEPARATOR)
-    private List<GenreEnum> genres;
+    private List<MovieGenre> genres;
     @JsonProperty("Director")
     @JoinedValue(separator = SEPARATOR)
     private List<String> directors;
@@ -50,10 +55,10 @@ public class OmdbTitle extends BaseImdbTitle {
     private List<String> actors;
     @JsonProperty("Language")
     @JoinedValue(separator = SEPARATOR)
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
     @JsonProperty("Country")
     @JoinedValue(separator = SEPARATOR)
-    private List<RegionEnum> regions;
+    private List<Region> regions;
 
     private String awards;
     private String poster;

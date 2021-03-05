@@ -1,15 +1,14 @@
 package wsg.tools.internet.movie.common.enums;
 
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.common.PathParameterized;
 
 /**
- * Enum of marking type.
+ * Enum of marking type on {@link wsg.tools.internet.movie.douban.DoubanSite}.
  *
  * @author Kingen
  * @since 2020/6/23
  */
-public enum MarkEnum implements TitleSupplier, PathParameterized {
+public enum DoubanMark implements TitleSupplier {
     /**
      * wish/do/collect
      */
@@ -19,17 +18,12 @@ public enum MarkEnum implements TitleSupplier, PathParameterized {
 
     private final String title;
 
-    MarkEnum(String title) {
+    DoubanMark(String title) {
         this.title = title;
     }
 
     @Override
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public String getPath() {
-        return name().toLowerCase();
     }
 }

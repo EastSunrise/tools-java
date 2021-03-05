@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/12/2
  */
-public class Rundll32 extends CommandExecutor {
+public final class Rundll32 extends CommandExecutor {
 
     public static final Rundll32 INSTANCE = new Rundll32();
 

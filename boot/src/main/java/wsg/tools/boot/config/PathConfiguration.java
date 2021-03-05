@@ -1,5 +1,7 @@
 package wsg.tools.boot.config;
 
+import java.io.File;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,11 +12,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
-
-import javax.annotation.Nullable;
-import java.io.File;
 
 /**
  * Configurations for video.
@@ -45,11 +45,13 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         if (entity.getOriginalTitle() != null) {
             title += NAME_SEPARATOR + entity.getOriginalTitle();
         }
-        return cdn + File.separator + MOVIE_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(title);
+        return cdn + File.separator + MOVIE_DIR + File.separator + entity.getYear() + NAME_SEPARATOR
+            + StringUtilsExt.toFilename(title);
     }
 
     public String getLocation(SeriesEntity entity) {
-        return cdn + File.separator + TV_DIR + File.separator + entity.getYear() + NAME_SEPARATOR + StringUtilsExt.toFilename(entity.getZhTitle());
+        return cdn + File.separator + TV_DIR + File.separator + entity.getYear() + NAME_SEPARATOR
+            + StringUtilsExt.toFilename(entity.getZhTitle());
     }
 
     public String getLocation(SeasonEntity season) {
@@ -62,8 +64,9 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
     }
 
     public String getLocation(SeasonEntity season, int currentEpisode) {
-        Integer episodeCount = AssertUtils.requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
-        String format = "E%0" + (((int) Math.log10(episodeCount)) + 1) + "d";
+        Integer episodeCount = AssertUtils
+            .requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
+        String format = String.format("E%%0%dd", ((int) StrictMath.log10(episodeCount)) + 1);
         return getLocation(season) + File.separator + String.format(format, currentEpisode);
     }
 
@@ -73,21 +76,23 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/cdn/**").addResourceLocations("file:" + new File(cdn).getPath() + File.separator);
-        registry.addResourceHandler("/tmp/**").addResourceLocations("file:" + new File(tmpdir).getPath() + File.separator);
+        registry.addResourceHandler("/cdn/**")
+            .addResourceLocations("file:" + new File(cdn).getPath() + File.separator);
+        registry.addResourceHandler("/tmp/**")
+            .addResourceLocations("file:" + new File(tmpdir).getPath() + File.separator);
     }
 
     @Override
     public void afterPropertiesSet() {
-        File file = new File(this.cdn);
-        if (!file.isDirectory()) {
-            log.warn("Not a valid cdn: " + cdn);
-            this.cdn = System.getProperty("java.io.tmpdir");
+        File cf = new File(cdn);
+        if (!cf.isDirectory()) {
+            log.warn("Not a valid cdn: {}", cf);
+            this.cdn = Constants.SYSTEM_TMPDIR;
         }
-        file = new File(this.tmpdir);
-        if (!file.isDirectory()) {
-            log.warn("Not a valid tmpdir: " + tmpdir);
-            this.tmpdir = System.getProperty("java.io.tmpdir");
+        File tf = new File(tmpdir);
+        if (!tf.isDirectory()) {
+            log.warn("Not a valid tmpdir: {}", tf);
+            this.tmpdir = Constants.SYSTEM_TMPDIR;
         }
     }
 

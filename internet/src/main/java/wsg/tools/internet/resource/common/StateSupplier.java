@@ -6,6 +6,7 @@ package wsg.tools.internet.resource.common;
  * @author Kingen
  * @since 2021/2/10
  */
+@FunctionalInterface
 public interface StateSupplier {
 
     /**

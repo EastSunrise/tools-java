@@ -1,10 +1,10 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
-import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Repository;
+import wsg.tools.boot.dao.jpa.base.BaseRepository;
+import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
 
 /**
  * Repository for episodes of TV series.
@@ -12,6 +12,7 @@ import java.util.Optional;
  * @author Kingen
  * @since 2020/9/24
  */
+@Repository
 public interface EpisodeRepository extends BaseRepository<EpisodeEntity, Long> {
 
     /**

@@ -44,7 +44,9 @@ public enum CelebrityType implements TextSupplier {
 
     private final String text;
 
-    CelebrityType(String text) {this.text = text;}
+    CelebrityType(String text) {
+        this.text = text;
+    }
 
     @Override
     public String getText() {

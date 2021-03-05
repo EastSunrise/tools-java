@@ -1,14 +1,13 @@
 package wsg.tools.boot.dao.jpa.base;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.repository.support.JpaRepositoryImplementation;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.lang.Nullable;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
-
-import javax.persistence.EntityExistsException;
-import javax.persistence.EntityNotFoundException;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Base repository including common and customized CRUD operations.
@@ -17,7 +16,8 @@ import java.util.function.Supplier;
  * @since 2020/7/12
  */
 @NoRepositoryBean
-public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryImplementation<E, ID> {
+public interface BaseRepository<E extends BaseEntity, ID> extends
+    JpaRepositoryImplementation<E, ID> {
 
     /**
      * Insert a new entity.
@@ -26,7 +26,7 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @return entity inserted
      * @throws EntityExistsException if the entity exists.
      */
-    <S extends E> S insert(S entity) throws EntityExistsException;
+    <S extends E> S insert(S entity);
 
     /**
      * Update an entity by {@link ID}.
@@ -43,19 +43,23 @@ public interface BaseRepository<E extends BaseEntity, ID> extends JpaRepositoryI
      * @param entity   entity to update
      * @param supplier supply the source entity
      * @return updated entity
-     * @throws EntityNotFoundException  if can't find an entity by the supplier or id of the given entity
-     * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
+     * @throws EntityNotFoundException  if can't find an entity by the supplier or id of the given
+     *                                  entity
+     * @throws IllegalArgumentException if the entity found by the supplier differs from the given
+     *                                  one
      */
-    <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier) throws EntityNotFoundException, IllegalArgumentException;
+    <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier);
 
     /**
-     * Update the entity if found by the supplier or id of the given entity
-     * Insert the given entity if not found.
+     * Update the entity if found by the supplier or id of the given entity Insert the given entity
+     * if not found.
      *
      * @param entity   object to update or save
      * @param supplier supplier to supply source entity
      * @return updated entity with flag of inserting or updating
-     * @throws IllegalArgumentException if the entity found by the supplier differs from the given one
+     * @throws IllegalArgumentException if the entity found by the supplier differs from the given
+     *                                  one
      */
-    <S extends E> InsertOrUpdate<S> updateOrInsert(S entity, @Nullable Supplier<Optional<E>> supplier) throws IllegalArgumentException;
+    <S extends E> InsertOrUpdate<S> updateOrInsert(S entity,
+        @Nullable Supplier<Optional<E>> supplier);
 }

@@ -1,14 +1,13 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.BaseEntity;
-import wsg.tools.internet.movie.douban.DoubanIdentifier;
-import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import lombok.Setter;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 /**
  * Relation between ids.
@@ -20,6 +19,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "video_id_relation")
 public class IdRelationEntity extends BaseEntity implements DoubanIdentifier, ImdbIdentifier {
+
+    private static final long serialVersionUID = 2918051901304370785L;
 
     @Id
     @Column(length = 10)

@@ -1,15 +1,14 @@
 package wsg.tools.internet.movie.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.GenreEnum;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.enums.RegionEnum;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
  * Info of a subject.
@@ -37,13 +36,13 @@ public class ImdbInfo {
         private List<String> title;
         private List<Year> year;
         @JsonProperty("country")
-        private List<RegionEnum> regions;
+        private List<Region> regions;
         @JsonProperty("language")
-        private List<LanguageEnum> languages;
+        private List<Language> languages;
         @JsonProperty("movie_duration")
         private List<Duration> durations;
         @JsonProperty("movie_type")
-        private List<GenreEnum> genres;
+        private List<MovieGenre> genres;
         @JsonProperty("pubdate")
         private List<LocalDate> releases;
         @JsonProperty("cast")

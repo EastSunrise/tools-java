@@ -1,9 +1,8 @@
 package wsg.tools.internet.base.intf;
 
-import org.apache.http.client.HttpResponseException;
-
 import java.util.Objects;
 import java.util.function.Consumer;
+import org.apache.http.client.HttpResponseException;
 
 /**
  * A repository whose records is iterable.
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
  * @see RepositoryIterator
  * @since 2021/3/1
  */
+@FunctionalInterface
 public interface IterableRepository<T> {
 
     /**
@@ -22,8 +22,8 @@ public interface IterableRepository<T> {
     RepositoryIterator<T> iterator();
 
     /**
-     * Performs the given action for each record in the repository until all records
-     * have been processed or the action throws an exception.
+     * Performs the given action for each record in the repository until all records have been
+     * processed or the action throws an exception.
      *
      * @param action The action to be performed for each record
      * @throws HttpResponseException if an error occurs

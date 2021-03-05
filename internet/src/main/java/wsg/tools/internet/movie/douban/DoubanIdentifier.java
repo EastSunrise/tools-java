@@ -6,6 +6,7 @@ package wsg.tools.internet.movie.douban;
  * @author Kingen
  * @since 2020/11/4
  */
+@FunctionalInterface
 public interface DoubanIdentifier {
 
     /**

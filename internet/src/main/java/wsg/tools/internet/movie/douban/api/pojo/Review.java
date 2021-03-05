@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 /**
  * Reviews of subjects.

@@ -1,4 +1,4 @@
-package wsg.tools.internet.common.enums;
+package wsg.tools.internet.enums;
 
 import wsg.tools.common.util.function.TitleSupplier;
 
@@ -10,6 +10,9 @@ import wsg.tools.common.util.function.TitleSupplier;
  */
 public enum Zodiac implements TitleSupplier {
 
+    /**
+     * Twelve zodiacs
+     */
     RAT("鼠"),
     OX("牛"),
     TIGER("虎"),
@@ -25,7 +28,9 @@ public enum Zodiac implements TitleSupplier {
 
     private final String title;
 
-    Zodiac(String title) {this.title = title;}
+    Zodiac(String title) {
+        this.title = title;
+    }
 
     @Override
     public String getTitle() {

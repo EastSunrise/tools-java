@@ -1,13 +1,13 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-
+import java.util.Collections;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.util.List;
+import lombok.Setter;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.internet.enums.Language;
 
 /**
  * Entity of TV series.
@@ -19,6 +19,8 @@ import java.util.List;
 @Entity
 @Table(name = "video_series")
 public class SeriesEntity extends IdentityEntity {
+
+    private static final long serialVersionUID = 8249371344171811042L;
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;
@@ -33,7 +35,7 @@ public class SeriesEntity extends IdentityEntity {
     private Integer year;
 
     @Column(length = 63)
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
 
     @Column(nullable = false)
     private Integer seasonsCount;
@@ -54,8 +56,8 @@ public class SeriesEntity extends IdentityEntity {
         return year;
     }
 
-    public List<LanguageEnum> getLanguages() {
-        return languages;
+    public List<Language> getLanguages() {
+        return Collections.unmodifiableList(languages);
     }
 
     public Integer getSeasonsCount() {
@@ -63,8 +65,8 @@ public class SeriesEntity extends IdentityEntity {
     }
 
     @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
+    public boolean equals(Object obj) {
+        return super.equals(obj);
     }
 
     @Override

@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/7/26
  */
-public enum RoleEnum implements TitleSupplier {
+public enum MovieRole implements TitleSupplier {
     /**
      * cast/director
      */
@@ -22,7 +22,7 @@ public enum RoleEnum implements TitleSupplier {
 
     private final String title;
 
-    RoleEnum(String title) {
+    MovieRole(String title) {
         this.title = title;
     }
 

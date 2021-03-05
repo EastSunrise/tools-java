@@ -3,13 +3,12 @@ package wsg.tools.common.io.excel.reader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Cell;
-
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Cell;
 
 /**
  * Interface to read a cell.
@@ -39,7 +38,7 @@ public class CellReader<V> {
             return null;
         }
 
-        JavaType javaType = mapper.getTypeFactory().constructType(getType());
+        JavaType javaType = mapper.getTypeFactory().constructType(type);
         return mapper.convertValue(value, javaType);
     }
 
@@ -51,7 +50,7 @@ public class CellReader<V> {
             return null;
         }
 
-        JavaType javaType = mapper.getTypeFactory().constructType(getType());
+        JavaType javaType = mapper.getTypeFactory().constructType(type);
         return mapper.convertValue(value, javaType);
     }
 

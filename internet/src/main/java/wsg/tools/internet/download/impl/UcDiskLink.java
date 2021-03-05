@@ -1,13 +1,12 @@
 package wsg.tools.internet.download.impl;
 
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.UnknownResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
-
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A link of UC disk.
@@ -15,11 +14,13 @@ import java.util.regex.Pattern;
  * @author Kingen
  * @since 2020/10/30
  */
-public class UcDiskLink extends AbstractLink {
+public final class UcDiskLink extends AbstractLink {
 
     public static final String UC_DISK_HOST = "yun.cn";
 
-    private static final Pattern UC_REGEX = Pattern.compile("https://www\\.yun\\.cn/s/(?<key>[0-9a-z]{32})(\\?chkey=(?<ck>[0-9a-z]{5}))?");
+    private static final Pattern UC_REGEX =
+        Pattern
+            .compile("https://www\\.yun\\.cn/s/(?<key>[0-9a-z]{32})(\\?chkey=(?<ck>[0-9a-z]{5}))?");
 
     private final String key;
     private final String ck;

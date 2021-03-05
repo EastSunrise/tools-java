@@ -1,10 +1,10 @@
 package wsg.tools.internet.movie.common;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Runtime of a subject.
@@ -32,21 +32,22 @@ public final class Runtime {
             return;
         }
 
-        matcher = RUNTIME_REGEX2.matcher(text);
-        if (matcher.matches()) {
-            this.duration = Duration.ofMinutes(Integer.parseInt(matcher.group("m")));
-            this.comment = matcher.group("c");
+        Matcher matcher2 = RUNTIME_REGEX2.matcher(text);
+        if (matcher2.matches()) {
+            this.duration = Duration.ofMinutes(Integer.parseInt(matcher2.group("m")));
+            this.comment = matcher2.group("c");
             return;
         }
 
-        matcher = RANGE_RUNTIME_REGEX.matcher(text);
-        if (matcher.matches()) {
-            int sum = Integer.parseInt(matcher.group("s")) + Integer.parseInt(matcher.group("e"));
+        matcher2 = RANGE_RUNTIME_REGEX.matcher(text);
+        if (matcher2.matches()) {
+            int sum = Integer.parseInt(matcher2.group("s")) + Integer.parseInt(matcher2.group("e"));
             this.duration = Duration.ofMinutes(sum / 2);
             return;
         }
 
-        throw new IllegalArgumentException(String.format("Not matched string: '%s' for %s", text, Runtime.class));
+        throw new IllegalArgumentException(
+            String.format("Not matched string: '%s' for %s", text, Runtime.class));
     }
 
     public static Runtime of(String text) {

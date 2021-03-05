@@ -1,10 +1,9 @@
 package wsg.tools.internet.movie.douban.api.container;
 
+import java.util.List;
 import lombok.Getter;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.movie.douban.api.pojo.SimpleSubject;
-
-import java.util.List;
 
 /**
  * Result of subjects with ranked info.

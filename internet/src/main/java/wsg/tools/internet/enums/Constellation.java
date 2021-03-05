@@ -1,11 +1,11 @@
-package wsg.tools.internet.movie.common.enums;
+package wsg.tools.internet.enums;
 
 import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TitleSupplier;
 
 /**
- * Enum for constellations.
+ * Twelve constellations.
  *
  * @author Kingen
  * @since 2020/7/26
@@ -24,9 +24,7 @@ public enum Constellation implements TitleSupplier, AkaPredicate<String> {
     SCORPIO("天蝎座", "天蠍座"),
     SAGITTARIUS("射手座", "人马座", "いて座"),
     CAPRICORN("摩羯座", "山羊座", "魔羯座", "魔蝎座"),
-    AQUARIUS("水瓶座", "みずがめ座"),
-    PISCES("双鱼座"),
-    ;
+    AQUARIUS("水瓶座", "みずがめ座"), PISCES("双鱼座");
 
     private final String title;
     private final String[] aka;

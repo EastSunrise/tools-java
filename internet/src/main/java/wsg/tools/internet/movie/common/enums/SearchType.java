@@ -6,7 +6,7 @@ package wsg.tools.internet.movie.common.enums;
  * @author Kingen
  * @since 2020/6/18
  */
-public enum SearchTypeEnum {
+public enum SearchType {
     /**
      * movie/series/episode
      */

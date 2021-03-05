@@ -1,19 +1,13 @@
 package wsg.tools.internet.base.intf;
 
-import org.apache.http.HttpEntity;
+import java.io.Closeable;
+import javax.annotation.Nullable;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.util.EntityUtils;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.base.impl.RequestBuilder;
-
-import javax.annotation.Nullable;
-import java.io.Closeable;
-import java.io.IOException;
 
 /**
  * A http session to execute requests under a domain.
@@ -22,24 +16,18 @@ import java.io.IOException;
  * <p>
  * {@link #getDomain()} appoints the target domain.
  * <p>
- * The core method is {@link #execute(RequestBuilder, ResponseHandler)} which executes the given request, handles the response
- * by the given handler and returns the response as an object of target type: request → response → {@code <T>}.
+ * The core method is {@link #execute(RequestBuilder, ResponseHandler)} which executes the given
+ * request, handles the response by the given handler and returns the response as an object of
+ * target type: request → response → {@code <T>}.
  * <p>
- * Method {@link #getContent} is an extension of {@link #execute}. It executes
- * the given request, handles the response as a String, handles the String by the given {@code ContentHandler}, and finally
- * returns the Sting as an object of target type: request → response → String → {@code T}.
+ * Method {@link #getContent} is an extension of {@link #execute}. It executes the given request,
+ * handles the response as a String, handles the String by the given {@code ContentHandler}, and
+ * finally returns the Sting as an object of target type: request → response → String → {@code T}.
  *
  * @author Kingen
  * @since 2021/3/1
  */
 public interface HttpSession extends Closeable {
-
-    ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler() {
-        @Override
-        public String handleEntity(HttpEntity entity) throws IOException {
-            return EntityUtils.toString(entity, Constants.UTF_8);
-        }
-    };
 
     /**
      * Obtains the domain of the session.
@@ -59,7 +47,8 @@ public interface HttpSession extends Closeable {
     <T> T execute(RequestBuilder builder, ResponseHandler<T> handler) throws HttpResponseException;
 
     /**
-     * Obtains the content of the response of the request and returns it as an object of type {@code T} by the given handler.
+     * Obtains the content of the response of the request and returns it as an object of type {@code
+     * T} by the given handler.
      *
      * @param builder         builder to construct a request
      * @param responseHandler handler to generate a response String from a {@link HttpResponse}.
@@ -68,8 +57,9 @@ public interface HttpSession extends Closeable {
      * @return an object generated from the string response
      * @throws HttpResponseException if an error occurs when receive the response
      */
-    <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler, ContentHandler<T> contentHandler, SnapshotStrategy<T> strategy)
-            throws HttpResponseException;
+    <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler,
+        ContentHandler<T> contentHandler,
+        SnapshotStrategy<T> strategy) throws HttpResponseException;
 
     /**
      * Creates a builder to construct a request of the given method under the sub domain.
@@ -78,7 +68,7 @@ public interface HttpSession extends Closeable {
      * @param subDomain the sub domain that the request will access to
      * @return a builder to construct a request
      */
-    RequestBuilder create(final String method, final String subDomain);
+    RequestBuilder create(String method, String subDomain);
 
     /**
      * Obtains the cookie of the given name.

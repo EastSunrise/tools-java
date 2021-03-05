@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/3/2
  */
+@FunctionalInterface
 public interface FirstSupplier<T> {
 
     /**

@@ -5,9 +5,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Base deserializer to pre-handle blank string.
@@ -17,7 +16,7 @@ import java.io.IOException;
  */
 public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
 
-    protected final Class<T> clazz;
+    private final Class<T> clazz;
 
     protected AbstractStringDeserializer(Class<T> clazz) {
         super(clazz);
@@ -32,21 +31,27 @@ public abstract class AbstractStringDeserializer<T> extends StdDeserializer<T> {
         }
         if (parser.hasToken(JsonToken.VALUE_STRING)) {
             String text = parser.getText();
-            if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT) && StringUtils.isBlank(text)) {
+            if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
+                && StringUtils.isBlank(text)) {
                 return null;
             }
             return parseText(text, context);
         }
-        return (T) context.handleUnexpectedToken(clazz, parser);
+        return (T) context.handleUnexpectedToken(getClazz(), parser);
     }
 
     /**
      * Parses an object from a string.
      *
      * @param text    target text
-     * @param context context that can be used to access information about this deserialization activity.
+     * @param context context that can be used to access information about this deserialization
+     *                activity.
      * @return parsed object
      * @throws IOException i/o exception
      */
     protected abstract T parseText(String text, DeserializationContext context) throws IOException;
+
+    Class<T> getClazz() {
+        return clazz;
+    }
 }

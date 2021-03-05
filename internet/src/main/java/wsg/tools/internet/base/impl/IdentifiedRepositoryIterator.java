@@ -1,11 +1,10 @@
 package wsg.tools.internet.base.impl;
 
+import java.util.Iterator;
+import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
-
-import javax.annotation.Nonnull;
-import java.util.Iterator;
 
 /**
  * An implementation of {@link RepositoryIterator}.

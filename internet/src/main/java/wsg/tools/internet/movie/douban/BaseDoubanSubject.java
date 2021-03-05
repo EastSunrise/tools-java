@@ -4,18 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.Runtime;
-import wsg.tools.internet.movie.common.enums.GenreEnum;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.douban.pojo.AggregateRating;
-import wsg.tools.internet.movie.douban.pojo.DoubanPerson;
-import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import javax.annotation.Nullable;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.common.Runtime;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
+import wsg.tools.internet.movie.douban.pojo.AggregateRating;
+import wsg.tools.internet.movie.douban.pojo.DoubanPerson;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 /**
  * Base class of subjects from douban.
@@ -25,11 +24,9 @@ import java.util.List;
  */
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = DoubanSeries.class, name = "TVSeries"),
-        @JsonSubTypes.Type(value = DoubanMovie.class, name = "Movie")
-})
-@JsonIgnoreProperties(value = {"@context"})
+@JsonSubTypes({@JsonSubTypes.Type(value = DoubanSeries.class, name = "TVSeries"),
+    @JsonSubTypes.Type(value = DoubanMovie.class, name = "Movie")})
+@JsonIgnoreProperties("@context")
 public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentifier {
 
     private long id;
@@ -54,7 +51,7 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     @JsonProperty("datePublished")
     private LocalDate release;
     @JsonProperty("genre")
-    private List<GenreEnum> genres;
+    private List<MovieGenre> genres;
     @JsonProperty("duration")
     private Duration duration;
     /**
@@ -70,7 +67,7 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     private String originalTitle;
     private int year;
     private boolean released;
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
     private List<Runtime> runtimes;
 
     BaseDoubanSubject() {
@@ -126,11 +123,11 @@ public abstract class BaseDoubanSubject implements DoubanIdentifier, ImdbIdentif
     }
 
     @Nullable
-    public List<LanguageEnum> getLanguages() {
+    public List<Language> getLanguages() {
         return languages;
     }
 
-    void setLanguages(List<LanguageEnum> languages) {
+    void setLanguages(List<Language> languages) {
         this.languages = languages;
     }
 }

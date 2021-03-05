@@ -11,12 +11,34 @@ import wsg.tools.common.util.function.TextSupplier;
  */
 public enum VideoStatus implements IntCodeSupplier, TextSupplier {
 
+    /**
+     * If archived
+     */
     ARCHIVED(20, "Archived"),
+    /**
+     * If not released
+     */
     COMING(21, "Coming"),
+    /**
+     * If it's to be downloaded
+     */
     TO_DOWNLOAD(30, "To download"),
-    DOWNLOADING(31, "Downloading"),
+    /**
+     * If in downloading
+     */
+    DOWNLOADING(31,
+        "Downloading"),
+    /**
+     * If to be chosen
+     */
     TO_CHOOSE(32, "To choose"),
+    /**
+     * If lacking of some episodes
+     */
     LACKING(33, "Lacking"),
+    /**
+     * If to be archived
+     */
     TO_ARCHIVE(40, "To archive");
 
     private final int code;

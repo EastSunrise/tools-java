@@ -1,11 +1,19 @@
 package wsg.tools.boot.controller;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.dto.ResourceQueryDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
@@ -15,11 +23,6 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * API of resources.
@@ -44,14 +47,15 @@ public class ResourceController extends AbstractController {
     public String movieResources(Long id, String key, Model model) {
         Optional<MovieEntity> optional = subjectService.getMovie(id);
         if (optional.isEmpty()) {
-            return "error/notFound";
+            return ERROR_NOT_FOUND;
         }
         MovieEntity movieEntity = optional.get();
         model.addAttribute("movie", movieEntity);
         if (StringUtils.isBlank(key)) {
             key = movieEntity.getZhTitle();
         }
-        model.addAttribute("items", resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
+        model.addAttribute("items",
+            resourceService.search(key, movieEntity.getDbId(), movieEntity.getImdbId()));
         return "video/movie/resources";
     }
 
@@ -59,7 +63,7 @@ public class ResourceController extends AbstractController {
     public String seriesResources(Long id, String key, Model model) {
         Pair<SeriesEntity, List<SeasonEntity>> pair = subjectService.getSeries(id);
         if (pair.getLeft() == null) {
-            return "error/notFound";
+            return ERROR_NOT_FOUND;
         }
         SeriesEntity seriesEntity = pair.getLeft();
         model.addAttribute("series", seriesEntity);
@@ -68,24 +72,28 @@ public class ResourceController extends AbstractController {
         if (StringUtils.isBlank(key)) {
             key = seriesEntity.getZhTitle();
         }
-        Set<ResourceItemEntity> items = new HashSet<>(resourceService.search(key, null, seriesEntity.getImdbId()));
-        seasons.forEach(seasonEntity -> items.addAll(resourceService.search(null, seasonEntity.getDbId(), null)));
+        Set<ResourceItemEntity> items = new HashSet<>();
+        items.addAll(resourceService.search(key, null, seriesEntity.getImdbId()));
+        seasons.forEach(seasonEntity ->
+            items.addAll(resourceService.search(null, seasonEntity.getDbId(), null))
+        );
         model.addAttribute("items", items);
         return "video/series/resources";
     }
 
-    @GetMapping(value = "/index")
+    @GetMapping("/index")
     public String links(Model model, ResourceQueryDto query) {
-        List<ResourceItemEntity> items = resourceService.search(query.getKey(), query.getDbId(), query.getImdbId(), query.getChosen());
+        List<ResourceItemEntity> items = resourceService
+            .search(query.getKey(), query.getDbId(), query.getImdbId(), query.getChosen());
         List<ResourceDto> resources = resourceService.getResources(items);
         model.addAttribute("resources", resources);
         model.addAttribute("query", query);
         return "video/resource/index";
     }
 
-    @PostMapping(value = "/check")
+    @PostMapping("/check")
     @ResponseBody
-    public long checkResources(@RequestBody List<ResourceCheckDto> checkDto) {
-        return resourceService.check(checkDto);
+    public long identifyResources(@RequestBody List<ResourceCheckDto> checkDto) {
+        return resourceService.identifyResources(checkDto);
     }
 }

@@ -3,17 +3,16 @@ package wsg.tools.internet.movie.imdb;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.GenreEnum;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.jackson.JoinedValue;
-import wsg.tools.internet.movie.imdb.pojo.base.BaseImdbObject;
-import wsg.tools.internet.movie.imdb.pojo.object.ImdbPerson;
-
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import javax.annotation.Nullable;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
+import wsg.tools.internet.movie.common.jackson.JoinedValue;
+import wsg.tools.internet.movie.imdb.pojo.base.BaseImdbObject;
+import wsg.tools.internet.movie.imdb.pojo.object.ImdbPerson;
 
 /**
  * Base class of titles from IMDb.
@@ -23,12 +22,10 @@ import java.util.List;
  */
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = ImdbSeries.class, name = "TVSeries"),
-        @JsonSubTypes.Type(value = ImdbEpisode.class, name = "TVEpisode"),
-        @JsonSubTypes.Type(value = ImdbMovie.class, name = "Movie"),
-        @JsonSubTypes.Type(value = ImdbCreativeWork.class, name = "CreativeWork"),
-})
+@JsonSubTypes({@JsonSubTypes.Type(value = ImdbSeries.class, name = "TVSeries"),
+    @JsonSubTypes.Type(value = ImdbEpisode.class, name = "TVEpisode"),
+    @JsonSubTypes.Type(value = ImdbMovie.class, name = "Movie"),
+    @JsonSubTypes.Type(value = ImdbCreativeWork.class, name = "CreativeWork"),})
 public class ImdbTitle extends BaseImdbTitle {
 
     @JsonProperty("name")
@@ -36,7 +33,7 @@ public class ImdbTitle extends BaseImdbTitle {
     @JsonProperty("url")
     private String url;
     @JsonProperty("genre")
-    private List<GenreEnum> genres;
+    private List<MovieGenre> genres;
     @JsonProperty("datePublished")
     private LocalDate release;
     @JsonProperty("duration")
@@ -57,7 +54,7 @@ public class ImdbTitle extends BaseImdbTitle {
     private String context;
 
     private List<Duration> runtimes;
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
     private List<LocalDate> releases;
 
     ImdbTitle() {
@@ -99,11 +96,11 @@ public class ImdbTitle extends BaseImdbTitle {
     }
 
     @Nullable
-    public List<LanguageEnum> getLanguages() {
+    public List<Language> getLanguages() {
         return languages;
     }
 
-    void setLanguages(List<LanguageEnum> languages) {
+    void setLanguages(List<Language> languages) {
         this.languages = languages;
     }
 }

@@ -1,10 +1,9 @@
 package wsg.tools.boot.dao.jpa.converter;
 
+import java.util.function.Supplier;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
-
-import java.util.function.Supplier;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
  * Adapter between a code and a {@code MarkEnum}.
@@ -12,30 +11,28 @@ import java.util.function.Supplier;
  * @author Kingen
  * @since 2021/2/21
  */
-enum MarkEnumAdapter implements IntCodeSupplier, Supplier<MarkEnum>, AkaPredicate<MarkEnum> {
+enum MarkEnumAdapter implements IntCodeSupplier, Supplier<DoubanMark>, AkaPredicate<DoubanMark> {
     /**
      * wish/do/collect
      */
-    WISH(1, MarkEnum.WISH),
-    DO(2, MarkEnum.DO),
-    COLLECT(3, MarkEnum.COLLECT),
+    WISH(1, DoubanMark.WISH), DO(2, DoubanMark.DO), COLLECT(3, DoubanMark.COLLECT),
     ;
 
     private final int code;
-    private final MarkEnum mark;
+    private final DoubanMark mark;
 
-    MarkEnumAdapter(int code, MarkEnum mark) {
+    MarkEnumAdapter(int code, DoubanMark mark) {
         this.code = code;
         this.mark = mark;
     }
 
     @Override
-    public MarkEnum get() {
+    public DoubanMark get() {
         return mark;
     }
 
     @Override
-    public boolean alsoKnownAs(MarkEnum other) {
+    public boolean alsoKnownAs(DoubanMark other) {
         return mark == other;
     }
 

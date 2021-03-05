@@ -2,9 +2,8 @@ package wsg.tools.common.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import wsg.tools.common.util.function.TextSupplier;
-
 import java.io.IOException;
+import wsg.tools.common.util.function.TextSupplier;
 
 /**
  * Serialize a object implementing {@link TextSupplier} to a text.
@@ -12,10 +11,10 @@ import java.io.IOException;
  * @author Kingen
  * @since 2020/7/13
  */
-public class TextSerializer<JavaType extends TextSupplier> extends AbstractNonNullSerializer<JavaType, String> {
+public class TextSerializer<T extends TextSupplier> extends AbstractNonNullSerializer<T> {
 
-    protected TextSerializer(Class<JavaType> javaType) {
-        super(javaType, String.class);
+    protected TextSerializer(Class<T> clazz) {
+        super(clazz);
     }
 
     public static <T extends TextSupplier> TextSerializer<T> getInstance(Class<T> type) {
@@ -23,7 +22,8 @@ public class TextSerializer<JavaType extends TextSupplier> extends AbstractNonNu
     }
 
     @Override
-    protected void serializeNonNull(JavaType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    protected void serializeNonNull(T value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
         gen.writeString(value.getText());
     }
 }

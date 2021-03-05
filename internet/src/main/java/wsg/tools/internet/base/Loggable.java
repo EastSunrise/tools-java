@@ -6,6 +6,7 @@ package wsg.tools.internet.base;
  * @author Kingen
  * @since 2021/2/11
  */
+@FunctionalInterface
 public interface Loggable<T> {
 
     /**

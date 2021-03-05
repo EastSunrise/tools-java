@@ -1,10 +1,9 @@
 package wsg.tools.common.io.multimedia;
 
-import lombok.Getter;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 /**
  * Info of a multimedia.

@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.douban.api.container;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import lombok.Getter;
-
 import java.util.List;
+import lombok.Getter;
 
 /**
  * Result with paged info.

@@ -14,9 +14,8 @@ import wsg.tools.internet.movie.imdb.pojo.object.ImdbPerson;
  */
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = ImdbPerson.class, name = "Person"),
-        @JsonSubTypes.Type(value = ImdbOrganization.class, name = "Organization"),
-})
+@JsonSubTypes({@JsonSubTypes.Type(value = ImdbPerson.class, name = "Person"),
+    @JsonSubTypes.Type(value = ImdbOrganization.class, name = "Organization"),})
 public abstract class BaseImdbObject {
+
 }

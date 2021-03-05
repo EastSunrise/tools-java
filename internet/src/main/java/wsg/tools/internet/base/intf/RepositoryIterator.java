@@ -1,8 +1,7 @@
 package wsg.tools.internet.base.intf;
 
-import org.apache.http.client.HttpResponseException;
-
 import java.util.NoSuchElementException;
+import org.apache.http.client.HttpResponseException;
 
 /**
  * An iterator over records in the {@link IterableRepository}.
@@ -15,9 +14,9 @@ import java.util.NoSuchElementException;
 public interface RepositoryIterator<T> {
 
     /**
-     * Returns {@code true} if the next record exists in the repository.
-     * (In other words, returns {@code true} if {@link #next} would
-     * return the index of next record rather than throwing an exception.)
+     * Returns {@code true} if the next record exists in the repository. (In other words, returns
+     * {@code true} if {@link #next} would return the index of next record rather than throwing an
+     * exception.)
      *
      * @return {@code true} if the next record exists
      */

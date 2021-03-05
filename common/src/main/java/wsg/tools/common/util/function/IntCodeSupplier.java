@@ -8,4 +8,5 @@ package wsg.tools.common.util.function;
  */
 @FunctionalInterface
 public interface IntCodeSupplier extends CodeSupplier<Integer> {
+
 }

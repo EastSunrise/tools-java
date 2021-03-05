@@ -1,10 +1,10 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
-
-import java.util.Optional;
 
 /**
  * Repository for items of resources.
@@ -12,6 +12,7 @@ import java.util.Optional;
  * @author Kingen
  * @since 2020/11/4
  */
+@Repository
 public interface ResourceItemRepository extends BaseRepository<ResourceItemEntity, Long> {
 
     /**

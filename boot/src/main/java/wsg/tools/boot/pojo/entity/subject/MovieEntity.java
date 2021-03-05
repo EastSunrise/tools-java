@@ -1,17 +1,17 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.douban.DoubanIdentifier;
-import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
-
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.time.Duration;
-import java.util.List;
+import lombok.Setter;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.douban.DoubanIdentifier;
+import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * Movie entity.
@@ -22,7 +22,10 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "video_movie")
-public class MovieEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier, YearSupplier {
+public class MovieEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier,
+    YearSupplier {
+
+    private static final long serialVersionUID = 7109265333600711325L;
 
     @Column(unique = true)
     private Long dbId;
@@ -43,7 +46,7 @@ public class MovieEntity extends IdentityEntity implements DoubanIdentifier, Imd
     private Integer year;
 
     @Column(length = 63)
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
 
     @Column(nullable = false, length = 63)
     private List<Duration> durations;
@@ -56,12 +59,12 @@ public class MovieEntity extends IdentityEntity implements DoubanIdentifier, Imd
         return originalTitle;
     }
 
-    public List<LanguageEnum> getLanguages() {
-        return languages;
+    public List<Language> getLanguages() {
+        return Collections.unmodifiableList(languages);
     }
 
     public List<Duration> getDurations() {
-        return durations;
+        return Collections.unmodifiableList(durations);
     }
 
     public String getEnTitle() {

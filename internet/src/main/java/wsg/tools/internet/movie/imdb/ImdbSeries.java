@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.imdb;
 
+import java.util.List;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.imdb.pojo.object.ImdbVideoObject;
-
-import java.util.List;
 
 /**
  * IMDb TV Series.
@@ -19,8 +18,8 @@ public class ImdbSeries extends ImdbTitle {
     /**
      * Index of a given episode is array[currentSeason-1][currentEpisode].
      * <p>
-     * Ep0 may be included if exists. It also means that length of each array is at least 1
-     * even if all of the elements are null.
+     * Ep0 may be included if exists. It also means that length of each array is at least 1 even if
+     * all of the elements are null.
      */
     private List<String[]> episodes;
 

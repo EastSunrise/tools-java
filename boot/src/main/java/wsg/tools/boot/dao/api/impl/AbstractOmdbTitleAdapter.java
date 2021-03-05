@@ -1,13 +1,12 @@
 package wsg.tools.boot.dao.api.impl;
 
-import wsg.tools.boot.dao.api.intf.ImdbView;
-import wsg.tools.internet.movie.common.Runtime;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.imdb.OmdbTitle;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import wsg.tools.boot.dao.api.intf.ImdbView;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.common.Runtime;
+import wsg.tools.internet.movie.imdb.OmdbTitle;
 
 /**
  * Projects {@link OmdbTitle} to {@link ImdbView}.
@@ -17,7 +16,7 @@ import java.util.List;
  */
 abstract class AbstractOmdbTitleAdapter<T extends OmdbTitle> implements ImdbView {
 
-    final T t;
+    private final T t;
 
     AbstractOmdbTitleAdapter(T t) {
         this.t = t;
@@ -39,7 +38,7 @@ abstract class AbstractOmdbTitleAdapter<T extends OmdbTitle> implements ImdbView
     }
 
     @Override
-    public List<LanguageEnum> getLanguages() {
+    public List<Language> getLanguages() {
         return t.getLanguages();
     }
 
@@ -50,5 +49,9 @@ abstract class AbstractOmdbTitleAdapter<T extends OmdbTitle> implements ImdbView
             return null;
         }
         return List.of(runtime.getDuration());
+    }
+
+    T getT() {
+        return t;
     }
 }

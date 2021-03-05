@@ -10,6 +10,7 @@ import java.time.LocalDate;
  * @author Kingen
  * @since 2021/2/25
  */
+@FunctionalInterface
 public interface UpdateDateSupplier {
 
     /**

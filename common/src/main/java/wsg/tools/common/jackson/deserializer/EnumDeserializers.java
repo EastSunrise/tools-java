@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import java.io.IOException;
+import java.util.function.BiPredicate;
+import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.AkaPredicate;
@@ -13,40 +16,46 @@ import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 
-import java.io.IOException;
-import java.util.function.BiPredicate;
-
 /**
  * Deserializers for {@link Enum} which usually implements {@link CodeSupplier}
  *
  * @author Kingen
  * @since 2020/7/23
  */
+@UtilityClass
 public class EnumDeserializers {
 
-    public static <E extends Enum<E>, U> EnumDeserializer<E, U> getDeserializer(Class<E> eClass, Class<U> uClass, BiPredicate<E, U> predicate) {
+    public <E extends Enum<E>, U> EnumDeserializer<E, U> getDeserializer(Class<E> eClass,
+        Class<U> uClass,
+        BiPredicate<E, U> predicate) {
         return new EnumDeserializer<>(eClass, uClass, predicate);
     }
 
-    public static <C, E extends Enum<E> & CodeSupplier<C>> EnumCodeDeserializer<C, E> getCodeDeserializer(Class<C> cClass, Class<E> eClass) {
+    public <C, E extends Enum<E> & CodeSupplier<C>> EnumCodeDeserializer<C, E> getCodeDeserializer(
+        Class<C> cClass,
+        Class<E> eClass) {
         return new EnumCodeDeserializer<>(eClass, cClass);
     }
 
-    public static <Aka, E extends Enum<E> & AkaPredicate<Aka>> EnumAkaDeserializer<Aka, E> getAkaDeserializer(Class<Aka> akaClass, Class<E> eClass) {
+    public <Aka, E extends Enum<E> & AkaPredicate<Aka>> EnumAkaDeserializer<Aka, E>
+    getAkaDeserializer(Class<Aka> akaClass, Class<E> eClass) {
         return new EnumAkaDeserializer<>(eClass, akaClass);
     }
 
-    public static <E extends Enum<E> & TextSupplier> EnumTextDeserializer<E> getTextDeserializer(Class<E> tClass) {
+    public <E extends Enum<E> & TextSupplier> EnumTextDeserializer<E> getTextDeserializer(
+        Class<E> tClass) {
         return new EnumTextDeserializer<>(tClass);
     }
 
-    public static <E extends Enum<E> & TitleSupplier> EnumTitleDeserializer<E> getTitleDeserializer(Class<E> tClass) {
+    public <E extends Enum<E> & TitleSupplier> EnumTitleDeserializer<E> getTitleDeserializer(
+        Class<E> tClass) {
         return new EnumTitleDeserializer<>(tClass);
     }
 
-    public static class EnumDeserializer<E extends Enum<E>, U> extends StdDeserializer<E> {
+    public class EnumDeserializer<E extends Enum<E>, U> extends StdDeserializer<E> {
 
         private final Class<U> uClass;
+
         private final BiPredicate<E, U> predicate;
 
         protected EnumDeserializer(Class<E> eClass, Class<U> uClass, BiPredicate<E, U> predicate) {
@@ -62,18 +71,21 @@ public class EnumDeserializers {
                 return null;
             }
             U u = parser.readValueAs(uClass);
-            if (u instanceof String && StringUtils.isBlank((String) u) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+            if (u instanceof String && StringUtils.isBlank((CharSequence) u)
+                && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
             try {
                 return EnumUtilExt.deserialize((Class<E>) handledType(), e -> predicate.test(e, u));
             } catch (IllegalArgumentException e) {
-                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), u, parser);
+                return (E) context
+                    .handleWeirdNativeValue(context.constructType(handledType()), u, parser);
             }
         }
     }
 
-    public static class EnumCodeDeserializer<Code, E extends Enum<E> & CodeSupplier<Code>> extends StdDeserializer<E> {
+    public class EnumCodeDeserializer<Code, E extends Enum<E> & CodeSupplier<Code>> extends
+        StdDeserializer<E> {
 
         private final Class<Code> codeClass;
 
@@ -89,18 +101,21 @@ public class EnumDeserializers {
                 return null;
             }
             Code code = parser.readValueAs(codeClass);
-            if (code instanceof String && StringUtils.isBlank((String) code) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+            if (code instanceof String && StringUtils.isBlank((CharSequence) code)
+                && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
             try {
                 return EnumUtilExt.deserializeCode(code, (Class<E>) handledType());
             } catch (IllegalArgumentException e) {
-                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), code, parser);
+                return (E) context
+                    .handleWeirdNativeValue(context.constructType(handledType()), code, parser);
             }
         }
     }
 
-    public static class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaPredicate<Aka>> extends StdDeserializer<E> {
+    public class EnumAkaDeserializer<Aka, E extends Enum<E> & AkaPredicate<Aka>> extends
+        StdDeserializer<E> {
 
         private final Class<Aka> akaClass;
 
@@ -116,18 +131,21 @@ public class EnumDeserializers {
                 return null;
             }
             Aka aka = parser.readValueAs(akaClass);
-            if (aka instanceof String && StringUtils.isBlank((String) aka) && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
+            if (aka instanceof String && StringUtils.isBlank((CharSequence) aka)
+                && context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
                 return null;
             }
             try {
                 return EnumUtilExt.deserializeAka(aka, (Class<E>) handledType());
             } catch (IllegalArgumentException e) {
-                return (E) context.handleWeirdNativeValue(context.constructType(handledType()), aka, parser);
+                return (E) context
+                    .handleWeirdNativeValue(context.constructType(handledType()), aka, parser);
             }
         }
     }
 
-    public static class EnumTextDeserializer<E extends Enum<E> & TextSupplier> extends AbstractStringDeserializer<E> {
+    public class EnumTextDeserializer<E extends Enum<E> & TextSupplier> extends
+        AbstractStringDeserializer<E> {
 
         protected EnumTextDeserializer(Class<E> eClass) {
             super(eClass);
@@ -137,14 +155,16 @@ public class EnumDeserializers {
         @SuppressWarnings("unchecked")
         protected E parseText(String text, DeserializationContext context) throws IOException {
             try {
-                return EnumUtilExt.deserializeText(text, clazz, context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
+                return EnumUtilExt.deserializeText(text, getClazz(),
+                    context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
             } catch (IllegalArgumentException e) {
                 return (E) context.handleWeirdStringValue(handledType(), text, e.getMessage());
             }
         }
     }
 
-    public static class EnumTitleDeserializer<E extends Enum<E> & TitleSupplier> extends AbstractStringDeserializer<E> {
+    public class EnumTitleDeserializer<E extends Enum<E> & TitleSupplier> extends
+        AbstractStringDeserializer<E> {
 
         protected EnumTitleDeserializer(Class<E> eClass) {
             super(eClass);
@@ -154,7 +174,8 @@ public class EnumDeserializers {
         @SuppressWarnings("unchecked")
         protected E parseText(String title, DeserializationContext context) throws IOException {
             try {
-                return EnumUtilExt.deserializeTitle(title, clazz, context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
+                return EnumUtilExt.deserializeTitle(title, getClazz(),
+                    context.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS));
             } catch (IllegalArgumentException e) {
                 return (E) context.handleWeirdStringValue(handledType(), title, e.getMessage());
             }

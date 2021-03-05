@@ -1,5 +1,13 @@
 package wsg.tools.boot.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +26,7 @@ import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
@@ -27,17 +36,7 @@ import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.common.LoginException;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
-
-import java.io.File;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
  * API of video subjects.
@@ -52,26 +51,55 @@ public class SubjectController extends AbstractController {
 
     private final SubjectService subjectService;
     private final VideoManager videoManager;
-    private final DatabaseConfig databaseConfig;
 
     @Autowired
-    public SubjectController(SubjectService subjectService, VideoManager videoManager, DatabaseConfig databaseConfig) {
+    public SubjectController(SubjectService subjectService, VideoManager videoManager) {
         this.subjectService = subjectService;
         this.videoManager = videoManager;
-        this.databaseConfig = databaseConfig;
+    }
+
+    private static <T extends IdentityEntity> ResponseEntity<VideoStatus> archive(
+        Optional<T> optional,
+        ThrowableFunction<T, VideoStatus, IOException> archive) {
+        if (optional.isEmpty()) {
+            return NOT_FOUND.build();
+        }
+        try {
+            return OK.body(archive.apply(optional.get()));
+        } catch (IOException e) {
+            return SERVER_ERROR.build();
+        }
+    }
+
+    private static <T extends IdentityEntity> ResponseEntity<Void> open(Optional<T> optional,
+        Function<T, Optional<File>> getFile) {
+        if (optional.isEmpty()) {
+            return NOT_FOUND.build();
+        }
+        Optional<File> file = getFile.apply(optional.get());
+        if (file.isEmpty()) {
+            return NOT_FOUND.build();
+        }
+        try {
+            Rundll32.openFile(file.get());
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            return SERVER_ERROR.build();
+        }
+        return OK.build();
     }
 
     /**
      * Import subjects from Douban of the given user.
      */
-    @PostMapping(value = "/import/douban")
+    @PostMapping("/import/douban")
     @ResponseBody
     public ResponseEntity<BatchResult<Long>> importDouban(Long user, LocalDate since) {
         if (user == null) {
             return BAD_REQUEST.build();
         }
         BatchResult<Long> result = BatchResult.empty();
-        for (MarkEnum mark : MarkEnum.values()) {
+        for (DoubanMark mark : DoubanMark.values()) {
             try {
                 result = result.plus(subjectService.importDouban(user, since, mark));
             } catch (HttpResponseException | LoginException e) {
@@ -85,7 +113,7 @@ public class SubjectController extends AbstractController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping(value = "/import")
+    @PostMapping("/import")
     @ResponseBody
     public ResponseEntity<String> importSubject(Long id) {
         if (id == null) {
@@ -103,56 +131,46 @@ public class SubjectController extends AbstractController {
 
     @GetMapping(path = "/subject/index")
     public String subjects(Model model) {
-        List<MovieDto> subjects = subjectService.listMovies().getRecords().stream().map(movie -> {
-            MovieDto movieDto = new MovieDto();
-            movieDto.setId(movie.getId());
-            movieDto.setImdbId(movie.getImdbId());
-            movieDto.setZhTitle(movie.getZhTitle());
-            movieDto.setOriginalTitle(movie.getOriginalTitle());
-            movieDto.setYear(movie.getYear());
-            movieDto.setLanguages(movie.getLanguages());
-            movieDto.setDbId(movie.getDbId());
-            movieDto.setDurations(movie.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
-                    .collect(Collectors.joining("/")));
-            movieDto.setStatus(videoManager.getStatus(movie));
-            movieDto.setGmtModified(movie.getGmtModified());
-            return movieDto;
-        }).sorted((o1, o2) -> {
+        List<MovieDto> movies = new ArrayList<>();
+        for (MovieEntity entity : subjectService.listMovies()) {
+            MovieDto movie = MovieDto.fromEntity(entity);
+            movie.setStatus(videoManager.getStatus(entity));
+            movies.add(movie);
+        }
+        movies.sort((o1, o2) -> {
             int dif = o2.getStatus().getCode() - o1.getStatus().getCode();
             if (dif != 0) {
                 return dif;
             }
             return o2.getGmtModified().compareTo(o1.getGmtModified());
-        }).collect(Collectors.toList());
-        model.addAttribute("movies", subjects);
-        Map<SeriesEntity, List<SeasonEntity>> map = subjectService.listSeries();
-        List<SeriesDto> tvs = map.entrySet().stream().map(entry -> {
+        });
+        model.addAttribute("movies", movies);
+        List<SeriesDto> tvs = new ArrayList<>();
+        for (Map.Entry<SeriesEntity, List<SeasonEntity>> entry : subjectService.listSeries()
+            .entrySet()) {
             SeriesDto seriesDto = new SeriesDto();
             seriesDto.setSeries(entry.getKey());
-            List<SeasonDto> seasons = entry.getValue().stream().map(season -> {
-                SeasonDto seasonDto = new SeasonDto();
-                seasonDto.setId(season.getId());
-                seasonDto.setZhTitle(season.getZhTitle());
-                seasonDto.setYear(season.getYear());
-                seasonDto.setDbId(season.getDbId());
-                seasonDto.setDurations(season.getDurations().stream().map(Duration::toMinutes).map(String::valueOf)
-                        .collect(Collectors.joining("/")));
-                seasonDto.setCurrentSeason(season.getCurrentSeason());
-                seasonDto.setEpisodesCount(season.getEpisodesCount());
-                seasonDto.setStatus(videoManager.getStatus(season));
-                return seasonDto;
-            }).collect(Collectors.toList());
+            List<SeasonDto> seasons = new ArrayList<>();
+            for (SeasonEntity entity : entry.getValue()) {
+                SeasonDto seasonDto = SeasonDto.fromEntity(entity);
+                seasonDto.setStatus(videoManager.getStatus(entity));
+                seasons.add(seasonDto);
+            }
             seriesDto.setSeasons(seasons);
             seriesDto.setUnarchived((int) seasons.stream()
-                    .filter(season -> season.getStatus() != VideoStatus.ARCHIVED || season.getStatus() != VideoStatus.COMING).count());
-            return seriesDto;
-        }).sorted(((o1, o2) -> {
+                .filter(
+                    season -> season.getStatus() != VideoStatus.ARCHIVED
+                        || season.getStatus() != VideoStatus.COMING)
+                .count());
+            tvs.add(seriesDto);
+        }
+        tvs.sort(((o1, o2) -> {
             int dif = o2.getUnarchived() - o1.getUnarchived();
             if (dif != 0) {
                 return dif;
             }
             return o2.getSeries().getYear().compareTo(o1.getSeries().getYear());
-        })).collect(Collectors.toList());
+        }));
         model.addAttribute("tvs", tvs);
         return "video/subject/index";
     }
@@ -160,52 +178,24 @@ public class SubjectController extends AbstractController {
     @PostMapping(path = "/subject/archive")
     @ResponseBody
     public ResponseEntity<VideoStatus> archive(long id) {
-        if (databaseConfig.isMovie(id)) {
+        if (DatabaseConfig.isMovie(id)) {
             return archive(subjectService.getMovie(id), videoManager::archive);
         }
-        if (databaseConfig.isSeason(id)) {
+        if (DatabaseConfig.isSeason(id)) {
             return archive(subjectService.getSeason(id), videoManager::archive);
         }
         return BAD_REQUEST.build();
     }
 
-    private <T extends IdentityEntity> ResponseEntity<VideoStatus> archive(Optional<T> optional, ThrowableFunction<T, VideoStatus, IOException> archive) {
-        if (optional.isEmpty()) {
-            return NOT_FOUND.build();
-        }
-        try {
-            return OK.body(archive.apply(optional.get()));
-        } catch (IOException e) {
-            return SERVER_ERROR.build();
-        }
-    }
-
     @PostMapping(path = "/open")
     @ResponseBody
     public ResponseEntity<Void> open(long id) {
-        if (databaseConfig.isMovie(id)) {
+        if (DatabaseConfig.isMovie(id)) {
             return open(subjectService.getMovie(id), videoManager::getFile);
         }
-        if (databaseConfig.isSeason(id)) {
+        if (DatabaseConfig.isSeason(id)) {
             return open(subjectService.getSeason(id), videoManager::getFile);
         }
         return BAD_REQUEST.build();
-    }
-
-    private <T extends IdentityEntity> ResponseEntity<Void> open(Optional<T> optional, Function<T, Optional<File>> getFile) {
-        if (optional.isEmpty()) {
-            return NOT_FOUND.build();
-        }
-        Optional<File> file = getFile.apply(optional.get());
-        if (file.isEmpty()) {
-            return NOT_FOUND.build();
-        }
-        try {
-            Rundll32.openFile(file.get());
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            return SERVER_ERROR.build();
-        }
-        return OK.build();
     }
 }

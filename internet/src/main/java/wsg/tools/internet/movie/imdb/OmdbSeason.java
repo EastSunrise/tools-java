@@ -2,10 +2,9 @@ package wsg.tools.internet.movie.imdb;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Getter;
 
 /**
  * A season of TV series.
@@ -14,7 +13,7 @@ import java.util.List;
  * @since 2020/9/4
  */
 @Getter
-@JsonIgnoreProperties(value = {"Response", "Error"})
+@JsonIgnoreProperties({"Response", "Error"})
 public class OmdbSeason {
 
     @JsonProperty("title")

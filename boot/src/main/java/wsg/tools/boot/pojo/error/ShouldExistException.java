@@ -10,6 +10,8 @@ import wsg.tools.boot.common.NotFoundException;
  */
 public class ShouldExistException extends RuntimeException {
 
+    private static final long serialVersionUID = 3475544961035594631L;
+
     public ShouldExistException(NotFoundException cause) {
         super(cause);
     }

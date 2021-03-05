@@ -1,5 +1,15 @@
 package wsg.tools.internet.resource.movie;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -27,35 +37,25 @@ import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.resource.common.VideoType;
 
-import javax.annotation.Nonnull;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
  * @author Kingen
  * @see <a href="http://m.y80s.org">80s</a>
  * @since 2020/9/9
  */
 @Slf4j
-public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>, IterableRepository<Y80sItem> {
+public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
+    IterableRepository<Y80sItem> {
 
     private static final Map<String, VideoType> TYPE_AKA = Map.of(
-            "movie", VideoType.MOVIE,
-            "ju", VideoType.SERIES,
-            "zy", VideoType.VARIETY,
-            "dm", VideoType.ANIME,
-            "trailer", VideoType.TRAILER,
-            "mv", VideoType.MV,
-            "video", VideoType.VIDEO,
-            "course", VideoType.COURSE,
-            "weidianying", VideoType.MOVIE
+        "movie", VideoType.MOVIE,
+        "ju", VideoType.SERIES,
+        "zy", VideoType.VARIETY,
+        "dm", VideoType.ANIME,
+        "trailer", VideoType.TRAILER,
+        "mv", VideoType.MV,
+        "video", VideoType.VIDEO,
+        "course", VideoType.COURSE,
+        "weidianying", VideoType.MOVIE
     );
     private static final String TYPE_JOINING_STR = StringUtils.join(TYPE_AKA.keySet(), "|");
     private static final Pattern MOVIE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
@@ -63,19 +63,11 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
     private static final Pattern PLAY_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(" + TYPE_JOINING_STR + ")/\\d+/play-\\d+");
     private static final Pattern YEAR_REGEX = Pattern.compile("-?(?<year>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
     private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
-    private static Y80sSite instance;
 
     private final IterableRepository<Y80sItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
 
-    private Y80sSite() {
+    public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
-    }
-
-    public synchronized static Y80sSite getInstance() {
-        if (instance == null) {
-            instance = new Y80sSite();
-        }
-        return instance;
     }
 
     /**
@@ -112,25 +104,30 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Target page is empty.");
         }
 
-        Map<String, Element> info = document.select(".movie_attr").stream().collect(Collectors.toMap(Element::text, e -> e));
+        Map<String, Element> info = document.select(".movie_attr").stream()
+            .collect(Collectors.toMap(Element::text, e -> e));
         Elements lis = document.selectFirst("#path").select(CssSelector.TAG_LI);
-        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, lis.get(1).selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF));
+        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX,
+            lis.get(1).selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF));
         VideoType type = Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("type")));
-        Element span = info.get("资源更新：");
-        LocalDate updateDate = LocalDate.parse(((TextNode) span.nextSibling()).text().strip(), DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate updateDate = LocalDate
+            .parse(((TextNode) info.get("资源更新：").nextSibling()).text().strip(),
+                DateTimeFormatter.ISO_LOCAL_DATE);
         Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, type);
 
         item.setTitle(lis.last().text().strip());
-        span = info.get("年代：");
-        if (span != null) {
-            String year = RegexUtils.matchesOrElseThrow(YEAR_REGEX, span.nextElementSibling().text()).group("year");
+        Element yearEle = info.get("年代：");
+        if (yearEle != null) {
+            String year = RegexUtils
+                .matchesOrElseThrow(YEAR_REGEX, yearEle.nextElementSibling().text()).group("year");
             if (year != null) {
                 item.setYear(Integer.parseInt(year));
             }
         }
-        span = info.get("豆瓣评分：");
-        if (span != null) {
-            String doubanHref = span.nextElementSibling().nextElementSibling().attr(CssSelector.ATTR_HREF);
+        Element dbEle = info.get("豆瓣评分：");
+        if (dbEle != null) {
+            String doubanHref = dbEle.nextElementSibling().nextElementSibling()
+                .attr(CssSelector.ATTR_HREF);
             String dbId = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
             if (dbId != null) {
                 item.setDbId(Long.parseLong(dbId));
@@ -147,7 +144,7 @@ public class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
                 continue;
             }
             if (PLAY_HREF_REGEX.matcher(href).matches()) {
-                href = Scheme.HTTP.toString() + Constants.URL_SCHEME_SEPARATOR + href;
+                href = Scheme.HTTP + Constants.URL_SCHEME_SEPARATOR + href;
             }
             String title = a.text().strip();
             try {

@@ -10,9 +10,7 @@ public enum Scheme {
     /**
      * Protocol of the url
      */
-    HTTPS,
-    HTTP,
-    FTP;
+    HTTPS, HTTP, FTP;
 
     @Override
     public String toString() {

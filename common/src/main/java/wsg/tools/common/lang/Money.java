@@ -1,9 +1,8 @@
 package wsg.tools.common.lang;
 
+import java.util.Objects;
 import lombok.Getter;
 import wsg.tools.common.util.function.AkaPredicate;
-
-import java.util.Objects;
 
 /**
  * Class for money.
@@ -51,9 +50,7 @@ public class Money {
         /**
          * RMB
          */
-        YUAN("CNY", "￥"),
-        DOLLAR("USD", "$"),
-        POUND("GBP", "£");
+        YUAN("CNY", "￥"), DOLLAR("USD", "$"), POUND("GBP", "£");
 
         private final String code;
         private final String sign;

@@ -11,8 +11,12 @@ import org.springframework.http.ResponseEntity;
  */
 public abstract class AbstractController {
 
-    protected static final ResponseEntity.BodyBuilder OK = ResponseEntity.status(HttpStatus.OK);
-    protected static final ResponseEntity.BodyBuilder NOT_FOUND = ResponseEntity.status(HttpStatus.NOT_FOUND);
-    protected static final ResponseEntity.BodyBuilder SERVER_ERROR = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR);
-    protected static final ResponseEntity.BodyBuilder BAD_REQUEST = ResponseEntity.status(HttpStatus.BAD_REQUEST);
+    static final String ERROR_NOT_FOUND = "error/notFound";
+
+    static final ResponseEntity.BodyBuilder OK = ResponseEntity.status(HttpStatus.OK);
+    static final ResponseEntity.BodyBuilder NOT_FOUND = ResponseEntity.status(HttpStatus.NOT_FOUND);
+    static final ResponseEntity.BodyBuilder SERVER_ERROR = ResponseEntity
+        .status(HttpStatus.INTERNAL_SERVER_ERROR);
+    static final ResponseEntity.BodyBuilder BAD_REQUEST = ResponseEntity
+        .status(HttpStatus.BAD_REQUEST);
 }

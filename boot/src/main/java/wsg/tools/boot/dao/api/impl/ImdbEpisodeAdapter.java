@@ -17,11 +17,11 @@ class ImdbEpisodeAdapter extends AbstractImdbTitleAdapter<ImdbEpisode> implement
 
     @Override
     public Integer getYear() {
-        return t.getYear();
+        return getT().getYear();
     }
 
     @Override
     public String getSeriesId() {
-        return t.getSeriesId();
+        return getT().getSeriesId();
     }
 }

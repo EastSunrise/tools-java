@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.imdb;
 
+import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.internet.base.intf.Repository;
-
-import javax.annotation.Nonnull;
 
 /**
  * Service of IMDb.com.
@@ -11,6 +10,7 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2020/12/12
  */
+@FunctionalInterface
 public interface ImdbRepository<T extends ImdbIdentifier> extends Repository<String, T> {
 
     /**

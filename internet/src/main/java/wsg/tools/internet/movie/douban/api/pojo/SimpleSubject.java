@@ -1,14 +1,13 @@
 package wsg.tools.internet.movie.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.GenreEnum;
-import wsg.tools.internet.movie.common.enums.SubtypeEnum;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
+import lombok.Getter;
+import wsg.tools.internet.movie.common.enums.DoubanSubtype;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
  * A simple subject.
@@ -20,15 +19,15 @@ import java.util.List;
 public class SimpleSubject {
 
     private Long id;
-    private SubtypeEnum subtype;
+    private DoubanSubtype subtype;
     private String title;
     private String originalTitle;
     private String alt;
     private Year year;
-    private List<GenreEnum> genres;
+    private List<MovieGenre> genres;
     private List<Duration> durations;
 
-    @JsonProperty(value = "images")
+    @JsonProperty("images")
     private Image image;
     private Rating rating;
     @JsonProperty("mainland_pubdate")

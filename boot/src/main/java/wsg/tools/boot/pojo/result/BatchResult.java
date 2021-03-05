@@ -1,10 +1,9 @@
 package wsg.tools.boot.pojo.result;
 
-import lombok.Getter;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * Result when handle multi-data.
@@ -24,7 +23,7 @@ public class BatchResult<T> extends BaseResult {
     public BatchResult(int success, Map<T, String> fails) {
         super();
         this.success = success;
-        this.fails = fails;
+        this.fails = Collections.unmodifiableMap(fails);
     }
 
     /**
@@ -40,8 +39,8 @@ public class BatchResult<T> extends BaseResult {
      * @param result result to merge
      */
     public BatchResult<T> plus(BatchResult<T> result) {
-        HashMap<T, String> map = new HashMap<>(this.fails);
+        HashMap<T, String> map = new HashMap<>(fails);
         map.putAll(result.fails);
-        return new BatchResult<>(this.success + result.success, map);
+        return new BatchResult<>(success + result.success, map);
     }
 }

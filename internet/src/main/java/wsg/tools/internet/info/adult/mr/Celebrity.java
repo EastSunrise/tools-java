@@ -1,9 +1,8 @@
 package wsg.tools.internet.info.adult.mr;
 
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
 
 /**
  * A celebrity with basic information, works, and albums.

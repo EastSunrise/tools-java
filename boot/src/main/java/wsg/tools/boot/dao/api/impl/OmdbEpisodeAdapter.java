@@ -17,11 +17,11 @@ class OmdbEpisodeAdapter extends AbstractOmdbTitleAdapter<OmdbEpisode> implement
 
     @Override
     public String getSeriesId() {
-        return t.getSeriesId();
+        return getT().getSeriesId();
     }
 
     @Override
     public Integer getYear() {
-        return t.getYear();
+        return getT().getYear();
     }
 }

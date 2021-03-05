@@ -3,8 +3,8 @@ package wsg.tools.common.util.function;
 import java.util.function.Function;
 
 /**
- * Represents a function that accepts three arguments and produces a result.
- * This is the three-arity specialization of {@link Function}.
+ * Represents a function that accepts three arguments and produces a result. This is the three-arity
+ * specialization of {@link Function}.
  *
  * @author Kingen
  * @since 2020/9/11

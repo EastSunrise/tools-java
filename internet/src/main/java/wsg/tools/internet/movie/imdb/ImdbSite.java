@@ -5,6 +5,17 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
@@ -20,17 +31,10 @@ import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.common.UnexpectedContentException;
+import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.movie.common.RangeYear;
-import wsg.tools.internet.movie.common.enums.GenreEnum;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.enums.RatingEnum;
-
-import javax.annotation.Nonnull;
-import java.time.Duration;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import wsg.tools.internet.movie.common.enums.ImdbRating;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
  * <a href="https://imdb.com">IMDb</a>
@@ -43,33 +47,34 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
-    private static final Pattern MOVIE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
-    private static final Pattern SERIES_PAGE_TITLE_REGEX =
-            Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV (Mini-)?Series (?<s>\\d{4})(–((?<e>\\d{4})| )?)?\\) - IMDb");
-    private static final Pattern SEASON_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
-    private static final Pattern EPISODE_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
-    private static final Pattern WORK_PAGE_TITLE_REGEX = Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
+    private static final Pattern MOVIE_PAGE_TITLE_REGEX =
+        Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
+    private static final Pattern SERIES_PAGE_TITLE_REGEX = Pattern
+        .compile("(?<text>" + TEXT_REGEX_STR
+            + ") \\(TV (Mini-)?Series (?<s>\\d{4})(–((?<e>\\d{4})| )?)?\\) - IMDb");
+    private static final Pattern SEASON_PAGE_TITLE_REGEX =
+        Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") - Season (\\d{1,2}) - IMDb");
+    private static final Pattern EPISODE_PAGE_TITLE_REGEX =
+        Pattern
+            .compile("(?<text>" + TEXT_REGEX_STR + ") \\(TV Episode( (?<year>\\d{4}))?\\) - IMDb");
+    private static final Pattern WORK_PAGE_TITLE_REGEX =
+        Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") \\((Video )?(?<year>\\d{4})\\) - IMDb");
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    private static final ObjectMapper MAPPER =
+        new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .setLocale(Locale.ENGLISH)
             .registerModule(new SimpleModule()
-                    .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
-                    .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
-                    .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-            ).registerModule(new JavaTimeModule());
+                .addDeserializer(MovieGenre.class,
+                    EnumDeserializers.getTextDeserializer(MovieGenre.class))
+                .addDeserializer(
+                    ImdbRating.class,
+                    EnumDeserializers.getAkaDeserializer(String.class, ImdbRating.class))
+                .addDeserializer(Language.class,
+                    EnumDeserializers.getAkaDeserializer(String.class, Language.class)))
+            .registerModule(new JavaTimeModule());
 
-    private static ImdbSite instance;
-
-    private ImdbSite() {
+    public ImdbSite() {
         super("IMDb", new BasicHttpSession("imdb.com"));
-    }
-
-    public static ImdbSite getInstance() {
-        if (instance == null) {
-            instance = new ImdbSite();
-        }
-        return instance;
     }
 
     @Override
@@ -84,7 +89,8 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
 
         title.setImdbId(tt);
         if (title instanceof ImdbEpisode) {
-            String href = document.selectFirst("div.titleParent").selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF).split("\\?")[0];
+            String href = document.selectFirst("div.titleParent").selectFirst(CssSelector.TAG_A)
+                .attr(CssSelector.ATTR_HREF).split("\\?")[0];
             String seriesId = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
             ((ImdbEpisode) title).setSeriesId(seriesId);
         }
@@ -96,12 +102,12 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
                 ((ImdbMovie) title).setYear(Integer.parseInt(year));
             }
         } else if (title instanceof ImdbSeries) {
-            Matcher matcher = RegexUtils.matchesOrElseThrow(SERIES_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils
+                .matchesOrElseThrow(SERIES_PAGE_TITLE_REGEX, document.title());
             String end = matcher.group("end");
-            ((ImdbSeries) title).setRangeYear(new RangeYear(
-                    Integer.parseInt(matcher.group("start")),
-                    end == null ? null : Integer.parseInt(end)
-            ));
+            ((ImdbSeries) title).setRangeYear(
+                new RangeYear(Integer.parseInt(matcher.group("start")),
+                    end == null ? null : Integer.parseInt(end)));
             ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
         } else if (title instanceof ImdbEpisode) {
             Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
@@ -110,28 +116,33 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
                 ((ImdbEpisode) title).setYear(Integer.parseInt(year));
             }
         } else if (title instanceof ImdbCreativeWork) {
-            Matcher matcher = RegexUtils.matchesOrElseThrow(WORK_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils
+                .matchesOrElseThrow(WORK_PAGE_TITLE_REGEX, document.title());
             ((ImdbCreativeWork) title).setYear(Integer.parseInt(matcher.group("year")));
         } else {
             throw new UnexpectedContentException("Unknown type of imdb title: " + tt);
         }
 
-        Map<String, Element> details = document.selectFirst("div#titleDetails").select("div.txt-block").stream()
-                .filter(div -> div.selectFirst(CssSelector.TAG_H4) != null)
-                .collect(Collectors.toMap(div -> StringUtils.strip(div.selectFirst(CssSelector.TAG_H4).text(), " :"), div -> div));
+        Map<String,
+            Element> details = document.selectFirst("div#titleDetails").select("div.txt-block")
+            .stream()
+            .filter(div -> div.selectFirst(CssSelector.TAG_H4) != null).collect(Collectors
+                .toMap(div -> StringUtils.strip(div.selectFirst(CssSelector.TAG_H4).text(), " :"),
+                    div -> div));
         Element block;
-        final String language = "Language";
-        if ((block = details.get(language)) != null) {
-            List<LanguageEnum> languages = block.select(CssSelector.TAG_A).stream()
-                    .map(a -> EnumUtilExt.deserializeAka(a.text(), LanguageEnum.class))
-                    .collect(Collectors.toList());
+        block = details.get("Language");
+        if (null != block) {
+            List<Language> languages = block.select(CssSelector.TAG_A).stream()
+                .map(a -> EnumUtilExt.deserializeAka(a.text(), Language.class))
+                .collect(Collectors.toList());
             title.setLanguages(languages);
         }
-        final String runtime = "Runtime";
-        if ((block = details.get(runtime)) != null) {
+        block = details.get("Runtime");
+        if (null != block) {
             List<Duration> runtimes = block.select(CssSelector.TAG_TIME).stream()
-                    .map(e -> Duration.parse(StringUtils.remove(e.attr(CssSelector.ATTR_DATETIME), ",")))
-                    .collect(Collectors.toList());
+                .map(
+                    e -> Duration.parse(StringUtils.remove(e.attr(CssSelector.ATTR_DATETIME), ",")))
+                .collect(Collectors.toList());
             title.setRuntimes(runtimes);
         }
 
@@ -143,8 +154,10 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            Document document = getDocument(builder0("/title/%s/episodes", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.never());
+            Document document = getDocument(
+                builder0("/title/%s/episodes", seriesId)
+                    .addParameter("season", String.valueOf(currentSeason)),
+                SnapshotStrategy.never());
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;
@@ -160,9 +173,11 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             Map<Integer, String> map = new HashMap<>(episodesCount);
             for (int i = divs.size() - 1; i >= 0; i--) {
                 Element div = divs.get(i);
-                String href = div.selectFirst(CssSelector.TAG_STRONG).selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF).split("\\?")[0];
+                String href = div.selectFirst(CssSelector.TAG_STRONG).selectFirst(CssSelector.TAG_A)
+                    .attr(CssSelector.ATTR_HREF).split("\\?")[0];
                 String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
-                int episode = Integer.parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
+                int episode = Integer
+                    .parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
                 if (null != map.put(episode, id)) {
                     throw new UnexpectedContentException("Conflict episodes of " + seriesId);
                 }

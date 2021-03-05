@@ -1,12 +1,12 @@
 package wsg.tools.common.io.excel.writer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.Objects;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Workbook;
 import wsg.tools.common.util.function.GetterFunction;
-
-import java.io.IOException;
 
 /**
  * Get a property value of target object {@link T} and write to the cell.
@@ -21,7 +21,7 @@ public class CellFromGetter<T, V> extends CellWriter<V> {
     private final GetterFunction<T, V> getter;
 
     public CellFromGetter(GetterFunction<T, V> getter) {
-        this.getter = getter;
+        this.getter = Objects.requireNonNull(getter);
     }
 
     public CellFromGetter(Class<?> targetType, GetterFunction<T, V> getter) {
@@ -33,20 +33,20 @@ public class CellFromGetter<T, V> extends CellWriter<V> {
      * Set the given cell with value got from implemented getter.
      */
     public void setCellFromGetter(Cell cell, T t, ObjectMapper mapper) {
-        super.setCellValue(cell, getter.getValue(t), mapper);
+        setCellValue(cell, getter.getValue(t), mapper);
     }
 
     /**
      * Set style of the given cell.
      */
     public void setCellStyleFromGetter(Cell cell, T t, Workbook workbook) {
-        super.setCellStyle(cell, getter.getValue(t), workbook);
+        setCellStyle(cell, getter.getValue(t), workbook);
     }
 
     /**
      * Print value got from implemented getter.
      */
     public void printFromGetter(CSVPrinter printer, T t, ObjectMapper mapper) throws IOException {
-        super.print(printer, getter.getValue(t), mapper);
+        print(printer, getter.getValue(t), mapper);
     }
 }

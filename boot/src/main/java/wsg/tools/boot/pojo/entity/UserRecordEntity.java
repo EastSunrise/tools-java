@@ -1,14 +1,13 @@
 package wsg.tools.boot.pojo.entity;
 
-import lombok.Getter;
-import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
-
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.time.LocalDate;
+import lombok.Getter;
+import lombok.Setter;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
  * Entity of marking relationship between users and subjects.
@@ -22,6 +21,8 @@ import java.time.LocalDate;
 @Table(name = "user_record")
 public class UserRecordEntity extends IdentityEntity {
 
+    private static final long serialVersionUID = -266237054166225183L;
+
     @Column(nullable = false)
     private Long userId;
 
@@ -29,7 +30,7 @@ public class UserRecordEntity extends IdentityEntity {
     private Long subjectId;
 
     @Column(nullable = false)
-    private MarkEnum mark;
+    private DoubanMark mark;
 
     @Column(nullable = false)
     private LocalDate markDate;

@@ -15,14 +15,15 @@ import wsg.tools.common.util.function.SetterBiConsumer;
  */
 public class CellToSetter<T, V> extends CellReader<V> {
 
-    private final SetterBiConsumer<T, V> setter;
+    private final SetterBiConsumer<? super T, ? super V> setter;
 
-    public CellToSetter(Class<V> clazz, SetterBiConsumer<T, V> setter) {
+    public CellToSetter(Class<V> clazz, SetterBiConsumer<? super T, ? super V> setter) {
         super(clazz);
         this.setter = setter;
     }
 
-    public CellToSetter(TypeReference<V> typeReference, SetterBiConsumer<T, V> setter) {
+    public CellToSetter(TypeReference<V> typeReference,
+        SetterBiConsumer<? super T, ? super V> setter) {
         super(typeReference);
         this.setter = setter;
     }

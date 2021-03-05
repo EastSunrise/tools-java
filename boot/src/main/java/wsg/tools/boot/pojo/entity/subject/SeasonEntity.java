@@ -1,14 +1,18 @@
 package wsg.tools.boot.pojo.entity.subject;
 
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
+import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.resource.common.YearSupplier;
-
-import javax.persistence.*;
-import java.time.Duration;
-import java.util.List;
 
 /**
  * Entity of one season of TV series.
@@ -20,6 +24,8 @@ import java.util.List;
 @Entity
 @Table(name = "video_season")
 public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, YearSupplier {
+
+    private static final long serialVersionUID = 4265823069538348592L;
 
     @Column(nullable = false, unique = true)
     private Long dbId;
@@ -34,7 +40,7 @@ public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, Ye
     private Integer year;
 
     @Column(length = 63)
-    private List<LanguageEnum> languages;
+    private List<Language> languages;
 
     @Column(nullable = false, length = 63)
     private List<Duration> durations;
@@ -57,12 +63,12 @@ public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, Ye
         return originalTitle;
     }
 
-    public List<LanguageEnum> getLanguages() {
-        return languages;
+    public List<Language> getLanguages() {
+        return Collections.unmodifiableList(languages);
     }
 
     public List<Duration> getDurations() {
-        return durations;
+        return Collections.unmodifiableList(durations);
     }
 
     @Override

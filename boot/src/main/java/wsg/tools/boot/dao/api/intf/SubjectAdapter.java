@@ -1,14 +1,13 @@
 package wsg.tools.boot.dao.api.intf;
 
+import java.time.LocalDate;
+import java.util.Map;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.BaseDoubanSubject;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.imdb.ImdbRepository;
-
-import java.time.LocalDate;
-import java.util.Map;
 
 /**
  * Adapter for subjects to transfer result of video sites.
@@ -34,7 +33,8 @@ public interface SubjectAdapter {
      * @param imdbId id of IMDb
      * @return result
      * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if the responding Douban id of the given IMDb id is not found from Douban
+     * @throws NotFoundException     if the responding Douban id of the given IMDb id is not found
+     *                               from Douban
      */
     Long getDbIdByImdbId(String imdbId) throws HttpResponseException, NotFoundException;
 
@@ -48,7 +48,8 @@ public interface SubjectAdapter {
      * @throws HttpResponseException if an error occurs
      * @throws NotFoundException     if subjects of the given user is not found from Douban
      */
-    Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException;
+    Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, DoubanMark mark)
+        throws HttpResponseException, NotFoundException;
 
     /**
      * Obtains a view of a title from {@link ImdbRepository}.

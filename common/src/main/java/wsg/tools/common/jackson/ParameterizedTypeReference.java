@@ -1,7 +1,6 @@
 package wsg.tools.common.jackson;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 

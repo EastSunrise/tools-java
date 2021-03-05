@@ -6,6 +6,7 @@ package wsg.tools.internet.common;
  * @author Kingen
  * @since 2021/3/2
  */
+@FunctionalInterface
 public interface NextSupplier<T> {
 
     /**

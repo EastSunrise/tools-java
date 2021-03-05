@@ -1,9 +1,9 @@
 package wsg.tools.common.lang;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Objects;
 import java.util.function.Predicate;
+import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility to check objects or conditions before operation
@@ -11,12 +11,13 @@ import java.util.function.Predicate;
  * @author Kingen
  * @since 2020/6/22
  */
-public final class AssertUtils {
+@UtilityClass
+public class AssertUtils {
 
     /**
      * Validate range of an object, [fromInclusive, toExclusive)
      */
-    public static <T extends Comparable<T>> T requireRange(T target, T fromInclusive, T toExclusive) {
+    public <T extends Comparable<T>> T requireRange(T target, T fromInclusive, T toExclusive) {
         Objects.requireNonNull(target);
         if (fromInclusive == null && toExclusive == null) {
             return target;
@@ -34,7 +35,9 @@ public final class AssertUtils {
             return target;
         }
         if (target.compareTo(fromInclusive) < 0 || target.compareTo(toExclusive) >= 0) {
-            throw new IllegalArgumentException("Target must be within range fromInclusive " + fromInclusive + " toExclusive " + toExclusive);
+            throw new IllegalArgumentException(
+                "Target must be within range fromInclusive " + fromInclusive + " toExclusive "
+                    + toExclusive);
         }
         return target;
     }
@@ -46,7 +49,7 @@ public final class AssertUtils {
      * @param t2 another object
      * @throws IllegalArgumentException if test is failed
      */
-    public static <T> void requireEquals(T t1, T t2) {
+    public <T> void requireEquals(T t1, T t2) {
         if (!Objects.equals(t1, t2)) {
             throw new IllegalArgumentException("'" + t1 + "' doesn't equal to '" + t2 + "'");
         }
@@ -60,7 +63,7 @@ public final class AssertUtils {
      * @return the object
      * @throws IllegalArgumentException if test is failed
      */
-    public static <T> T require(T t, Predicate<T> predicate, String message) {
+    public <T> T require(T t, Predicate<? super T> predicate, String message) {
         if (predicate.test(t)) {
             return t;
         }
@@ -70,7 +73,7 @@ public final class AssertUtils {
     /**
      * Validate args to be not blank.
      */
-    public static String requireNotBlank(String arg) {
+    public String requireNotBlank(String arg) {
         if (StringUtils.isBlank(arg)) {
             throw new IllegalArgumentException("Arg mustn't be blank.");
         }
@@ -80,7 +83,7 @@ public final class AssertUtils {
     /**
      * Returns a {@link RuntimeException}.
      */
-    public static RuntimeException runtimeException(Throwable e) {
+    public RuntimeException runtimeException(Throwable e) {
         Objects.requireNonNull(e, "Can't construct a RuntimeException from a null exception.");
         return new RuntimeException(e.getMessage(), e);
     }

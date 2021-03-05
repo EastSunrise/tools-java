@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -18,13 +22,13 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.movie.common.enums.*;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.movie.common.enums.ImdbRating;
+import wsg.tools.internet.movie.common.enums.MovieGenre;
+import wsg.tools.internet.movie.common.enums.RatingSource;
+import wsg.tools.internet.movie.common.enums.SearchType;
 import wsg.tools.internet.movie.common.jackson.CommaSeparatedNumberDeserializationProblemHandler;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Objects;
 
 /**
  * @author Kingen
@@ -38,44 +42,28 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     private static final String SEASON_NOT_FOUND_MSG = "Series or season not found!";
     private static final String EPISODE_NOT_FOUND_MSG = "Series or episode not found!";
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-            .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
-            .setLocale(Locale.ENGLISH)
-            .registerModule(new SimpleModule()
-                    .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                    .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
-                    .addDeserializer(RatingEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RatingEnum.class))
-                    .addDeserializer(GenreEnum.class, EnumDeserializers.getTextDeserializer(GenreEnum.class))
-                    .addDeserializer(RatingSource.class, EnumDeserializers.getTextDeserializer(RatingSource.class))
-            )
-            .registerModule(new JavaTimeModule())
-            .addHandler(CommaSeparatedNumberDeserializationProblemHandler.INSTANCE);
+        .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+        .setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE)
+        .setLocale(Locale.ENGLISH)
+        .registerModule(new SimpleModule()
+            .addDeserializer(
+                Language.class, EnumDeserializers.getAkaDeserializer(String.class, Language.class))
+            .addDeserializer(
+                Region.class, EnumDeserializers.getAkaDeserializer(String.class, Region.class))
+            .addDeserializer(
+                ImdbRating.class,
+                EnumDeserializers.getAkaDeserializer(String.class, ImdbRating.class))
+            .addDeserializer(MovieGenre.class,
+                EnumDeserializers.getTextDeserializer(MovieGenre.class))
+            .addDeserializer(RatingSource.class,
+                EnumDeserializers.getTextDeserializer(RatingSource.class)))
+        .registerModule(new JavaTimeModule())
+        .addHandler(new CommaSeparatedNumberDeserializationProblemHandler());
 
     private final String apikey;
 
     public OmdbSite(String apikey) {
-        super("OMDb", new BasicHttpSession("omdbapi.com"), new AbstractResponseHandler<>() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                String content = EntityUtils.toString(entity);
-                JsonNode node;
-                try {
-                    node = MAPPER.readTree(content);
-                } catch (JsonProcessingException e) {
-                    throw AssertUtils.runtimeException(e);
-                }
-                boolean response = Boolean.parseBoolean(node.get("Response").asText());
-                if (response) {
-                    return content.replace("\"N/A\"", "null");
-                } else {
-                    String error = node.get("Error").asText();
-                    if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error) || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
-                        throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
-                    }
-                    throw new RuntimeException(error);
-                }
-            }
-        });
+        super("OMDb", new BasicHttpSession("omdbapi.com"), new OmdbResponseHandler());
         this.apikey = Objects.requireNonNull(apikey);
     }
 
@@ -84,7 +72,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     @Override
     public OmdbTitle findById(@Nonnull String imdbId) throws HttpResponseException {
-        OmdbTitle title = getObject(builder0("/").addParameter("i", imdbId).addParameter("plot", "full"), OmdbTitle.class);
+        OmdbTitle title =
+            getObject(builder0("/").addParameter("i", imdbId).addParameter("plot", "full"),
+                OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
     }
@@ -95,9 +85,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @param season start with 1
      */
     public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
-        return getObject(builder0("/")
-                .addParameter("i", seriesId)
-                .addParameter("season", String.valueOf(season)), OmdbSeason.class);
+        return getObject(builder0("/").addParameter("i", seriesId)
+                .addParameter("season", String.valueOf(season)),
+            OmdbSeason.class);
     }
 
     /**
@@ -106,9 +96,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @param season start with 1
      */
     public OmdbEpisode episode(String seriesId, int season, int episode) throws HttpResponseException {
-        return getObject(builder0("/")
-                .addParameter("i", seriesId)
-                .addParameter("season", String.valueOf(season))
+        return getObject(
+            builder0("/").addParameter("i", seriesId).addParameter("season", String.valueOf(season))
                 .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);
     }
 
@@ -122,11 +111,12 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     /**
      * Search subject.
      *
-     * @param type {@link SearchTypeEnum}
+     * @param type {@link SearchType}
      * @param page 1-100, default 1
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
-    public OmdbTitle search(String s, SearchTypeEnum type, Integer year, int page) throws HttpResponseException {
+    public OmdbTitle search(String s, SearchType type, Integer year, int page)
+        throws HttpResponseException {
         RequestBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase());
@@ -145,5 +135,30 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, clazz, SnapshotStrategy.never());
+    }
+
+    private static class OmdbResponseHandler extends AbstractResponseHandler<String> {
+
+        @Override
+        public String handleEntity(HttpEntity entity) throws IOException {
+            String content = EntityUtils.toString(entity);
+            JsonNode node;
+            try {
+                node = MAPPER.readTree(content);
+            } catch (JsonProcessingException e) {
+                throw AssertUtils.runtimeException(e);
+            }
+            boolean response = Boolean.parseBoolean(node.get("Response").asText());
+            if (response) {
+                return content.replace("\"N/A\"", "null");
+            } else {
+                String error = node.get("Error").asText();
+                if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error)
+                    || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
+                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
+                }
+                throw new RuntimeException(error);
+            }
+        }
     }
 }

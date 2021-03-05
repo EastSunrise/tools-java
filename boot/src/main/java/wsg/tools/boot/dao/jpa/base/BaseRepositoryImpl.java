@@ -1,19 +1,17 @@
 package wsg.tools.boot.dao.jpa.base;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.metamodel.SingularAttribute;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
-
-import javax.persistence.EntityExistsException;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.metamodel.SingularAttribute;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Implementation of extended {@link Repository} operations.
@@ -22,22 +20,26 @@ import java.util.function.Supplier;
  * @since 2020/7/15
  */
 @Transactional(readOnly = true)
-public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepository<E, ID> implements BaseRepository<E, ID> {
+public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepository<E, ID>
+    implements BaseRepository<E, ID> {
 
-    private final JpaEntityInformation<E, ID> info;
+    private static final String CONFLICT_ID_MSG = "Supplied entity differs from the given one.";
+    private final JpaEntityInformation<E, ? extends ID> info;
     private final EntityManager manager;
 
-    public BaseRepositoryImpl(JpaEntityInformation<E, ID> info, EntityManager entityManager) {
+    public BaseRepositoryImpl(JpaEntityInformation<E, ? extends ID> info,
+        EntityManager entityManager) {
         super(info, entityManager);
         this.info = info;
         this.manager = entityManager;
         SingularAttribute<? super E, ?> idAttribute = info.getIdAttribute();
-        Objects.requireNonNull(idAttribute, "Can't find an id attribute of entity " + info.getEntityName());
+        Objects.requireNonNull(idAttribute,
+            "Can't find an id attribute of entity " + info.getEntityName());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public <S extends E> S insert(S entity) throws EntityExistsException {
+    public <S extends E> S insert(S entity) {
         manager.persist(entity);
         return entity;
     }
@@ -67,7 +69,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
             }
         }
         if (id != null && info.getId(optional.get()) != id) {
-            throw new IllegalArgumentException("Supplied entity differs from the given one.");
+            throw new IllegalArgumentException(CONFLICT_ID_MSG);
         }
         BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
         return manager.merge(entity);
@@ -75,7 +77,8 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public <S extends E> InsertOrUpdate<S> updateOrInsert(S entity, Supplier<Optional<E>> supplier) {
+    public <S extends E> InsertOrUpdate<S> updateOrInsert(S entity,
+        Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
         if (optional.isEmpty()) {
@@ -85,7 +88,7 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
             }
         }
         if (id != null && info.getId(optional.get()) != id) {
-            throw new IllegalArgumentException("Supplied entity differs from the given one.");
+            throw new IllegalArgumentException(CONFLICT_ID_MSG);
         }
         BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
         return InsertOrUpdate.update(manager.merge(entity));

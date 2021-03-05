@@ -5,12 +5,11 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Deserialize timestamp to {@link LocalDateTime}.
@@ -45,7 +44,8 @@ public class TimestampDeserializer extends StdDeserializer<LocalDateTime> {
         }
         if (p.hasToken(JsonToken.VALUE_STRING)) {
             String text = p.getText();
-            if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT) && StringUtils.isBlank(text)) {
+            if (context.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
+                && StringUtils.isBlank(text)) {
                 return null;
             }
             try {

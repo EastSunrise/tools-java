@@ -1,5 +1,8 @@
 package wsg.tools.boot.pojo.result;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -9,9 +12,6 @@ import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
 import wsg.tools.boot.pojo.dto.BaseDto;
 
-import java.util.HashMap;
-import java.util.List;
-
 /**
  * Result with pagination info.
  *
@@ -19,24 +19,24 @@ import java.util.List;
  * @since 2020/7/10
  */
 @Getter
-public class PageResult<T extends BaseDto> extends BaseResult {
+public final class PageResult<T extends BaseDto> extends BaseResult {
 
     private final Page<T> page;
 
-    protected PageResult(Page<T> page) {
+    private PageResult(Page<T> page) {
         super();
         this.page = page;
     }
 
     /**
-     * Obtains a successful instance of {@link PageResult}
+     * Obtains a successful instance.
      */
     public static <T extends BaseDto> PageResult<T> of(Page<T> page) {
         return new PageResult<>(page);
     }
 
     /**
-     * Obtains a successful instance of {@link PageResult}
+     * Obtains a successful instance.
      */
     public static <T extends BaseDto> PageResult<T> of(List<T> list) {
         return new PageResult<>(new PageImpl<>(list));
@@ -44,10 +44,8 @@ public class PageResult<T extends BaseDto> extends BaseResult {
 
     public ResponseEntity<?> toResponse(PagedResourcesAssembler<T> assembler) {
         PagedModel<EntityModel<T>> pagedModel = assembler.toModel(page);
-        return ResponseEntity.ok(new HashMap<>(3) {{
-            put("page", pagedModel.getMetadata());
-            put("links", pagedModel.getLinks());
-            put("data", pagedModel.getContent());
-        }});
+        return ResponseEntity
+            .ok(Map.of("page", Objects.requireNonNull(pagedModel.getMetadata()), "links",
+                pagedModel.getLinks(), "data", pagedModel.getContent()));
     }
 }

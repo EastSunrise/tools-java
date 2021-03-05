@@ -2,9 +2,8 @@ package wsg.tools.internet.movie.imdb.pojo.object;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 /**
  * Object of video on IMDb.

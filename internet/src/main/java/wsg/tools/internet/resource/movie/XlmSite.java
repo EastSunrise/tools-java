@@ -1,5 +1,12 @@
 package wsg.tools.internet.resource.movie;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
@@ -25,43 +32,28 @@ import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.Thunder;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.regex.Pattern;
-
 /**
  * @author Kingen
  * @see <a href="https://www.xleimi.com/">XLM</a>
  * @since 2020/12/2
  */
-public class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
+public final class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
 
     private static final String DOWNLOAD_ASP = "/download.asp";
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/dy/k(?<id>\\d+)\\.html");
-    private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>[^《》]*(《[^《》]+》)?[^《》]*)》\\S+\\1\\S+");
+    private static final Pattern ITEM_TITLE_REGEX = Pattern
+        .compile("《(?<title>[^《》]*(《[^《》]+》)?[^《》]*)》\\S+\\1\\S+");
     private static final Pattern TYPE_HREF_REGEX = Pattern.compile("/lanmu/xz(?<c>\\d+).html");
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/M/d H:mm:ss");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter
+        .ofPattern("yyyy/M/d H:mm:ss");
 
-    private static XlmSite instance;
-
-    private XlmSite() {
+    public XlmSite() {
         super("Xlm", new BasicHttpSession("xleimi.com"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
                 return EntityUtils.toString(entity, Constants.GBK);
             }
         });
-    }
-
-    public synchronized static XlmSite getInstance() {
-        if (instance == null) {
-            instance = new XlmSite();
-        }
-        return instance;
     }
 
     public IterableRepository<XlmItem> getRepository(@Nonnull XlmType type) {

@@ -1,9 +1,8 @@
 package wsg.tools.boot.pojo.result;
 
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 
 /**
  * Result of list of records.
@@ -11,7 +10,7 @@ import java.util.Objects;
  * @author Kingen
  * @since 2020/8/7
  */
-public class ListResult<T> extends BaseResult {
+public final class ListResult<T> extends BaseResult {
 
     @Getter
     private final List<T> records;

@@ -1,13 +1,13 @@
 package wsg.tools.boot.pojo.entity.subject;
 
-import lombok.Setter;
-import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.time.Duration;
-import java.util.List;
+import lombok.Setter;
+import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 
 /**
  * Episode entity.
@@ -38,7 +38,7 @@ public class EpisodeEntity extends IdentityEntity {
     private Integer currentEpisode;
 
     public List<Duration> getDurations() {
-        return durations;
+        return Collections.unmodifiableList(durations);
     }
 
     public Long getSeasonId() {

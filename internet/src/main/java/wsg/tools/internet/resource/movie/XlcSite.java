@@ -1,5 +1,15 @@
 package wsg.tools.internet.resource.movie;
 
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
@@ -26,50 +36,35 @@ import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.common.VideoConstants;
 import wsg.tools.internet.resource.common.VideoType;
 
-import javax.annotation.Nonnull;
-import java.time.LocalDate;
-import java.time.Year;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * @author Kingen
  * @see <a href="https://www.xunleicang.in/">XunLeiCang</a>
  * @since 2020/9/9
  */
 @Slf4j
-public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, IterableRepository<XlcItem> {
+public final class XlcSite extends BaseSite implements Repository<Integer, XlcItem>,
+    IterableRepository<XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
     private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
-    private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/vod-read-id-(?<id>\\d+)\\.html");
-    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<index>\\d+)\\.html");
+    private static final Pattern ITEM_HREF_REGEX = Pattern
+        .compile("/vod-read-id-(?<id>\\d+)\\.html");
+    private static final Pattern TYPE_PATH_REGEX = Pattern
+        .compile("/vod-show-id-(?<index>\\d+)\\.html");
     private static final VideoType[] TYPES = {
-            null, VideoType.MOVIE, VideoType.SERIES, VideoType.ANIME, VideoType.VARIETY, VideoType.FOUR_K,
-            VideoType.FHD, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.SERIES,
-            VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.THREE_D,
-            VideoType.MANDARIN
+        null, VideoType.MOVIE, VideoType.SERIES, VideoType.ANIME, VideoType.VARIETY,
+        VideoType.FOUR_K,
+        VideoType.FHD, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
+        VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.SERIES,
+        VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.THREE_D,
+        VideoType.MANDARIN
     };
 
-    private static XlcSite instance;
+    private final IterableRepository<XlcItem> repository = new IntRangeIterableRepositoryImpl<>(
+        this, this::max);
 
-    private final IterableRepository<XlcItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
-
-    private XlcSite() {
+    public XlcSite() {
         super("XLC", new BasicHttpSession("xunleicang.in"));
-    }
-
-    public synchronized static XlcSite getInstance() {
-        if (instance == null) {
-            instance = new XlcSite();
-        }
-        return instance;
     }
 
     /**
@@ -107,19 +102,22 @@ public class XlcSite extends BaseSite implements Repository<Integer, XlcItem>, I
         for (Element strong : elements) {
             infos.put(strong.text(), strong.nextSibling());
         }
-        Node node = infos.get("更新时间：");
-        LocalDate updateDate = LocalDate.parse(((TextNode) node).text(), DateTimeFormatter.ISO_LOCAL_DATE);
-        Elements as = document.selectFirst("div.pleft").selectFirst(CssSelector.TAG_H3).select(CssSelector.TAG_A);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, as.get(as.size() - 2).attr(CssSelector.ATTR_HREF));
+        LocalDate updateDate = LocalDate
+            .parse(((TextNode) infos.get("更新时间：")).text(), DateTimeFormatter.ISO_LOCAL_DATE);
+        Elements as = document.selectFirst("div.pleft").selectFirst(CssSelector.TAG_H3)
+            .select(CssSelector.TAG_A);
+        Matcher matcher = RegexUtils
+            .matchesOrElseThrow(TYPE_PATH_REGEX, as.get(as.size() - 2).attr(CssSelector.ATTR_HREF));
         VideoType type = TYPES[Integer.parseInt(matcher.group("index"))];
-        node = infos.get("状态：");
-        String state = ((TextNode) node).text();
+        String state = ((TextNode) infos.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 
-        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
+        item.setTitle(
+            RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
         Element font = as.last().selectFirst(CssSelector.TAG_FONT);
         if (font != null) {
-            int year = Integer.parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("year"));
+            int year = Integer
+                .parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("year"));
             if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
                 item.setYear(year);
             }

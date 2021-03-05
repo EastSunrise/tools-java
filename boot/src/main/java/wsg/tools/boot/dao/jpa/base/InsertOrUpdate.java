@@ -1,8 +1,7 @@
 package wsg.tools.boot.dao.jpa.base;
 
-import wsg.tools.boot.pojo.entity.base.BaseEntity;
-
 import java.util.function.Supplier;
+import wsg.tools.boot.pojo.entity.base.BaseEntity;
 
 /**
  * Result for {@link BaseRepository#updateOrInsert(BaseEntity, Supplier)}.
@@ -10,7 +9,7 @@ import java.util.function.Supplier;
  * @author Kingen
  * @since 2020/7/25
  */
-public class InsertOrUpdate<E extends BaseEntity> {
+public final class InsertOrUpdate<E extends BaseEntity> {
 
     private final boolean inserted;
     private final E entity;
@@ -20,11 +19,11 @@ public class InsertOrUpdate<E extends BaseEntity> {
         this.entity = entity;
     }
 
-    public static <E extends BaseEntity> InsertOrUpdate<E> insert(E entity) {
+    static <E extends BaseEntity> InsertOrUpdate<E> insert(E entity) {
         return new InsertOrUpdate<>(true, entity);
     }
 
-    public static <E extends BaseEntity> InsertOrUpdate<E> update(E entity) {
+    static <E extends BaseEntity> InsertOrUpdate<E> update(E entity) {
         return new InsertOrUpdate<>(false, entity);
     }
 

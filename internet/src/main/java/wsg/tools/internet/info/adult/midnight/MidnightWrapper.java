@@ -1,24 +1,24 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.Getter;
 import wsg.tools.common.lang.IntIdentifier;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-
 /**
- * A wrapper of an item in the {@link MidnightSite}, containing a specific
- * kind of {@link #content}.
+ * A wrapper of an item in the {@link MidnightSite}, containing a specific kind of {@link
+ * #content}.
  *
  * @param <T> type of the content wrapped within the item
  * @author Kingen
  * @since 2021/3/2
  */
 @Getter
-public class MidnightWrapper<T extends TitleSupplier> implements IntIdentifier, UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class MidnightWrapper<T extends TitleSupplier>
+    implements IntIdentifier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final int id;
     private final LocalDateTime release;

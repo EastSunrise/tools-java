@@ -12,4 +12,5 @@ import lombok.Setter;
 @Setter
 @Getter
 public class BaseQueryDto {
+
 }

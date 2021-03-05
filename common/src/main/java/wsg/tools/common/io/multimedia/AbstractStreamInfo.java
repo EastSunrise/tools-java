@@ -10,4 +10,5 @@ import lombok.Getter;
  */
 @Getter
 abstract class AbstractStreamInfo extends MetadataInfo {
+
 }

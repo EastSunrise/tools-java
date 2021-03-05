@@ -1,10 +1,9 @@
 package wsg.tools.internet.movie.imdb;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDate;
 import lombok.Getter;
 import wsg.tools.common.lang.Money;
-
-import java.time.LocalDate;
 
 /**
  * OMDb movie.

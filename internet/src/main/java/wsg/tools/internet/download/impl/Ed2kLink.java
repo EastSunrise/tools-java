@@ -1,5 +1,9 @@
 package wsg.tools.internet.download.impl;
 
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.UnknownResourceException;
@@ -7,27 +11,22 @@ import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.FilenameSupplier;
 import wsg.tools.internet.download.base.LengthSupplier;
 
-import javax.annotation.Nonnull;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * An ed2k link.
  *
  * @author Kingen
  * @since 2020/9/18
  */
-public class Ed2kLink extends AbstractLink implements FilenameSupplier, LengthSupplier {
+public final class Ed2kLink extends AbstractLink implements FilenameSupplier, LengthSupplier {
 
     public static final String ED2K_PREFIX = "ed2k://";
     private static final Pattern ED2K_REGEX = Pattern.compile(
-            "ed2k://\\|file\\|(?<name>[^|]+)\\|(?<size>\\d+)\\|(?<hash>[0-9A-Za-z]{32})" +
-                    "(\\|h=(?<h>[0-9A-Za-z]{32})" +
-                    "|\\|p=(?<p>[0-9A-Za-z]{32}(:[0-9A-Za-z]{32})*)" +
-                    "|\\|s=(?<s>[^|]+))*" +
-                    "(\\|/\\|sources,(?<sources>\\d{1,3}(\\.\\d{1,3}){3}:\\d{1,5})\\|/" +
-                    "|(\\|/.*)|(\\|/\\|/)|(\\|)|)", Pattern.CASE_INSENSITIVE);
+        "ed2k://\\|file\\|(?<name>[^|]+)\\|(?<size>\\d+)\\|(?<hash>[0-9A-Za-z]{32})"
+            + "(\\|h=(?<h>[0-9A-Za-z]{32})"
+            + "|\\|p=(?<p>[0-9A-Za-z]{32}(:[0-9A-Za-z]{32})*)" + "|\\|s=(?<s>[^|]+))*"
+            + "(\\|/\\|sources,(?<sources>\\d{1,3}(\\.\\d{1,3}){3}:\\d{1,5})\\|/"
+            + "|(\\|/.*)|(\\|/\\|/)|(\\|)|)",
+        Pattern.CASE_INSENSITIVE);
     private final String filename;
     private final long size;
     private final String hash;
@@ -39,8 +38,9 @@ public class Ed2kLink extends AbstractLink implements FilenameSupplier, LengthSu
     private final String href;
     private final String sources;
 
-    private Ed2kLink(String title, String filename, long size, String hash, String rootHash, String partHash,
-                     String href, String sources) {
+    private Ed2kLink(String title, String filename, long size, String hash, String rootHash,
+        String partHash,
+        String href, String sources) {
         super(title);
         this.filename = Objects.requireNonNull(filename);
         this.size = size;
@@ -58,16 +58,9 @@ public class Ed2kLink extends AbstractLink implements FilenameSupplier, LengthSu
         url = url.replace(" ", "");
         Matcher matcher = ED2K_REGEX.matcher(url);
         if (matcher.lookingAt()) {
-            return new Ed2kLink(
-                    title,
-                    matcher.group("name"),
-                    Long.parseLong(matcher.group("size")),
-                    matcher.group("hash"),
-                    matcher.group("h"),
-                    matcher.group("p"),
-                    matcher.group("s"),
-                    matcher.group("sources")
-            );
+            return new Ed2kLink(title, matcher.group("name"), Long.parseLong(matcher.group("size")),
+                matcher.group("hash"), matcher.group("h"), matcher.group("p"), matcher.group("s"),
+                matcher.group("sources"));
         }
         throw new InvalidResourceException(Ed2kLink.class, title, url);
     }
@@ -75,9 +68,7 @@ public class Ed2kLink extends AbstractLink implements FilenameSupplier, LengthSu
     @Override
     public String getUrl() {
         StringBuilder builder = new StringBuilder("ed2k://|file");
-        builder.append("|").append(filename)
-                .append("|").append(size)
-                .append("|").append(hash);
+        builder.append("|").append(filename).append("|").append(size).append("|").append(hash);
         if (rootHash != null) {
             builder.append("|h=").append(rootHash);
         }

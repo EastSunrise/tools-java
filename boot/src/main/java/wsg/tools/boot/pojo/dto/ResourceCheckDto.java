@@ -13,6 +13,8 @@ import lombok.Setter;
 @Setter
 public class ResourceCheckDto extends BaseDto {
 
+    private static final long serialVersionUID = -3550972446159103724L;
+
     private Long id;
     private Long dbId;
     private String imdbId;

@@ -2,11 +2,10 @@ package wsg.tools.internet.movie.imdb.pojo.object;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.imdb.ImdbCreativeWork;
-
 import java.time.LocalDate;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.imdb.ImdbCreativeWork;
 
 /**
  * IMDb reviews.
@@ -23,7 +22,7 @@ public class ImdbReview {
     private ImdbCreativeWork itemReviewed;
     private ImdbPerson author;
     private LocalDate dateCreated;
-    private LanguageEnum inLanguage;
+    private Language inLanguage;
     private String reviewBody;
     private ImdbRating reviewRating;
 }

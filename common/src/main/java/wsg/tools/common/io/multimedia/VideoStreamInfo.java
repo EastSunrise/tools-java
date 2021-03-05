@@ -11,8 +11,6 @@ import lombok.Getter;
 @Getter
 public class VideoStreamInfo extends AbstractStreamInfo {
 
-    public static final String TYPE = "Video";
-
     private String decoder;
     private Integer frameWidth;
     private Integer frameHeight;

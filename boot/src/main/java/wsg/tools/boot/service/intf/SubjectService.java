@@ -1,5 +1,10 @@
 package wsg.tools.boot.service.intf;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
@@ -8,15 +13,8 @@ import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.result.BatchResult;
-import wsg.tools.boot.pojo.result.ListResult;
 import wsg.tools.boot.pojo.result.SingleResult;
-import wsg.tools.internet.movie.common.enums.MarkEnum;
-
-import javax.annotation.Nullable;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
  * Interface of subject service.
@@ -35,7 +33,8 @@ public interface SubjectService {
      * @throws DataIntegrityException if some required properties are lacking
      * @throws NotFoundException      if the subject of the given id is not found from Douban
      */
-    SingleResult<Long> importSubjectByDb(long dbId) throws HttpResponseException, DataIntegrityException, NotFoundException;
+    SingleResult<Long> importSubjectByDb(long dbId)
+        throws HttpResponseException, DataIntegrityException, NotFoundException;
 
     /**
      * Import a subject obtained by id of IMDb.
@@ -46,7 +45,8 @@ public interface SubjectService {
      * @throws DataIntegrityException if some required properties are lacking
      * @throws NotFoundException      if the subject of the given id is not found from IMDb
      */
-    SingleResult<Long> importSubjectByImdb(String imdbId) throws HttpResponseException, DataIntegrityException, NotFoundException;
+    SingleResult<Long> importSubjectByImdb(String imdbId)
+        throws HttpResponseException, DataIntegrityException, NotFoundException;
 
     /**
      * Import subjects from Douban of the given user.
@@ -58,14 +58,15 @@ public interface SubjectService {
      * @throws HttpResponseException if an error occurs
      * @throws NotFoundException     if subjects of the given user are not found from Douban
      */
-    BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, MarkEnum mark) throws HttpResponseException, NotFoundException;
+    BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, DoubanMark mark)
+        throws HttpResponseException, NotFoundException;
 
     /**
      * Obtains all subjects of movies.
      *
-     * @return list result of all movies
+     * @return list of all movies
      */
-    ListResult<MovieEntity> listMovies();
+    List<MovieEntity> listMovies();
 
     /**
      * Obtains the movie of the given id

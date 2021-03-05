@@ -1,11 +1,11 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
+import java.util.List;
+import java.util.Optional;
+import org.springframework.stereotype.Repository;
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
 import wsg.tools.boot.pojo.entity.base.IdView;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository for seasons of TV series.
@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author Kingen
  * @since 2020/9/24
  */
+@Repository
 public interface SeasonRepository extends BaseRepository<SeasonEntity, Long> {
 
     /**

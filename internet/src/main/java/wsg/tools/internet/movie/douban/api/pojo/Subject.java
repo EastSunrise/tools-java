@@ -2,12 +2,11 @@ package wsg.tools.internet.movie.douban.api.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.enums.RegionEnum;
-
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Getter;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Region;
 
 /**
  * A subject from douban
@@ -23,8 +22,8 @@ public class Subject extends SimpleSubject {
     @JsonProperty("pubdate")
     private LocalDate release;
 
-    private List<LanguageEnum> languages;
-    private List<RegionEnum> regions;
+    private List<Language> languages;
+    private List<Region> regions;
     private Integer episodesCount;
     private Integer seasonsCount;
     private Integer currentSeason;

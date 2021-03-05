@@ -1,5 +1,11 @@
 package wsg.tools.internet.download.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
@@ -8,13 +14,6 @@ import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.Downloader;
-
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Base64;
-import java.util.regex.Pattern;
 
 /**
  * Downloader of thunder.
@@ -27,7 +26,9 @@ public class Thunder implements Downloader<AbstractLink> {
 
     public static final String THUNDER_PREFIX = "thunder://";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
-    private static final Pattern THUNDER_REGEX = Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern THUNDER_REGEX =
+        Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern SRC_URL_REGEX = Pattern.compile("AA\\s*(?<url>.*)\\s*ZZ");
 
     /**

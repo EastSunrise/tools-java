@@ -1,5 +1,16 @@
 package wsg.tools.internet.resource.movie;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -23,14 +34,6 @@ import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.UnknownResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
 
-import javax.annotation.Nonnull;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
  * @author Kingen
  * @see <a href="https://www.bd2020.com/">BD Movies</a>
@@ -51,17 +54,8 @@ public final class BdMovieSite extends BaseSite {
                     "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com|pan\\.xunlei\\.com)(?<path>/[\\w-./?=&]+)\\s*"
     );
 
-    private static BdMovieSite instance;
-
-    private BdMovieSite() {
+    public BdMovieSite() {
         super("BD-Movie", new BasicHttpSession("bd2020.com"));
-    }
-
-    public synchronized static BdMovieSite getInstance() {
-        if (instance == null) {
-            instance = new BdMovieSite();
-        }
-        return instance;
     }
 
     public IterableRepository<BdMovieItem> getRepository(BdMovieType type) {
@@ -71,14 +65,17 @@ public final class BdMovieSite extends BaseSite {
     /**
      * Obtains an item by the given type and id.
      */
-    public BdMovieItem findItem(@Nonnull BdMovieType type, @Nonnull Integer id) throws HttpResponseException {
-        Document document = getDocument(builder0("/%s/%d.htm", type.getText(), id), new WithoutNextDocument<>(this::getNext));
+    public BdMovieItem findItem(@Nonnull BdMovieType type, int id) throws HttpResponseException {
+        Document document = getDocument(builder0("/%s/%d.htm", type.getText(), id),
+            new WithoutNextDocument<>(this::getNext));
         Map<String, String> meta = document.select("meta[property]").stream()
-                .collect(Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));
+            .collect(
+                Collectors.toMap(e -> e.attr("property"), e -> e.attr(CssSelector.ATTR_CONTENT)));
         Elements elements = document.select("meta[name]");
         for (Element element : elements) {
             if (element.hasAttr(CssSelector.ATTR_CONTENT)) {
-                meta.put(element.attr(CssSelector.ATTR_NAME), element.attr(CssSelector.ATTR_CONTENT));
+                meta.put(element.attr(CssSelector.ATTR_NAME),
+                    element.attr(CssSelector.ATTR_CONTENT));
             }
         }
         String location = Objects.requireNonNull(meta.get("og:url"));

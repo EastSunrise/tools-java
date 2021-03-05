@@ -1,5 +1,18 @@
 package wsg.tools.common.io.multimedia;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
@@ -7,16 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.common.io.CommandTask;
 import wsg.tools.common.util.regex.RegexUtils;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.time.Duration;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A ffmpeg process wrapper.
@@ -27,20 +30,24 @@ import java.util.regex.Pattern;
 @Slf4j
 public class FfmpegExecutor {
 
-    private static final Pattern INPUT_REGEX = Pattern.compile("Input #(?<i>\\d+), (?<fs>[a-z0-9]+(,[a-z0-9]+)*), from '(?<src>.*)':");
+    private static final String VIDEO_TYPE = "Video";
+    private static final String AUDIO_TYPE = "Audio";
+    private static final Pattern INPUT_REGEX =
+        Pattern.compile("Input #(?<i>\\d+), (?<fs>[a-z0-9]+(,[a-z0-9]+)*), from '(?<src>.*)':");
     private static final Pattern DURATION_REGEX =
-            Pattern.compile("Duration: (?<h>\\d{2}):(?<min>\\d{2}):(?<s>\\d{2})\\.(?<ms>\\d{2}), " +
-                    "start: (?<start>\\d+\\.\\d+), " +
-                    "bitrate: (?<br>\\d+) kb/s");
-    private static final Pattern STREAM_REGEX =
-            Pattern.compile("Stream #(?<i>\\d+):(?<j>\\d+)(\\((?<remark>[a-z]+)\\))?: (?<type>Audio|Video|Subtitle|Attachment|Data): (?<c>.*)");
+        Pattern.compile("Duration: (?<h>\\d{2}):(?<min>\\d{2}):(?<s>\\d{2})\\.(?<ms>\\d{2}), "
+            + "start: (?<start>\\d+\\.\\d+), " + "bitrate: (?<br>\\d+) kb/s");
+    private static final Pattern STREAM_REGEX = Pattern.compile(
+        "Stream #(?<i>\\d+):(?<j>\\d+)(\\((?<remark>[a-z]+)\\))?: (?<type>Audio|Video|Subtitle|Attachment|Data): (?<c>.*)");
     private static final Pattern CHAPTER_REGEX =
-            Pattern.compile("Chapter #(?<i>\\d+):(?<j>\\d+): start (?<start>\\d+\\.\\d+), end (?<end>\\d+\\.\\d+)");
+        Pattern.compile(
+            "Chapter #(?<i>\\d+):(?<j>\\d+): start (?<start>\\d+\\.\\d+), end (?<end>\\d+\\.\\d+)");
     private static final Pattern FRAME_SIZE_REGEX = Pattern.compile("(?<w>\\d+)x(?<h>\\d+)");
     private static final Pattern FRAME_RATE_REGEX = Pattern.compile("(?<r>[\\d.]+)\\s+fps");
     private static final Pattern BIT_RATE_REGEX = Pattern.compile("(?<r>\\d+)\\s+kb/s");
     private static final Pattern SAMPLING_RATE_REGEX = Pattern.compile("(?<r>\\d+)\\s+Hz");
-    private static final Pattern CHANNEL_REGEX = Pattern.compile("(?<c>mono|stereo|quad)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CHANNEL_REGEX = Pattern
+        .compile("(?<c>mono|stereo|quad)", Pattern.CASE_INSENSITIVE);
 
     private final CommandExecutor ffmpeg;
     private final CommandExecutor ffprobe;
@@ -55,19 +62,23 @@ public class FfmpegExecutor {
         this.ffplay = new CommandExecutor(binDir + File.separator + "ffplay");
     }
 
-    public MultimediaInfo getInfo(URL url) throws ParseException, InputFormatException, IOException {
+    public MultimediaInfo getInfo(URL url)
+        throws ParseException, InputFormatException, IOException {
         return getInfo(url.toString());
     }
 
-    public MultimediaInfo getInfo(File file) throws ParseException, InputFormatException, IOException {
+    public MultimediaInfo getInfo(File file)
+        throws ParseException, InputFormatException, IOException {
         return getInfo(file.getAbsolutePath());
     }
 
-    public MultimediaInfo getInfo(String target) throws InputFormatException, ParseException, IOException {
+    public MultimediaInfo getInfo(String target)
+        throws InputFormatException, ParseException, IOException {
         CommandTask task = ffprobe.createTask("-i", "\"" + target + "\"");
         task.execute();
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(task.getErrorStream()));
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(task.getErrorStream()));
             return parseMultimediaInfo(target, reader).get(0);
         } finally {
             task.destroy();
@@ -81,14 +92,15 @@ public class FfmpegExecutor {
      * @param reader ffprobe output channel.
      * @return information of the target
      * @throws IOException          If a problem occurs when reading the stream.
-     * @throws InputFormatException if the format of the source file cannot be recognized and decoded.
+     * @throws InputFormatException if the format of the source file cannot be recognized and
+     *                              decoded.
      * @throws ParseException       If stream of the info cannot be recognized
      */
     private List<MultimediaInfo> parseMultimediaInfo(String target, BufferedReader reader)
-            throws InputFormatException, ParseException, IOException {
+        throws InputFormatException, ParseException, IOException {
         List<String> lines = new ArrayList<>();
         String line;
-        while ((line = reader.readLine()) != null) {
+        while (null != (line = reader.readLine())) {
             lines.add(line);
         }
 
@@ -135,7 +147,8 @@ public class FfmpegExecutor {
      *
      * @return start index of next block
      */
-    private int readInput(List<String> lines, int index, MultimediaInfo info) throws ParseException {
+    private int readInput(List<String> lines, int index, MultimediaInfo info)
+        throws ParseException {
         MetadataInfo currentObject = info;
         while (index < lines.size()) {
             String line = lines.get(index);
@@ -148,7 +161,7 @@ public class FfmpegExecutor {
             if (current == 2) {
                 if (line.startsWith("Metadata")) {
                     Map<String, String> metadata = new HashMap<>(4);
-                    index = readMap(lines, index + 1, metadata, current);
+                    index = readMap(lines, index + 1, metadata, 2);
                     currentObject.setMetadata(metadata);
                     continue;
                 }
@@ -158,7 +171,8 @@ public class FfmpegExecutor {
                     long min = Long.parseLong(matcher.group("min"));
                     long s = Long.parseLong(matcher.group("s"));
                     long ms = Long.parseLong(matcher.group("ms")) * 10;
-                    info.setDuration(Duration.ofHours(h).plusMinutes(min).plusSeconds(s).plusMillis(ms));
+                    info.setDuration(
+                        Duration.ofHours(h).plusMinutes(min).plusSeconds(s).plusMillis(ms));
                     info.setStart(Double.parseDouble(matcher.group("start")));
                     info.setBitrate(Integer.parseInt(matcher.group("br")));
                     index++;
@@ -170,14 +184,14 @@ public class FfmpegExecutor {
                     Matcher matcher = RegexUtils.matchesOrElseThrow(STREAM_REGEX, line);
                     String type = matcher.group("type");
                     String content = matcher.group("c");
-                    if (VideoStreamInfo.TYPE.equalsIgnoreCase(type)) {
+                    if (VIDEO_TYPE.equalsIgnoreCase(type)) {
                         VideoStreamInfo videoStreamInfo = parseVideoStream(content);
                         info.addVideo(videoStreamInfo);
                         currentObject = videoStreamInfo;
                         index++;
                         continue;
                     }
-                    if (AudioStreamInfo.TYPE.equalsIgnoreCase(type)) {
+                    if (AUDIO_TYPE.equalsIgnoreCase(type)) {
                         AudioStreamInfo audioStreamInfo = parseAudioStream(content);
                         info.addAudio(audioStreamInfo);
                         currentObject = audioStreamInfo;
@@ -206,14 +220,14 @@ public class FfmpegExecutor {
                 // metadata of last stream
                 if (line.startsWith("Metadata")) {
                     Map<String, String> metadata = new HashMap<>(4);
-                    index = readMap(lines, index + 1, metadata, current);
+                    index = readMap(lines, index + 1, metadata, 4);
                     currentObject.setMetadata(metadata);
                     continue;
                 }
                 if (line.startsWith("Side data")) {
                     // ignore
                     Map<String, String> sideData = new HashMap<>(4);
-                    index = readMap(lines, index + 1, sideData, current);
+                    index = readMap(lines, index + 1, sideData, 4);
                     continue;
                 }
             }
@@ -264,7 +278,10 @@ public class FfmpegExecutor {
             }
             Matcher m2 = CHANNEL_REGEX.matcher(token);
             if (m2.find()) {
-                audioStreamInfo.setChannel(EnumUtils.getEnumIgnoreCase(AudioStreamInfo.AudioChannel.class, m2.group("c")));
+                audioStreamInfo
+                    .setChannel(
+                        EnumUtils
+                            .getEnumIgnoreCase(AudioStreamInfo.AudioChannel.class, m2.group("c")));
                 continue;
             }
             Matcher m3 = BIT_RATE_REGEX.matcher(token);
@@ -282,7 +299,9 @@ public class FfmpegExecutor {
      * @param map   map to store data
      * @return start index of next block
      */
-    private int readMap(List<String> lines, int index, @NonNull Map<String, String> map, int parent) throws ParseException {
+    private int readMap(List<String> lines, int index,
+        @NonNull Map<? super String, ? super String> map, int parent)
+        throws ParseException {
         while (index < lines.size()) {
             String line = lines.get(index);
             int current = StringUtils.indexOfAnyBut(line, ' ');
@@ -293,7 +312,8 @@ public class FfmpegExecutor {
             if (indexOfSeparator < 0) {
                 throw new ParseException("Unknown metadata: " + line);
             }
-            map.put(line.substring(0, indexOfSeparator).strip(), line.substring(indexOfSeparator + 1).strip());
+            map.put(line.substring(0, indexOfSeparator).strip(),
+                line.substring(indexOfSeparator + 1).strip());
             index++;
         }
         return index;

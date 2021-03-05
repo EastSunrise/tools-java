@@ -1,11 +1,11 @@
 package wsg.tools.boot.dao.api.impl;
 
-import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
-import wsg.tools.internet.movie.imdb.OmdbSeries;
-
-import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nonnull;
+import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
+import wsg.tools.internet.movie.imdb.OmdbSeries;
 
 /**
  * Projects {@link OmdbSeries} to {@link ImdbSeriesView}.
@@ -19,13 +19,13 @@ class OmdbSeriesAdapter extends AbstractOmdbTitleAdapter<OmdbSeries> implements 
 
     OmdbSeriesAdapter(OmdbSeries omdbSeries, List<String[]> episodes) {
         super(omdbSeries);
-        this.episodes = episodes;
+        this.episodes = Collections.unmodifiableList(episodes);
     }
 
     @Nonnull
     @Override
     public Integer getSeasonsCount() {
-        return Objects.requireNonNullElse(t.getTotalSeasons(), 1);
+        return Objects.requireNonNullElse(getT().getTotalSeasons(), 1);
     }
 
     @Override
@@ -35,6 +35,6 @@ class OmdbSeriesAdapter extends AbstractOmdbTitleAdapter<OmdbSeries> implements 
 
     @Override
     public Integer getYear() {
-        return t.getYear().getStart();
+        return getT().getYear().getStart();
     }
 }

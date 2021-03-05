@@ -1,11 +1,11 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
-import org.springframework.data.jpa.repository.Query;
-import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.UserRecordEntity;
-
 import java.time.LocalDate;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import wsg.tools.boot.dao.jpa.base.BaseRepository;
+import wsg.tools.boot.pojo.entity.UserRecordEntity;
 
 /**
  * Repository for user-subject relationship.
@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author Kingen
  * @since 2020/8/1
  */
+@Repository
 public interface UserRecordRepository extends BaseRepository<UserRecordEntity, Long> {
 
     /**

@@ -8,8 +8,8 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.intf.ContentHandler;
 
 /**
- * An implementation of {@link ContentHandler} to handle the json response
- * and return as a Java object.
+ * An implementation of {@link ContentHandler} to handle the json response and return as a Java
+ * object.
  *
  * @author Kingen
  * @since 2021/3/1

@@ -1,19 +1,26 @@
 package wsg.tools.internet.download;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.function.throwable.ThrowableSupplier;
-import wsg.tools.internet.download.base.AbstractLink;
-import wsg.tools.internet.download.impl.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import wsg.tools.common.constant.Constants;
+import wsg.tools.common.util.function.throwable.ThrowableSupplier;
+import wsg.tools.internet.download.base.AbstractLink;
+import wsg.tools.internet.download.impl.BaiduDiskLink;
+import wsg.tools.internet.download.impl.Ed2kLink;
+import wsg.tools.internet.download.impl.HttpLink;
+import wsg.tools.internet.download.impl.MagnetLink;
+import wsg.tools.internet.download.impl.Thunder;
+import wsg.tools.internet.download.impl.ThunderDiskLink;
+import wsg.tools.internet.download.impl.UcDiskLink;
+import wsg.tools.internet.download.impl.YyetsLink;
 
 /**
  * A factory to create links.
@@ -22,28 +29,32 @@ import java.util.regex.Pattern;
  * @since 2020/10/8
  */
 @Slf4j
-public final class LinkFactory {
+@UtilityClass
+public class LinkFactory {
 
-    private static final Pattern PASSWORD_REGEX = Pattern.compile("(提取码|密码)[:：]\\s?(?<p>\\w{4})");
+    private final Pattern PASSWORD_REGEX = Pattern.compile("(提取码|密码)[:：]\\s?(?<p>\\w{4})");
 
-    public static AbstractLink create(String title, String url) throws InvalidResourceException {
+    public AbstractLink create(String title, String url) throws InvalidResourceException {
         return create(title, url, Constants.UTF_8);
     }
 
-    public static AbstractLink create(String title, String url, @Nonnull Charset charset) throws InvalidResourceException {
+    public AbstractLink create(String title, String url, @Nonnull Charset charset)
+        throws InvalidResourceException {
         return create(title, url, charset, null);
     }
 
-    public static AbstractLink create(String title, String url, @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
-            throws InvalidResourceException {
+    public AbstractLink create(String title, String url,
+        @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
+        throws InvalidResourceException {
         return create(title, url, Constants.UTF_8, passwordProvider);
     }
 
     /**
      * Create a resource based on the given url and title.
      */
-    public static AbstractLink create(String title, String url, @Nonnull Charset charset,
-                                      @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider) throws InvalidResourceException {
+    public AbstractLink create(String title, String url, @Nonnull Charset charset,
+        @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
+        throws InvalidResourceException {
         Objects.requireNonNull(url);
         if (StringUtils.startsWithIgnoreCase(url, Thunder.THUNDER_PREFIX)) {
             try {
@@ -92,7 +103,7 @@ public final class LinkFactory {
     /**
      * Extract a password from the given strings.
      */
-    public static String getPassword(String... strings) {
+    public String getPassword(String... strings) {
         for (String string : strings) {
             Matcher matcher = PASSWORD_REGEX.matcher(string);
             if (matcher.find()) {

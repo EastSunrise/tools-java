@@ -3,25 +3,32 @@ package wsg.tools.internet.movie.douban.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.movie.common.enums.CityEnum;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.common.enums.RegionEnum;
-import wsg.tools.internet.movie.common.enums.SubtypeEnum;
+import wsg.tools.internet.enums.DomesticCity;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.movie.common.enums.DoubanSubtype;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.douban.api.container.BoxResult;
 import wsg.tools.internet.movie.douban.api.container.ChartResult;
 import wsg.tools.internet.movie.douban.api.container.ContentResult;
 import wsg.tools.internet.movie.douban.api.container.RankedResult;
-import wsg.tools.internet.movie.douban.api.pojo.*;
-
-import java.util.LinkedList;
-import java.util.List;
+import wsg.tools.internet.movie.douban.api.pojo.Celebrity;
+import wsg.tools.internet.movie.douban.api.pojo.Comment;
+import wsg.tools.internet.movie.douban.api.pojo.ImdbInfo;
+import wsg.tools.internet.movie.douban.api.pojo.Photo;
+import wsg.tools.internet.movie.douban.api.pojo.Review;
+import wsg.tools.internet.movie.douban.api.pojo.SimpleCelebrity;
+import wsg.tools.internet.movie.douban.api.pojo.SimpleSubject;
+import wsg.tools.internet.movie.douban.api.pojo.Subject;
+import wsg.tools.internet.movie.douban.api.pojo.Work;
 
 /**
  * Extension of {@link DoubanSite} with api-related methods.
@@ -32,12 +39,15 @@ import java.util.List;
 public class ApiDoubanSite extends DoubanSite {
 
     static {
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
-                .registerModule(new SimpleModule()
-                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getAkaDeserializer(String.class, LanguageEnum.class))
-                        .addDeserializer(RegionEnum.class, EnumDeserializers.getAkaDeserializer(String.class, RegionEnum.class))
-                        .addDeserializer(SubtypeEnum.class, EnumDeserializers.getAkaDeserializer(String.class, SubtypeEnum.class))
-                );
+        MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+            .registerModule(new SimpleModule()
+                .addDeserializer(
+                    Language.class,
+                    EnumDeserializers.getAkaDeserializer(String.class, Language.class))
+                .addDeserializer(
+                    Region.class, EnumDeserializers.getAkaDeserializer(String.class, Region.class))
+                .addDeserializer(DoubanSubtype.class,
+                    EnumDeserializers.getAkaDeserializer(String.class, DoubanSubtype.class)));
     }
 
     private final String apikey;
@@ -84,8 +94,10 @@ public class ApiDoubanSite extends DoubanSite {
         return getApiChart(apiBuilder("/v2/movie/new_movies"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(CityEnum city) throws HttpResponseException {
-        return getApiChart(apiBuilder("/v2/movie/in_theaters").addParameter("city", city.getPath()));
+    public Pair<String, List<SimpleSubject>> apiMovieInTheaters(DomesticCity city)
+        throws HttpResponseException {
+        return getApiChart(
+            apiBuilder("/v2/movie/in_theaters").addParameter("city", city.getText()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {
@@ -143,14 +155,16 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of owner-content
      */
-    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type, String path, long ownerId) throws HttpResponseException {
+    private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type,
+        String path, long ownerId)
+        throws HttpResponseException {
         int start = 0;
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
             RequestBuilder builder = apiBuilder(path, ownerId)
-                    .addParameter("start", String.valueOf(start))
-                    .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
+                .addParameter("start", String.valueOf(start))
+                .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
             ContentResult<O, C> contentResult = getObject(builder, type);
             content.addAll(contentResult.getContent());
             owner = contentResult.getOwner();
@@ -166,14 +180,16 @@ public class ApiDoubanSite extends DoubanSite {
         return getObject(builder, clazz, SnapshotStrategy.never());
     }
 
-    private <T> T getObject(RequestBuilder builder, TypeReference<T> type) throws HttpResponseException {
+    private <T> T getObject(RequestBuilder builder, TypeReference<T> type)
+        throws HttpResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, mapper, type, SnapshotStrategy.never());
+        return getObject(builder, MAPPER, type, SnapshotStrategy.never());
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy) throws HttpResponseException {
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy)
+        throws HttpResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, mapper, clazz, strategy);
+        return getObject(builder, MAPPER, clazz, strategy);
     }
 
     private RequestBuilder apiBuilder(String path, Object... pathArgs) {

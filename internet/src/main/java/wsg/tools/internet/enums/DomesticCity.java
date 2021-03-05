@@ -1,19 +1,18 @@
-package wsg.tools.internet.movie.common.enums;
+package wsg.tools.internet.enums;
 
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.common.PathParameterized;
 
 /**
- * Enum for cities.
+ * Enum for domestic cities.
  *
  * @author Kingen
  * @since 2020/7/17
  */
-public enum CityEnum implements IntCodeSupplier, TextSupplier, TitleSupplier, PathParameterized {
+public enum DomesticCity implements IntCodeSupplier, TextSupplier, TitleSupplier {
     /**
-     * Cities
+     * domestic cities
      */
     PEK(1101, "Beijing", "北京"),
     SHA(3101, "Shanghai", "上海"),
@@ -24,7 +23,7 @@ public enum CityEnum implements IntCodeSupplier, TextSupplier, TitleSupplier, Pa
     private final String text;
     private final String title;
 
-    CityEnum(int code, String text, String title) {
+    DomesticCity(int code, String text, String title) {
         this.code = code;
         this.text = text;
         this.title = title;
@@ -43,10 +42,5 @@ public enum CityEnum implements IntCodeSupplier, TextSupplier, TitleSupplier, Pa
     @Override
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public String getPath() {
-        return text.toLowerCase();
     }
 }

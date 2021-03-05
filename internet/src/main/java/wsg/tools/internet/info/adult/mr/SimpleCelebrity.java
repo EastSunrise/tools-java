@@ -1,9 +1,8 @@
 package wsg.tools.internet.info.adult.mr;
 
+import java.util.List;
 import lombok.Getter;
 import wsg.tools.common.lang.IntIdentifier;
-
-import java.util.List;
 
 /**
  * A celebrity with simple information.

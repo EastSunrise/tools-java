@@ -1,9 +1,8 @@
 package wsg.tools.internet.movie.imdb;
 
+import javax.annotation.Nullable;
 import lombok.Getter;
 import wsg.tools.internet.movie.common.RangeYear;
-
-import javax.annotation.Nullable;
 
 /**
  * OMDb TV series.

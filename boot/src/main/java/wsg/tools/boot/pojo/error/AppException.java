@@ -7,15 +7,14 @@ package wsg.tools.boot.pojo.error;
  * @since 2020/7/25
  */
 public class AppException extends RuntimeException {
+
+    private static final long serialVersionUID = 1670342063938140164L;
+
     public AppException(Throwable e) {
         super(e.getMessage(), e);
     }
 
     public AppException(String message) {
         super(message);
-    }
-
-    public AppException(String format, Object... args) {
-        super(String.format(format, args));
     }
 }

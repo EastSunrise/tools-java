@@ -1,13 +1,12 @@
 package wsg.tools.boot.service.intf;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Management of local video.

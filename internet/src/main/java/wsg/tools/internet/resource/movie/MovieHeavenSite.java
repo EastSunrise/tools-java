@@ -1,5 +1,16 @@
 package wsg.tools.internet.resource.movie;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -31,49 +42,41 @@ import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.common.VideoConstants;
 import wsg.tools.internet.resource.common.VideoType;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.Year;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
  * @author Kingen
  * @see <a href="https://www.993dy.com/">Movie Heaven</a>
  * @since 2020/10/18
  */
 @Slf4j
-public class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>, IterableRepository<MovieHeavenItem> {
+public final class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>,
+    IterableRepository<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
-    private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
-    private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/vod-detail-id-(?<id>\\d+)\\.html");
-    private static final Pattern TYPE_PATH_REGEX = Pattern.compile("/vod-type-id-(?<index>\\d+)-pg-1\\.html");
+    private static final Pattern ITEM_TITLE_REGEX = Pattern
+        .compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
+    private static final Pattern ITEM_HREF_REGEX = Pattern
+        .compile("/vod-detail-id-(?<id>\\d+)\\.html");
+    private static final Pattern TYPE_PATH_REGEX = Pattern
+        .compile("/vod-type-id-(?<index>\\d+)-pg-1\\.html");
     private static final String UNKNOWN_YEAR = "未知";
-    private static final Pattern VAR_URL_REGEX = Pattern.compile("var downurls=\"(?<entries>.*)#\";");
-    private static final Pattern RESOURCE_REGEX = Pattern.compile("(?<title>(第\\d+集\\$)?[^$]+)\\$(?<url>[^$]*)");
+    private static final Pattern VAR_URL_REGEX = Pattern
+        .compile("var downurls=\"(?<entries>.*)#\";");
+    private static final Pattern RESOURCE_REGEX = Pattern
+        .compile("(?<title>(第\\d+集\\$)?[^$]+)\\$(?<url>[^$]*)");
     private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
     private static final String XUNLEI = "xunlei";
     private static final String URL_SEPARATOR = "#";
     private static final VideoType[] TYPES = {
-            null, VideoType.MOVIE, VideoType.SERIES, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
-            VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
-            VideoType.MOVIE, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES,
-            VideoType.SERIES, VideoType.FOUR_K
+        null, VideoType.MOVIE, VideoType.SERIES, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
+        VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
+        VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
+        VideoType.MOVIE, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES,
+        VideoType.SERIES, VideoType.FOUR_K
     };
-
-    private static MovieHeavenSite instance;
 
     private final IterableRepository<MovieHeavenItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
 
-    private MovieHeavenSite() {
+    public MovieHeavenSite() {
         super("Movie Heaven", new BasicHttpSession("993dy.com"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
@@ -84,13 +87,6 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
                 return content;
             }
         });
-    }
-
-    public synchronized static MovieHeavenSite getInstance() {
-        if (instance == null) {
-            instance = new MovieHeavenSite();
-        }
-        return instance;
     }
 
     /**
@@ -124,20 +120,21 @@ public class MovieHeavenSite extends BaseSite implements Repository<Integer, Mov
         Document document = getDocument(builder, SnapshotStrategy.never());
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, document.selectFirst("h4.infotitle1").text());
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND,
+                document.selectFirst("h4.infotitle1").text());
         }
 
-        Map<String, Element> info = document.selectFirst("div.info").select(CssSelector.TAG_SPAN).stream().collect(Collectors.toMap(Element::text, e -> e));
-        Element span = info.get("类型：");
-        String href = span.nextElementSibling().attr(CssSelector.ATTR_HREF);
-        VideoType type = TYPES[Integer.parseInt(RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, href).group("index"))];
-        span = info.get("上架时间：");
-        LocalDate addDate = LocalDate.parse(((TextNode) span.nextSibling()).text(), DateTimeFormatter.ISO_LOCAL_DATE);
+        Map<String, Element> info = document.selectFirst("div.info").select(CssSelector.TAG_SPAN)
+            .stream().collect(Collectors.toMap(Element::text, e -> e));
+        String href = info.get("类型：").nextElementSibling().attr(CssSelector.ATTR_HREF);
+        VideoType type = TYPES[Integer
+            .parseInt(RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, href).group("index"))];
+        LocalDate addDate = LocalDate.parse(((TextNode) info.get("上架时间：").nextSibling()).text(),
+            DateTimeFormatter.ISO_LOCAL_DATE);
         MovieHeavenItem item = new MovieHeavenItem(id, builder.toString(), type, addDate);
 
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
-        span = info.get("上映年代：");
-        String text = ((TextNode) span.nextSibling()).text();
+        String text = ((TextNode) info.get("上映年代：").nextSibling()).text();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
             int year = Integer.parseInt(text);
             if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {

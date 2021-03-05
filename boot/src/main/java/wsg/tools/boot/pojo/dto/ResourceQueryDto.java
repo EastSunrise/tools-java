@@ -15,6 +15,8 @@ import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 @Setter
 public class ResourceQueryDto extends BaseDto implements DoubanIdentifier, ImdbIdentifier {
 
+    private static final long serialVersionUID = -626041252491563294L;
+
     private String key;
     private Long dbId;
     private String imdbId;

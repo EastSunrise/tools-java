@@ -15,4 +15,5 @@ import wsg.tools.internet.movie.imdb.pojo.base.BaseRating;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonTypeName("Rating")
 public class ImdbRating extends BaseRating {
+
 }

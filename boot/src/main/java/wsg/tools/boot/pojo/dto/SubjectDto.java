@@ -1,11 +1,10 @@
 package wsg.tools.boot.pojo.dto;
 
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
-
-import java.time.LocalDateTime;
 
 /**
  * Subject object for movie and season.
@@ -16,6 +15,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class SubjectDto extends BaseDto implements DoubanIdentifier {
+
+    private static final long serialVersionUID = 1667441730744897649L;
 
     private Long id;
     private String zhTitle;

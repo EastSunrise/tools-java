@@ -14,7 +14,8 @@ import lombok.Getter;
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonTypeName("Person")
-public class DoubanPerson {
+class DoubanPerson {
+
     /**
      * Only path.
      */

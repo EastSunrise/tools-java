@@ -1,10 +1,9 @@
 package wsg.tools.boot.dao.api.impl;
 
+import java.util.List;
+import javax.annotation.Nonnull;
 import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
 import wsg.tools.internet.movie.imdb.ImdbSeries;
-
-import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
  * Projects {@link ImdbSeries} to {@link ImdbSeriesView}.
@@ -21,16 +20,16 @@ class ImdbSeriesAdapter extends AbstractImdbTitleAdapter<ImdbSeries> implements 
     @Nonnull
     @Override
     public Integer getSeasonsCount() {
-        return Math.max(t.getEpisodes().size(), 1);
+        return Math.max(getT().getEpisodes().size(), 1);
     }
 
     @Override
     public List<String[]> getEpisodes() {
-        return t.getEpisodes();
+        return getT().getEpisodes();
     }
 
     @Override
     public Integer getYear() {
-        return t.getRangeYear().getStart();
+        return getT().getRangeYear().getStart();
     }
 }

@@ -9,7 +9,7 @@ import lombok.Getter;
  * @since 2020/12/2
  */
 @Getter
-public class ChapterInfo extends MetadataInfo {
+class ChapterInfo extends MetadataInfo {
 
     private double start;
     private double end;

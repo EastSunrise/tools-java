@@ -1,4 +1,4 @@
-package wsg.tools.internet.movie.common.enums;
+package wsg.tools.internet.enums;
 
 import wsg.tools.common.util.function.TitleSupplier;
 
@@ -10,9 +10,12 @@ import wsg.tools.common.util.function.TitleSupplier;
  */
 public enum Gender implements TitleSupplier {
     /**
-     * Male/Female
+     * Male
      */
     MALE("男"),
+    /**
+     * Female
+     */
     FEMALE("女");
 
     private final String title;

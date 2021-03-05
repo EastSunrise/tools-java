@@ -6,6 +6,7 @@ package wsg.tools.internet.download.base;
  * @author Kingen
  * @since 2020/12/3
  */
+@FunctionalInterface
 public interface LengthSupplier {
 
     /**

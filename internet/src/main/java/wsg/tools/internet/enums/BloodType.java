@@ -1,4 +1,4 @@
-package wsg.tools.internet.common.enums;
+package wsg.tools.internet.enums;
 
 /**
  * Blood types.

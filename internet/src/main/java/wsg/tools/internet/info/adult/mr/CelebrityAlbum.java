@@ -1,11 +1,10 @@
 package wsg.tools.internet.info.adult.mr;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Getter;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Album including a series of photos.

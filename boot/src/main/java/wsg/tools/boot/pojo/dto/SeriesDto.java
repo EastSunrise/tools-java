@@ -1,10 +1,9 @@
 package wsg.tools.boot.pojo.dto;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
-
-import java.util.List;
 
 /**
  * Subject of series.
@@ -15,6 +14,8 @@ import java.util.List;
 @Getter
 @Setter
 public class SeriesDto extends BaseDto {
+
+    private static final long serialVersionUID = 8342913829890750191L;
 
     private SeriesEntity series;
     private List<SeasonDto> seasons;

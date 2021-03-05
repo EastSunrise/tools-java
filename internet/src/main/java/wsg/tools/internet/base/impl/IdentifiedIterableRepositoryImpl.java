@@ -1,17 +1,16 @@
 package wsg.tools.internet.base.impl;
 
+import java.util.Iterator;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 
-import javax.annotation.Nonnull;
-import java.util.Iterator;
-
 /**
  * An implementation of {@link IterableRepository}.
  * <p>
- * The iteration of the repository will go on with that of an iterator
- * over identifiers supplied by {@link #idIterable}.
+ * The iteration of the repository will go on with that of an iterator over identifiers supplied by
+ * {@link #idIterable}.
  *
  * @author Kingen
  * @see IdentifiedRepositoryIterator

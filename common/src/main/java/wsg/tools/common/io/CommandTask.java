@@ -1,11 +1,10 @@
 package wsg.tools.common.io;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A task created by an executor with the given arguments.
@@ -32,9 +31,8 @@ public class CommandTask {
     private Process process;
 
     /**
-     * A process killer to kill the process with a shutdown hook.
-     * It's useful when the jvm execution is shut down during
-     * an ongoing process.
+     * A process killer to kill the process with a shutdown hook. It's useful when the jvm execution
+     * is shut down during an ongoing process.
      */
     private KillThread killer;
 
@@ -118,9 +116,8 @@ public class CommandTask {
     }
 
     /**
-     * Return the exit value of the process
-     * If the process is not yet terminated, it waits for the termination
-     * of the process
+     * Return the exit value of the process If the process is not yet terminated, it waits for the
+     * termination of the process
      *
      * @return exit value
      */
@@ -149,9 +146,12 @@ public class CommandTask {
     }
 
     static class KillThread extends Thread {
+
         private final Process process;
 
-        KillThread(Process process) {this.process = process;}
+        KillThread(Process process) {
+            this.process = process;
+        }
 
         @Override
         public void run() {

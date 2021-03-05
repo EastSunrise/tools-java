@@ -1,10 +1,9 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.util.List;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.info.adult.AdultEntry;
-
-import java.util.List;
 
 /**
  * An entry with an adult entry.

@@ -1,19 +1,19 @@
 package wsg.tools.internet.base.impl;
 
+import java.util.NoSuchElementException;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
 
-import java.util.NoSuchElementException;
-
 /**
  * Base implementation of {@link RepositoryIterator}.
  * <p>
- * Each node of the iterator contains an {@link #nextId}, the identifier of next node, which can be used to
- * find next record by the {@link #repository}.
+ * Each node of the iterator contains an {@link #nextId}, the identifier of next node, which can be
+ * used to find next record by the {@link #repository}.
  *
- * @param <T> type of records which is required to implement {@link NextSupplier} to supply the identifier of next record.
+ * @param <T> type of records which is required to implement {@link NextSupplier} to supply the
+ *            identifier of next record.
  * @author Kingen
  * @see IterableRepositoryImpl
  * @since 2021/3/2

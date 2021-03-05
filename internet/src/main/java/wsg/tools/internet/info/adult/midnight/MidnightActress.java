@@ -1,9 +1,8 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.util.Map;
 import lombok.Getter;
 import wsg.tools.common.util.function.TitleSupplier;
-
-import java.util.Map;
 
 /**
  * An actress in the {@link MidnightSite}.

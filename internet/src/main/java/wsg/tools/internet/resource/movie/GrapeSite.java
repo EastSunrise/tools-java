@@ -1,5 +1,18 @@
 package wsg.tools.internet.resource.movie;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -26,46 +39,30 @@ import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.Ed2kLink;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
  * @author Kingen
  * @see <a href="https://www.putaoys.com">Grape Video</a>
  * @since 2021/3/2
  */
-public class GrapeSite extends BaseSite {
+public final class GrapeSite extends BaseSite {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern YEAR_REGEX = Pattern.compile("◎年\\s*代\\s+(?<y>\\d{4})\\s*◎");
-    private static final Pattern VOD_REGEX = Pattern.compile("tt\\d+/?|/vod/\\d+/?|/vod/[a-z]+/[a-z]+/?|/html/\\d+\\.html");
+    private static final Pattern VOD_REGEX = Pattern
+        .compile("tt\\d+/?|/vod/\\d+/?|/vod/[a-z]+/[a-z]+/?|/html/\\d+\\.html");
     private static final Pattern VOD_GENRE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>[a-z]+)");
     private static final String BT_ATTACH = "url_btbtt";
 
-    private static GrapeSite instance;
+    private final IterableRepository<GrapeNewsItem> newsRepository = new IntRangeIterableRepositoryImpl<>(
+        this::findNewsItem, 16132);
 
-    private final IterableRepository<GrapeNewsItem> newsRepository = new IntRangeIterableRepositoryImpl<>(this::findNewsItem, 16132);
-
-    private GrapeSite() {
+    public GrapeSite() {
         super("Grape Vod", new BasicHttpSession("putaoys.com"), GrapeSite::handleResponse);
     }
 
-    public synchronized static GrapeSite getInstance() {
-        if (instance == null) {
-            instance = new GrapeSite();
-        }
-        return instance;
-    }
-
-    protected static String handleResponse(HttpResponse response) throws IOException {
+    private static String handleResponse(HttpResponse response) throws IOException {
         try {
             return DEFAULT_RESPONSE_HANDLER.handleResponse(response);
         } catch (HttpResponseException e) {
@@ -139,7 +136,7 @@ public class GrapeSite extends BaseSite {
     private List<SimpleItem> getAllVodIndexes(GrapeVodType type) throws HttpResponseException {
         List<SimpleItem> items = new ArrayList<>();
         for (int page = 1; ; page++) {
-            VodList vodList = this.getIndexes(type, page);
+            VodList vodList = getIndexes(type, page);
             items.addAll(vodList.items);
             if (vodList.currentPage >= vodList.pagesCount) {
                 break;

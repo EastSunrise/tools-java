@@ -1,18 +1,17 @@
 package wsg.tools.internet.base.impl;
 
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 
-import javax.annotation.Nonnull;
-import java.util.function.Supplier;
-import java.util.stream.IntStream;
-
 /**
  * An implementation of {@link IterableRepository}.
  * <p>
- * The iteration of the repository will go on with that of an iterator over an integer
- * range whose lower and upper bounds are supplied by {@link #minSupplier} and {@link #maxSupplier}.
+ * The iteration of the repository will go on with that of an iterator over an integer range whose
+ * lower and upper bounds are supplied by {@link #minSupplier} and {@link #maxSupplier}.
  * <p>
  *
  * @author Kingen
@@ -29,13 +28,15 @@ public class IntRangeIterableRepositoryImpl<T> implements IterableRepository<T> 
         this.maxSupplier = () -> max;
     }
 
-    public IntRangeIterableRepositoryImpl(@Nonnull Repository<Integer, T> repository, @Nonnull Supplier<Integer> maxSupplier) {
+    public IntRangeIterableRepositoryImpl(@Nonnull Repository<Integer, T> repository,
+        @Nonnull Supplier<Integer> maxSupplier) {
         this.repository = repository;
         this.maxSupplier = maxSupplier;
     }
 
     @Override
     public RepositoryIterator<T> iterator() {
-        return new IdentifiedRepositoryIterator<>(repository, IntStream.rangeClosed(minSupplier.get(), maxSupplier.get()).iterator());
+        return new IdentifiedRepositoryIterator<>(repository,
+            IntStream.rangeClosed(minSupplier.get(), maxSupplier.get()).iterator());
     }
 }

@@ -1,5 +1,11 @@
 package wsg.tools.boot.pojo.entity.resource;
 
+import java.time.LocalDateTime;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
@@ -9,9 +15,6 @@ import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.common.VideoTypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 import wsg.tools.internet.resource.movie.BasicItem;
-
-import javax.persistence.*;
-import java.time.temporal.Temporal;
 
 /**
  * Items of resources.
@@ -23,12 +26,13 @@ import java.time.temporal.Temporal;
 @Getter
 @Setter
 @Entity
-@Table(name = "resource_item", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_site_key", columnNames = {"site", "sid"})
-}, indexes = {
-        @Index(name = "index_imdb", columnList = "imdbId")
-})
-public class ResourceItemEntity extends IdentityEntity implements VideoTypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
+@Table(name = "resource_item",
+    uniqueConstraints = @UniqueConstraint(name = "uk_site_key", columnNames = {"site", "sid"}),
+    indexes = @Index(name = "index_imdb", columnList = "imdbId"))
+public class ResourceItemEntity extends IdentityEntity
+    implements VideoTypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
+
+    private static final long serialVersionUID = -6437618032369837427L;
 
     @Column(nullable = false, length = 15)
     private String site;
@@ -52,14 +56,14 @@ public class ResourceItemEntity extends IdentityEntity implements VideoTypeSuppl
     private String imdbId;
 
     @Column(length = 0)
-    private Temporal updateTime;
+    private LocalDateTime updateTime;
 
     @Column(nullable = false)
     private Boolean identified;
 
     @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
+    public boolean equals(Object obj) {
+        return super.equals(obj);
     }
 
     @Override

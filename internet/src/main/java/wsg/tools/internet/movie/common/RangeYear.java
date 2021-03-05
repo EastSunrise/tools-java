@@ -1,11 +1,10 @@
 package wsg.tools.internet.movie.common;
 
-import wsg.tools.common.util.regex.RegexUtils;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import wsg.tools.common.util.regex.RegexUtils;
 
 /**
  * Ranged years of series.

@@ -1,16 +1,15 @@
 package wsg.tools.boot.dao.api.impl;
 
-import org.apache.commons.collections4.CollectionUtils;
-import wsg.tools.boot.dao.api.intf.ImdbView;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-import wsg.tools.internet.movie.imdb.ImdbTitle;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
+import wsg.tools.boot.dao.api.intf.ImdbView;
+import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.movie.imdb.ImdbTitle;
 
 /**
  * Projects {@link ImdbTitle} to {@link ImdbView}.
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
  */
 abstract class AbstractImdbTitleAdapter<T extends ImdbTitle> implements ImdbView {
 
-    final T t;
+    private final T t;
 
     AbstractImdbTitleAdapter(T t) {
         this.t = t;
@@ -37,7 +36,7 @@ abstract class AbstractImdbTitleAdapter<T extends ImdbTitle> implements ImdbView
     }
 
     @Override
-    public List<LanguageEnum> getLanguages() {
+    public List<Language> getLanguages() {
         return t.getLanguages();
     }
 
@@ -51,9 +50,14 @@ abstract class AbstractImdbTitleAdapter<T extends ImdbTitle> implements ImdbView
         Set<Duration> durations = new HashSet<>();
         CollectionUtils.addIgnoreNull(durations, t.getDuration());
         List<Duration> runtimes = t.getRuntimes();
-        if (runtimes != null) {
+        if (null != runtimes) {
             durations.addAll(runtimes);
         }
-        return durations.isEmpty() ? null : durations.stream().sorted().collect(Collectors.toList());
+        return durations.isEmpty() ? null
+            : durations.stream().sorted().collect(Collectors.toList());
+    }
+
+    T getT() {
+        return t;
     }
 }

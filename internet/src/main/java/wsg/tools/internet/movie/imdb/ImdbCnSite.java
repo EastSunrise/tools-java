@@ -1,5 +1,17 @@
 package wsg.tools.internet.movie.imdb;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -20,31 +32,22 @@ import wsg.tools.internet.common.CssSelector;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
  * <a href="https://www.imdb.cn">IMDb CN</a>
  *
  * @author Kingen
  * @since 2020/12/12
  */
-public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
+public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
-    private static final Pattern EPISODE_LIST_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/episodelist\\?season=\\d+");
+    private static final Pattern EPISODE_LIST_REGEX = Pattern
+        .compile("/title/(?<id>tt\\d+)/episodelist\\?season=\\d+");
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(?<id>tt\\d+)/");
     private static final Pattern CURRENT_EPISODE_REGEX = Pattern.compile("第(?<e>\\d+)集");
     private static final String NOT_FOUND = "404";
     private static final String INTERNAL_SERVER_ERROR = "500";
 
-    private static ImdbCnSite instance;
-
-    private ImdbCnSite() {
+    public ImdbCnSite() {
         super("IMDb CN", new BasicHttpSession("imdb.cn"), new AbstractResponseHandler<>() {
             @Override
             public String handleEntity(HttpEntity entity) throws IOException {
@@ -53,18 +56,12 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
                     throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
                 }
                 if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
-                    throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server is limit to access.");
+                    throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                        "Server is limit to access.");
                 }
                 return content;
             }
         });
-    }
-
-    public static ImdbCnSite getInstance() {
-        if (instance == null) {
-            instance = new ImdbCnSite();
-        }
-        return instance;
     }
 
     @Override
@@ -72,10 +69,11 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.never());
 
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        Document editForm = getDocument(builder0("/index/video.editform/index.html")
+        Document editForm =
+            getDocument(builder0("/index/video.editform/index.html")
                 .addParameter("m_id", dataset.get("movie_id"))
                 .addParameter("location", dataset.get("location")), SnapshotStrategy.never());
-        Map<String, Element> fields = new HashMap<>(16);
+        Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {
             if (item.hasClass("items")) {
@@ -126,7 +124,9 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
         String showdate = fields.get("showdate00").val();
         if (StringUtils.isNotBlank(showdate)) {
             String[] parts = showdate.split("/");
-            List<LocalDate> dates = Arrays.stream(parts).map(String::strip).map(Release::of).map(Release::getDate).collect(Collectors.toList());
+            List<LocalDate> dates = Arrays.stream(parts).map(String::strip).map(Release::of)
+                .map(Release::getDate)
+                .collect(Collectors.toList());
             imdbTitle.setReleases(dates);
         }
 
@@ -134,9 +134,11 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
     }
 
     private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
-        Document document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                .addParameter("season", "1"), SnapshotStrategy.never());
-        int seasonsCount = document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
+        Document document = getDocument(
+            builder0("/title/%s/episodelist", seriesId).addParameter("season", "1"),
+            SnapshotStrategy.never());
+        int seasonsCount =
+            document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
 
         List<String[]> result = new ArrayList<>();
         int currentSeason = 1;
@@ -149,7 +151,9 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
                     String href = item.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
                     String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group("id");
                     String text = item.selectFirst("span.s2").text();
-                    int episode = Integer.parseInt(RegexUtils.matchesOrElseThrow(CURRENT_EPISODE_REGEX, text).group("e"));
+                    int episode =
+                        Integer.parseInt(
+                            RegexUtils.matchesOrElseThrow(CURRENT_EPISODE_REGEX, text).group("e"));
                     map.put(episode, id);
                 }
                 Element pagination = document.selectFirst("ul.pagination");
@@ -160,9 +164,11 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
                 if (nextPage.hasClass("disabled")) {
                     break;
                 }
+                page++;
                 document = getDocument(builder0("/title/%s/episodelist", seriesId)
                         .addParameter("season", String.valueOf(currentSeason))
-                        .addParameter("page", String.valueOf(++page)), SnapshotStrategy.never());
+                        .addParameter("page", String.valueOf(page)),
+                    SnapshotStrategy.never());
             }
             if (map.isEmpty()) {
                 result.add(new String[1]);
@@ -172,11 +178,14 @@ public class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
                 result.add(episodes);
             }
 
-            if (++currentSeason > seasonsCount) {
+            currentSeason++;
+            if (currentSeason > seasonsCount) {
                 break;
             }
-            document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)), SnapshotStrategy.never());
+            document = getDocument(
+                builder0("/title/%s/episodelist", seriesId)
+                    .addParameter("season", String.valueOf(currentSeason)),
+                SnapshotStrategy.never());
         }
         return result;
     }

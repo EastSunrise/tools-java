@@ -6,14 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.Duration;
+import java.util.List;
+import javax.persistence.Converter;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.jackson.serializer.CodeSerializer;
-import wsg.tools.internet.movie.common.enums.LanguageEnum;
-
-import javax.persistence.Converter;
-import java.time.Duration;
-import java.util.List;
+import wsg.tools.internet.enums.Language;
 
 /**
  * Converters for container types like {@link List}.
@@ -26,38 +25,48 @@ import java.util.List;
 public class ContainerJsonJpaConverters {
 
     @Converter(autoApply = true)
-    public static class StringListJsonConverter extends AbstractContainerJsonConverter<List<String>> {
+    public static class StringListJsonConverter extends
+        AbstractContainerJsonConverter<List<String>> {
+
         public StringListJsonConverter() {
-            super(new TypeReference<>() {});
+            super(new TypeReference<>() {
+            });
         }
     }
 
     @Converter(autoApply = true)
-    public static class LanguageListJsonConverter extends AbstractContainerJsonConverter<List<LanguageEnum>> {
+    public static class LanguageListJsonConverter extends
+        AbstractContainerJsonConverter<List<Language>> {
+
         public LanguageListJsonConverter() {
-            super(new TypeReference<>() {});
+            super(new TypeReference<>() {
+            });
         }
     }
 
     @Converter(autoApply = true)
-    public static class DurationListJsonConverter extends AbstractContainerJsonConverter<List<Duration>> {
+    public static class DurationListJsonConverter extends
+        AbstractContainerJsonConverter<List<Duration>> {
+
         public DurationListJsonConverter() {
-            super(new TypeReference<>() {});
+            super(new TypeReference<>() {
+            });
         }
     }
 
-    static abstract class AbstractContainerJsonConverter<Container> extends BaseNonNullConverter<Container, String> {
+    private abstract static class AbstractContainerJsonConverter<Container>
+        extends BaseNonNullConverter<Container, String> {
 
-        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-                .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
-                .registerModule(new JavaTimeModule())
-                .registerModule(new SimpleModule()
-                        .addSerializer(CodeSerializer.getInstance(String.class, LanguageEnum.class))
-                        .addDeserializer(LanguageEnum.class, EnumDeserializers.getCodeDeserializer(String.class, LanguageEnum.class))
-                );
+        private static final ObjectMapper OBJECT_MAPPER =
+            new ObjectMapper().disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+                .registerModule(new JavaTimeModule()).registerModule(
+                new SimpleModule().addSerializer(CodeSerializer.getInstance(Language.class))
+                    .addDeserializer(
+                        Language.class,
+                        EnumDeserializers.getCodeDeserializer(String.class, Language.class)));
         private final TypeReference<Container> type;
 
-        public AbstractContainerJsonConverter(TypeReference<Container> type) {
+        AbstractContainerJsonConverter(TypeReference<Container> type) {
             this.type = type;
         }
 

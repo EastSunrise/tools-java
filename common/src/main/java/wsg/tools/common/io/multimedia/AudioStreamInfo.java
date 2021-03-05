@@ -11,8 +11,6 @@ import lombok.Getter;
 @Getter
 public class AudioStreamInfo extends AbstractStreamInfo {
 
-    public static final String TYPE = "Audio";
-
     private String decoder;
     private Integer samplingRate;
     private AudioChannel channel;
@@ -38,8 +36,6 @@ public class AudioStreamInfo extends AbstractStreamInfo {
         /**
          * Channels
          */
-        MONO,
-        STEREO,
-        QUAD
+        MONO, STEREO, QUAD
     }
 }

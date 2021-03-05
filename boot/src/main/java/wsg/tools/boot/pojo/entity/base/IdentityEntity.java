@@ -1,13 +1,12 @@
 package wsg.tools.boot.pojo.entity.base;
 
-import lombok.Setter;
-import wsg.tools.common.lang.Identifier;
-
+import java.util.Objects;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
-import java.util.Objects;
+import lombok.Setter;
+import wsg.tools.common.lang.Identifier;
 
 /**
  * Base entity with an generated id.
@@ -19,6 +18,8 @@ import java.util.Objects;
 @MappedSuperclass
 public class IdentityEntity extends BaseEntity implements Identifier<Long> {
 
+    private static final long serialVersionUID = -7472130300615133460L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,15 +30,15 @@ public class IdentityEntity extends BaseEntity implements Identifier<Long> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        IdentityEntity that = (IdentityEntity) o;
-        return Objects.equals(id, that.id);
+        IdentityEntity entity = (IdentityEntity) obj;
+        return Objects.equals(id, entity.id);
     }
 
     @Override
