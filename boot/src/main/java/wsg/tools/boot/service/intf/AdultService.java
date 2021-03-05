@@ -1,7 +1,7 @@
 package wsg.tools.boot.service.intf;
 
 import org.apache.http.client.HttpResponseException;
-import wsg.tools.internet.info.adult.midnight.MidnightSite;
+import wsg.tools.boot.pojo.result.BatchResult;
 
 /**
  * Interface of service for adult videos.
@@ -13,9 +13,10 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
 public interface AdultService {
 
     /**
-     * Import latest adult series from {@link MidnightSite}.
+     * Import latest adult entries from {@link wsg.tools.internet.info.adult.LaymanCatSite}.
      *
+     * @return result of importing
      * @throws HttpResponseException if an error occurs when do request
      */
-    void importLatest() throws HttpResponseException;
+    BatchResult<String> importLaymanCatSite() throws HttpResponseException;
 }

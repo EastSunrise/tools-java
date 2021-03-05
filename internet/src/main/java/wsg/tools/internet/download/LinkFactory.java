@@ -7,7 +7,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
@@ -29,21 +28,23 @@ import wsg.tools.internet.download.impl.YyetsLink;
  * @since 2020/10/8
  */
 @Slf4j
-@UtilityClass
-public class LinkFactory {
+public final class LinkFactory {
 
-    private final Pattern PASSWORD_REGEX = Pattern.compile("(提取码|密码)[:：]\\s?(?<p>\\w{4})");
+    private static final Pattern PASSWORD_REGEX = Pattern.compile("(提取码|密码)[:：]\\s?(?<p>\\w{4})");
 
-    public AbstractLink create(String title, String url) throws InvalidResourceException {
+    private LinkFactory() {
+    }
+
+    public static AbstractLink create(String title, String url) throws InvalidResourceException {
         return create(title, url, Constants.UTF_8);
     }
 
-    public AbstractLink create(String title, String url, @Nonnull Charset charset)
+    public static AbstractLink create(String title, String url, @Nonnull Charset charset)
         throws InvalidResourceException {
         return create(title, url, charset, null);
     }
 
-    public AbstractLink create(String title, String url,
+    public static AbstractLink create(String title, String url,
         @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         return create(title, url, Constants.UTF_8, passwordProvider);
@@ -52,7 +53,7 @@ public class LinkFactory {
     /**
      * Create a resource based on the given url and title.
      */
-    public AbstractLink create(String title, String url, @Nonnull Charset charset,
+    public static AbstractLink create(String title, String url, @Nonnull Charset charset,
         @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         Objects.requireNonNull(url);
@@ -103,7 +104,7 @@ public class LinkFactory {
     /**
      * Extract a password from the given strings.
      */
-    public String getPassword(String... strings) {
+    public static String getPassword(String... strings) {
         for (String string : strings) {
             Matcher matcher = PASSWORD_REGEX.matcher(string);
             if (matcher.find()) {

@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.util.List;
 import javax.persistence.Converter;
 import wsg.tools.boot.pojo.error.AppException;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.serializer.CodeSerializer;
 import wsg.tools.internet.enums.Language;
 
@@ -54,24 +54,24 @@ public class ContainerJsonJpaConverters {
         }
     }
 
-    private abstract static class AbstractContainerJsonConverter<Container>
-        extends BaseNonNullConverter<Container, String> {
+    private static class AbstractContainerJsonConverter<C>
+        extends BaseNonNullConverter<C, String> {
 
-        private static final ObjectMapper OBJECT_MAPPER =
-            new ObjectMapper().disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
-                .registerModule(new JavaTimeModule()).registerModule(
-                new SimpleModule().addSerializer(CodeSerializer.getInstance(Language.class))
-                    .addDeserializer(
-                        Language.class,
-                        EnumDeserializers.getCodeDeserializer(String.class, Language.class)));
-        private final TypeReference<Container> type;
+        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+            .registerModule(new JavaTimeModule())
+            .registerModule(new SimpleModule()
+                .addSerializer(CodeSerializer.getInstance(Language.class))
+                .addDeserializer(Language.class,
+                    new CodeEnumDeserializer<>(String.class, Language.class)));
+        private final TypeReference<C> type;
 
-        AbstractContainerJsonConverter(TypeReference<Container> type) {
+        AbstractContainerJsonConverter(TypeReference<C> type) {
             this.type = type;
         }
 
         @Override
-        protected Container deserialize(String dbData) {
+        protected C deserialize(String dbData) {
             try {
                 return OBJECT_MAPPER.readValue(dbData, type);
             } catch (JsonProcessingException e) {
@@ -80,7 +80,7 @@ public class ContainerJsonJpaConverters {
         }
 
         @Override
-        protected String serialize(Container attribute) {
+        protected String serialize(C attribute) {
             try {
                 return OBJECT_MAPPER.writeValueAsString(attribute);
             } catch (JsonProcessingException e) {

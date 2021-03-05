@@ -20,6 +20,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1923844612718234234L;
+
     @UpdateTimestamp
     @Column(nullable = false, length = 6)
     private LocalDateTime gmtModified;

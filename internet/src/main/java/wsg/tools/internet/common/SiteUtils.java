@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -23,15 +22,20 @@ import wsg.tools.internet.base.intf.RepositoryIterator;
  * @author Kingen
  * @since 2021/3/1
  */
-@UtilityClass
-public class SiteUtils {
+public final class SiteUtils {
 
-    private final char SEPARATOR = '.';
-    private final String[] COMMON_TOP_DOMAINS = {"com", "org", "net", "gov", "edu", "co", "top",
-        "info"};
-    private final String[] REGION_TOP_DOMAINS = {"cn", "jp", "hk", "fr", "kr", "ru", "us", "uk"};
-    private final Pattern DOMAIN_REGEX = Pattern
+    private static final char SEPARATOR = '.';
+    private static final String[] COMMON_TOP_DOMAINS = {
+        "com", "org", "net", "gov", "edu", "co", "top", "info"
+    };
+    private static final String[] REGION_TOP_DOMAINS = {
+        "cn", "jp", "hk", "fr", "kr", "ru", "us", "uk"
+    };
+    private static final Pattern DOMAIN_REGEX = Pattern
         .compile("[a-z0-9][a-z0-9-]*[a-z0-9](\\.[a-z0-9][a-z0-9-]*[a-z0-9])+");
+
+    private SiteUtils() {
+    }
 
     /**
      * Splits the given domain.
@@ -39,7 +43,7 @@ public class SiteUtils {
      * @param domain a full domain like 'xxx.xxx.xxx'
      * @return pair of main domain and sub domain if exists
      */
-    public Pair<String, String> splitDomain(String domain) {
+    public static Pair<String, String> splitDomain(String domain) {
         domain = AssertUtils.requireNotBlank(domain).toLowerCase();
         RegexUtils.matchesOrElseThrow(DOMAIN_REGEX, domain);
         String[] parts = StringUtils.split(domain, SEPARATOR);
@@ -66,7 +70,8 @@ public class SiteUtils {
      *
      * @throws SiteStatusException if the status is abnormal
      */
-    public void validateStatus(Class<? extends HttpSession> clazz) throws SiteStatusException {
+    public static void validateStatus(Class<? extends HttpSession> clazz)
+        throws SiteStatusException {
         SiteStatus annotation = clazz.getAnnotation(SiteStatus.class);
         if (annotation != null) {
             SiteStatus.Status status = annotation.status();
@@ -79,7 +84,7 @@ public class SiteUtils {
     /**
      * Obtains all records by going through the given repository.
      */
-    public <T> List<T> findAll(@Nonnull IterableRepository<T> repository)
+    public static <T> List<T> findAll(@Nonnull IterableRepository<T> repository)
         throws HttpResponseException {
         RepositoryIterator<T> iterator = repository.iterator();
         List<T> all = new ArrayList<>();
@@ -93,7 +98,7 @@ public class SiteUtils {
     /**
      * Obtains all records by going through the given repository, ignoring not-found ones.
      */
-    public <T> List<T> findAllIgnoreNotfound(@Nonnull IterableRepository<T> repository)
+    public static <T> List<T> findAllIgnoreNotfound(@Nonnull IterableRepository<T> repository)
         throws HttpResponseException {
         RepositoryIterator<T> iterator = repository.iterator();
         List<T> all = new ArrayList<>();

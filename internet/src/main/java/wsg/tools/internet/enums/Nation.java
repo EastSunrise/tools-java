@@ -46,7 +46,7 @@ public enum Nation implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     YAM("Yamato", "大和民族", "大和族", "大和", "和族", "やまとみんぞく"),
     KOR("Korean nationality", "韩民族"),
     MAL("Ethnic Malay", "马来族", "巫族"),
-    MIXED("Mixed", "混血");
+    MIX("Mixed", "混血");
 
     private final String text;
     private final String title;

@@ -13,12 +13,18 @@ public enum Mosaic implements TitleSupplier {
     /**
      * If the adult video is covered with mosaic or not.
      */
-    COVERED("有码"), UNCOVERED("无码");
+    COVERED(true, "有码"), UNCOVERED(false, "无码");
 
+    private final boolean covered;
     private final String title;
 
-    Mosaic(String title) {
+    Mosaic(boolean covered, String title) {
+        this.covered = covered;
         this.title = title;
+    }
+
+    public boolean isCovered() {
+        return covered;
     }
 
     @Override

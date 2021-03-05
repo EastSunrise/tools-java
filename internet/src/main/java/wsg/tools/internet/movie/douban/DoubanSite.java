@@ -32,7 +32,7 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -70,8 +70,8 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
     protected static final int MAX_COUNT_ONCE = 100;
 
     protected static final ObjectMapper MAPPER = new ObjectMapper()
-        .registerModule(new SimpleModule().addDeserializer(MovieGenre.class,
-            EnumDeserializers.getTitleDeserializer(MovieGenre.class)))
+        .registerModule(new SimpleModule()
+            .addDeserializer(MovieGenre.class, new TitleEnumDeserializer<>(MovieGenre.class)))
         .registerModule(new JavaTimeModule().addDeserializer(LocalDateTime.class,
             new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER)));
 

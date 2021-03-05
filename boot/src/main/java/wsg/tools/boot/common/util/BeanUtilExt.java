@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
@@ -24,14 +23,13 @@ import wsg.tools.common.constant.Constants;
  * @author Kingen
  * @since 2020/7/12
  */
-@UtilityClass
 public class BeanUtilExt {
 
-    private final String PROPERTY_NAME_CLASS = "class";
-    private final Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> COPIERS =
+    private static final String PROPERTY_NAME_CLASS = "class";
+    private static final Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> COPIERS =
         new ConcurrentHashMap<>(Constants.DEFAULT_MAP_CAPACITY);
 
-    public <From, To> To convert(From from, Class<To> toClass) {
+    public static <From, To> To convert(From from, Class<To> toClass) {
         if (null == from) {
             return null;
         }
@@ -47,7 +45,7 @@ public class BeanUtilExt {
      * its value of the original object is null. It means that properties of the destination object
      * are more important.
      */
-    public void copyPropertiesExceptNull(Object dest, Object orig) {
+    public static void copyPropertiesExceptNull(Object dest, Object orig) {
         copyPropertiesExceptNull(dest, orig, false, true);
     }
 
@@ -57,7 +55,7 @@ public class BeanUtilExt {
      * @param replaced   whether replace the non-null values of destination while copying
      * @param ignoreNull whether ignore null-value properties of the original object
      */
-    public void copyPropertiesExceptNull(Object dest, Object orig, boolean replaced,
+    public static void copyPropertiesExceptNull(Object dest, Object orig, boolean replaced,
         boolean ignoreNull) {
         Objects.requireNonNull(dest, "Can't copy properties to a null object.");
         Objects.requireNonNull(orig, "Can't copy properties from a null object.");
@@ -80,30 +78,10 @@ public class BeanUtilExt {
     }
 
     /**
-     * Get all properties and values of the given object.
-     */
-    public Map<String, Object> convertToMap(Object o, boolean ignoreNull) {
-        Objects.requireNonNull(o, "Can't convert a null object to map.");
-        Map<String, Object> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-        for (PropertyDescriptor descriptor : getDescriptorsExceptClass(o.getClass(), true, false)) {
-            Object value;
-            try {
-                value = descriptor.getReadMethod().invoke(o);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new AppException(e);
-            }
-            if (!ignoreNull || null != value) {
-                map.put(descriptor.getName(), value);
-            }
-        }
-        return map;
-    }
-
-    /**
      * Get common properties between the two types. Also, the property has to be writeable for
      * destination object.
      */
-    private List<PropertyCopier> getPropertyCopiers(Class<?> dest, Class<?> orig) {
+    private static List<PropertyCopier> getPropertyCopiers(Class<?> dest, Class<?> orig) {
         Pair<Class<?>, Class<?>> key = Pair.of(dest, orig);
         List<PropertyCopier> copiers = COPIERS.get(key);
         if (null == copiers) {
@@ -125,7 +103,8 @@ public class BeanUtilExt {
         return copiers;
     }
 
-    private List<PropertyDescriptor> getDescriptorsExceptClass(Class<?> type, boolean readable,
+    private static List<PropertyDescriptor> getDescriptorsExceptClass(Class<?> type,
+        boolean readable,
         boolean writeable) {
         return Arrays.stream(BeanUtils.getPropertyDescriptors(type))
             .filter(descriptor -> !PROPERTY_NAME_CLASS.equals(descriptor.getName()))
@@ -134,7 +113,27 @@ public class BeanUtilExt {
             .collect(Collectors.toList());
     }
 
-    private class PropertyCopier {
+    /**
+     * Get all properties and values of the given object.
+     */
+    public static Map<String, Object> convertToMap(Object o, boolean ignoreNull) {
+        Objects.requireNonNull(o, "Can't convert a null object to map.");
+        Map<String, Object> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        for (PropertyDescriptor descriptor : getDescriptorsExceptClass(o.getClass(), true, false)) {
+            Object value;
+            try {
+                value = descriptor.getReadMethod().invoke(o);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new AppException(e);
+            }
+            if (!ignoreNull || null != value) {
+                map.put(descriptor.getName(), value);
+            }
+        }
+        return map;
+    }
+
+    private static class PropertyCopier {
 
         private final Method writeMethod;
         private final Method readMethod;

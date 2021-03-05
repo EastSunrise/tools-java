@@ -1,6 +1,5 @@
 package wsg.tools.internet.base.impl;
 
-import lombok.experimental.UtilityClass;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import wsg.tools.internet.base.intf.ContentHandler;
@@ -11,15 +10,18 @@ import wsg.tools.internet.base.intf.ContentHandler;
  * @author Kingen
  * @since 2021/2/11
  */
-@UtilityClass
-public class ContentHandlers {
+public final class ContentHandlers {
 
     /**
      * Parse the content to a {@link Document}.
      */
-    public final ContentHandler<Document> DOCUMENT_CONTENT_HANDLER = new DocumentContentHandler();
+    public static final ContentHandler<Document> DOCUMENT_CONTENT_HANDLER =
+        new DocumentContentHandler();
 
-    private class DocumentContentHandler implements ContentHandler<Document> {
+    private ContentHandlers() {
+    }
+
+    private static class DocumentContentHandler implements ContentHandler<Document> {
 
         @Override
         public Document handleContent(String content) {

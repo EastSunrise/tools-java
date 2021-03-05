@@ -16,7 +16,7 @@ import wsg.tools.internet.movie.common.enums.DoubanMark;
  * @author Kingen
  * @since 2020/7/13
  */
-public class CodeEnumJpaConverters {
+public final class CodeEnumJpaConverters {
 
     @Converter(autoApply = true)
     public static class MarkEnumConverter extends CodeConverter<DoubanMark, MarkEnumAdapter> {

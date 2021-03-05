@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
@@ -41,13 +41,12 @@ public class ApiDoubanSite extends DoubanSite {
     static {
         MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
             .registerModule(new SimpleModule()
-                .addDeserializer(
-                    Language.class,
-                    EnumDeserializers.getAkaDeserializer(String.class, Language.class))
-                .addDeserializer(
-                    Region.class, EnumDeserializers.getAkaDeserializer(String.class, Region.class))
+                .addDeserializer(Language.class,
+                    new AkaEnumDeserializer<>(String.class, Language.class))
+                .addDeserializer(Region.class,
+                    new AkaEnumDeserializer<>(String.class, Region.class))
                 .addDeserializer(DoubanSubtype.class,
-                    EnumDeserializers.getAkaDeserializer(String.class, DoubanSubtype.class)));
+                    new AkaEnumDeserializer<>(String.class, DoubanSubtype.class)));
     }
 
     private final String apikey;
@@ -58,7 +57,8 @@ public class ApiDoubanSite extends DoubanSite {
     }
 
     /**
-     * This method can't obtain x-rated subjects probably which are restricted to be accessed only after logging in.
+     * This method can't obtain x-rated subjects probably which are restricted to be accessed only
+     * after logging in.
      */
     public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
         return getObject(apiBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
@@ -76,14 +76,16 @@ public class ApiDoubanSite extends DoubanSite {
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws HttpResponseException {
-        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class, SnapshotStrategy.always());
+        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class,
+            SnapshotStrategy.always());
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws HttpResponseException {
-        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class, SnapshotStrategy.always());
+        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class,
+            SnapshotStrategy.always());
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
@@ -109,14 +111,16 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder) throws HttpResponseException {
+    private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder)
+        throws HttpResponseException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
         builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
             builder.addParameter("start", String.valueOf(start));
-            ChartResult chartResult = getObject(builder, ChartResult.class, SnapshotStrategy.always());
+            ChartResult chartResult = getObject(builder, ChartResult.class,
+                SnapshotStrategy.always());
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -130,24 +134,34 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * Only include official photos.
      */
-    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId) throws HttpResponseException {
-        return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/photos", subjectId);
+    public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId)
+        throws HttpResponseException {
+        return getApiContent(new TypeReference<>() {
+        }, "/v2/movie/subject/%d/photos", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId) throws HttpResponseException {
-        return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/reviews", subjectId);
+    public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId)
+        throws HttpResponseException {
+        return getApiContent(new TypeReference<>() {
+        }, "/v2/movie/subject/%d/reviews", subjectId);
     }
 
-    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId) throws HttpResponseException {
-        return getApiContent(new TypeReference<>() {}, "/v2/movie/subject/%d/comments", subjectId);
+    public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId)
+        throws HttpResponseException {
+        return getApiContent(new TypeReference<>() {
+        }, "/v2/movie/subject/%d/comments", subjectId);
     }
 
-    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId) throws HttpResponseException {
-        return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/photos", celebrityId);
+    public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId)
+        throws HttpResponseException {
+        return getApiContent(new TypeReference<>() {
+        }, "/v2/movie/celebrity/%d/photos", celebrityId);
     }
 
-    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId) throws HttpResponseException {
-        return getApiContent(new TypeReference<>() {}, "/v2/movie/celebrity/%d/works", celebrityId);
+    public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId)
+        throws HttpResponseException {
+        return getApiContent(new TypeReference<>() {
+        }, "/v2/movie/celebrity/%d/works", celebrityId);
     }
 
     /**

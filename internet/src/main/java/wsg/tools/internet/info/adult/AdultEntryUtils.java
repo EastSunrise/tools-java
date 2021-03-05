@@ -10,7 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.lang.EnumUtilExt;
@@ -23,19 +22,21 @@ import wsg.tools.internet.info.adult.common.Mosaic;
  * @author Kingen
  * @since 2021/3/3
  */
-@UtilityClass
-public class AdultEntryUtils {
+public final class AdultEntryUtils {
 
-    private final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d+)?(min|分|分钟)");
-    private final Pattern RELEASE_REGEX = Pattern.compile(
+    private static final Pattern RELEASE_REGEX = Pattern.compile(
         "(月額▶)?((?<y>\\d{4})([-/])(?<m>\\d{2})\\4(?<d>\\d{2})|--)( \\((DVD|VHS|BD) (セル版|レンタル版|セルorレンタル|记载无し)?\\))?");
+    private static final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d+)?(min|分|分钟)");
+
+    private AdultEntryUtils() {
+    }
 
     /**
      * Constructs an adult entry with all properties based on the given map except cover.
      *
      * @return the adult entry, {@code null} if the code is unavailable
      */
-    public AdultEntry getAdultEntry(@Nonnull Map<String, String> map, @Nonnull String cover,
+    public static AdultEntry getAdultEntry(@Nonnull Map<String, String> map, @Nonnull String cover,
         String separatorChars) {
         String code = getString(map, "品番", "番号");
         if (code == null) {
@@ -50,7 +51,7 @@ public class AdultEntryUtils {
      *
      * @return the adult entry
      */
-    public AdultEntry getAdultEntry(@Nonnull Map<String, String> map, @Nonnull String code,
+    public static AdultEntry getAdultEntry(@Nonnull Map<String, String> map, @Nonnull String code,
         @Nonnull String cover,
         String separatorChars) {
         String title = getString(map, "名称");
@@ -97,12 +98,13 @@ public class AdultEntryUtils {
             distributor, series, tags);
     }
 
-    public List<String> getStringList(@Nonnull Map<String, String> map, String separatorChars,
+    public static List<String> getStringList(@Nonnull Map<String, String> map,
+        String separatorChars,
         String... keys) {
         return getValues(map, Function.identity(), separatorChars, keys);
     }
 
-    public <T> List<T> getValues(@Nonnull Map<String, String> map,
+    public static <T> List<T> getValues(@Nonnull Map<String, String> map,
         @Nonnull Function<? super String, T> function,
         String separatorChars, String... keys) {
         return getValue(map,
@@ -110,11 +112,11 @@ public class AdultEntryUtils {
                 .collect(Collectors.toList()), keys);
     }
 
-    public String getString(@Nonnull Map<String, String> map, String... keys) {
+    public static String getString(@Nonnull Map<String, String> map, String... keys) {
         return getValue(map, Function.identity(), keys);
     }
 
-    public <T> T getValueIfMatched(Map<String, String> map, Pattern pattern,
+    public static <T> T getValueIfMatched(Map<String, String> map, Pattern pattern,
         Function<? super Matcher, T> function,
         String... keys) {
         return getValue(map, text -> {
@@ -135,7 +137,7 @@ public class AdultEntryUtils {
      * @param <T>      type of returned value
      * @return target value, or {@code null} if none key is found in the map
      */
-    public <T> T getValue(@Nonnull Map<String, String> map,
+    public static <T> T getValue(@Nonnull Map<String, String> map,
         @Nonnull Function<? super String, T> function,
         String... keys) {
         for (String key : keys) {

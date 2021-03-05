@@ -3,7 +3,6 @@ package wsg.tools.common.util.regex;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
 
 /**
  * Utility for regex.
@@ -11,8 +10,10 @@ import lombok.experimental.UtilityClass;
  * @author Kingen
  * @since 2020/10/29
  */
-@UtilityClass
-public class RegexUtils {
+public final class RegexUtils {
+
+    private RegexUtils() {
+    }
 
     /**
      * Check if the text is full-matched for the pattern.
@@ -20,7 +21,7 @@ public class RegexUtils {
      * @return an matcher if full-matched.
      * @throws IllegalArgumentException if not full-matched
      */
-    public Matcher matchesOrElseThrow(Pattern pattern, String text) {
+    public static Matcher matchesOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.matches()) {
             return matcher;
@@ -33,7 +34,7 @@ public class RegexUtils {
      * If the pattern is found in the text, performs the given action with the value, otherwise does
      * nothing.
      */
-    public void ifFind(Pattern pattern, String text, Consumer<Matcher> consumer) {
+    public static void ifFind(Pattern pattern, String text, Consumer<Matcher> consumer) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             consumer.accept(matcher);
@@ -46,7 +47,7 @@ public class RegexUtils {
      * @return an matcher if found
      * @throws IllegalArgumentException if not found
      */
-    public Matcher findOrElseThrow(Pattern pattern, String text) {
+    public static Matcher findOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher;
@@ -61,7 +62,7 @@ public class RegexUtils {
      * @return an matcher if starting with
      * @throws IllegalArgumentException if not start
      */
-    public Matcher lookingAtOrElseThrow(Pattern pattern, String text) {
+    public static Matcher lookingAtOrElseThrow(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.lookingAt()) {
             return matcher;

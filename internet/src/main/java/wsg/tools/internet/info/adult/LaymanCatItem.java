@@ -27,14 +27,12 @@ public class LaymanCatItem implements Identifier<String>, UpdateDatetimeSupplier
     private final String next;
 
     LaymanCatItem(String id, AdultEntry entry, String author, LocalDateTime published,
-        LocalDateTime updated,
-        String next) {
+        LocalDateTime updated, String next) {
         this(id, entry, author, published, updated, null, next);
     }
 
     LaymanCatItem(String id, AdultEntry entry, String author, LocalDateTime published,
-        LocalDateTime updated,
-        String description, String next) {
+        LocalDateTime updated, String description, String next) {
         this.id = AssertUtils.requireNotBlank(id);
         this.entry = Objects.requireNonNull(entry);
         this.author = AssertUtils.requireNotBlank(author);

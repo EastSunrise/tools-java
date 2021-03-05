@@ -2,7 +2,6 @@ package wsg.tools.common.lang;
 
 import java.util.Set;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -11,24 +10,26 @@ import org.apache.commons.lang3.StringUtils;
  * @author Kingen
  * @since 2020/7/18
  */
-@UtilityClass
-public class StringUtilsExt {
+public final class StringUtilsExt {
 
     /**
      * Chars which aren't permit to name files on Windows.
      */
-    private final char[] NOT_PERMIT_CHARS_FOR_FILENAME = {':', '*', '?', '"', '<', '>', '|'};
-    private final Pattern CHINESE_REGEX = Pattern.compile("[\u4E00-\u9FBF]");
+    private static final char[] NOT_PERMIT_CHARS_FOR_FILENAME = {':', '*', '?', '"', '<', '>', '|'};
+    private static final Pattern CHINESE_REGEX = Pattern.compile("[\u4E00-\u9FBF]");
     /**
      * Special chars which need to escape in the patterns.
      */
-    private final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
-    private final String[] UNITS = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"};
+    private static final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
+    private static final String[] UNITS = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"};
+
+    private StringUtilsExt() {
+    }
 
     /**
      * Encode a string as a pattern with special chars escaped.
      */
-    public String encodeAsPattern(String str) {
+    public static String encodeAsPattern(String str) {
         if (str == null) {
             return null;
         }
@@ -42,7 +43,7 @@ public class StringUtilsExt {
         return builder.toString();
     }
 
-    public String chineseNumeric(int num) {
+    public static String chineseNumeric(int num) {
         if (num < 0) {
             throw new IllegalArgumentException("Number must be positive.");
         }
@@ -71,7 +72,7 @@ public class StringUtilsExt {
     /**
      * Check if the string contain a Chinese character.
      */
-    public boolean hasChinese(String text) {
+    public static boolean hasChinese(String text) {
         if (StringUtils.isBlank(text)) {
             return false;
         }
@@ -85,7 +86,7 @@ public class StringUtilsExt {
      *
      * @param filename not an absolute path
      */
-    public String toFilename(String filename) {
+    public static String toFilename(String filename) {
         String result = filename;
         for (char sign : NOT_PERMIT_CHARS_FOR_FILENAME) {
             result = StringUtils.replace(result, String.valueOf(sign), "#" + ((int) sign));

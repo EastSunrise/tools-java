@@ -9,18 +9,20 @@ import wsg.tools.internet.base.intf.RepositoryIterator;
 /**
  * An implementation of {@link RepositoryIterator}.
  * <p>
- * The iteration of the iterator will go on with that of the {@link #idIterator}, the iterator over identifiers.
+ * The iteration of the iterator will go on with that of the {@link #idIterator}, the iterator over
+ * identifiers.
  *
  * @author Kingen
  * @see IdentifiedIterableRepositoryImpl
  * @since 2021/3/2
  */
-public class IdentifiedRepositoryIterator<ID, T> implements RepositoryIterator<T> {
+class IdentifiedRepositoryIterator<ID, T> implements RepositoryIterator<T> {
 
     private final Repository<ID, T> repository;
     private final Iterator<ID> idIterator;
 
-    public IdentifiedRepositoryIterator(@Nonnull Repository<ID, T> repository, @Nonnull Iterator<ID> idIterator) {
+    IdentifiedRepositoryIterator(@Nonnull Repository<ID, T> repository,
+        @Nonnull Iterator<ID> idIterator) {
         this.repository = repository;
         this.idIterator = idIterator;
     }

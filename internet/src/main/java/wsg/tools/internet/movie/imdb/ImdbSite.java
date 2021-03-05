@@ -21,7 +21,8 @@ import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
+import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -64,13 +65,11 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .setLocale(Locale.ENGLISH)
             .registerModule(new SimpleModule()
-                .addDeserializer(MovieGenre.class,
-                    EnumDeserializers.getTextDeserializer(MovieGenre.class))
-                .addDeserializer(
-                    ImdbRating.class,
-                    EnumDeserializers.getAkaDeserializer(String.class, ImdbRating.class))
+                .addDeserializer(MovieGenre.class, new TextEnumDeserializer<>(MovieGenre.class))
+                .addDeserializer(ImdbRating.class,
+                    new AkaEnumDeserializer<>(String.class, ImdbRating.class))
                 .addDeserializer(Language.class,
-                    EnumDeserializers.getAkaDeserializer(String.class, Language.class)))
+                    new AkaEnumDeserializer<>(String.class, Language.class)))
             .registerModule(new JavaTimeModule());
 
     public ImdbSite() {
@@ -82,7 +81,9 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.never());
         ImdbTitle title;
         try {
-            title = MAPPER.readValue(document.selectFirst("script[type=application/ld+json]").html(), ImdbTitle.class);
+            title = MAPPER
+                .readValue(document.selectFirst("script[type=application/ld+json]").html(),
+                    ImdbTitle.class);
         } catch (JsonProcessingException e) {
             throw AssertUtils.runtimeException(e);
         }
@@ -96,7 +97,8 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         }
 
         if (title instanceof ImdbMovie) {
-            Matcher matcher = RegexUtils.matchesOrElseThrow(MOVIE_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils
+                .matchesOrElseThrow(MOVIE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
                 ((ImdbMovie) title).setYear(Integer.parseInt(year));
@@ -110,7 +112,8 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
                     end == null ? null : Integer.parseInt(end)));
             ((ImdbSeries) title).setEpisodes(getEpisodes(tt));
         } else if (title instanceof ImdbEpisode) {
-            Matcher matcher = RegexUtils.matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
+            Matcher matcher = RegexUtils
+                .matchesOrElseThrow(EPISODE_PAGE_TITLE_REGEX, document.title());
             String year = matcher.group("year");
             if (year != null) {
                 ((ImdbEpisode) title).setYear(Integer.parseInt(year));

@@ -16,7 +16,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.util.EntityUtils;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
+import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
@@ -47,16 +48,13 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         .setLocale(Locale.ENGLISH)
         .registerModule(new SimpleModule()
             .addDeserializer(
-                Language.class, EnumDeserializers.getAkaDeserializer(String.class, Language.class))
+                Language.class, new AkaEnumDeserializer<>(String.class, Language.class))
             .addDeserializer(
-                Region.class, EnumDeserializers.getAkaDeserializer(String.class, Region.class))
-            .addDeserializer(
-                ImdbRating.class,
-                EnumDeserializers.getAkaDeserializer(String.class, ImdbRating.class))
-            .addDeserializer(MovieGenre.class,
-                EnumDeserializers.getTextDeserializer(MovieGenre.class))
-            .addDeserializer(RatingSource.class,
-                EnumDeserializers.getTextDeserializer(RatingSource.class)))
+                Region.class, new AkaEnumDeserializer<>(String.class, Region.class))
+            .addDeserializer(ImdbRating.class,
+                new AkaEnumDeserializer<>(String.class, ImdbRating.class))
+            .addDeserializer(MovieGenre.class, new TextEnumDeserializer<>(MovieGenre.class))
+            .addDeserializer(RatingSource.class, new TextEnumDeserializer<>(RatingSource.class)))
         .registerModule(new JavaTimeModule())
         .addHandler(new CommaSeparatedNumberDeserializationProblemHandler());
 
@@ -95,7 +93,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      *
      * @param season start with 1
      */
-    public OmdbEpisode episode(String seriesId, int season, int episode) throws HttpResponseException {
+    public OmdbEpisode episode(String seriesId, int season, int episode)
+        throws HttpResponseException {
         return getObject(
             builder0("/").addParameter("i", seriesId).addParameter("season", String.valueOf(season))
                 .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);

@@ -18,12 +18,13 @@ import wsg.tools.internet.common.NextSupplier;
  * @see IterableRepositoryImpl
  * @since 2021/3/2
  */
-public class RepositoryIteratorImpl<ID, T extends NextSupplier<ID>> implements RepositoryIterator<T> {
+public class RepositoryIteratorImpl<ID, T extends NextSupplier<ID>> implements
+    RepositoryIterator<T> {
 
     private final Repository<ID, T> repository;
     private ID nextId;
 
-    public RepositoryIteratorImpl(Repository<ID, T> repository, ID nextId) {
+    RepositoryIteratorImpl(Repository<ID, T> repository, ID nextId) {
         this.repository = repository;
         this.nextId = nextId;
     }
@@ -36,7 +37,7 @@ public class RepositoryIteratorImpl<ID, T extends NextSupplier<ID>> implements R
     @Override
     public T next() throws HttpResponseException {
         if (!hasNext()) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Doesn't have next id.");
         }
         T t = repository.findById(nextId);
         nextId = t.next();
