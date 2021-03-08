@@ -28,7 +28,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
 
@@ -77,12 +77,12 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         Elements items = editForm.select(".item");
         for (Element item : items) {
             if (item.hasClass("items")) {
-                Element input = item.selectFirst(CssSelector.TAG_INPUT);
-                fields.put(input.attr(CssSelector.ATTR_NAME), input);
+                Element input = item.selectFirst(CssSelectors.TAG_INPUT);
+                fields.put(input.attr(CssSelectors.ATTR_NAME), input);
                 continue;
             }
             Elements children = item.selectFirst(".choices").children();
-            fields.put(children.get(2).attr(CssSelector.ATTR_NAME), children.get(1));
+            fields.put(children.get(2).attr(CssSelectors.ATTR_NAME), children.get(1));
         }
         int year = Integer.parseInt(fields.get("year").val());
         Duration duration = null;
@@ -91,7 +91,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             duration = Duration.ofMinutes(Integer.parseInt(runtime));
         }
 
-        Elements lis = document.selectFirst("div.item_r").select(CssSelector.TAG_LI);
+        Elements lis = document.selectFirst("div.item_r").select(CssSelectors.TAG_LI);
         AssertUtils.requireRange(lis.size(), 4, 6);
         ImdbTitle imdbTitle;
         final int size = 4;
@@ -101,7 +101,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             movie.setDuration(duration);
             imdbTitle = movie;
         } else {
-            String href = lis.first().selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+            String href = lis.first().selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
             String seriesId = RegexUtils.matchesOrElseThrow(EPISODE_LIST_REGEX, href).group("id");
             if (seriesId.equals(imdbId)) {
                 ImdbSeries series = new ImdbSeries();
@@ -138,7 +138,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             builder0("/title/%s/episodelist", seriesId).addParameter("season", "1"),
             SnapshotStrategy.never());
         int seasonsCount =
-            document.selectFirst("select#ep_season").select(CssSelector.TAG_OPTION).size() - 1;
+            document.selectFirst("select#ep_season").select(CssSelectors.TAG_OPTION).size() - 1;
 
         List<String[]> result = new ArrayList<>();
         int currentSeason = 1;
@@ -148,7 +148,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             while (true) {
                 Elements items = document.select("div.s_item");
                 for (Element item : items) {
-                    String href = item.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+                    String href = item.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
                     String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group("id");
                     String text = item.selectFirst("span.s2").text();
                     int episode =
@@ -160,14 +160,14 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                 if (pagination == null) {
                     break;
                 }
-                Element nextPage = pagination.select(CssSelector.TAG_LI).last();
+                Element nextPage = pagination.select(CssSelectors.TAG_LI).last();
                 if (nextPage.hasClass("disabled")) {
                     break;
                 }
                 page++;
                 document = getDocument(builder0("/title/%s/episodelist", seriesId)
-                        .addParameter("season", String.valueOf(currentSeason))
-                        .addParameter("page", String.valueOf(page)),
+                        .addParameter("season", currentSeason)
+                        .addParameter("page", page),
                     SnapshotStrategy.never());
             }
             if (map.isEmpty()) {
@@ -184,7 +184,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             }
             document = getDocument(
                 builder0("/title/%s/episodelist", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)),
+                    .addParameter("season", currentSeason),
                 SnapshotStrategy.never());
         }
         return result;

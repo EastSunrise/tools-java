@@ -11,6 +11,7 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +29,7 @@ import wsg.tools.common.lang.Identifier;
 @Getter
 @Setter
 @Entity
-@Table(name = "adult_video")
+@Table(name = "adult_video", indexes = @Index(name = "adult_video_repository", columnList = "repository"))
 public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
 
     private static final long serialVersionUID = 718083190465191530L;
@@ -37,7 +38,7 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(length = 15)
     private String id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 63)
     private String cover;
 
     @Column(length = 15)
@@ -58,13 +59,18 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(length = 15)
     private String distributor;
 
-    @Column(length = 31)
+    @Column(length = 63)
     private String series;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "adult_video_tag")
     @Column(name = "tag", nullable = false, length = 31)
     private List<String> tags;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "adult_video_image")
+    @Column(name = "image", nullable = false, length = 63)
+    private List<String> images;
 
     @Embedded
     private Source source;

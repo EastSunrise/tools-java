@@ -27,9 +27,13 @@ public class Failure extends IdentityEntity {
     @Column(nullable = false)
     private String reason;
 
+    @Column(nullable = false)
+    private Boolean solved;
+
     public Failure(Source source, String reason) {
         this.source = source;
         this.reason = reason;
+        this.solved = false;
     }
 
     public Failure() {

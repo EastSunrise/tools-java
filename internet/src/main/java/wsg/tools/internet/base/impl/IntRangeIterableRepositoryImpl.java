@@ -36,7 +36,7 @@ public class IntRangeIterableRepositoryImpl<T> implements IterableRepository<T> 
 
     @Override
     public RepositoryIterator<T> iterator() {
-        return new IdentifiedRepositoryIterator<>(repository,
+        return new IdentifiedIteratorImpl<>(repository,
             IntStream.rangeClosed(minSupplier.get(), maxSupplier.get()).iterator());
     }
 }

@@ -7,7 +7,7 @@ import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
 
 /**
- * Base implementation of {@link RepositoryIterator}.
+ * An implementation of {@link RepositoryIterator}.
  * <p>
  * Each node of the iterator contains an {@link #nextId}, the identifier of next node, which can be
  * used to find next record by the {@link #repository}.
@@ -15,18 +15,18 @@ import wsg.tools.internet.common.NextSupplier;
  * @param <T> type of records which is required to implement {@link NextSupplier} to supply the
  *            identifier of next record.
  * @author Kingen
- * @see IterableRepositoryImpl
+ * @see LinkedRepositoryImpl
  * @since 2021/3/2
  */
-public class RepositoryIteratorImpl<ID, T extends NextSupplier<ID>> implements
+public class LinkedIteratorImpl<ID, T extends NextSupplier<ID>> implements
     RepositoryIterator<T> {
 
     private final Repository<ID, T> repository;
     private ID nextId;
 
-    RepositoryIteratorImpl(Repository<ID, T> repository, ID nextId) {
+    LinkedIteratorImpl(Repository<ID, T> repository, ID first) {
         this.repository = repository;
-        this.nextId = nextId;
+        this.nextId = first;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class RepositoryIteratorImpl<ID, T extends NextSupplier<ID>> implements
             throw new NoSuchElementException("Doesn't have next id.");
         }
         T t = repository.findById(nextId);
-        nextId = t.next();
+        nextId = t.nextId();
         return t;
     }
 }

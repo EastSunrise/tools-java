@@ -8,28 +8,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.common.util.MapUtilsExt;
+import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IdentifiedIterableRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.info.adult.AdultEntry;
 import wsg.tools.internet.info.adult.AdultEntryUtils;
 
@@ -40,157 +39,163 @@ import wsg.tools.internet.info.adult.AdultEntryUtils;
  */
 public final class MidnightSite extends BaseSite {
 
-    private static final String HASH = "#";
     private static final String IMG_HOST = "https://syqpic.hantangrx.com";
     private static final String MG_STAGE_HOST = "https://image.mgstage.com/";
     private static final Pattern IMG_FILE_HREF_REGEX =
         Pattern.compile("/d/file/\\d{4}-\\d{2}-\\d{2}/[a-z0-9]{32}\\.(jpg|gif)");
-    private static final Map<MidnightType, Pattern> ITEM_URL_REGEXES =
-        Arrays.stream(MidnightType.values()).collect(Collectors.toMap(type -> type,
-            type -> Pattern
-                .compile("https://www\\.shenyequ\\.com/" + type.getText() + "/(?<id>\\d+).html")));
+    private static final Map<MidnightType, Pattern> ITEM_URL_REGEXES = Arrays
+        .stream(MidnightType.values()).collect(Collectors.toMap(type -> type, type -> Pattern
+            .compile("https://www\\.shenyequ\\.com/" + type.getText() + "/(?<id>\\d+).html")));
+    private static final String NAV_NAVIGATION = "nav.navigation";
 
     public MidnightSite() {
         super("Midnight", new BasicHttpSession("shenyequ.com"));
     }
 
-    public IterableRepository<MidnightWrapper<MidnightActress>> getActressRepository()
+    /**
+     * Obtains the page of simple items by the given type.
+     *
+     * @return the page of the simple items
+     */
+    public MidnightPageResult getSimpleItemPage(MidnightType type, MidnightPageRequest pageRequest)
         throws HttpResponseException {
-        return new IdentifiedIterableRepositoryImpl<>(this::findActress,
-            getIdentifierIterator(MidnightType.ACTRESS));
+        RequestBuilder builder = builder0("/e/action/ListInfo.php")
+            .addParameter("page", pageRequest.getCurrent())
+            .addParameter("classid", type.getCode())
+            .addParameter("line", pageRequest.getPageSize())
+            .addParameter("tempid", "11")
+            .addParameter("orderby", pageRequest.getOrderBy().getText())
+            .addParameter("myorder", 0);
+        Document document = getDocument(builder, SnapshotStrategy.always());
+        List<MidnightSimpleItem> items = new ArrayList<>();
+        Elements lis = document.selectFirst("div[role=main]").select(CssSelectors.TAG_LI);
+        for (Element li : lis) {
+            Element a = li.selectFirst(CssSelectors.TAG_A);
+            String href = a.attr(CssSelectors.ATTR_HREF);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(type), href);
+            int id = Integer.parseInt(matcher.group("id"));
+            String title = a.attr(CssSelectors.ATTR_TITLE);
+            String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
+            LocalDateTime release = DocumentUtils.parseInterval(time);
+            items.add(new MidnightSimpleItem(id, title, release));
+        }
+        Element nav = document.selectFirst(NAV_NAVIGATION);
+        int total = Integer.parseInt(nav.selectFirst("a[title=总数]").selectFirst("b").text());
+        return new MidnightPageResult(items, pageRequest, total);
     }
 
-    public IterableRepository<MidnightWrapper<MidnightAlbum>> getAlbumRepository()
-        throws HttpResponseException {
-        return new IdentifiedIterableRepositoryImpl<>(this::findAlbum,
-            getIdentifierIterator(MidnightType.ALBUM));
-    }
-
-    public IterableRepository<MidnightWrapper<MidnightEntry>> getEntryRepository(
-        @Nonnull MidnightEntryType type)
-        throws HttpResponseException {
-        return new IdentifiedIterableRepositoryImpl<>(integer -> findAdultEntry(type, integer),
-            getIdentifierIterator(type.getType()));
-    }
-
-    public MidnightWrapper<MidnightActress> findActress(int id) throws HttpResponseException {
-        return initWrapper(MidnightType.ACTRESS, id, (contents, title) -> {
-            MidnightActress actress = new MidnightActress(title);
-            Map<String, String> works = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-            for (Element content : contents) {
-                Element current =
-                    content.selectFirst("nav.navigation").previousElementSibling()
-                        .previousElementSibling();
-                while (current != null) {
-                    Elements elements = current.select("img");
-                    for (Element img : elements) {
-                        String code = img.attr("alt").strip();
-                        if (code.endsWith(".jpg")) {
-                            code = code.substring(0, code.length() - 4);
-                        }
-                        Matcher matcher = IMG_FILE_HREF_REGEX
-                            .matcher(img.attr(CssSelector.ATTR_SRC));
-                        if (StringUtils.isNotBlank(code)) {
-                            works.put(code, matcher.find() ? IMG_HOST + matcher.group() : null);
-                        }
+    public MidnightActress findActress(int id) throws HttpResponseException {
+        Pair<MidnightActress, List<Element>> pair =
+            initItem(MidnightType.ACTRESS, id, MidnightActress::new);
+        Map<String, String> works = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+        for (Element content : pair.getRight()) {
+            Element current =
+                content.selectFirst(NAV_NAVIGATION).previousElementSibling()
+                    .previousElementSibling();
+            while (current != null) {
+                Elements elements = current.select(CssSelectors.TAG_IMG);
+                for (Element img : elements) {
+                    String code = img.attr(CssSelectors.ATTR_ALT).strip();
+                    if (code.endsWith(".jpg")) {
+                        code = code.substring(0, code.length() - 4);
                     }
-                    current = current.previousElementSibling();
+                    Matcher matcher = IMG_FILE_HREF_REGEX
+                        .matcher(img.attr(CssSelectors.ATTR_SRC));
+                    if (StringUtils.isNotBlank(code)) {
+                        works.put(code, matcher.find() ? IMG_HOST + matcher.group() : null);
+                    }
                 }
+                current = current.previousElementSibling();
             }
-            actress.setWorks(works);
-            return actress;
-        });
+        }
+        MidnightActress actress = pair.getLeft();
+        actress.setWorks(works);
+        return actress;
     }
 
-    public MidnightWrapper<MidnightAlbum> findAlbum(int id) throws HttpResponseException {
-        return initWrapper(MidnightType.ALBUM, id, (contents, title) -> {
-            MidnightAlbum album = new MidnightAlbum(title);
-            album.setImages(getImages(contents));
-            return album;
-        });
+    public MidnightAlbum findAlbum(int id) throws HttpResponseException {
+        Pair<MidnightAlbum, List<Element>> pair =
+            initItem(MidnightType.ALBUM, id, MidnightAlbum::new);
+        MidnightAlbum album = pair.getLeft();
+        album.setImages(getImages(pair.getRight()));
+        return album;
     }
 
-    public MidnightWrapper<MidnightEntry> findAdultEntry(@Nonnull MidnightEntryType type, int id)
+    public MidnightEntry findAdultEntry(@Nonnull MidnightEntryType type, int id)
         throws HttpResponseException {
-        return initWrapper(type.getType(), id, (contents, title) -> {
-            List<String> images = Objects.requireNonNull(getImages(contents));
-            Node current = contents.get(0).selectFirst("nav.navigation").previousElementSibling()
-                .previousSibling();
-            List<String> texts = new ArrayList<>();
-            for (; current != null; current = current.previousSibling()) {
-                collectTexts(current, texts);
+        Pair<MidnightEntry, List<Element>> pair =
+            initItem(type.getType(), id, MidnightEntry::new);
+        List<Element> contents = pair.getRight();
+        List<String> images = Objects.requireNonNull(getImages(contents));
+        List<String> texts = new ArrayList<>();
+        Element nav = contents.get(0).selectFirst(NAV_NAVIGATION);
+        Node current = nav.previousElementSibling().previousSibling();
+        while (current != null) {
+            texts.addAll(DocumentUtils.collectTexts(current));
+            current = current.previousSibling();
+        }
+        Map<String, String> info = new HashMap<>(8);
+        for (String text : texts) {
+            String[] parts = StringUtils.split(text, ":：", 2);
+            if (parts.length < 2) {
+                continue;
             }
-            Map<String, String> info = texts.stream().map(s -> StringUtils.split(s, ":：", 2))
-                .filter(ss -> ss.length > 1).collect(Collectors.toMap(ss -> {
-                    String[] parts = ss[0].split(" ");
-                    return parts[parts.length - 1];
-                }, ss -> ss[1].strip()));
-            AdultEntry entry = AdultEntryUtils.getAdultEntry(info, images.get(0), ", ");
-            MidnightEntry item = new MidnightEntry(title);
-            item.setImages(images);
-            item.setEntry(entry);
-            return item;
-        });
+            String[] parts0 = parts[0].split(" ");
+            String key = parts0[parts0.length - 1];
+            MapUtilsExt.putIfAbsent(info, key, parts[1]);
+        }
+        AdultEntry entry = AdultEntryUtils.getAdultEntry(info, images.get(0), ", ");
+        MidnightEntry item = pair.getLeft();
+        item.setImages(images);
+        item.setEntry(entry);
+        return item;
     }
 
-    private <T extends TitleSupplier> MidnightWrapper<T> initWrapper(@Nonnull MidnightType type,
-        int id,
-        @Nonnull BiFunction<List<Element>, String, T> getContent) throws HttpResponseException {
-        Document document = getDocument(builder0("/%s/%d.html", type.getText(), id),
-            SnapshotStrategy.never());
-        LocalDateTime release =
-            LocalDateTime.parse(document.selectFirst("time.data-time").text(),
-                Constants.STANDARD_DATE_TIME_FORMATTER);
+    private <T extends BaseMidnightItem> Pair<T, List<Element>> initItem(@Nonnull MidnightType type,
+        int id, @Nonnull TriFunction<Integer, String, LocalDateTime, T> constructor)
+        throws HttpResponseException {
+        RequestBuilder builder = builder0("/%s/%d.html", type.getText(), id);
+        Document document = getDocument(builder, SnapshotStrategy.never());
+        String datetime = document.selectFirst("time.data-time").text();
+        LocalDateTime release = LocalDateTime.parse(datetime, Constants.DATE_TIME_FORMATTER);
         String title = document.selectFirst("h1.title").text();
-        String keywords = document.selectFirst("meta[name=keywords]")
-            .attr(CssSelector.ATTR_CONTENT);
+        T t = constructor.apply(id, title, release);
+        String keywords = document.selectFirst(CssSelectors.META_KEYWORDS)
+            .attr(CssSelectors.ATTR_CONTENT);
+        if (StringUtils.isNotBlank(keywords)) {
+            t.setKeywords(keywords.split(","));
+        }
+        return Pair.of(t, getContents(document));
+    }
+
+    private List<Element> getContents(Document document) throws HttpResponseException {
         List<Element> contents = new ArrayList<>();
         while (true) {
             Element content = document.selectFirst("div.single-content");
             contents.add(content);
-            Element next = content.selectFirst("div.pagination").selectFirst("a.next");
+            Element next = content.selectFirst(NAV_NAVIGATION).selectFirst("a.next");
             if (next == null) {
                 break;
             }
-            document =
-                getDocument(builder0(URI.create(next.attr(CssSelector.ATTR_HREF)).getPath()),
-                    SnapshotStrategy.never());
+            String nextHref = next.attr(CssSelectors.ATTR_HREF);
+            RequestBuilder builder = builder0(URI.create(nextHref).getPath());
+            document = getDocument(builder, SnapshotStrategy.never());
         }
-        T t = getContent.apply(contents, title);
-        MidnightWrapper<T> wrapper = new MidnightWrapper<>(id, release, t);
-        wrapper.setKeywords(StringUtils.isBlank(keywords) ? null : keywords.split(","));
-        wrapper.setNext(getNext(document, type));
-        return wrapper;
-    }
-
-    private void collectTexts(Node node, List<String> texts) {
-        if (node instanceof TextNode) {
-            String text = ((TextNode) node).text();
-            if (StringUtils.isBlank(text)) {
-                return;
-            }
-            texts.add(text.strip());
-            return;
-        }
-        if (node instanceof Element) {
-            for (Node childNode : node.childNodes()) {
-                collectTexts(childNode, texts);
-            }
-            return;
-        }
-        throw new IllegalArgumentException("Unexpected type of node: " + node.getClass());
+        return contents;
     }
 
     private List<String> getImages(List<Element> contents) {
         List<String> images = new ArrayList<>();
         for (Element content : contents) {
-            Node current = content.selectFirst("nav.navigation").previousElementSibling().previousSibling();
-            for (; current != null; current = current.previousSibling()) {
+            Element nav = content.selectFirst(NAV_NAVIGATION);
+            Node current = nav.previousElementSibling().previousSibling();
+            while (current != null) {
                 if (current instanceof Element) {
-                    Elements elements = ((Element) current).select("img");
+                    Elements elements = ((Element) current).select(CssSelectors.TAG_IMG);
                     for (Element img : elements) {
-                        String href = img.attr(CssSelector.ATTR_SRC);
+                        String href = img.attr(CssSelectors.ATTR_SRC);
                         if (href.startsWith(MG_STAGE_HOST)) {
+                            current = current.previousSibling();
                             continue;
                         }
                         Matcher matcher = IMG_FILE_HREF_REGEX.matcher(href);
@@ -200,48 +205,9 @@ public final class MidnightSite extends BaseSite {
                         images.add(href);
                     }
                 }
+                current = current.previousSibling();
             }
         }
         return images.isEmpty() ? null : images;
-    }
-
-    private Integer getNext(Document document, MidnightType type) {
-        String next = document.selectFirst("a.next-post").attr(CssSelector.ATTR_HREF);
-        if (HASH.equals(next)) {
-            return null;
-        }
-        return Integer.parseInt(RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(type), next).group("id"));
-    }
-
-    /**
-     * Obtains the list of the identifiers of the records by the given type.
-     *
-     * @return the list of the identifiers
-     */
-    private List<Integer> getIdentifierIterator(MidnightType type) throws HttpResponseException {
-        List<Integer> ids = new ArrayList<>();
-        int page = 0;
-        RequestBuilder builder =
-            builder0("/e/action/ListInfo.php")
-                .addParameter("classid", String.valueOf(type.getCode()))
-                .addParameter("tempid", "11").addParameter("orderby", "newstime")
-                .addParameter("line", "80");
-        while (true) {
-            Document document =
-                getDocument(builder.setParameter("page", String.valueOf(page)),
-                    SnapshotStrategy.always());
-            page++;
-            Elements lis = document.selectFirst("div[role=main]").select(CssSelector.TAG_LI);
-            for (Element li : lis) {
-                String href = li.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-                ids.add(Integer.parseInt(
-                    RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(type), href).group("id")));
-            }
-            Element next = document.selectFirst("div.pagination").selectFirst("a.next");
-            if (null == next) {
-                break;
-            }
-        }
-        return ids;
     }
 }

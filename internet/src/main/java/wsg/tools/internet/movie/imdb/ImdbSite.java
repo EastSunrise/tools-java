@@ -30,7 +30,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.movie.common.RangeYear;
@@ -90,8 +90,8 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
 
         title.setImdbId(tt);
         if (title instanceof ImdbEpisode) {
-            String href = document.selectFirst("div.titleParent").selectFirst(CssSelector.TAG_A)
-                .attr(CssSelector.ATTR_HREF).split("\\?")[0];
+            String href = document.selectFirst("div.titleParent").selectFirst(CssSelectors.TAG_A)
+                .attr(CssSelectors.ATTR_HREF).split("\\?")[0];
             String seriesId = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
             ((ImdbEpisode) title).setSeriesId(seriesId);
         }
@@ -129,22 +129,23 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         Map<String,
             Element> details = document.selectFirst("div#titleDetails").select("div.txt-block")
             .stream()
-            .filter(div -> div.selectFirst(CssSelector.TAG_H4) != null).collect(Collectors
-                .toMap(div -> StringUtils.strip(div.selectFirst(CssSelector.TAG_H4).text(), " :"),
+            .filter(div -> div.selectFirst(CssSelectors.TAG_H4) != null).collect(Collectors
+                .toMap(div -> StringUtils.strip(div.selectFirst(CssSelectors.TAG_H4).text(), " :"),
                     div -> div));
         Element block;
         block = details.get("Language");
         if (null != block) {
-            List<Language> languages = block.select(CssSelector.TAG_A).stream()
+            List<Language> languages = block.select(CssSelectors.TAG_A).stream()
                 .map(a -> EnumUtilExt.deserializeAka(a.text(), Language.class))
                 .collect(Collectors.toList());
             title.setLanguages(languages);
         }
         block = details.get("Runtime");
         if (null != block) {
-            List<Duration> runtimes = block.select(CssSelector.TAG_TIME).stream()
+            List<Duration> runtimes = block.select(CssSelectors.TAG_TIME).stream()
                 .map(
-                    e -> Duration.parse(StringUtils.remove(e.attr(CssSelector.ATTR_DATETIME), ",")))
+                    e -> Duration
+                        .parse(StringUtils.remove(e.attr(CssSelectors.ATTR_DATETIME), ",")))
                 .collect(Collectors.toList());
             title.setRuntimes(runtimes);
         }
@@ -159,7 +160,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             currentSeason++;
             Document document = getDocument(
                 builder0("/title/%s/episodes", seriesId)
-                    .addParameter("season", String.valueOf(currentSeason)),
+                    .addParameter("season", currentSeason),
                 SnapshotStrategy.never());
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
@@ -171,16 +172,18 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             }
 
             Element element = document.selectFirst("meta[itemprop=numberofEpisodes]");
-            int episodesCount = Integer.parseInt(element.attr("content"));
+            int episodesCount = Integer.parseInt(element.attr(CssSelectors.ATTR_CONTENT));
             Elements divs = document.select("div[itemprop=episodes]");
             Map<Integer, String> map = new HashMap<>(episodesCount);
             for (int i = divs.size() - 1; i >= 0; i--) {
                 Element div = divs.get(i);
-                String href = div.selectFirst(CssSelector.TAG_STRONG).selectFirst(CssSelector.TAG_A)
-                    .attr(CssSelector.ATTR_HREF).split("\\?")[0];
+                String href = div.selectFirst(CssSelectors.TAG_STRONG)
+                    .selectFirst(CssSelectors.TAG_A)
+                    .attr(CssSelectors.ATTR_HREF).split("\\?")[0];
                 String id = RegexUtils.matchesOrElseThrow(TITLE_HREF_REGEX, href).group(1);
                 int episode = Integer
-                    .parseInt(div.selectFirst("meta[itemprop=episodeNumber]").attr("content"));
+                    .parseInt(div.selectFirst("meta[itemprop=episodeNumber]")
+                        .attr(CssSelectors.ATTR_CONTENT));
                 if (null != map.put(episode, id)) {
                     throw new UnexpectedContentException("Conflict episodes of " + seriesId);
                 }

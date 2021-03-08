@@ -1,7 +1,6 @@
 /**
- * todo config picture server
- * <p>
- * todo add index on columns in {@link wsg.tools.boot.pojo.entity.base.Source}.
+ * todo {@link wsg.tools.boot.config.FastdfsClient} uploads images too slowly and handles
+ * concurrency
  *
  * @author Kingen
  * @since 2021/3/5

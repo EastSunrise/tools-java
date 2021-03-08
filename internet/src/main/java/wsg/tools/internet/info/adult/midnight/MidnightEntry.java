@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
-import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.info.adult.AdultEntry;
 
 /**
@@ -11,19 +11,13 @@ import wsg.tools.internet.info.adult.AdultEntry;
  * @author Kingen
  * @since 2021/3/2
  */
-public class MidnightEntry implements TitleSupplier {
+public class MidnightEntry extends BaseMidnightItem {
 
-    private final String title;
     private AdultEntry entry;
     private List<String> images;
 
-    MidnightEntry(String title) {
-        this.title = AssertUtils.requireNotBlank(title);
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
+    MidnightEntry(int id, String title, LocalDateTime release) {
+        super(id, title, release);
     }
 
     public AdultEntry getEntry() {
@@ -35,10 +29,10 @@ public class MidnightEntry implements TitleSupplier {
     }
 
     public List<String> getImages() {
-        return images;
+        return Collections.unmodifiableList(images);
     }
 
     void setImages(List<String> images) {
-        this.images = images;
+        this.images = Collections.unmodifiableList(images);
     }
 }

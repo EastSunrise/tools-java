@@ -84,7 +84,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
         return getObject(builder0("/").addParameter("i", seriesId)
-                .addParameter("season", String.valueOf(season)),
+                .addParameter("season", season),
             OmdbSeason.class);
     }
 
@@ -96,8 +96,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     public OmdbEpisode episode(String seriesId, int season, int episode)
         throws HttpResponseException {
         return getObject(
-            builder0("/").addParameter("i", seriesId).addParameter("season", String.valueOf(season))
-                .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);
+            builder0("/").addParameter("i", seriesId)
+                .addParameter("season", season)
+                .addParameter("episode", episode), OmdbEpisode.class);
     }
 
     /**
@@ -121,12 +122,12 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
             builder.addParameter("type", type.toString().toLowerCase());
         }
         if (year != null) {
-            builder.addParameter("y", year.toString());
+            builder.addParameter("y", year);
         }
         if (page < 1 || page > MAX_PAGE) {
             throw new IllegalArgumentException("Illegal page " + page + ", required: 1-100");
         } else {
-            builder.addParameter("page", String.valueOf(page));
+            builder.addParameter("page", page);
         }
         return getObject(builder, OmdbTitle.class);
     }

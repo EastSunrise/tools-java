@@ -83,6 +83,26 @@ public final class AssertUtils {
     }
 
     /**
+     * Validate args to be not blank.
+     */
+    public static String requireNotBlank(String arg, String message) {
+        if (StringUtils.isBlank(arg)) {
+            throw new IllegalArgumentException(message);
+        }
+        return arg;
+    }
+
+    /**
+     * Validate args to be not blank.
+     */
+    public static String requireNotBlankElse(String arg, String defaultStr) {
+        if (StringUtils.isNotBlank(arg)) {
+            return arg;
+        }
+        return requireNotBlank(defaultStr, "defaultStr");
+    }
+
+    /**
      * Returns a {@link RuntimeException}.
      */
     public static RuntimeException runtimeException(Throwable e) {

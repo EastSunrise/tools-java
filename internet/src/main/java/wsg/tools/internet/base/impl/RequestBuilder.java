@@ -77,8 +77,8 @@ public class RequestBuilder {
     /**
      * Adds a parameter to the request.
      */
-    public RequestBuilder addParameter(String name, String value) {
-        return addParameter(new BasicNameValuePair(name, value));
+    public RequestBuilder addParameter(String name, Object value) {
+        return addParameter(new BasicNameValuePair(name, Objects.requireNonNull(value).toString()));
     }
 
     /**
@@ -131,7 +131,8 @@ public class RequestBuilder {
         }
         CollectionUtils.addIgnoreNull(params, token);
         if (CollectionUtils.isNotEmpty(params)) {
-            if (HttpPost.METHOD_NAME.equalsIgnoreCase(method) || HttpPut.METHOD_NAME.equalsIgnoreCase(method)) {
+            if (HttpPost.METHOD_NAME.equalsIgnoreCase(method) || HttpPut.METHOD_NAME
+                .equalsIgnoreCase(method)) {
                 entity = new UrlEncodedFormEntity(params, HTTP.DEF_CONTENT_CHARSET);
             } else {
                 uri = URI.create(new URIBuilder(uri).addParameters(params).toString());
@@ -167,14 +168,13 @@ public class RequestBuilder {
 
         if (!builder.isPathEmpty()) {
             for (String part : builder.getPathSegments()) {
-                if (!"".equals(part)) {
-                    sb.append(File.separator).append(part);
-                }
+                sb.append(File.separator).append(part);
             }
         }
 
         if (!builder.isQueryEmpty()) {
-            sb.append(File.separator).append(URLEncodedUtils.format(builder.getQueryParams(), Consts.UTF_8));
+            sb.append(File.separator)
+                .append(URLEncodedUtils.format(builder.getQueryParams(), Consts.UTF_8));
         }
 
         if (parameters != null) {
@@ -184,7 +184,7 @@ public class RequestBuilder {
         return StringUtilsExt.toFilename(sb.toString());
     }
 
-    static class InternalRequest extends HttpRequestBase {
+    private static class InternalRequest extends HttpRequestBase {
 
         private final String method;
 

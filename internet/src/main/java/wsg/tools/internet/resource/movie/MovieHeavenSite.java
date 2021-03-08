@@ -33,7 +33,7 @@ import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -100,10 +100,12 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
         } catch (HttpResponseException e) {
             throw new UnexpectedException(e);
         }
-        Elements lis = document.selectFirst("div.newbox").select(CssSelector.TAG_LI);
+        Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
-            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, li.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF)).group("id");
+            String id = RegexUtils
+                .matchesOrElseThrow(ITEM_HREF_REGEX, li.selectFirst(CssSelectors.TAG_A).attr(
+                    CssSelectors.ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
@@ -124,16 +126,17 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
                 document.selectFirst("h4.infotitle1").text());
         }
 
-        Map<String, Element> info = document.selectFirst("div.info").select(CssSelector.TAG_SPAN)
+        Map<String, Element> info = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
             .stream().collect(Collectors.toMap(Element::text, e -> e));
-        String href = info.get("类型：").nextElementSibling().attr(CssSelector.ATTR_HREF);
+        String href = info.get("类型：").nextElementSibling().attr(CssSelectors.ATTR_HREF);
         VideoType type = TYPES[Integer
             .parseInt(RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, href).group("index"))];
         LocalDate addDate = LocalDate.parse(((TextNode) info.get("上架时间：").nextSibling()).text(),
             DateTimeFormatter.ISO_LOCAL_DATE);
         MovieHeavenItem item = new MovieHeavenItem(id, builder.toString(), type, addDate);
 
-        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group("title"));
+        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group(
+            CssSelectors.ATTR_TITLE));
         String text = ((TextNode) info.get("上映年代：").nextSibling()).text();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
             int year = Integer.parseInt(text);
@@ -150,7 +153,8 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
         List<InvalidResourceException> exceptions = new LinkedList<>();
         final String downUl = "ul.downurl";
         for (Element ul : document.select(downUl)) {
-            String varUrls = ul.selectFirst(CssSelector.TAG_SCRIPT).html().strip().split("\n")[0].strip();
+            String varUrls = ul.selectFirst(CssSelectors.TAG_SCRIPT).html().strip().split("\n")[0]
+                .strip();
             String entries = RegexUtils.matchesOrElseThrow(VAR_URL_REGEX, varUrls).group("entries");
             entries = StringEscapeUtils.unescapeHtml4(entries);
             for (String entry : entries.split(URL_SEPARATOR)) {
@@ -159,7 +163,7 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {
                     continue;
                 }
-                String t = matcher.group("title");
+                String t = matcher.group(CssSelectors.ATTR_TITLE);
                 if (XUNLEI.equals(url)) {
                     url = t;
                     t = XUNLEI;

@@ -1,7 +1,5 @@
 package wsg.tools.internet.download.impl;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.regex.Pattern;
@@ -10,26 +8,26 @@ import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.io.Rundll32;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.download.base.AbstractLink;
-import wsg.tools.internet.download.base.Downloader;
 
 /**
- * Downloader of thunder.
+ * Utility for thunder.
  *
  * @author Kingen
  * @see <a href="https://www.xunlei.com/">Thunder</a>
  * @since 2020/10/8
  */
-public class Thunder implements Downloader<AbstractLink> {
+public final class Thunder {
 
     public static final String THUNDER_PREFIX = "thunder://";
     public static final String EMPTY_LINK = "thunder://QUFaWg==";
-    private static final Pattern THUNDER_REGEX =
-        Pattern.compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)",
+    private static final Pattern THUNDER_REGEX = Pattern
+        .compile("thunder://(?<c>([\\w+/-]{4})+([\\w+/-]{2}[\\w+/-=]=)?)",
             Pattern.CASE_INSENSITIVE);
-    private static final Pattern SRC_URL_REGEX = Pattern.compile("AA\\s*(?<url>.*)\\s*ZZ");
+    private static final Pattern SRC_URL_REGEX = Pattern.compile("AA\\s*(?<u>.*)\\s*ZZ");
+
+    private Thunder() {
+    }
 
     /**
      * Encode a url to a thunder url.
@@ -53,7 +51,7 @@ public class Thunder implements Downloader<AbstractLink> {
             url = StringUtils.replace(url, "%3D", "=");
             url = RegexUtils.matchesOrElseThrow(THUNDER_REGEX, url).group("c");
             url = new String(Base64.getDecoder().decode(url.getBytes(charset)), charset);
-            url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("url").strip();
+            url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("u").strip();
         }
         return url;
     }
@@ -63,20 +61,5 @@ public class Thunder implements Downloader<AbstractLink> {
      */
     public static SuffixFileFilter tmpFileFilter() {
         return new SuffixFileFilter("xltd", IOCase.INSENSITIVE);
-    }
-
-    /**
-     * @param dir target directory is dependent on the selection of the dialog
-     */
-    @Override
-    public boolean addTask(File dir, AbstractLink link) throws IOException {
-        if (link instanceof BaiduDiskLink || link instanceof UcDiskLink) {
-            return false;
-        }
-
-        if (!dir.isDirectory() && !dir.mkdirs()) {
-            throw new SecurityException("Can't create dir " + dir.getPath());
-        }
-        return Rundll32.open(encodeThunder(link.getUrl())) == 0;
     }
 }

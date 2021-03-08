@@ -6,7 +6,7 @@ package wsg.tools.internet.common;
  * @author Kingen
  * @since 2021/2/6
  */
-public final class CssSelector {
+public final class CssSelectors {
 
     /**
      * Common HTML tags.
@@ -15,7 +15,6 @@ public final class CssSelector {
     public static final String TAG_LI = "li";
     public static final String TAG_DIV = "div";
     public static final String TAG_SPAN = "span";
-
     public static final String TAG_SCRIPT = "script";
     public static final String TAG_INPUT = "input";
     public static final String TAG_FIELDSET = "fieldset";
@@ -29,6 +28,12 @@ public final class CssSelector {
     public static final String TAG_H4 = "h4";
     public static final String TAG_TIME = "time";
     public static final String TAG_FONT = "font";
+    public static final String TAG_IMG = "img";
+
+    /**
+     * Common meta tags
+     */
+    public static final String META_KEYWORDS = "meta[name=keywords]";
 
     /**
      * Common HTML attributes.
@@ -38,7 +43,9 @@ public final class CssSelector {
     public static final String ATTR_SRC = "src";
     public static final String ATTR_DATETIME = "datetime";
     public static final String ATTR_CONTENT = "content";
+    public static final String ATTR_TITLE = "title";
+    public static final String ATTR_ALT = "alt";
 
-    private CssSelector() {
+    private CssSelectors() {
     }
 }

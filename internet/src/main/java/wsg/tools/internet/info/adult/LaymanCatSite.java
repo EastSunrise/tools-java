@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,13 +20,15 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IterableRepositoryImpl;
+import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.Scheme;
+import wsg.tools.internet.common.UnexpectedContentException;
 
 /**
  * @author Kingen
@@ -41,23 +44,81 @@ public final class LaymanCatSite extends BaseSite
     private static final String FIRST_KEY = "収録時間";
 
     private final IterableRepository<LaymanCatItem> repository =
-        new IterableRepositoryImpl<>(this, "200gana-1829");
+        new LinkedRepositoryImpl<>(this, "200gana-1829");
 
     public LaymanCatSite() {
         super("Layman Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
     }
 
-    private static String getNext(Document document) {
-        Element next = document.selectFirst("div.nav-next");
-        if (next == null) {
-            return null;
-        }
-        String href = next.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("id");
+    @Override
+    public RepositoryIterator<LaymanCatItem> iterator() {
+        return repository.iterator();
     }
 
-    private static AdultEntry getEntry(@Nonnull String code, @Nonnull String cover,
-        List<String> lines) {
+    @Override
+    public LaymanCatItem findById(@Nonnull String id) throws HttpResponseException {
+        WithoutNextDocument<String> strategy = new WithoutNextDocument<>(this::getNext);
+        Document document = getDocument(builder0("/%s/", id), strategy);
+        LaymanCatItem item = new LaymanCatItem(id);
+
+        Element main = document.selectFirst("#main");
+        item.setAuthor(main.selectFirst("span.author").text());
+        String published = main.selectFirst("time.published").attr(CssSelectors.ATTR_DATETIME);
+        item.setPublished(LocalDateTime.parse(published, FORMATTER));
+        String updated = main.selectFirst("time.updated").attr(CssSelectors.ATTR_DATETIME);
+        item.setUpdated(LocalDateTime.parse(updated, FORMATTER));
+        item.setNext(getNext(document));
+
+        String code = main.selectFirst("h1.entry-title").text();
+        String cover = main.selectFirst("img.size-full").attr(CssSelectors.ATTR_SRC);
+        Element content = main.selectFirst("div.entry-content");
+        Pair<String, AdultEntry> pair = getDescAndEntry(content, code, cover);
+        item.setDescription(pair.getLeft());
+        item.setEntry(pair.getRight());
+        return item;
+    }
+
+    private Pair<String, AdultEntry> getDescAndEntry(Element content, String code, String cover) {
+        Elements children = content.children();
+        Map<String, List<Element>> map = children.stream()
+            .collect(Collectors.groupingBy(Element::tagName));
+        if (map.size() == 1) {
+            Element current = children.first();
+            if (current.childNodeSize() == 1) {
+                current = current.nextElementSibling();
+            }
+            StringBuilder description = new StringBuilder(current.text());
+            current = current.nextElementSibling();
+            if (current == null) {
+                return Pair.of(description.toString(), new AdultEntry(code, cover));
+            }
+            while (current.childNodeSize() == 1) {
+                description.append(current.text());
+                current = current.nextElementSibling();
+            }
+            List<String> lines = current.textNodes().stream()
+                .map(TextNode::text)
+                .collect(Collectors.toList());
+            return Pair.of(description.toString(), getEntry(code, cover, lines));
+        }
+        if (map.containsKey(CssSelectors.TAG_DIV)) {
+            List<String> lines = map.get(CssSelectors.TAG_DIV).stream()
+                .map(Element::text)
+                .collect(Collectors.toList());
+            return Pair.of(children.get(1).text(), getEntry(code, cover, lines));
+        }
+        List<Element> article = map.get("article");
+        if (article != null) {
+            List<String> lines = DocumentUtils.collectTexts(article.get(0));
+            Iterator<String> iterator = lines.iterator();
+            String description = iterator.next() + iterator.next() + iterator.next();
+            AdultEntry entry = getEntry(code, cover, lines.subList(3, lines.size()));
+            return Pair.of(description, entry);
+        }
+        throw new UnexpectedContentException("Unknown content");
+    }
+
+    private AdultEntry getEntry(@Nonnull String code, @Nonnull String cover, List<String> lines) {
         Map<String, String> info = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Iterator<String> iterator = lines.iterator();
         String[] parts = StringUtils.split(StringUtils.stripStart(iterator.next(), " ・"), ":：", 2);
@@ -74,57 +135,12 @@ public final class LaymanCatSite extends BaseSite
         return AdultEntryUtils.getAdultEntry(info, code, cover, " ");
     }
 
-    @Override
-    public RepositoryIterator<LaymanCatItem> iterator() {
-        return repository.iterator();
-    }
-
-    @Override
-    public LaymanCatItem findById(@Nonnull String id) throws HttpResponseException {
-        Document document = getDocument(builder0("/%s/", id),
-            new WithoutNextDocument<>(LaymanCatSite::getNext));
-        Element main = document.selectFirst("#main");
-        String code = main.selectFirst("h1.entry-title").text();
-        String cover = main.selectFirst("img.size-full").attr("src");
-        LocalDateTime published = LocalDateTime
-            .parse(main.selectFirst("time.published").attr(CssSelector.ATTR_DATETIME), FORMATTER);
-        LocalDateTime updated = LocalDateTime
-            .parse(main.selectFirst("time.updated").attr(CssSelector.ATTR_DATETIME), FORMATTER);
-        String author = main.selectFirst("span.author").text();
-
-        Elements children = main.selectFirst("div.entry-content").children();
-        Map<String, List<Element>> map = children.stream()
-            .collect(Collectors.groupingBy(Element::tagName));
-        if (map.size() == 1) {
-            Element current = children.first();
-            if (current.childNodeSize() == 1) {
-                current = current.nextElementSibling();
-            }
-            StringBuilder description = new StringBuilder(current.text());
-            current = current.nextElementSibling();
-            if (current == null) {
-                return new LaymanCatItem(id, new AdultEntry(code, cover), author, published,
-                    updated, description.toString(), getNext(document));
-            }
-            while (current.childNodeSize() == 1) {
-                description.append(current.text());
-                current = current.nextElementSibling();
-            }
-            List<String> lines = current.childNodes().stream()
-                .filter(node -> node instanceof TextNode).map(node -> (TextNode) node)
-                .map(TextNode::text).collect(Collectors.toList());
-            AdultEntry entry = getEntry(code, cover, lines);
-            return new LaymanCatItem(id, entry, author, published, updated, description.toString(),
-                getNext(document));
+    private String getNext(Document document) {
+        Element next = document.selectFirst("div.nav-next");
+        if (next == null) {
+            return null;
         }
-        if (map.containsKey(CssSelector.TAG_DIV)) {
-            List<String> lines = map.get(CssSelector.TAG_DIV).stream().map(Element::text)
-                .collect(Collectors.toList());
-            AdultEntry entry = getEntry(code, cover, lines);
-            return new LaymanCatItem(id, entry, author, published, updated, children.get(1).text(),
-                getNext(document));
-        }
-        return new LaymanCatItem(id, new AdultEntry(code, cover), author, published, updated,
-            getNext(document));
+        String href = next.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
+        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("id");
     }
 }

@@ -42,7 +42,7 @@ import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.enums.Language;
@@ -73,7 +73,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         .registerModule(new SimpleModule()
             .addDeserializer(MovieGenre.class, new TitleEnumDeserializer<>(MovieGenre.class)))
         .registerModule(new JavaTimeModule().addDeserializer(LocalDateTime.class,
-            new LocalDateTimeDeserializer(Constants.STANDARD_DATE_TIME_FORMATTER)));
+            new LocalDateTimeDeserializer(Constants.DATE_TIME_FORMATTER)));
 
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern
         .compile("[^()\\s]+\\((\\d+)\\)");
@@ -106,7 +106,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
             .setPath("/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
             .addParameter("password", password)
-            .addParameter("remember", String.valueOf(true));
+            .addParameter("remember", true);
         LoginResult loginResult = getObject(builder, MAPPER, LoginResult.class,
             SnapshotStrategy.always());
         if (!loginResult.isSuccess()) {
@@ -129,9 +129,9 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
             return;
         }
         getDocument(builder0(null), SnapshotStrategy.always());
-        RequestBuilder builder = builder0("/accounts/logout").addParameter("source", "main")
-            .addParameter("ck",
-                Objects.requireNonNull(getCookie("ck")).getValue());
+        RequestBuilder builder = builder0("/accounts/logout")
+            .addParameter("source", "main")
+            .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
         getDocument(builder, SnapshotStrategy.always());
     }
 
@@ -178,7 +178,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         if (subject instanceof DoubanSeries) {
             Element season = document.selectFirst("#season");
             if (season != null) {
-                Elements options = season.select(CssSelector.TAG_OPTION);
+                Elements options = season.select(CssSelectors.TAG_OPTION);
                 long[] seasons = new long[options.size()];
                 for (Element option : options) {
                     seasons[Integer.parseInt(option.text()) - 1] = Long.parseLong(option.val());
@@ -229,7 +229,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
     private List<Runtime> getRuntimes(Element span) {
         if (span != null) {
             Element element = span.nextElementSibling();
-            Node node = element.is(CssSelector.TAG_SPAN) ? element.nextSibling()
+            Node node = element.is(CssSelectors.TAG_SPAN) ? element.nextSibling()
                 : element.previousSibling();
             if (node instanceof TextNode) {
                 String[] parts = StringUtils.strip(((TextNode) node).text(), " /").split("/");
@@ -260,14 +260,15 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         while (true) {
             RequestBuilder builder = builder(catalog.name().toLowerCase(Locale.ROOT),
                 "/people/%d/%s", userId, mark.name().toLowerCase(Locale.ROOT))
-                .addParameter("sort", "time").addParameter("start", String.valueOf(start))
+                .addParameter("sort", "time")
+                .addParameter("start", start)
                 .addParameter("mode", "list");
             Document document = getDocument(builder, SnapshotStrategy.always());
             boolean done = false;
             String listClass = ".list-view";
-            for (Element li : document.selectFirst(listClass).select(CssSelector.TAG_LI)) {
+            for (Element li : document.selectFirst(listClass).select(CssSelectors.TAG_LI)) {
                 Element div = li.selectFirst(".title");
-                String href = div.selectFirst(CssSelector.TAG_A).attr("href");
+                String href = div.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
                 long id = Long
                     .parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/"));
                 LocalDate markDate = LocalDate.parse(div.nextElementSibling().text().strip());
@@ -304,12 +305,12 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
             RequestBuilder builder = builder(catalog.name().toLowerCase(Locale.ROOT),
                 "/people/%d/%s", userId,
                 catalog.getCreator().getPlurality())
-                .addParameter("start", String.valueOf(start));
+                .addParameter("start", start);
             Document document = getDocument(builder, SnapshotStrategy.always());
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
-                Element a = div.selectFirst(".title").selectFirst(CssSelector.TAG_A);
-                String href = a.attr("href");
+                Element a = div.selectFirst(".title").selectFirst(CssSelectors.TAG_A);
+                String href = a.attr(CssSelectors.ATTR_HREF);
                 ids.add(Long.parseLong(
                     StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
                 start++;
@@ -347,7 +348,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         Document document = getDocument(builder, SnapshotStrategy.never());
 
         Element fieldset = document.selectFirst("div#content")
-            .selectFirst(CssSelector.TAG_FIELDSET);
+            .selectFirst(CssSelectors.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
         if (input == null) {
             return null;
@@ -358,7 +359,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
             log.error(span.text());
             return null;
         }
-        String href = ref.attr(CssSelector.ATTR_HREF);
+        String href = ref.attr(CssSelectors.ATTR_HREF);
         return Long
             .parseLong(RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
     }
@@ -375,11 +376,11 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         RequestBuilder builder = builder("search", "/%s/subject_search", catalog.name().toLowerCase(
             Locale.ROOT))
             .addParameter("search_text", keyword)
-            .addParameter("cat", String.valueOf(catalog.getCode()));
+            .addParameter("cat", catalog.getCode());
         Document document = getDocument(builder, SnapshotStrategy.always());
         return document.select("div.item-root").stream().map(div -> {
             Element a = div.selectFirst("a.title-text");
-            String url = a.attr(CssSelector.ATTR_HREF);
+            String url = a.attr(CssSelectors.ATTR_HREF);
             return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
         }).collect(Collectors.toList());
     }
@@ -397,13 +398,13 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         }
         RequestBuilder builder = builder0("/search").addParameter("q", keyword);
         if (catalog != null) {
-            builder.addParameter("cat", String.valueOf(catalog.getCode()));
+            builder.addParameter("cat", catalog.getCode());
         }
         Document document = getDocument(builder, SnapshotStrategy.always());
         return document.selectFirst("div.search-result").select("div.result").stream().map(div -> {
-            Element a = div.selectFirst(CssSelector.TAG_H3).selectFirst(CssSelector.TAG_A);
+            Element a = div.selectFirst(CssSelectors.TAG_H3).selectFirst(CssSelectors.TAG_A);
             Matcher matcher = RegexUtils
-                .matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(CssSelector.ATTR_HREF));
+                .matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF));
             String url = URLDecoder.decode(matcher.group("url"), Constants.UTF_8);
             return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
         }).collect(Collectors.toList());

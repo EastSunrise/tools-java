@@ -1,7 +1,8 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * An album in the {@link MidnightSite}.
@@ -9,25 +10,19 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-public class MidnightAlbum implements TitleSupplier {
+public class MidnightAlbum extends BaseMidnightItem {
 
-    private final String title;
     private List<String> images;
 
-    MidnightAlbum(String title) {
-        this.title = title;
+    MidnightAlbum(int id, String title, LocalDateTime release) {
+        super(id, title, release);
     }
 
     public List<String> getImages() {
-        return images;
+        return Collections.unmodifiableList(images);
     }
 
     void setImages(List<String> images) {
-        this.images = images;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
+        this.images = Collections.unmodifiableList(images);
     }
 }

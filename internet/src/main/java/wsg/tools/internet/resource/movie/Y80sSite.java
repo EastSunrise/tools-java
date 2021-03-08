@@ -28,7 +28,7 @@ import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -58,13 +58,19 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         "weidianying", VideoType.MOVIE
     );
     private static final String TYPE_JOINING_STR = StringUtils.join(TYPE_AKA.keySet(), "|");
-    private static final Pattern MOVIE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
-    private static final Pattern TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<type>" + TYPE_JOINING_STR + ")/\\d+(-\\d){6}");
-    private static final Pattern PLAY_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(" + TYPE_JOINING_STR + ")/\\d+/play-\\d+");
-    private static final Pattern YEAR_REGEX = Pattern.compile("-?(?<year>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
-    private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
+    private static final Pattern MOVIE_HREF_REGEX = Pattern
+        .compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
+    private static final Pattern TYPE_HREF_REGEX = Pattern
+        .compile("//m\\.y80s\\.com/(?<t>" + TYPE_JOINING_STR + ")/\\d+(-\\d){6}");
+    private static final Pattern PLAY_HREF_REGEX = Pattern
+        .compile("//m\\.y80s\\.com/(" + TYPE_JOINING_STR + ")/\\d+/play-\\d+");
+    private static final Pattern YEAR_REGEX = Pattern
+        .compile("-?(?<y>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
+    private static final Pattern DOUBAN_HREF_REGEX = Pattern
+        .compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
-    private final IterableRepository<Y80sItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
+    private final IterableRepository<Y80sItem> repository = new IntRangeIterableRepositoryImpl<>(
+        this, this::max);
 
     public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
@@ -84,7 +90,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
-            String href = div.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
+            String href = div.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
             String id = RegexUtils.matchesOrElseThrow(MOVIE_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
@@ -106,10 +112,10 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
 
         Map<String, Element> info = document.select(".movie_attr").stream()
             .collect(Collectors.toMap(Element::text, e -> e));
-        Elements lis = document.selectFirst("#path").select(CssSelector.TAG_LI);
+        Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
         Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX,
-            lis.get(1).selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF));
-        VideoType type = Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("type")));
+            lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF));
+        VideoType type = Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("t")));
         LocalDate updateDate = LocalDate
             .parse(((TextNode) info.get("资源更新：").nextSibling()).text().strip(),
                 DateTimeFormatter.ISO_LOCAL_DATE);
@@ -119,7 +125,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         Element yearEle = info.get("年代：");
         if (yearEle != null) {
             String year = RegexUtils
-                .matchesOrElseThrow(YEAR_REGEX, yearEle.nextElementSibling().text()).group("year");
+                .matchesOrElseThrow(YEAR_REGEX, yearEle.nextElementSibling().text()).group("y");
             if (year != null) {
                 item.setYear(Integer.parseInt(year));
             }
@@ -127,7 +133,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         Element dbEle = info.get("豆瓣评分：");
         if (dbEle != null) {
             String doubanHref = dbEle.nextElementSibling().nextElementSibling()
-                .attr(CssSelector.ATTR_HREF);
+                .attr(CssSelectors.ATTR_HREF);
             String dbId = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
             if (dbId != null) {
                 item.setDbId(Long.parseLong(dbId));
@@ -136,10 +142,10 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
 
         List<AbstractLink> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
-        Elements trs = document.select("#dl-tab-panes").select(CssSelector.TAG_TR);
+        Elements trs = document.select("#dl-tab-panes").select(CssSelectors.TAG_TR);
         for (Element tr : trs) {
-            Element a = tr.selectFirst(CssSelector.TAG_A);
-            String href = a.attr(CssSelector.ATTR_HREF);
+            Element a = tr.selectFirst(CssSelectors.TAG_A);
+            String href = a.attr(CssSelectors.ATTR_HREF);
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
@@ -148,7 +154,8 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
             }
             String title = a.text().strip();
             try {
-                resources.add(LinkFactory.create(title, href, () -> LinkFactory.getPassword(title)));
+                resources
+                    .add(LinkFactory.create(title, href, () -> LinkFactory.getPassword(title)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }

@@ -21,12 +21,12 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IterableRepositoryImpl;
+import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -57,7 +57,7 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
     }
 
     public IterableRepository<XlmItem> getRepository(@Nonnull XlmType type) {
-        return new IterableRepositoryImpl<>(this, type.first());
+        return new LinkedRepositoryImpl<>(this, type.first());
     }
 
     @Override
@@ -65,28 +65,36 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         RequestBuilder builder = builder0("/dy/k%d.html", id);
         Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
 
-        String typeHref = document.selectFirst("div.conpath").select(CssSelector.TAG_A).get(1).attr(CssSelector.ATTR_HREF);
-        int code = Integer.parseInt(RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("c"));
+        String typeHref = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).get(1)
+            .attr(
+                CssSelectors.ATTR_HREF);
+        int code = Integer
+            .parseInt(RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("c"));
         XlmType type = EnumUtilExt.deserializeCode(code, XlmType.class);
-        LocalDateTime releaseTime = LocalDateTime.parse(document.selectFirst(".info").selectFirst(".time").selectFirst(CssSelector.TAG_FONT).text(), FORMATTER);
+        LocalDateTime releaseTime = LocalDateTime
+            .parse(document.selectFirst(".info").selectFirst(".time").selectFirst(
+                CssSelectors.TAG_FONT).text(), FORMATTER);
         XlmItem item = new XlmItem(id, builder.toString(), releaseTime, type);
-        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
+        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group(
+            CssSelectors.ATTR_TITLE));
         item.setNext(getNext(document));
 
         Element downs = document.selectFirst("#downs");
         List<AbstractLink> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
-        for (Element a : downs.select(CssSelector.TAG_A)) {
-            String href = a.attr(CssSelector.ATTR_HREF).strip();
+        for (Element a : downs.select(CssSelectors.TAG_A)) {
+            String href = a.attr(CssSelectors.ATTR_HREF).strip();
             if (href.endsWith("=/") || href.endsWith("=v")) {
                 href = StringUtils.stripEnd(href, "/v");
             }
-            if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href) || href.startsWith(DOWNLOAD_ASP)) {
+            if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href) || href
+                .startsWith(DOWNLOAD_ASP)) {
                 continue;
             }
             String title = a.text().strip();
             try {
-                resources.add(LinkFactory.create(title, href, Constants.GBK, () -> LinkFactory.getPassword(title)));
+                resources.add(LinkFactory
+                    .create(title, href, Constants.GBK, () -> LinkFactory.getPassword(title)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }
@@ -97,12 +105,13 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
     }
 
     private Integer getNext(Document document) {
-        Elements spans = document.selectFirst("div.turn").select(CssSelector.TAG_SPAN);
+        Elements spans = document.selectFirst("div.turn").select(CssSelectors.TAG_SPAN);
         AssertUtils.requireEquals(spans.size(), 2);
-        Element next = spans.get(0).selectFirst(CssSelector.TAG_A);
+        Element next = spans.get(0).selectFirst(CssSelectors.TAG_A);
         if (next == null) {
             return null;
         }
-        return Integer.parseInt(RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, next.attr(CssSelector.ATTR_HREF)).group("id"));
+        return Integer.parseInt(RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, next.attr(
+            CssSelectors.ATTR_HREF)).group("id"));
     }
 }

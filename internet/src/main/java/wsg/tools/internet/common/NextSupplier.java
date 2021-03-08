@@ -1,7 +1,7 @@
 package wsg.tools.internet.common;
 
 /**
- * Supplies the index of next record.
+ * Supplies the identifier of next record.
  *
  * @author Kingen
  * @since 2021/3/2
@@ -14,5 +14,5 @@ public interface NextSupplier<T> {
      *
      * @return the index
      */
-    T next();
+    T nextId();
 }

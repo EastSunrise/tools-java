@@ -1,8 +1,9 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Map;
 import lombok.Getter;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * An actress in the {@link MidnightSite}.
@@ -11,24 +12,18 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @since 2021/2/22
  */
 @Getter
-public class MidnightActress implements TitleSupplier {
+public class MidnightActress extends BaseMidnightItem {
 
-    private final String title;
     /**
      * Map of code-cover of adult videos, the cover may be null.
      */
     private Map<String, String> works;
 
-    MidnightActress(String title) {
-        this.title = title;
+    MidnightActress(int id, String title, LocalDateTime release) {
+        super(id, title, release);
     }
 
     void setWorks(Map<String, String> works) {
-        this.works = works;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
+        this.works = Collections.unmodifiableMap(works);
     }
 }

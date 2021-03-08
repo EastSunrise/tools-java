@@ -116,9 +116,9 @@ public class ApiDoubanSite extends DoubanSite {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
-        builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
+        builder.addParameter("count", MAX_COUNT_ONCE);
         while (true) {
-            builder.addParameter("start", String.valueOf(start));
+            builder.addParameter("start", start);
             ChartResult chartResult = getObject(builder, ChartResult.class,
                 SnapshotStrategy.always());
             subjects.addAll(chartResult.getContent());
@@ -177,8 +177,8 @@ public class ApiDoubanSite extends DoubanSite {
         O owner;
         while (true) {
             RequestBuilder builder = apiBuilder(path, ownerId)
-                .addParameter("start", String.valueOf(start))
-                .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
+                .addParameter("start", start)
+                .addParameter("count", MAX_COUNT_ONCE);
             ContentResult<O, C> contentResult = getObject(builder, type);
             content.addAll(contentResult.getContent());
             owner = contentResult.getOwner();

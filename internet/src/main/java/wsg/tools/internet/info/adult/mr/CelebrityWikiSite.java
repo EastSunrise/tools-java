@@ -44,11 +44,11 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
-import wsg.tools.internet.base.impl.IterableRepositoryImpl;
+import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.enums.BloodType;
 import wsg.tools.internet.enums.Constellation;
@@ -147,7 +147,7 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     public IterableRepository<CelebrityAlbum> getAlbumRepository(AlbumType type) {
-        return new IterableRepositoryImpl<>(id -> findAlbum(id, type), type.first());
+        return new LinkedRepositoryImpl<>(id -> findAlbum(id, type), type.first());
     }
 
     public Repository<String, CelebrityAdultEntry> getEntryRepository() {
@@ -202,14 +202,15 @@ public final class CelebrityWikiSite extends BaseSite {
         Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id),
             SnapshotStrategy.never());
         Element show = document.selectFirst("div.picshow");
-        String title = show.selectFirst(CssSelector.TAG_H1).text();
+        String title = show.selectFirst(CssSelectors.TAG_H1).text();
         LocalDateTime updateTime = LocalDateTime
             .parse(((TextNode) show.selectFirst("div.info").childNode(0)).text(),
-                Constants.STANDARD_DATE_TIME_FORMATTER);
-        List<String> images = show.selectFirst("#pictureurls").select("img").eachAttr("rel");
+                Constants.DATE_TIME_FORMATTER);
+        List<String> images = show.selectFirst("#pictureurls").select(CssSelectors.TAG_IMG)
+            .eachAttr("rel");
         CelebrityAlbum album = new CelebrityAlbum(id, type, title, updateTime, images);
         Element text = show.selectFirst("div.text");
-        List<String> hrefs = text.select(">a").eachAttr(CssSelector.ATTR_HREF).stream()
+        List<String> hrefs = text.select(">a").eachAttr(CssSelectors.ATTR_HREF).stream()
             .filter(s -> !HOME_PAGE.equals(s)).collect(Collectors.toList());
         if (!hrefs.isEmpty()) {
             album.setRelatedCelebrities(
@@ -219,10 +220,10 @@ public final class CelebrityWikiSite extends BaseSite {
         }
         Element tags = text.selectFirst("div.ptags");
         if (tags != null) {
-            album.setTags(tags.select(CssSelector.TAG_A).eachText());
+            album.setTags(tags.select(CssSelectors.TAG_A).eachText());
         }
-        String next = show.selectFirst("div.next").selectFirst(CssSelector.TAG_A)
-            .attr(CssSelector.ATTR_HREF);
+        String next = show.selectFirst("div.next").selectFirst(CssSelectors.TAG_A)
+            .attr(CssSelectors.ATTR_HREF);
         if (!LAST_PAGE.equals(next)) {
             album.setNext(Integer
                 .parseInt(RegexUtils.matchesOrElseThrow(ALBUM_HREF_REGEX, next).group("id")));
@@ -243,7 +244,7 @@ public final class CelebrityWikiSite extends BaseSite {
         if (div.childNodeSize() == 1) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
         }
-        String cover = div.selectFirst("img").attr(CssSelector.ATTR_SRC);
+        String cover = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
 
         Elements ems = div.select("em");
         Map<String, String> info = ems.stream().collect(
@@ -264,18 +265,18 @@ public final class CelebrityWikiSite extends BaseSite {
     private <T extends SimpleCelebrity> T initCelebrity(Document document,
         TriFunction<? super Integer, String, CelebrityType, T> constructor) {
         Matcher matcher = RegexUtils.matchesOrElseThrow(CELEBRITY_HREF_REGEX,
-            document.selectFirst("a.current").attr(CssSelector.ATTR_HREF));
+            document.selectFirst("a.current").attr(CssSelectors.ATTR_HREF));
         int id = Integer.parseInt(matcher.group("id"));
         String name = document.selectFirst(".mx_name").text();
         CelebrityType type = EnumUtilExt
             .deserializeText(matcher.group("t"), CelebrityType.class, false);
         T t = constructor.apply(id, name, type);
         Element block01 = document.selectFirst("div.cm_block01");
-        String image = block01.selectFirst("img").attr(CssSelector.ATTR_SRC);
+        String image = block01.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
         if (!NO_PERSON_IMG.equals(image)) {
             t.setCover(image);
         }
-        Elements tags = block01.selectFirst("div.txt03").select(CssSelector.TAG_A);
+        Elements tags = block01.selectFirst("div.txt03").select(CssSelectors.TAG_A);
         if (!tags.isEmpty()) {
             t.setTags(tags.stream().map(Element::text).collect(Collectors.toList()));
         }
@@ -441,7 +442,7 @@ public final class CelebrityWikiSite extends BaseSite {
         List<SimpleAdultEntry> works = new ArrayList<>();
         Element tbody = icon.selectFirst("tbody");
         if (tbody != null) {
-            Elements trs = tbody.select(CssSelector.TAG_TR);
+            Elements trs = tbody.select(CssSelectors.TAG_TR);
             for (Element tr : trs) {
                 Elements tds = tr.select("td");
                 if (tds.size() < 6) {
@@ -508,19 +509,19 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     private Set<SimpleAlbum> getAlbums(Document document) {
-        Elements lis = document.selectFirst("#xiezhen").select(CssSelector.TAG_LI);
+        Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         if (lis.isEmpty()) {
             return null;
         }
         Set<SimpleAlbum> albums = new HashSet<>();
         for (Element li : lis) {
-            Element a = li.selectFirst(CssSelector.TAG_A);
+            Element a = li.selectFirst(CssSelectors.TAG_A);
             Matcher matcher = RegexUtils
-                .matchesOrElseThrow(ALBUM_HREF_REGEX, a.attr(CssSelector.ATTR_HREF));
+                .matchesOrElseThrow(ALBUM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF));
             int albumId = Integer.parseInt(matcher.group("id"));
             AlbumType type = EnumUtilExt
                 .deserializeText(matcher.group("t"), AlbumType.class, false);
-            String title = a.selectFirst("img").attr("alt");
+            String title = a.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_ALT);
             albums.add(new SimpleAlbum(albumId, type, title));
         }
         return albums;

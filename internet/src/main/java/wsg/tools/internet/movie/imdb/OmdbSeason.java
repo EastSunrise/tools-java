@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
+import wsg.tools.internet.common.CssSelectors;
 
 /**
  * A season of TV series.
@@ -16,7 +17,7 @@ import lombok.Getter;
 @JsonIgnoreProperties({"Response", "Error"})
 public class OmdbSeason {
 
-    @JsonProperty("title")
+    @JsonProperty(CssSelectors.ATTR_TITLE)
     private String enTitle;
     @JsonProperty("Season")
     private Integer currentSeason;

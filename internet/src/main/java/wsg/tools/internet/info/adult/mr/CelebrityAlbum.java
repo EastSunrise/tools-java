@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.mr;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import wsg.tools.internet.common.NextSupplier;
@@ -13,7 +14,8 @@ import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
  * @since 2021/2/26
  */
 @Getter
-public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplier,
+    NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private final List<String> images;
@@ -23,18 +25,19 @@ public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplie
 
     private Integer next;
 
-    CelebrityAlbum(int id, AlbumType type, String title, LocalDateTime updateTime, List<String> images) {
+    CelebrityAlbum(int id, AlbumType type, String title, LocalDateTime updateTime,
+        List<String> images) {
         super(id, type, title);
         this.updateTime = updateTime;
-        this.images = images;
+        this.images = Collections.unmodifiableList(images);
     }
 
     void setRelatedCelebrities(List<Integer> relatedCelebrities) {
-        this.relatedCelebrities = relatedCelebrities;
+        this.relatedCelebrities = Collections.unmodifiableList(relatedCelebrities);
     }
 
     void setTags(List<String> tags) {
-        this.tags = tags;
+        this.tags = Collections.unmodifiableList(tags);
     }
 
     void setNext(Integer next) {
@@ -47,7 +50,7 @@ public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplie
     }
 
     @Override
-    public Integer next() {
+    public Integer nextId() {
         return next;
     }
 }

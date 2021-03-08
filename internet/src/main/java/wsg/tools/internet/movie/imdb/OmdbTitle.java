@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.enums.Region;
 import wsg.tools.internet.movie.common.Runtime;
@@ -32,7 +33,7 @@ public class OmdbTitle extends BaseImdbTitle {
 
     private static final String SEPARATOR = ", ";
 
-    @JsonProperty("title")
+    @JsonProperty(CssSelectors.ATTR_TITLE)
     private String enTitle;
     private ImdbRating rated;
     @JsonProperty("released")

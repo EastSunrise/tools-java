@@ -1,5 +1,7 @@
 package wsg.tools.internet.resource.movie;
 
+import java.time.LocalDateTime;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
@@ -7,16 +9,14 @@ import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.common.VideoTypeSupplier;
 
-import javax.annotation.Nonnull;
-import java.time.LocalDateTime;
-
 /**
  * Items of {@link BdMovieSite}.
  *
  * @author Kingen
  * @since 2020/10/27
  */
-public class BdMovieItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier, VideoTypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class BdMovieItem extends IdentifiedItem implements DoubanIdentifier, ImdbIdentifier,
+    VideoTypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
     private Long dbId;
@@ -61,7 +61,7 @@ public class BdMovieItem extends IdentifiedItem implements DoubanIdentifier, Imd
     }
 
     @Override
-    public Integer next() {
+    public Integer nextId() {
         return next;
     }
 }

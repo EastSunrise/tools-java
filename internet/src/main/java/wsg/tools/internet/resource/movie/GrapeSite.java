@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +27,12 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IdentifiedIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -83,35 +82,42 @@ public final class GrapeSite extends BaseSite {
     /**
      * The repository including vod resource.
      */
-    public IterableRepository<GrapeVodItem> getVodRepository(GrapeVodType type) throws HttpResponseException {
-        Iterator<String> iterator = getAllVodIndexes(type).stream().map(i -> i.path).iterator();
-        return new IdentifiedIterableRepositoryImpl<>(this::findVodItem, iterator);
+    public IterableRepository<GrapeVodItem> getVodRepository(GrapeVodType type)
+        throws HttpResponseException {
+        List<SimpleItem> items = getAllVodIndexes(type);
+        List<String> ids = items.stream().map(item -> item.path).collect(Collectors.toList());
+        return new IdentifiedRepositoryImpl<>(this::findVodItem, ids);
     }
 
     public GrapeNewsItem findNewsItem(@Nonnull Integer id) throws HttpResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
-        LocalDate releaseDate = LocalDate.parse(RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text()).group("s"));
+        LocalDate releaseDate = LocalDate.parse(
+            RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text())
+                .group("s"));
         GrapeNewsItem item = new GrapeNewsItem(id, builder.toString(), releaseDate);
 
-        item.setTitle(document.selectFirst("div.news_title_all").selectFirst(CssSelector.TAG_H1).text().strip());
+        item.setTitle(
+            document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1).text()
+                .strip());
         Element info = document.selectFirst(".text");
         Matcher matcher = YEAR_REGEX.matcher(info.text());
         if (matcher.find()) {
             item.setYear(Integer.parseInt(matcher.group("y")));
         }
 
-        Elements as = info.select(CssSelector.TAG_A);
+        Elements as = info.select(CssSelectors.TAG_A);
         List<AbstractLink> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         for (Element a : as) {
             try {
-                String href = a.attr(CssSelector.ATTR_HREF).strip();
+                String href = a.attr(CssSelectors.ATTR_HREF).strip();
                 if (StringUtils.isBlank(href) || VOD_REGEX.matcher(href).matches()) {
                     continue;
                 }
                 if (href.contains(BT_ATTACH)) {
-                    href = href.replace("thunder://url_btbtt", "http://51btbtt.com/attach-download");
+                    href = href
+                        .replace("thunder://url_btbtt", "http://51btbtt.com/attach-download");
                 }
                 int index = StringUtils.indexOf(href, Ed2kLink.ED2K_PREFIX);
                 if (StringUtils.INDEX_NOT_FOUND != index) {
@@ -155,19 +161,20 @@ public final class GrapeSite extends BaseSite {
         String[] parts = ((TextNode) (prev.previousSibling())).text().split("/");
         listBuilder.currentPage(Integer.parseInt(parts[0].strip()));
         listBuilder.pagesCount(Integer.parseInt(parts[1].strip()));
-        if (prev.is(CssSelector.TAG_A)) {
-            listBuilder.prev(prev.attr(CssSelector.ATTR_HREF));
+        if (prev.is(CssSelectors.TAG_A)) {
+            listBuilder.prev(prev.attr(CssSelectors.ATTR_HREF));
         }
         Element next = prev.nextElementSibling();
-        if (next.is(CssSelector.TAG_A)) {
-            listBuilder.next(next.attr(CssSelector.ATTR_HREF));
+        if (next.is(CssSelectors.TAG_A)) {
+            listBuilder.next(next.attr(CssSelectors.ATTR_HREF));
         }
 
-        Elements lis = document.selectFirst("#contents").select(CssSelector.TAG_LI);
+        Elements lis = document.selectFirst("#contents").select(CssSelectors.TAG_LI);
         List<SimpleItem> items = new LinkedList<>();
         for (Element li : lis) {
-            String href = li.selectFirst(CssSelector.TAG_A).attr(CssSelector.ATTR_HREF);
-            LocalDate date = LocalDate.parse(((TextNode) li.selectFirst(".long").nextSibling()).text().strip());
+            String href = li.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
+            LocalDate date = LocalDate
+                .parse(((TextNode) li.selectFirst(".long").nextSibling()).text().strip());
             SimpleItem.SimpleItemBuilder itemBuilder = SimpleItem.builder().path(href).update(date);
             items.add(itemBuilder.build());
         }
@@ -180,32 +187,36 @@ public final class GrapeSite extends BaseSite {
         RequestBuilder builder = builder0(path);
         Document document = getDocument(builder, SnapshotStrategy.never());
 
-        Elements heads = document.selectFirst("ul.bread-crumbs").select(CssSelector.TAG_A);
+        Elements heads = document.selectFirst("ul.bread-crumbs").select(CssSelectors.TAG_A);
         AssertUtils.requireEquals(heads.size(), 3);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, heads.get(1).attr(CssSelector.ATTR_HREF));
-        GrapeVodGenre genre = EnumUtilExt.deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
-        LocalDateTime addTime = LocalDateTime.parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, heads.get(1).attr(
+            CssSelectors.ATTR_HREF));
+        GrapeVodGenre genre = EnumUtilExt
+            .deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
+        LocalDateTime addTime = LocalDateTime
+            .parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
         GrapeVodItem item = new GrapeVodItem(builder.toString(), genre, addTime);
 
         Element div = document.selectFirst(".detail-title");
-        Element h1 = div.selectFirst(CssSelector.TAG_H);
+        Element h1 = div.selectFirst(CssSelectors.TAG_H);
         item.setTitle(h1.text().strip());
         Element span = h1.nextElementSibling();
-        if (span.is(CssSelector.TAG_SPAN)) {
+        if (span.is(CssSelectors.TAG_SPAN)) {
             int year = Integer.parseInt(StringUtils.strip(span.text(), "()"));
             item.setYear(year);
         }
-        Map<String, Element> info = document.selectFirst(".info").select("dl").stream().collect(Collectors.toMap(Element::text, e -> e));
+        Map<String, Element> info = document.selectFirst(".info").select("dl").stream()
+            .collect(Collectors.toMap(Element::text, e -> e));
         Element dl = info.get("状态：");
         if (dl != null) {
             item.setState(dl.nextElementSibling().text().strip());
         }
 
-        Elements lis = document.select("#downul").select(CssSelector.TAG_LI);
+        Elements lis = document.select("#downul").select(CssSelectors.TAG_LI);
         List<AbstractLink> resources = new ArrayList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         for (Element li : lis) {
-            Element input = li.selectFirst(CssSelector.TAG_INPUT);
+            Element input = li.selectFirst(CssSelectors.TAG_INPUT);
             try {
                 resources.add(LinkFactory.create(input.attr("file_name"), input.val()));
             } catch (InvalidResourceException e) {
@@ -220,6 +231,7 @@ public final class GrapeSite extends BaseSite {
 
     @Builder
     static class VodList {
+
         List<SimpleItem> items;
         int currentPage;
         int pagesCount;
@@ -229,6 +241,7 @@ public final class GrapeSite extends BaseSite {
 
     @Builder
     static class SimpleItem {
+
         String path;
         LocalDate update;
     }

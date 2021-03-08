@@ -1,9 +1,7 @@
 package wsg.tools.internet.info.adult;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import lombok.Getter;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.Identifier;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
@@ -19,26 +17,38 @@ public class LaymanCatItem implements Identifier<String>, UpdateDatetimeSupplier
     NextSupplier<String> {
 
     private final String id;
-    private final AdultEntry entry;
-    private final String author;
-    private final LocalDateTime published;
-    private final LocalDateTime updated;
-    private final String description;
-    private final String next;
+    private String author;
+    private LocalDateTime published;
+    private LocalDateTime updated;
+    private AdultEntry entry;
+    private String description;
+    private String next;
 
-    LaymanCatItem(String id, AdultEntry entry, String author, LocalDateTime published,
-        LocalDateTime updated, String next) {
-        this(id, entry, author, published, updated, null, next);
+    LaymanCatItem(String id) {
+        this.id = id;
     }
 
-    LaymanCatItem(String id, AdultEntry entry, String author, LocalDateTime published,
-        LocalDateTime updated, String description, String next) {
-        this.id = AssertUtils.requireNotBlank(id);
-        this.entry = Objects.requireNonNull(entry);
-        this.author = AssertUtils.requireNotBlank(author);
-        this.published = Objects.requireNonNull(published);
-        this.updated = Objects.requireNonNull(updated);
+    void setAuthor(String author) {
+        this.author = author;
+    }
+
+    void setPublished(LocalDateTime published) {
+        this.published = published;
+    }
+
+    void setUpdated(LocalDateTime updated) {
+        this.updated = updated;
+    }
+
+    void setEntry(AdultEntry entry) {
+        this.entry = entry;
+    }
+
+    void setDescription(String description) {
         this.description = description;
+    }
+
+    void setNext(String next) {
         this.next = next;
     }
 
@@ -48,7 +58,7 @@ public class LaymanCatItem implements Identifier<String>, UpdateDatetimeSupplier
     }
 
     @Override
-    public String next() {
+    public String nextId() {
         return next;
     }
 }

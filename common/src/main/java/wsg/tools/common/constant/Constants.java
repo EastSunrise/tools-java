@@ -32,10 +32,12 @@ public final class Constants {
      */
     public static final int DEFAULT_MAP_CAPACITY = 16;
 
+    public static final int KILOBYTE = 1024;
+
     /**
      * Common datetime formatters.
      */
-    public static final DateTimeFormatter STANDARD_DATE_TIME_FORMATTER =
+    public static final DateTimeFormatter DATE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.CHINESE)
             .withZone(ZoneId.systemDefault());
 

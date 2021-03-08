@@ -66,12 +66,12 @@ public final class MagnetLink extends AbstractLink {
         if (!MAGNET_REGEX.matcher(url).matches()) {
             throw new InvalidResourceException(MagnetLink.class, title, url);
         }
-        Matcher dns = XT_REGEX.matcher(url);
+        Matcher xt = XT_REGEX.matcher(url);
         Set<String> topics = new HashSet<>();
-        while (dns.find()) {
-            topics.add(dns.group("dns"));
+        while (xt.find()) {
+            topics.add(xt.group("xt"));
         }
-        dns = DN_REGEX.matcher(url);
+        Matcher dns = DN_REGEX.matcher(url);
         Set<String> names = new HashSet<>();
         while (dns.find()) {
             String dn = dns.group("dn");
@@ -97,7 +97,7 @@ public final class MagnetLink extends AbstractLink {
 
     @Override
     public String getUrl() {
-        StringBuilder builder = new StringBuilder("magnet:?");
+        StringBuilder builder = new StringBuilder(MAGNET_PREFIX);
         builder.append(topics.stream().map(s -> "xt=" + s).collect(Collectors.joining("&")));
         for (String name : names) {
             builder.append("&dn=").append(name);

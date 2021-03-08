@@ -1,12 +1,11 @@
 package wsg.tools.internet.resource.movie;
 
+import java.time.LocalDateTime;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.resource.common.VideoType;
 import wsg.tools.internet.resource.common.VideoTypeSupplier;
-
-import javax.annotation.Nonnull;
-import java.time.LocalDateTime;
 
 /**
  * Items of {@link XlmSite}.
@@ -14,7 +13,8 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2021/1/9
  */
-public class XlmItem extends IdentifiedItem implements VideoTypeSupplier, UpdateDatetimeSupplier, NextSupplier<Integer> {
+public class XlmItem extends IdentifiedItem implements VideoTypeSupplier, UpdateDatetimeSupplier,
+    NextSupplier<Integer> {
 
     private final LocalDateTime releaseTime;
     private final XlmType type;
@@ -41,7 +41,7 @@ public class XlmItem extends IdentifiedItem implements VideoTypeSupplier, Update
     }
 
     @Override
-    public Integer next() {
+    public Integer nextId() {
         return next;
     }
 }

@@ -2,6 +2,7 @@ package wsg.tools.internet.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
@@ -44,7 +45,7 @@ public final class SiteUtils {
      * @return pair of main domain and sub domain if exists
      */
     public static Pair<String, String> splitDomain(String domain) {
-        domain = AssertUtils.requireNotBlank(domain).toLowerCase();
+        domain = AssertUtils.requireNotBlank(domain).toLowerCase(Locale.ENGLISH);
         RegexUtils.matchesOrElseThrow(DOMAIN_REGEX, domain);
         String[] parts = StringUtils.split(domain, SEPARATOR);
         int last = parts.length - 1;
@@ -70,8 +71,7 @@ public final class SiteUtils {
      *
      * @throws SiteStatusException if the status is abnormal
      */
-    public static void validateStatus(Class<? extends HttpSession> clazz)
-        throws SiteStatusException {
+    public static void validateStatus(Class<? extends HttpSession> clazz) {
         SiteStatus annotation = clazz.getAnnotation(SiteStatus.class);
         if (annotation != null) {
             SiteStatus.Status status = annotation.status();

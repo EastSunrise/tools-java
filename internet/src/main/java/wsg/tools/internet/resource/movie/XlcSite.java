@@ -27,7 +27,7 @@ import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
-import wsg.tools.internet.common.CssSelector;
+import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -78,10 +78,11 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         } catch (HttpResponseException e) {
             throw new UnexpectedException(e);
         }
-        Elements as = document.selectFirst("ul.f6").select(CssSelector.TAG_A);
+        Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
-            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(CssSelector.ATTR_HREF)).group("id");
+            String id = RegexUtils
+                .matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF)).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
@@ -98,23 +99,25 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         Document document = getDocument(builder, SnapshotStrategy.never());
 
         Map<String, Node> infos = new HashMap<>(8);
-        Elements elements = document.selectFirst(".moviecont").select(CssSelector.TAG_STRONG);
+        Elements elements = document.selectFirst(".moviecont").select(CssSelectors.TAG_STRONG);
         for (Element strong : elements) {
             infos.put(strong.text(), strong.nextSibling());
         }
         LocalDate updateDate = LocalDate
             .parse(((TextNode) infos.get("更新时间：")).text(), DateTimeFormatter.ISO_LOCAL_DATE);
-        Elements as = document.selectFirst("div.pleft").selectFirst(CssSelector.TAG_H3)
-            .select(CssSelector.TAG_A);
+        Elements as = document.selectFirst("div.pleft").selectFirst(CssSelectors.TAG_H3)
+            .select(CssSelectors.TAG_A);
         Matcher matcher = RegexUtils
-            .matchesOrElseThrow(TYPE_PATH_REGEX, as.get(as.size() - 2).attr(CssSelector.ATTR_HREF));
+            .matchesOrElseThrow(TYPE_PATH_REGEX,
+                as.get(as.size() - 2).attr(CssSelectors.ATTR_HREF));
         VideoType type = TYPES[Integer.parseInt(matcher.group("index"))];
         String state = ((TextNode) infos.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 
         item.setTitle(
-            RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group("title"));
-        Element font = as.last().selectFirst(CssSelector.TAG_FONT);
+            RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group(
+                CssSelectors.ATTR_TITLE));
+        Element font = as.last().selectFirst(CssSelectors.TAG_FONT);
         if (font != null) {
             int year = Integer
                 .parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("year"));
@@ -127,14 +130,15 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         List<InvalidResourceException> exceptions = new LinkedList<>();
         Elements lis = document.select("ul.down-list").select("li.item");
         for (Element li : lis) {
-            Element a = li.selectFirst(CssSelector.TAG_A);
-            String href = a.attr(CssSelector.ATTR_HREF);
+            Element a = li.selectFirst(CssSelectors.TAG_A);
+            String href = a.attr(CssSelectors.ATTR_HREF);
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
             String title = a.text().strip();
             try {
-                resources.add(LinkFactory.create(title, href, () -> LinkFactory.getPassword(title, href)));
+                resources.add(
+                    LinkFactory.create(title, href, () -> LinkFactory.getPassword(title, href)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }
