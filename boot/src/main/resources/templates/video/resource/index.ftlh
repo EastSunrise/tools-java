@@ -53,8 +53,10 @@
         <#list resources as resource>
             <div class="layui-colla-item">
                 <h2 class="layui-colla-title">
-                    ${resource_index+1}. <a href="${resource.url}" target="_blank" <#if !resource.identified>style="color: blue" </#if>>${resource.title}</a>
-                    <a href="https://search.douban.com/movie/subject_search?search_text=${resource.title}&cat=1002" class="layui-icon layui-icon-search"
+                    ${resource_index+1}. <span
+                        <#if !resource.identified>style="color: blue;" </#if>>${resource.title}</span>
+                    <a href="https://search.douban.com/movie/subject_search?search_text=${resource.title}&cat=1002"
+                       class="layui-icon layui-icon-search"
                        target="_blank"></a>
                 </h2>
                 <#if resource.links??>
@@ -64,7 +66,9 @@
                                 <tr>
                                     <#assign linkCount=linkCount+1/>
                                     <td>${linkCount}</td>
-                                    <td style="width: 600px"><a href="${link.url}" target="_blank">${(link.filename)!"TITLE"}</td>
+                                    <td style="width: 600px"><a href="${link.url}"
+                                                                target="_blank">${(link.filename)!"TITLE"}
+                                    </td>
                                     <td>
                                         <#if link.length??>${(link.length/1024)?round} KB</#if>
                                     </td>

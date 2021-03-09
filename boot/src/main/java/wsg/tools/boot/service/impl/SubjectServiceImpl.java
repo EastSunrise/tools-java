@@ -21,11 +21,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.NotFoundException;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.dao.api.intf.ImdbEpisodeView;
 import wsg.tools.boot.dao.api.intf.ImdbMovieView;
 import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
@@ -116,7 +116,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     @Override
     public SingleResult<Long> importSubjectByDb(long dbId)
-        throws HttpResponseException, DataIntegrityException, NotFoundException {
+        throws DataIntegrityException, NotFoundException, OtherHttpResponseException {
         Optional<IdView<Long>> optionalMovie = movieRepository.findByDbId(dbId);
         if (optionalMovie.isPresent()) {
             return SingleResult.of(optionalMovie.get().getId());
@@ -145,7 +145,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     @Override
     public SingleResult<Long> importSubjectByImdb(String imdbId)
-        throws HttpResponseException, DataIntegrityException, NotFoundException {
+        throws DataIntegrityException, NotFoundException, OtherHttpResponseException {
         ImdbView imdbView = adapter.imdbView(imdbId);
         if (imdbView instanceof ImdbMovieView) {
             Optional<IdView<Long>> optional = movieRepository.findByImdbId(imdbId);
@@ -168,11 +168,10 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      * Make sure at least one valid movie is provided.
      *
      * @throws DataIntegrityException if some required properties are lacking
-     * @throws HttpResponseException  if an error occurs
      */
     private SingleResult<Long> insertMovie(Pair<Long, DoubanMovie> dbResult,
         Pair<String, ImdbMovieView> imdbResult)
-        throws DataIntegrityException, HttpResponseException {
+        throws DataIntegrityException, OtherHttpResponseException {
         Long dbId = dbResult.getLeft();
         DoubanMovie doubanMovie = dbResult.getRight();
         if (dbId != null && doubanMovie == null) {
@@ -242,10 +241,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      * Id and title are both required not null.
      *
      * @throws DataIntegrityException if some required properties are lacking
-     * @throws HttpResponseException  if an error occurs when getting seasons
      */
     private SingleResult<Long> insertSeries(@Nonnull String imdbId, @Nonnull ImdbView imdbView)
-        throws DataIntegrityException, HttpResponseException {
+        throws DataIntegrityException, OtherHttpResponseException {
         String seriesImdbId;
         ImdbSeriesView imdbSeriesView;
         if (imdbView instanceof ImdbEpisodeView) {
@@ -329,7 +327,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     private Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>>
-    getSeasons(List<String[]> allEpisodes, String seriesImdbId) throws HttpResponseException {
+    getSeasons(List<String[]> allEpisodes, String seriesImdbId) throws OtherHttpResponseException {
         Map<Integer, String> fails = new HashMap<>(4);
         List<Pair<SeasonEntity, List<EpisodeEntity>>> seasons = new ArrayList<>();
         String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
@@ -360,13 +358,12 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     /**
      * All args are required not null.
      *
-     * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if the subject of the given IMDb id is not found from Douban
+     * @throws NotFoundException if the subject of the given IMDb id is not found from Douban
      */
     private Pair<SeasonEntity, List<EpisodeEntity>> getSeason(String seasonImdbId,
         String[] episodes,
         int currentSeason)
-        throws HttpResponseException, NotFoundException {
+        throws OtherHttpResponseException, NotFoundException {
         Long seasonDbId = adapter.getDbIdByImdbId(seasonImdbId);
         BaseDoubanSubject subject = adapter.doubanSubject(seasonDbId);
 
@@ -402,7 +399,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     }
 
     private EpisodeEntity getEpisode(String episodeImdbId, int currentEpisode)
-        throws HttpResponseException {
+        throws OtherHttpResponseException {
         EpisodeEntity episodeEntity = new EpisodeEntity();
         episodeEntity.setImdbId(episodeImdbId);
 
@@ -420,7 +417,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     @Override
     public BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, DoubanMark mark)
-        throws HttpResponseException, NotFoundException {
+        throws NotFoundException, OtherHttpResponseException {
         if (since == null) {
             since = userRecordRepository.findMaxMarkDate(userId)
                 .orElse(DoubanSite.DOUBAN_START_DATE);

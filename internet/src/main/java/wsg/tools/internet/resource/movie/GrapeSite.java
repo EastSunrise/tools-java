@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -27,10 +26,9 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IdentifiedRepositoryImpl;
-import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -45,6 +43,7 @@ import wsg.tools.internet.download.impl.Ed2kLink;
  */
 public final class GrapeSite extends BaseSite {
 
+    public static final int MAX_NEWS_ID = 16132;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter
         .ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
@@ -52,10 +51,8 @@ public final class GrapeSite extends BaseSite {
     private static final Pattern VOD_REGEX = Pattern
         .compile("tt\\d+/?|/vod/\\d+/?|/vod/[a-z]+/[a-z]+/?|/html/\\d+\\.html");
     private static final Pattern VOD_GENRE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>[a-z]+)");
+    private static final Pattern PAGE_SUM_REGEX = Pattern.compile("共(?<t>\\d+)部 :\\d+/\\d+");
     private static final String BT_ATTACH = "url_btbtt";
-
-    private final IterableRepository<GrapeNewsItem> newsRepository = new IntRangeIterableRepositoryImpl<>(
-        this::findNewsItem, 16132);
 
     public GrapeSite() {
         super("Grape Vod", new BasicHttpSession("putaoys.com"), GrapeSite::handleResponse);
@@ -75,18 +72,8 @@ public final class GrapeSite extends BaseSite {
     /**
      * The repository including downloadable resources.
      */
-    public IterableRepository<GrapeNewsItem> getNewsRepository() {
-        return newsRepository;
-    }
-
-    /**
-     * The repository including vod resource.
-     */
-    public IterableRepository<GrapeVodItem> getVodRepository(GrapeVodType type)
-        throws HttpResponseException {
-        List<SimpleItem> items = getAllVodIndexes(type);
-        List<String> ids = items.stream().map(item -> item.path).collect(Collectors.toList());
-        return new IdentifiedRepositoryImpl<>(this::findVodItem, ids);
+    public IntRangeIdentifiedRepository<GrapeNewsItem> getNewsRepository() {
+        return new IntRangeIdentifiedRepositoryImpl<>(this::findNewsItem, MAX_NEWS_ID);
     }
 
     public GrapeNewsItem findNewsItem(@Nonnull Integer id) throws HttpResponseException {
@@ -139,63 +126,49 @@ public final class GrapeSite extends BaseSite {
         return item;
     }
 
-    private List<SimpleItem> getAllVodIndexes(GrapeVodType type) throws HttpResponseException {
-        List<SimpleItem> items = new ArrayList<>();
-        for (int page = 1; ; page++) {
-            VodList vodList = getIndexes(type, page);
-            items.addAll(vodList.items);
-            if (vodList.currentPage >= vodList.pagesCount) {
-                break;
-            }
-        }
-        return items;
-    }
-
-    private VodList getIndexes(GrapeVodType type, int page) throws HttpResponseException {
-        String arg = String.format("vod-type-id-%d-p-%d", type.getCode(), page);
+    /**
+     * Obtains the page of simple vod items by the given type.
+     *
+     * @return the page of the simple items
+     */
+    public GrapeVodPageResult findAllVodSimples(@Nonnull GrapeVodType type,
+        @Nonnull GrapeVodPageRequest pageRequest) throws HttpResponseException {
+        String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getCode(),
+            pageRequest.getOrderBy().getText(), pageRequest.getCurrent() + 1);
         RequestBuilder builder = builder0("/index.php").addParameter("s", arg);
         Document document = getDocument(builder, SnapshotStrategy.always());
-        VodList.VodListBuilder listBuilder = VodList.builder();
 
-        Element prev = document.selectFirst(".short-page").child(0);
-        String[] parts = ((TextNode) (prev.previousSibling())).text().split("/");
-        listBuilder.currentPage(Integer.parseInt(parts[0].strip()));
-        listBuilder.pagesCount(Integer.parseInt(parts[1].strip()));
-        if (prev.is(CssSelectors.TAG_A)) {
-            listBuilder.prev(prev.attr(CssSelectors.ATTR_HREF));
-        }
-        Element next = prev.nextElementSibling();
-        if (next.is(CssSelectors.TAG_A)) {
-            listBuilder.next(next.attr(CssSelectors.ATTR_HREF));
-        }
+        String summary = ((TextNode) document.selectFirst(".ui-page-big").childNode(0)).text();
+        Matcher matcher = RegexUtils.matchesOrElseThrow(PAGE_SUM_REGEX, summary.strip());
+        int total = Integer.parseInt(matcher.group("t"));
 
         Elements lis = document.selectFirst("#contents").select(CssSelectors.TAG_LI);
-        List<SimpleItem> items = new LinkedList<>();
+        List<GrapeVodSimpleItem> items = new ArrayList<>();
         for (Element li : lis) {
-            String href = li.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-            LocalDate date = LocalDate
-                .parse(((TextNode) li.selectFirst(".long").nextSibling()).text().strip());
-            SimpleItem.SimpleItemBuilder itemBuilder = SimpleItem.builder().path(href).update(date);
-            items.add(itemBuilder.build());
+            Element a = li.selectFirst(CssSelectors.TAG_H5).selectFirst(CssSelectors.TAG_A);
+            String path = a.attr(CssSelectors.ATTR_HREF);
+            String title = a.text();
+            Node node = li.selectFirst(".long").nextSibling();
+            LocalDate updateTime = LocalDate.parse(((TextNode) node).text().strip());
+            String state = li.selectFirst(".mod_version").text();
+            items.add(new GrapeVodSimpleItem(path, title, updateTime, state));
         }
-        listBuilder.items(items);
-
-        return listBuilder.build();
+        return new GrapeVodPageResult(items, pageRequest, total);
     }
 
-    public GrapeVodItem findVodItem(String path) throws HttpResponseException {
+    public GrapeVodItem findVodItem(@Nonnull String path) throws HttpResponseException {
         RequestBuilder builder = builder0(path);
         Document document = getDocument(builder, SnapshotStrategy.never());
 
         Elements heads = document.selectFirst("ul.bread-crumbs").select(CssSelectors.TAG_A);
         AssertUtils.requireEquals(heads.size(), 3);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, heads.get(1).attr(
-            CssSelectors.ATTR_HREF));
+        String genreHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, genreHref);
         GrapeVodGenre genre = EnumUtilExt
             .deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
         LocalDateTime addTime = LocalDateTime
             .parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
-        GrapeVodItem item = new GrapeVodItem(builder.toString(), genre, addTime);
+        GrapeVodItem item = new GrapeVodItem(path, builder.toString(), genre, addTime);
 
         Element div = document.selectFirst(".detail-title");
         Element h1 = div.selectFirst(CssSelectors.TAG_H);
@@ -225,24 +198,6 @@ public final class GrapeSite extends BaseSite {
         }
         item.setResources(resources);
         item.setExceptions(exceptions);
-
         return item;
-    }
-
-    @Builder
-    static class VodList {
-
-        List<SimpleItem> items;
-        int currentPage;
-        int pagesCount;
-        String prev;
-        String next;
-    }
-
-    @Builder
-    static class SimpleItem {
-
-        String path;
-        LocalDate update;
     }
 }

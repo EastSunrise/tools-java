@@ -26,9 +26,11 @@ public final class CssSelectors {
     public static final String TAG_H2 = "h2";
     public static final String TAG_H3 = "h3";
     public static final String TAG_H4 = "h4";
+    public static final String TAG_H5 = "h5";
     public static final String TAG_TIME = "time";
     public static final String TAG_FONT = "font";
     public static final String TAG_IMG = "img";
+    public static final String TAG_EM = "em";
 
     /**
      * Common meta tags

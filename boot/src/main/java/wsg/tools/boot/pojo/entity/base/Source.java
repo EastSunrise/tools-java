@@ -17,16 +17,21 @@ import wsg.tools.internet.base.intf.Repository;
 @Embeddable
 public class Source implements Serializable {
 
+    /**
+     * Default subtype for the repository which has only one subtype.
+     */
+    public static final int DEFAULT_SUBTYPE = 0;
+    public static final String DOMAIN_COLUMN = "domain";
     private static final long serialVersionUID = 38168257706310693L;
 
     /**
-     * The {@link Repository} where the records are from, usually domain
+     * The domain of the {@link Repository}
      */
-    @Column(nullable = false, length = 15)
-    private String repository;
+    @Column(name = DOMAIN_COLUMN, nullable = false, length = 15)
+    private String domain;
 
     /**
-     * The subtype of the record in the repository
+     * The subtype that the record belongs to in the repository
      */
     @Column(nullable = false)
     private Integer subtype;
@@ -37,8 +42,8 @@ public class Source implements Serializable {
     @Column(nullable = false)
     private Long rid;
 
-    private Source(String repository, int subtype, Long rid) {
-        this.repository = repository;
+    private Source(String domain, int subtype, Long rid) {
+        this.domain = domain;
         this.subtype = subtype;
         this.rid = rid;
     }
@@ -50,30 +55,30 @@ public class Source implements Serializable {
      * Returns an instance of {@link Source} representing the default subtype of the given
      * repository, usually the whole repository which only has one subtype.
      */
-    public static Source repo(@Nonnull String repository) {
-        return new Source(repository, 0, null);
+    public static Source repo(@Nonnull String domain) {
+        return new Source(domain, DEFAULT_SUBTYPE, null);
     }
 
     /**
      * Returns an instance of {@link Source} representing a record of the default subtype of the
      * given repository.
      */
-    public static Source record(@Nonnull String repository, @Nonnull Long rid) {
-        return new Source(repository, 0, rid);
+    public static Source record(@Nonnull String domain, long rid) {
+        return new Source(domain, DEFAULT_SUBTYPE, rid);
     }
 
     /**
      * Returns an instance of {@link Source} representing a subtype of the given repository.
      */
-    public static Source subtype(@Nonnull String repository, int subtype) {
-        return new Source(repository, subtype, null);
+    public static Source subtype(@Nonnull String domain, int subtype) {
+        return new Source(domain, subtype, null);
     }
 
     /**
      * Returns an instance of {@link Source} representing a record of the given subtype of the given
      * repository.
      */
-    public static Source record(@Nonnull String repository, int subtype, @Nonnull Long rid) {
-        return new Source(repository, subtype, rid);
+    public static Source record(@Nonnull String domain, int subtype, long rid) {
+        return new Source(domain, subtype, rid);
     }
 }

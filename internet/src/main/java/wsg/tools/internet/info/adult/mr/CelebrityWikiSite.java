@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -43,7 +44,7 @@ import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
@@ -106,6 +107,7 @@ public final class CelebrityWikiSite extends BaseSite {
     private static final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d{2,4}) ?(分钟|分|钟)");
     private static final Pattern RELEASE_REGEX = Pattern
         .compile("(?<y>\\d{4})([-/])(?<m>\\d{1,2})\\2(?<d>\\d{1,2})");
+    private static final int MAX_CELEBRITY_ID = 9601;
 
     static {
         String celebrityTypes =
@@ -143,7 +145,7 @@ public final class CelebrityWikiSite extends BaseSite {
      * found.
      */
     public IterableRepository<Celebrity> getCelebrityRepository() {
-        return new IntRangeIterableRepositoryImpl<>(this::findCelebrity, 9601);
+        return new IntRangeIdentifiedRepositoryImpl<>(this::findCelebrity, MAX_CELEBRITY_ID);
     }
 
     public IterableRepository<CelebrityAlbum> getAlbumRepository(AlbumType type) {
@@ -157,7 +159,7 @@ public final class CelebrityWikiSite extends BaseSite {
     public Celebrity findCelebrity(int id) throws HttpResponseException {
         Document document = getDocument(builder0("/yule/m%d/info.html", id),
             SnapshotStrategy.never());
-        Elements ems = document.selectFirst("div.datacon").select("em");
+        Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
             String text = ((TextNode) em.nextSibling()).text().substring(1);
@@ -237,16 +239,15 @@ public final class CelebrityWikiSite extends BaseSite {
      * @param id ignore case
      */
     public CelebrityAdultEntry findAdultEntry(String id) throws HttpResponseException {
-        Document document = getDocument(
-            builder0("/fanhao/%s.html", AssertUtils.requireNotBlank(id).toUpperCase()),
-            SnapshotStrategy.never());
+        Document document = getDocument(builder0("/fanhao/%s.html",
+            AssertUtils.requireNotBlank(id).toUpperCase(Locale.ENGLISH)), SnapshotStrategy.never());
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
         }
         String cover = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
 
-        Elements ems = div.select("em");
+        Elements ems = div.select(CssSelectors.TAG_EM);
         Map<String, String> info = ems.stream().collect(
             Collectors.toMap(e -> e.text().replace(" ", ""),
                 em -> ((TextNode) em.nextSibling()).text().substring(1)));

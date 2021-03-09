@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.BaseDoubanSubject;
 import wsg.tools.internet.movie.douban.DoubanSite;
@@ -22,21 +23,21 @@ public interface SubjectAdapter {
      *
      * @param dbId id of Douban
      * @return result
-     * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if the subject of the given id is not found from Douban
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws NotFoundException          if the subject of the given id is not found from Douban
      */
-    BaseDoubanSubject doubanSubject(long dbId) throws HttpResponseException, NotFoundException;
+    BaseDoubanSubject doubanSubject(long dbId) throws NotFoundException, OtherHttpResponseException;
 
     /**
      * Obtains id of Douban based on id of IMDb.
      *
      * @param imdbId id of IMDb
      * @return result
-     * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if the responding Douban id of the given IMDb id is not found
-     *                               from Douban
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws NotFoundException          if the responding Douban id of the given IMDb id is not
+     *                                    found from Douban
      */
-    Long getDbIdByImdbId(String imdbId) throws HttpResponseException, NotFoundException;
+    Long getDbIdByImdbId(String imdbId) throws NotFoundException, OtherHttpResponseException;
 
     /**
      * Obtains subjects of the given user.
@@ -45,19 +46,19 @@ public interface SubjectAdapter {
      * @param since  start date
      * @param mark   type of marking
      * @return result
-     * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if subjects of the given user is not found from Douban
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws NotFoundException          if subjects of the given user is not found from Douban
      */
     Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, DoubanMark mark)
-        throws HttpResponseException, NotFoundException;
+        throws OtherHttpResponseException, NotFoundException;
 
     /**
      * Obtains a view of a title from {@link ImdbRepository}.
      *
      * @param imdbId id of IMDb
      * @return result
-     * @throws HttpResponseException if an error occurs
-     * @throws NotFoundException     if the subject of the given id if not found from IMDb
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws NotFoundException          if the subject of the given id if not found from IMDb
      */
-    ImdbView imdbView(String imdbId) throws HttpResponseException, NotFoundException;
+    ImdbView imdbView(String imdbId) throws OtherHttpResponseException, NotFoundException;
 }

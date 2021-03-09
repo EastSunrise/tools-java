@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.HttpStatus;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.SerialNumHeaderEnum;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.FastdfsClient;
 import wsg.tools.boot.dao.jpa.mapper.AdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
@@ -31,7 +34,7 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.impl.BasicDownloader;
@@ -59,13 +62,13 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private static final String CODE_EXISTS_MSG = "The target code exists";
     private static final String CODE_NOT_EXIST_MSG = "The code doesn't exist";
     private static final String COVER_NOT_EXIST_MSG = "The cover doesn't exist";
+    private static final int MAX_CODE_LENGTH = 15;
+    private static final String ILLEGAL_CODE_MSG = "The code is illegal";
 
     private final FastdfsClient client;
     private final AdultVideoRepository videoRepository;
     private final FailureRepository failureRepository;
 
-    private final LaymanCatSite laymanCatSite = new LaymanCatSite();
-    private final MidnightSite midnightSite = new MidnightSite();
     private final BasicDownloader downloader = new BasicDownloader()
         .strategy(FileExistStrategy.REPLACE);
 
@@ -78,46 +81,51 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public void importLaymanCatSite() throws HttpResponseException {
+    public void importLaymanCatSite(@Nonnull LaymanCatSite site) throws OtherHttpResponseException {
+        String domain = site.getDomain();
         Sort sort = Sort.by(Sort.Direction.DESC, AdultVideoEntity_.GMT_CREATED);
         Pageable pageable = PageRequest.of(0, 1, sort);
         AdultVideoEntity probe = new AdultVideoEntity();
-        probe.setSource(Source.repo(laymanCatSite.getDomain()));
+        probe.setSource(Source.repo(domain));
         Example<AdultVideoEntity> example = Example.of(probe);
         Page<AdultVideoEntity> page = videoRepository.findAll(example, pageable);
+
+        LinkedRepository<String, LaymanCatItem> repository = site.getRepository();
         RepositoryIterator<LaymanCatItem> iterator;
         if (page.hasContent()) {
             long rid = page.iterator().next().getSource().getRid();
-            String first = SerialNumHeaderEnum.deserialize(rid);
-            iterator = new LinkedRepositoryImpl<>(laymanCatSite, first).iterator();
-            iterator.next();
+            String start = SerialNumHeaderEnum.deserialize(rid);
+            iterator = repository.iteratorAfter(start);
+            SiteUtilExt.found(iterator::next);
         } else {
-            iterator = laymanCatSite.iterator();
+            iterator = repository.iterator();
         }
         int success = 0, total = 0;
         while (iterator.hasNext()) {
-            LaymanCatItem item = iterator.next();
+            LaymanCatItem item = SiteUtilExt.found(iterator::next);
             AdultEntry entry = item.getEntry();
             long rid = SerialNumHeaderEnum.serialize(item.getId());
-            Source source = Source.record(laymanCatSite.getDomain(), rid);
+            Source source = Source.record(domain, rid);
             success += insertEntry(entry, source, null);
             total++;
         }
-        log.info("Imported adult entries from {}: {} succeed, {} failed", laymanCatSite.getDomain(),
-            success, total - success);
+        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
+            total - success);
     }
 
     @Override
-    public void importMidnightEntries(MidnightEntryType type) throws HttpResponseException {
+    public void importMidnightEntries(@Nonnull MidnightSite site, @Nonnull MidnightEntryType type)
+        throws OtherHttpResponseException {
         Integer subtype = type.getType().getCode();
-        String domain = midnightSite.getDomain();
+        String domain = site.getDomain();
         long max = videoRepository.findMaxRid(domain, subtype).orElse(0L);
 
         MidnightPageRequest request = MidnightPageRequest.first();
         boolean finished = false;
         List<MidnightSimpleItem> items = new ArrayList<>();
         while (true) {
-            MidnightPageResult page = midnightSite.getSimpleItemPage(type.getType(), request);
+            MidnightPageResult page = SiteUtilExt
+                .found(type.getType(), request, site::findAllSimples);
             for (MidnightSimpleItem simpleItem : page.getContent()) {
                 if (simpleItem.getId() <= max) {
                     finished = true;
@@ -134,8 +142,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         items.sort(Comparator.comparing(MidnightSimpleItem::getId));
         int success = 0;
         for (MidnightSimpleItem simpleItem : items) {
-            MidnightEntry entry = midnightSite.findAdultEntry(type, simpleItem.getId());
-            Source source = Source.record(domain, subtype, (long) entry.getId());
+            MidnightEntry entry = SiteUtilExt
+                .found(type, simpleItem.getId(), site::findAdultEntry);
+            Source source = Source.record(domain, subtype, entry.getId());
             success += insertEntry(entry.getEntry(), source, entry.getImages());
         }
         log.info("Imported adult entries of {} from {}: {} succeed, {} failed.", type, domain,
@@ -145,6 +154,10 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private int insertEntry(AdultEntry entry, Source source, List<String> images) {
         if (entry == null) {
             failureRepository.insert(new Failure(source, CODE_NOT_EXIST_MSG));
+            return 0;
+        }
+        if (entry.getCode().length() > MAX_CODE_LENGTH) {
+            failureRepository.insert(new Failure(source, ILLEGAL_CODE_MSG));
             return 0;
         }
         if (videoRepository.findById(entry.getCode()).isPresent()) {

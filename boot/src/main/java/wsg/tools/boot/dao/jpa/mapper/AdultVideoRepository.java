@@ -19,11 +19,11 @@ public interface AdultVideoRepository extends BaseRepository<AdultVideoEntity, S
     /**
      * Finds the maximum rid of the subtype of the repository.
      *
-     * @param repository the repository of the source
-     * @param subtype    the subtype of the source
+     * @param domain  the domain of the repository
+     * @param subtype the subtype of the source
      * @return optional of the maximum rid
      */
     @Query("select max(source.rid) from AdultVideoEntity "
-        + "where source.repository=?1 and source.subtype=?2")
-    Optional<Long> findMaxRid(@Nonnull String repository, int subtype);
+        + "where source.domain=?1 and source.subtype=?2")
+    Optional<Long> findMaxRid(@Nonnull String domain, int subtype);
 }

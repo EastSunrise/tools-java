@@ -22,9 +22,8 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.Scheme;
@@ -35,24 +34,19 @@ import wsg.tools.internet.common.UnexpectedContentException;
  * @see <a href="http://www.surenmao.com/">Layman Cat</a>
  * @since 2021/2/28
  */
-public final class LaymanCatSite extends BaseSite
-    implements Repository<String, LaymanCatItem>, IterableRepository<LaymanCatItem> {
+public final class LaymanCatSite extends BaseSite implements Repository<String, LaymanCatItem> {
 
     private static final Pattern HREF_REGEX = Pattern
         .compile("http://www\\.surenmao\\.com/(?<id>[0-9a-z-]+)/");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     private static final String FIRST_KEY = "収録時間";
 
-    private final IterableRepository<LaymanCatItem> repository =
-        new LinkedRepositoryImpl<>(this, "200gana-1829");
-
     public LaymanCatSite() {
         super("Layman Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
     }
 
-    @Override
-    public RepositoryIterator<LaymanCatItem> iterator() {
-        return repository.iterator();
+    public LinkedRepository<String, LaymanCatItem> getRepository() {
+        return new LinkedRepositoryImpl<>(this, "200gana-1829");
     }
 
     @Override

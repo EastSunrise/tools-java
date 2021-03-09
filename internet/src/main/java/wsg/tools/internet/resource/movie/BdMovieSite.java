@@ -27,7 +27,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -66,7 +66,10 @@ public final class BdMovieSite extends BaseSite {
         super("BD-Movie", new BasicHttpSession("bd2020.com"));
     }
 
-    public IterableRepository<BdMovieItem> getRepository(BdMovieType type) {
+    /**
+     * Returns the repository of the given type since very first one.
+     */
+    public LinkedRepository<Integer, BdMovieItem> getRepository(BdMovieType type) {
         return new LinkedRepositoryImpl<>(id -> findItem(type, id), type.first());
     }
 

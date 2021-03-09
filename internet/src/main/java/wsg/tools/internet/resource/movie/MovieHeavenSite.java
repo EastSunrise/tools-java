@@ -27,11 +27,10 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.UnexpectedException;
@@ -48,8 +47,8 @@ import wsg.tools.internet.resource.common.VideoType;
  * @since 2020/10/18
  */
 @Slf4j
-public final class MovieHeavenSite extends BaseSite implements Repository<Integer, MovieHeavenItem>,
-    IterableRepository<MovieHeavenItem> {
+public final class MovieHeavenSite extends BaseSite
+    implements Repository<Integer, MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern ITEM_TITLE_REGEX = Pattern
@@ -74,8 +73,6 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
         VideoType.SERIES, VideoType.FOUR_K
     };
 
-    private final IterableRepository<MovieHeavenItem> repository = new IntRangeIterableRepositoryImpl<>(this, this::max);
-
     public MovieHeavenSite() {
         super("Movie Heaven", new BasicHttpSession("993dy.com"), new AbstractResponseHandler<>() {
             @Override
@@ -89,11 +86,14 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
         });
     }
 
+    public IntRangeIdentifiedRepository<MovieHeavenItem> getRepository() {
+        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+    }
+
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
-    @Nonnull
-    public Integer max() {
+    public int max() {
         Document document;
         try {
             document = getDocument(builder0("/"), SnapshotStrategy.always());
@@ -109,11 +109,6 @@ public final class MovieHeavenSite extends BaseSite implements Repository<Intege
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
-    }
-
-    @Override
-    public RepositoryIterator<MovieHeavenItem> iterator() {
-        return repository.iterator();
     }
 
     @Override

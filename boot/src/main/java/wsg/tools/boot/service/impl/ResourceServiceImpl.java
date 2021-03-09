@@ -8,31 +8,39 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.common.util.BeanUtilExt;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.boot.common.util.SiteUtilExt;
+import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.LinkDto;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
+import wsg.tools.boot.pojo.entity.base.Failure;
+import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
+import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.FilenameSupplier;
 import wsg.tools.internet.download.base.LengthSupplier;
@@ -54,49 +62,85 @@ import wsg.tools.internet.resource.movie.IdentifiedItem;
 @Service
 public class ResourceServiceImpl extends BaseServiceImpl implements ResourceService {
 
+    private static final String ITEM_EXISTS_MSG = "The resource item exists";
     private final ResourceItemRepository itemRepository;
-
     private final ResourceLinkRepository linkRepository;
-
+    private final FailureRepository failureRepository;
     private final TransactionTemplate template;
 
     @Autowired
     public ResourceServiceImpl(ResourceItemRepository itemRepository,
         ResourceLinkRepository linkRepository,
+        FailureRepository failureRepository,
         TransactionTemplate template) {
         this.itemRepository = itemRepository;
         this.linkRepository = linkRepository;
+        this.failureRepository = failureRepository;
         this.template = template;
     }
 
     @Override
-    public <T extends IdentifiedItem> void importIterableRepository(
-        IterableRepository<T> repository,
-        String repositoryId) throws HttpResponseException {
-        int itemsCount = 0, linksCount = 0;
-        RepositoryIterator<T> iterator = repository.iterator();
+    public <T extends IdentifiedItem & NextSupplier<Integer>> void importLinkedRepository(
+        LinkedRepository<Integer, T> repository, String domain, int subtype)
+        throws OtherHttpResponseException {
+        Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
+        RepositoryIterator<T> iterator;
+        if (optional.isPresent()) {
+            int start = Math.toIntExact(optional.get());
+            iterator = repository.iteratorAfter(start);
+            SiteUtilExt.found(iterator::next);
+        } else {
+            iterator = repository.iterator();
+        }
+        int success = 0, failure = 0;
         while (iterator.hasNext()) {
-            int count = saveItem(iterator.next(), repositoryId);
-            if (count >= 0) {
-                itemsCount++;
-                linksCount += count;
+            T item = SiteUtilExt.found(iterator::next);
+            Source source = Source.record(domain, subtype, item.getId());
+            if (insertItem(item, source) >= 0) {
+                success++;
+            } else {
+                failure++;
             }
         }
-        log.info("Finished importing resources of {}: {} items, {} links.", repositoryId,
-            itemsCount,
-            linksCount);
+        log.info("Imported resources from {}: {} succeed, {} failed", domain, success, failure);
     }
 
-    private <T extends IdentifiedItem> int saveItem(T item, String domain) {
+    @Override
+    public <T extends IdentifiedItem> void importIntRangeRepository(
+        IntRangeIdentifiedRepository<T> repository, String domain, int subtype)
+        throws OtherHttpResponseException {
+        Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
+        int start = optional.map(Long::intValue).map(id -> id + 1).orElse(repository.min());
+        RepositoryIterator<T> iterator = repository.iteratorAfter(start);
+        int success = 0, total = 0, notFound = 0;
+        while (iterator.hasNext()) {
+            try {
+                T item = SiteUtilExt.ifNotFound(iterator::next, "A record of " + domain);
+                Source source = Source.record(domain, subtype, item.getId());
+                if (insertItem(item, source) >= 0) {
+                    success++;
+                }
+            } catch (NotFoundException e) {
+                notFound++;
+            }
+            total++;
+        }
+        log.info("Imported resources from {}: {} succeed, {} failed, {} not found", domain, success,
+            total - success - notFound, notFound);
+    }
+
+    /**
+     * @return the count of inserted links, or -1 if the item exists.
+     */
+    private <T extends IdentifiedItem> int insertItem(T item, Source source) {
         List<AbstractLink> resources = item.getResources();
-        if (itemRepository.findBySiteAndSid(domain, item.getId()).isPresent()) {
+        if (itemRepository.findBySource(source).isPresent()) {
+            failureRepository.insert(new Failure(source, ITEM_EXISTS_MSG));
             return -1;
         }
 
         ResourceItemEntity itemEntity = new ResourceItemEntity();
-        itemEntity.setSite(domain);
-        itemEntity.setSid(item.getId());
-        itemEntity.setUrl(item.getUrl());
+        itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
         if (item instanceof VideoTypeSupplier) {
@@ -118,7 +162,6 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                 .setUpdateTime(
                     LocalDateTime.of(((UpdateDateSupplier) item).lastUpdate(), LocalTime.MIN));
         }
-
         return Objects
             .requireNonNull(template.execute(status -> insertResource(itemEntity, resources)));
     }
@@ -212,8 +255,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
         List<ResourceDto> resources = new ArrayList<>();
         for (ResourceItemEntity item : items) {
-            ResourceDto resource = new ResourceDto(item.getTitle(), item.getUrl(),
-                item.getIdentified());
+            ResourceDto resource = new ResourceDto(item.getTitle(), item.getIdentified());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
                 List<LinkDto> linkDtos = new ArrayList<>();

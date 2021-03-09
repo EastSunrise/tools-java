@@ -25,7 +25,8 @@ import wsg.tools.internet.info.adult.common.Mosaic;
 public final class AdultEntryUtils {
 
     private static final Pattern RELEASE_REGEX = Pattern.compile(
-        "(月額▶)?((?<y>\\d{4})([-/])(?<m>\\d{2})\\4(?<d>\\d{2})|--)( \\((DVD|VHS|BD) (セル版|レンタル版|セルorレンタル|记载无し)?\\))?");
+        "(月額▶)?((?<y>\\d{4})([-/])(?<m>\\d{2})\\4(?<d>\\d{2})|--)"
+            + "( \\((DVD|VHS|BD) (セル版|レンタル版|セルorレンタル|记载无し)?\\))?");
     private static final Pattern DURATION_REGEX = Pattern.compile("(?<d>\\d+)?(min|分|分钟)");
 
     private AdultEntryUtils() {
@@ -52,23 +53,22 @@ public final class AdultEntryUtils {
      * @return the adult entry
      */
     public static AdultEntry getAdultEntry(@Nonnull Map<String, String> map, @Nonnull String code,
-        @Nonnull String cover,
-        String separatorChars) {
+        @Nonnull String cover, String separatorChars) {
         String title = getString(map, "名称");
         Mosaic mosaic = getValue(map, s -> EnumUtilExt.deserializeTitle(s, Mosaic.class, false),
             "是否有码");
         Duration duration = getValue(map, s -> {
-            String d = RegexUtils.matchesOrElseThrow(DURATION_REGEX, s).group("d");
-            return d == null ? null : Duration.ofMinutes(Integer.parseInt(d));
+            String dur = RegexUtils.matchesOrElseThrow(DURATION_REGEX, s).group("d");
+            return dur == null ? null : Duration.ofMinutes(Integer.parseInt(dur));
         }, "时长", "收录时间", "収录时间", "収録时间", "収録時間", "播放时间");
         LocalDate release = getValue(map, s -> {
-            Matcher m = RegexUtils.matchesOrElseThrow(RELEASE_REGEX, s);
-            String year = m.group("y");
+            Matcher matcher = RegexUtils.matchesOrElseThrow(RELEASE_REGEX, s);
+            String year = matcher.group("y");
             if (year == null) {
                 return null;
             }
-            return LocalDate.of(Integer.parseInt(year), Integer.parseInt(m.group("m")),
-                Integer.parseInt(m.group("d")));
+            return LocalDate.of(Integer.parseInt(year), Integer.parseInt(matcher.group("m")),
+                Integer.parseInt(matcher.group("d")));
         }, "配信开始日", "発売日", "发行时间", "配信開始日", "公開日");
         String director = getString(map, "导演");
         String producer = getString(map, "制作商", "制造商", "制造厂", "メーカー");
@@ -79,23 +79,19 @@ public final class AdultEntryUtils {
         String performer = getString(map, "出演", "出演者");
         if (performer != null) {
             return new SingleAdultEntry(code, cover, performer, title, mosaic, duration, release,
-                director, producer,
-                distributor, series, tags);
+                director, producer, distributor, series, tags);
         }
         List<String> performers = getStringList(map, separatorChars, "演员", "女优");
         if (CollectionUtils.isEmpty(performers)) {
             return new AdultEntry(code, cover, title, mosaic, duration, release, director, producer,
-                distributor,
-                series, tags);
+                distributor, series, tags);
         }
         if (performers.size() == 1) {
             return new SingleAdultEntry(code, cover, performers.get(0), title, mosaic, duration,
-                release, director,
-                producer, distributor, series, tags);
+                release, director, producer, distributor, series, tags);
         }
         return new MultiAdultEntry(code, cover, performers, title, mosaic, duration, release,
-            director, producer,
-            distributor, series, tags);
+            director, producer, distributor, series, tags);
     }
 
     public static List<String> getStringList(@Nonnull Map<String, String> map,

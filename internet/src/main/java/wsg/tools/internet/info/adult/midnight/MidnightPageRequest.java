@@ -58,7 +58,7 @@ public class MidnightPageRequest extends BasicPageRequest {
         return new MidnightPageRequest(previous.getCurrent(), previous.getPageSize(), orderBy);
     }
 
-    public OrderBy getOrderBy() {
+    OrderBy getOrderBy() {
         return orderBy;
     }
 

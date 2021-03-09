@@ -3,6 +3,7 @@ package wsg.tools.boot.pojo.entity.base;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table
+@Table(
+    name = "failure",
+    indexes = @Index(name = "index_failure_domain", columnList = Source.DOMAIN_COLUMN)
+)
 public class Failure extends IdentityEntity {
 
     private static final long serialVersionUID = 6395141771348858128L;

@@ -4,10 +4,13 @@ import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.http.client.HttpResponseException;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
+import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
 /**
@@ -19,15 +22,28 @@ import wsg.tools.internet.resource.movie.IdentifiedItem;
 public interface ResourceService {
 
     /**
-     * Import all resources from the given iterable repository.
+     * Imports latest resources from {@link LinkedRepository}.
      *
-     * @param repository   an iterable repository
-     * @param repositoryId the identifier of the repository
-     * @throws HttpResponseException if an error occurs when do request
+     * @param repository the target repository
+     * @param domain     the domain of the repository
+     * @param subtype    the subtype whose records are going to import
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    <T extends IdentifiedItem> void importIterableRepository(IterableRepository<T> repository,
-        String repositoryId)
-        throws HttpResponseException;
+    <T extends IdentifiedItem & NextSupplier<Integer>> void importLinkedRepository(
+        LinkedRepository<Integer, T> repository, String domain, int subtype)
+        throws OtherHttpResponseException;
+
+    /**
+     * Imports latest resources from {@link IntRangeIdentifiedRepository}.
+     *
+     * @param repository the target repository
+     * @param domain     the domain of the repository
+     * @param subtype    the subtype whose records are going to import
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     */
+    <T extends IdentifiedItem> void importIntRangeRepository(
+        IntRangeIdentifiedRepository<T> repository, String domain, int subtype)
+        throws OtherHttpResponseException;
 
     /**
      * Search resources of the given key.
@@ -50,8 +66,7 @@ public interface ResourceService {
      * @return result of list of resources
      */
     List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
-        @Nullable String imdbId,
-        @Nullable Boolean identified);
+        @Nullable String imdbId, @Nullable Boolean identified);
 
     /**
      * Link the given item to the given identifiers.

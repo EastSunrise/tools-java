@@ -2,13 +2,14 @@ package wsg.tools.boot.pojo.entity.resource;
 
 import java.time.LocalDateTime;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
+import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 import wsg.tools.internet.resource.common.VideoType;
@@ -26,22 +27,20 @@ import wsg.tools.internet.resource.movie.BasicItem;
 @Getter
 @Setter
 @Entity
-@Table(name = "resource_item",
-    uniqueConstraints = @UniqueConstraint(name = "uk_site_key", columnNames = {"site", "sid"}),
-    indexes = @Index(name = "index_imdb", columnList = "imdbId"))
+@Table(
+    name = "resource_item",
+    indexes = {
+        @Index(name = "index_imdb", columnList = "imdbId"),
+        @Index(name = "index_resource_item_domain", columnList = Source.DOMAIN_COLUMN)
+    }
+)
 public class ResourceItemEntity extends IdentityEntity
     implements VideoTypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
 
     private static final long serialVersionUID = -6437618032369837427L;
 
-    @Column(nullable = false, length = 15)
-    private String site;
-
-    @Column(nullable = false)
-    private Integer sid;
-
-    @Column(nullable = false, length = 63, unique = true)
-    private String url;
+    @Embedded
+    private Source source;
 
     @Column(nullable = false)
     private String title;

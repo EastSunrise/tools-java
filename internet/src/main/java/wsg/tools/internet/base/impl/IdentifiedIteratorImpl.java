@@ -12,7 +12,6 @@ import wsg.tools.internet.base.intf.RepositoryIterator;
  * identifiers.
  *
  * @author Kingen
- * @see IdentifiedRepositoryImpl
  * @since 2021/3/2
  */
 class IdentifiedIteratorImpl<ID, T> implements RepositoryIterator<T> {

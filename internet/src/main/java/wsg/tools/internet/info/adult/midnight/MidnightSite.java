@@ -57,8 +57,8 @@ public final class MidnightSite extends BaseSite {
      *
      * @return the page of the simple items
      */
-    public MidnightPageResult getSimpleItemPage(MidnightType type, MidnightPageRequest pageRequest)
-        throws HttpResponseException {
+    public MidnightPageResult findAllSimples(@Nonnull MidnightType type,
+        @Nonnull MidnightPageRequest pageRequest) throws HttpResponseException {
         RequestBuilder builder = builder0("/e/action/ListInfo.php")
             .addParameter("page", pageRequest.getCurrent())
             .addParameter("classid", type.getCode())

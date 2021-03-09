@@ -21,11 +21,10 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.UnexpectedException;
@@ -42,15 +41,14 @@ import wsg.tools.internet.resource.common.VideoType;
  * @since 2020/9/9
  */
 @Slf4j
-public final class XlcSite extends BaseSite implements Repository<Integer, XlcItem>,
-    IterableRepository<XlcItem> {
+public final class XlcSite extends BaseSite implements Repository<Integer, XlcItem> {
 
     private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
-    private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<year>\\d+)\\)");
+    private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<y>\\d+)\\)");
     private static final Pattern ITEM_HREF_REGEX = Pattern
         .compile("/vod-read-id-(?<id>\\d+)\\.html");
     private static final Pattern TYPE_PATH_REGEX = Pattern
-        .compile("/vod-show-id-(?<index>\\d+)\\.html");
+        .compile("/vod-show-id-(?<id>\\d+)\\.html");
     private static final VideoType[] TYPES = {
         null, VideoType.MOVIE, VideoType.SERIES, VideoType.ANIME, VideoType.VARIETY,
         VideoType.FOUR_K,
@@ -60,11 +58,12 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         VideoType.MANDARIN
     };
 
-    private final IterableRepository<XlcItem> repository = new IntRangeIterableRepositoryImpl<>(
-        this, this::max);
-
     public XlcSite() {
         super("XLC", new BasicHttpSession("xunleicang.in"));
+    }
+
+    public IntRangeIdentifiedRepository<XlcItem> getRepository() {
+        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }
 
     /**
@@ -89,11 +88,6 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
     }
 
     @Override
-    public RepositoryIterator<XlcItem> iterator() {
-        return repository.iterator();
-    }
-
-    @Override
     public XlcItem findById(@Nonnull Integer id) throws HttpResponseException {
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
@@ -107,10 +101,9 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
             .parse(((TextNode) infos.get("更新时间：")).text(), DateTimeFormatter.ISO_LOCAL_DATE);
         Elements as = document.selectFirst("div.pleft").selectFirst(CssSelectors.TAG_H3)
             .select(CssSelectors.TAG_A);
-        Matcher matcher = RegexUtils
-            .matchesOrElseThrow(TYPE_PATH_REGEX,
-                as.get(as.size() - 2).attr(CssSelectors.ATTR_HREF));
-        VideoType type = TYPES[Integer.parseInt(matcher.group("index"))];
+        Matcher matcher = RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX,
+            as.get(as.size() - 2).attr(CssSelectors.ATTR_HREF));
+        VideoType type = TYPES[Integer.parseInt(matcher.group("id"))];
         String state = ((TextNode) infos.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 
@@ -120,7 +113,7 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         Element font = as.last().selectFirst(CssSelectors.TAG_FONT);
         if (font != null) {
             int year = Integer
-                .parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("year"));
+                .parseInt(RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text()).group("y"));
             if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
                 item.setYear(year);
             }

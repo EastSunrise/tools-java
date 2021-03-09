@@ -18,8 +18,7 @@ import wsg.tools.internet.common.NextSupplier;
  * @see LinkedRepositoryImpl
  * @since 2021/3/2
  */
-public class LinkedIteratorImpl<ID, T extends NextSupplier<ID>> implements
-    RepositoryIterator<T> {
+public class LinkedIteratorImpl<ID, T extends NextSupplier<ID>> implements RepositoryIterator<T> {
 
     private final Repository<ID, T> repository;
     private ID nextId;

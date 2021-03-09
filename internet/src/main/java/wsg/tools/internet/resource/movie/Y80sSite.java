@@ -22,11 +22,10 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIterableRepositoryImpl;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.Scheme;
@@ -43,8 +42,7 @@ import wsg.tools.internet.resource.common.VideoType;
  * @since 2020/9/9
  */
 @Slf4j
-public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem>,
-    IterableRepository<Y80sItem> {
+public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem> {
 
     private static final Map<String, VideoType> TYPE_AKA = Map.of(
         "movie", VideoType.MOVIE,
@@ -69,11 +67,12 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
     private static final Pattern DOUBAN_HREF_REGEX = Pattern
         .compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
 
-    private final IterableRepository<Y80sItem> repository = new IntRangeIterableRepositoryImpl<>(
-        this, this::max);
-
     public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
+    }
+
+    public IntRangeIdentifiedRepository<Y80sItem> getRepository() {
+        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }
 
     /**
@@ -95,11 +94,6 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
-    }
-
-    @Override
-    public RepositoryIterator<Y80sItem> iterator() {
-        return repository.iterator();
     }
 
     @Override

@@ -1,9 +1,12 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.internet.resource.common.*;
-
-import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.resource.common.StateSupplier;
+import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.resource.common.VideoType;
+import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * Vod items of Grape site, which include downloadable and playable resources.
@@ -11,15 +14,19 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2021/2/3
  */
-public class GrapeVodItem extends BasicItem implements VideoTypeSupplier, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
+public class GrapeVodItem extends BasicItem implements VideoTypeSupplier, YearSupplier,
+    UpdateDatetimeSupplier, StateSupplier {
 
+    private final String path;
     private final String url;
     private final GrapeVodGenre genre;
     private final LocalDateTime addTime;
     private String state;
     private Integer year;
 
-    GrapeVodItem(@Nonnull String url, GrapeVodGenre genre, LocalDateTime addTime) {
+    GrapeVodItem(@Nonnull String path, @Nonnull String url, GrapeVodGenre genre,
+        LocalDateTime addTime) {
+        this.path = path;
         this.url = url;
         this.genre = genre;
         this.addTime = addTime;

@@ -29,7 +29,10 @@ import wsg.tools.common.lang.Identifier;
 @Getter
 @Setter
 @Entity
-@Table(name = "adult_video", indexes = @Index(name = "adult_video_repository", columnList = "repository"))
+@Table(
+    name = "adult_video",
+    indexes = @Index(name = "index_adult_video_domain", columnList = Source.DOMAIN_COLUMN)
+)
 public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
 
     private static final long serialVersionUID = 718083190465191530L;
@@ -56,7 +59,7 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(length = 31)
     private String producer;
 
-    @Column(length = 15)
+    @Column(length = 31)
     private String distributor;
 
     @Column(length = 63)

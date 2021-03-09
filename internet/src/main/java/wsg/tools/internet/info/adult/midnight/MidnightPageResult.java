@@ -11,9 +11,8 @@ import wsg.tools.internet.base.impl.BasicPageResult;
  */
 public class MidnightPageResult extends BasicPageResult<MidnightSimpleItem> {
 
-    MidnightPageResult(List<MidnightSimpleItem> content, MidnightPageRequest pageRequest,
-        long total) {
-        super(content, pageRequest, total);
+    MidnightPageResult(List<MidnightSimpleItem> content, MidnightPageRequest request, long total) {
+        super(content, request, total);
     }
 
     @Override

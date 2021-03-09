@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.VideoStatus;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.config.DatabaseConfig;
 import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
@@ -102,7 +102,7 @@ public class SubjectController extends AbstractController {
         for (DoubanMark mark : DoubanMark.values()) {
             try {
                 result = result.plus(subjectService.importDouban(user, since, mark));
-            } catch (HttpResponseException | LoginException e) {
+            } catch (OtherHttpResponseException | LoginException e) {
                 log.error(e.getMessage());
                 return SERVER_ERROR.build();
             } catch (NotFoundException e) {
@@ -121,7 +121,7 @@ public class SubjectController extends AbstractController {
         }
         try {
             subjectService.importSubjectByDb(id);
-        } catch (HttpResponseException | DataIntegrityException | LoginException e) {
+        } catch (OtherHttpResponseException | DataIntegrityException | LoginException e) {
             return SERVER_ERROR.body(e.getMessage());
         } catch (NotFoundException e) {
             return NOT_FOUND.body(e.getMessage());

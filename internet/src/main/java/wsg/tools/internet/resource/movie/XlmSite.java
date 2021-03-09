@@ -24,7 +24,7 @@ import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -56,7 +56,7 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         });
     }
 
-    public IterableRepository<XlmItem> getRepository(@Nonnull XlmType type) {
+    public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmType type) {
         return new LinkedRepositoryImpl<>(this, type.first());
     }
 

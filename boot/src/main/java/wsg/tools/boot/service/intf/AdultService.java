@@ -1,6 +1,9 @@
 package wsg.tools.boot.service.intf;
 
+import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
+import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.internet.info.adult.LaymanCatSite;
 import wsg.tools.internet.info.adult.midnight.MidnightEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 
@@ -13,17 +16,20 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
 public interface AdultService {
 
     /**
-     * Import latest adult entries from {@link wsg.tools.internet.info.adult.LaymanCatSite}.
+     * Import latest adult entries from {@link LaymanCatSite}.
      *
-     * @throws HttpResponseException if an error occurs when do request
+     * @param site an instance of {@link LaymanCatSite}
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    void importLaymanCatSite() throws HttpResponseException;
+    void importLaymanCatSite(@Nonnull LaymanCatSite site) throws OtherHttpResponseException;
 
     /**
      * Import latest adult entries from {@link MidnightSite}.
      *
+     * @param site an instance of {@link MidnightSite}
      * @param type type of entries in the {@link MidnightSite}.
-     * @throws HttpResponseException if an error occurs when do request
+     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    void importMidnightEntries(MidnightEntryType type) throws HttpResponseException;
+    void importMidnightEntries(@Nonnull MidnightSite site, @Nonnull MidnightEntryType type)
+        throws OtherHttpResponseException;
 }

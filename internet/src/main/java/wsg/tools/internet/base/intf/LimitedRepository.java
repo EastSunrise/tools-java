@@ -10,7 +10,7 @@ import org.apache.http.client.HttpResponseException;
  * @since 2021/3/1
  */
 @FunctionalInterface
-public interface LimitedRepository<ID, T> {
+public interface LimitedRepository<T> {
 
     /**
      * Obtains all records in the repository.
