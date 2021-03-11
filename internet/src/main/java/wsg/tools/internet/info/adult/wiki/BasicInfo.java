@@ -1,16 +1,15 @@
-package wsg.tools.internet.info.adult.mr;
+package wsg.tools.internet.info.adult.wiki;
 
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import wsg.tools.internet.enums.BloodType;
 import wsg.tools.internet.enums.Constellation;
 import wsg.tools.internet.enums.Gender;
-import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.enums.Nation;
-import wsg.tools.internet.enums.Region;
 import wsg.tools.internet.enums.Zodiac;
 import wsg.tools.internet.info.adult.common.CupEnum;
 
@@ -46,8 +45,6 @@ class BasicInfo {
     private String school;
     private String birthplace;
     private Nation nation;
-    private List<Region> nationalities;
-    private List<Language> languages;
 
     private Set<String> others;
 
@@ -67,19 +64,19 @@ class BasicInfo {
     }
 
     void setZhNames(List<String> zhNames) {
-        this.zhNames = zhNames;
+        this.zhNames = Collections.unmodifiableList(zhNames);
     }
 
     void setJaNames(List<String> jaNames) {
-        this.jaNames = jaNames;
+        this.jaNames = Collections.unmodifiableList(jaNames);
     }
 
     void setEnNames(List<String> enNames) {
-        this.enNames = enNames;
+        this.enNames = Collections.unmodifiableList(enNames);
     }
 
     void setAka(List<String> aka) {
-        this.aka = aka;
+        this.aka = Collections.unmodifiableList(aka);
     }
 
     void setZodiac(Zodiac zodiac) {
@@ -91,7 +88,7 @@ class BasicInfo {
     }
 
     void setInterests(List<String> interests) {
-        this.interests = interests;
+        this.interests = Collections.unmodifiableList(interests);
     }
 
     void setHeight(Integer height) {
@@ -115,7 +112,7 @@ class BasicInfo {
     }
 
     void setOccupations(List<String> occupations) {
-        this.occupations = occupations;
+        this.occupations = Collections.unmodifiableList(occupations);
     }
 
     void setStart(Temporal start) {
@@ -146,15 +143,7 @@ class BasicInfo {
         this.nation = nation;
     }
 
-    void setNationalities(List<Region> nationalities) {
-        this.nationalities = nationalities;
-    }
-
-    void setLanguages(List<Language> languages) {
-        this.languages = languages;
-    }
-
     void setOthers(Set<String> others) {
-        this.others = others;
+        this.others = Collections.unmodifiableSet(others);
     }
 }

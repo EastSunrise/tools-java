@@ -31,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 @PropertySource("classpath:config/fastdfs-client.properties")
 public class FastdfsClient implements InitializingBean {
 
+    public static final String META_SOURCE = "source";
+
     @Value("${fastdfs.tracker_servers}")
     private String trackerServers;
     private StorageClient client;

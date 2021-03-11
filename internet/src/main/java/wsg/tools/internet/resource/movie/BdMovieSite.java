@@ -68,6 +68,8 @@ public final class BdMovieSite extends BaseSite {
 
     /**
      * Returns the repository of the given type since very first one.
+     *
+     * @see BdMovieType
      */
     public LinkedRepository<Integer, BdMovieItem> getRepository(BdMovieType type) {
         return new LinkedRepositoryImpl<>(id -> findItem(type, id), type.first());

@@ -1,4 +1,4 @@
-package wsg.tools.internet.info.adult.mr;
+package wsg.tools.internet.info.adult.wiki;
 
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TextSupplier;
@@ -10,7 +10,7 @@ import wsg.tools.internet.common.FirstSupplier;
  * @author Kingen
  * @since 2021/2/26
  */
-public enum AlbumType implements TextSupplier, FirstSupplier<Integer> {
+public enum WikiAlbumType implements TextSupplier, FirstSupplier<Integer> {
 
     /**
      * @see <a href="http://www.mrenbaike.net/tuku/xiezhen/">Photos</a>
@@ -28,7 +28,7 @@ public enum AlbumType implements TextSupplier, FirstSupplier<Integer> {
     private final String text;
     private final int first;
 
-    AlbumType(String text, int first) {
+    WikiAlbumType(String text, int first) {
         this.text = text;
         this.first = first;
     }

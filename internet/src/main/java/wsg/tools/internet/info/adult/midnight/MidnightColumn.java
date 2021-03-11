@@ -4,17 +4,17 @@ import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 
 /**
- * Types of items in the {@link MidnightSite}.
+ * Columns of {@link MidnightSite}.
  *
  * @author Kingen
  * @since 2021/3/2
  */
-public enum MidnightType implements IntCodeSupplier, TextSupplier {
+public enum MidnightColumn implements IntCodeSupplier, TextSupplier {
 
     /**
-     * @see <a href="https://www.shenyequ.com/youyou/">Actresses</a>
+     * @see <a href="https://www.shenyequ.com/youyou/">Collections</a>
      */
-    ACTRESS(27, "youyou"),
+    COLLECTION(27, "youyou"),
     /**
      * @see <a href="https://www.shenyequ.com/wutu/">Entries</a>
      */
@@ -40,7 +40,7 @@ public enum MidnightType implements IntCodeSupplier, TextSupplier {
     private final int code;
     private final String text;
 
-    MidnightType(int code, String text) {
+    MidnightColumn(int code, String text) {
         this.code = code;
         this.text = text;
     }

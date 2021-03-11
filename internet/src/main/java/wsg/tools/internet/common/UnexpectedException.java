@@ -8,6 +8,8 @@ package wsg.tools.internet.common;
  */
 public class UnexpectedException extends RuntimeException {
 
+    private static final long serialVersionUID = -5371713868818418420L;
+
     public UnexpectedException(Throwable cause) {
         super(cause);
     }

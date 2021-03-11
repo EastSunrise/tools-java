@@ -3,26 +3,27 @@ package wsg.tools.internet.info.adult.midnight;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.Getter;
+import wsg.tools.common.lang.IntIdentifier;
 
 /**
- * A simple item which points to a {@link BaseMidnightItem} in the {@link MidnightSite}.
+ * An index pointing to a {@link BaseMidnightItem} in the {@link MidnightSite}.
  *
  * @author Kingen
  * @since 2021/3/8
  */
 @Getter
-public class MidnightSimpleItem {
+public class MidnightIndex implements IntIdentifier {
 
     private final int id;
     private final String title;
     /**
      * Not precise
      */
-    private final LocalDateTime simpleRelease;
+    private final LocalDateTime release;
 
-    MidnightSimpleItem(int id, String title, LocalDateTime simpleRelease) {
+    MidnightIndex(int id, String title, LocalDateTime release) {
         this.id = id;
         this.title = Objects.requireNonNull(title);
-        this.simpleRelease = Objects.requireNonNull(simpleRelease);
+        this.release = Objects.requireNonNull(release);
     }
 }

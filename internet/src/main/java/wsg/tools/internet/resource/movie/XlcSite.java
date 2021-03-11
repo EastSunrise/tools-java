@@ -62,6 +62,9 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         super("XLC", new BasicHttpSession("xunleicang.in"));
     }
 
+    /**
+     * Returns the repository from 1 to {@link #max()}.
+     */
     public IntRangeIdentifiedRepository<XlcItem> getRepository() {
         return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }

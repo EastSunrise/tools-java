@@ -1,7 +1,5 @@
 package wsg.tools.internet.base.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.util.concurrent.RateLimiter;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +37,7 @@ import wsg.tools.internet.base.intf.HttpSession;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.common.UnexpectedException;
 
 /**
  * Basic implementation of {@link HttpSession}.
@@ -50,13 +49,15 @@ import wsg.tools.internet.common.SiteUtils;
 @SuppressWarnings("UnstableApiUsage")
 public class BasicHttpSession implements HttpSession {
 
-    private static final double DEFAULT_PERMITS_PER_SECOND = 10D;
+    public static final String WWW = "www";
+    private static final double DEFAULT_PERMITS_PER_SECOND = 10.0;
     /**
      * temporary directory for snapshots and cookies.
      */
     private static final String TMPDIR = Constants.SYSTEM_TMPDIR + "tools";
     private static final Header USER_AGENT = new BasicHeader(HTTP.USER_AGENT,
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            + "Chrome/80.0.3987.132 Safari/537.36");
     private static final int TIME_OUT = 30000;
 
     private final Scheme scheme;
@@ -85,18 +86,18 @@ public class BasicHttpSession implements HttpSession {
         this.scheme = scheme;
         Pair<String, String> pair = SiteUtils.splitDomain(domain);
         this.mainDomain = pair.getLeft();
-        this.subDomain = "www".equals(pair.getRight()) ? null : pair.getRight();
+        this.subDomain = WWW.equals(pair.getRight()) ? null : pair.getRight();
         this.limiters = new HashMap<>(2);
         limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
         limiters.put(HttpPost.METHOD_NAME, RateLimiter.create(postPermitsPerSecond));
+        BasicHeader targetHost = new BasicHeader(HTTP.TARGET_HOST, getHost());
         this.client = HttpClientBuilder.create()
-            .setDefaultHeaders(List.of(USER_AGENT, new BasicHeader(HTTP.TARGET_HOST, getHost())))
+            .setDefaultHeaders(List.of(USER_AGENT, targetHost))
             .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
         this.context = HttpClientContext.create();
-        context
-            .setRequestConfig(
-                RequestConfig.custom().setConnectTimeout(TIME_OUT).setSocketTimeout(TIME_OUT)
-                    .build());
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(TIME_OUT)
+            .setSocketTimeout(TIME_OUT).build();
+        context.setRequestConfig(requestConfig);
         File file = cookieFile();
         if (file.canRead()) {
             try (ObjectInputStream stream = new ObjectInputStream(
@@ -105,7 +106,7 @@ public class BasicHttpSession implements HttpSession {
                 CookieStore cookieStore = (CookieStore) stream.readObject();
                 context.setCookieStore(cookieStore);
             } catch (IOException | ClassNotFoundException e) {
-                throw AssertUtils.runtimeException(e);
+                throw new UnexpectedException(e);
             }
         }
     }
@@ -134,9 +135,9 @@ public class BasicHttpSession implements HttpSession {
         }
         log.info("Read from {}", file.getPath());
         try {
-            content = FileUtils.readFileToString(file, UTF_8);
+            content = FileUtils.readFileToString(file, Constants.UTF_8);
         } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
         T t = contentHandler.handleContent(content);
         if (strategy.ifUpdate(t)) {
@@ -154,20 +155,20 @@ public class BasicHttpSession implements HttpSession {
         throws HttpResponseException {
         String content = execute(builder, handler);
         try {
-            FileUtils.write(file, content, UTF_8);
+            FileUtils.write(file, content, Constants.UTF_8);
         } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
         return content;
     }
 
     @Override
-    public String getDomain() {
+    public final String getDomain() {
         return subDomain == null ? mainDomain : subDomain + "." + mainDomain;
     }
 
-    public String getHost() {
-        return (subDomain == null ? "www" : subDomain) + "." + mainDomain;
+    public final String getHost() {
+        return (subDomain == null ? WWW : subDomain) + "." + mainDomain;
     }
 
     @Override
@@ -190,7 +191,7 @@ public class BasicHttpSession implements HttpSession {
         } catch (HttpResponseException e) {
             throw e;
         } catch (IOException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
     }
 

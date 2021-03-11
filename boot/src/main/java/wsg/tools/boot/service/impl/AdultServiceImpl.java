@@ -12,6 +12,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.csource.common.MyException;
+import org.csource.common.NameValuePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -20,12 +21,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.enums.SerialNumHeaderEnum;
 import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.FastdfsClient;
 import wsg.tools.boot.dao.jpa.mapper.AdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
+import wsg.tools.boot.pojo.entity.EntityUtils;
 import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity;
 import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity_;
 import wsg.tools.boot.pojo.entity.base.Failure;
@@ -38,15 +39,16 @@ import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.impl.BasicDownloader;
-import wsg.tools.internet.info.adult.AdultEntry;
 import wsg.tools.internet.info.adult.LaymanCatItem;
 import wsg.tools.internet.info.adult.LaymanCatSite;
+import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
-import wsg.tools.internet.info.adult.midnight.MidnightEntry;
-import wsg.tools.internet.info.adult.midnight.MidnightEntryType;
+import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
+import wsg.tools.internet.info.adult.midnight.MidnightAdultEntry;
+import wsg.tools.internet.info.adult.midnight.MidnightIndex;
+import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightPageRequest;
 import wsg.tools.internet.info.adult.midnight.MidnightPageResult;
-import wsg.tools.internet.info.adult.midnight.MidnightSimpleItem;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 
 /**
@@ -61,7 +63,6 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private static final File TMPDIR = new File(Constants.SYSTEM_TMPDIR);
     private static final String CODE_EXISTS_MSG = "The target code exists";
     private static final String CODE_NOT_EXIST_MSG = "The code doesn't exist";
-    private static final String COVER_NOT_EXIST_MSG = "The cover doesn't exist";
     private static final int MAX_CODE_LENGTH = 15;
     private static final String ILLEGAL_CODE_MSG = "The code is illegal";
 
@@ -70,7 +71,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private final FailureRepository failureRepository;
 
     private final BasicDownloader downloader = new BasicDownloader()
-        .strategy(FileExistStrategy.REPLACE);
+        .strategy(FileExistStrategy.FINISH);
 
     @Autowired
     public AdultServiceImpl(FastdfsClient client, AdultVideoRepository videoRepository,
@@ -94,7 +95,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         RepositoryIterator<LaymanCatItem> iterator;
         if (page.hasContent()) {
             long rid = page.iterator().next().getSource().getRid();
-            String start = SerialNumHeaderEnum.deserialize(rid);
+            String start = EntityUtils.deserialize(rid);
             iterator = repository.iteratorAfter(start);
             SiteUtilExt.found(iterator::next);
         } else {
@@ -104,9 +105,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         while (iterator.hasNext()) {
             LaymanCatItem item = SiteUtilExt.found(iterator::next);
             AdultEntry entry = item.getEntry();
-            long rid = SerialNumHeaderEnum.serialize(item.getId());
+            long rid = EntityUtils.serialize(item.getId());
             Source source = Source.record(domain, rid);
-            success += insertEntry(entry, source, null);
+            success += insertEntry(entry, source);
             total++;
         }
         log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
@@ -114,24 +115,25 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public void importMidnightEntries(@Nonnull MidnightSite site, @Nonnull MidnightEntryType type)
+    public void importMidnightEntries(@Nonnull MidnightSite site,
+        @Nonnull MidnightLaymanEntryType type)
         throws OtherHttpResponseException {
-        Integer subtype = type.getType().getCode();
+        Integer subtype = type.getColumn().getCode();
         String domain = site.getDomain();
         long max = videoRepository.findMaxRid(domain, subtype).orElse(0L);
 
         MidnightPageRequest request = MidnightPageRequest.first();
         boolean finished = false;
-        List<MidnightSimpleItem> items = new ArrayList<>();
+        List<MidnightIndex> indexes = new ArrayList<>();
         while (true) {
             MidnightPageResult page = SiteUtilExt
-                .found(type.getType(), request, site::findAllSimples);
-            for (MidnightSimpleItem simpleItem : page.getContent()) {
-                if (simpleItem.getId() <= max) {
+                .found(type.getColumn(), request, site::findAllIndexes);
+            for (MidnightIndex index : page.getContent()) {
+                if (index.getId() <= max) {
                     finished = true;
                     break;
                 }
-                items.add(simpleItem);
+                indexes.add(index);
             }
             if (finished || !page.hasNext()) {
                 break;
@@ -139,19 +141,20 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             request = page.nextPageRequest();
         }
 
-        items.sort(Comparator.comparing(MidnightSimpleItem::getId));
+        indexes.sort(Comparator.comparing(MidnightIndex::getId));
         int success = 0;
-        for (MidnightSimpleItem simpleItem : items) {
-            MidnightEntry entry = SiteUtilExt
-                .found(type, simpleItem.getId(), site::findAdultEntry);
-            Source source = Source.record(domain, subtype, entry.getId());
-            success += insertEntry(entry.getEntry(), source, entry.getImages());
+        for (MidnightIndex index : indexes) {
+            BaseMidnightEntry entry = SiteUtilExt.found(type, index.getId(), site::findLaymanEntry);
+            if (entry instanceof MidnightAdultEntry) {
+                Source source = Source.record(domain, subtype, entry.getId());
+                success += insertEntry(((MidnightAdultEntry) entry).getEntry(), source);
+            }
         }
         log.info("Imported adult entries of {} from {}: {} succeed, {} failed.", type, domain,
-            success, items.size() - success);
+            success, indexes.size() - success);
     }
 
-    private int insertEntry(AdultEntry entry, Source source, List<String> images) {
+    private int insertEntry(AdultEntry entry, Source source) {
         if (entry == null) {
             failureRepository.insert(new Failure(source, CODE_NOT_EXIST_MSG));
             return 0;
@@ -166,12 +169,6 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         }
         AdultVideoEntity entity = new AdultVideoEntity();
         entity.setId(entry.getCode());
-        try {
-            entity.setCover(upload(entry.getCover()));
-        } catch (NotFoundException e) {
-            failureRepository.insert(new Failure(source, COVER_NOT_EXIST_MSG));
-            return 0;
-        }
         entity.setTitle(entry.getTitle());
         Mosaic mosaic = entry.getMosaic();
         if (mosaic != null) {
@@ -185,17 +182,18 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         entity.setSeries(entry.getSeries());
         entity.setTags(entry.getTags());
         entity.setSource(source);
+        List<String> images = entry.getImages();
         if (CollectionUtils.isNotEmpty(images)) {
-            List<String> list = new ArrayList<>();
+            List<String> uploads = new ArrayList<>();
             for (String image : images) {
                 String upload = null;
                 try {
                     upload = upload(image);
                 } catch (NotFoundException ignored) {
                 }
-                list.add(upload);
+                uploads.add(upload);
             }
-            entity.setImages(list);
+            entity.setImages(uploads);
         }
         videoRepository.insert(entity);
         return 1;
@@ -204,7 +202,8 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private String upload(String url) throws NotFoundException {
         try {
             File file = downloader.download(TMPDIR, new URL(url));
-            return client.uploadLocal(file).getFullPath();
+            NameValuePair meta = new NameValuePair(FastdfsClient.META_SOURCE, url);
+            return client.uploadLocal(file, meta).getFullPath();
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 throw new NotFoundException(e.getMessage());

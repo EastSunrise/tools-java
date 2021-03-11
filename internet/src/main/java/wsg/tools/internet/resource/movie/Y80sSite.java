@@ -71,6 +71,9 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
     }
 
+    /**
+     * Returns the repository from 1 to {@link #max()}.
+     */
     public IntRangeIdentifiedRepository<Y80sItem> getRepository() {
         return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }

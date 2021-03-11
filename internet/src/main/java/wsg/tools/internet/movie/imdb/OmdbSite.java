@@ -7,22 +7,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.util.EntityUtils;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.common.StringResponseHandler;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.enums.Region;
 import wsg.tools.internet.movie.common.enums.ImdbRating;
@@ -119,7 +116,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         throws HttpResponseException {
         RequestBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
-            builder.addParameter("type", type.toString().toLowerCase());
+            builder.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
         }
         if (year != null) {
             builder.addParameter("y", year);
@@ -137,16 +134,15 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         return getObject(builder, MAPPER, clazz, SnapshotStrategy.never());
     }
 
-    private static class OmdbResponseHandler extends AbstractResponseHandler<String> {
+    private static class OmdbResponseHandler extends StringResponseHandler {
 
         @Override
-        public String handleEntity(HttpEntity entity) throws IOException {
-            String content = EntityUtils.toString(entity);
+        protected String handleContent(String content) throws HttpResponseException {
             JsonNode node;
             try {
                 node = MAPPER.readTree(content);
             } catch (JsonProcessingException e) {
-                throw AssertUtils.runtimeException(e);
+                throw new UnexpectedException(e);
             }
             boolean response = Boolean.parseBoolean(node.get("Response").asText());
             if (response) {
@@ -157,7 +153,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
                     || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
                     throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
                 }
-                throw new RuntimeException(error);
+                throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
             }
         }
     }

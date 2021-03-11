@@ -1,5 +1,7 @@
 package wsg.tools.internet.base.intf;
 
+import wsg.tools.internet.base.impl.BasicPageRequest;
+
 /**
  * Interface for pagination information.
  *
@@ -7,6 +9,27 @@ package wsg.tools.internet.base.intf;
  * @since 2021/3/8
  */
 public interface PageRequest {
+
+    /**
+     * Obtains an instance of {@link PageRequest} with the given arguments.
+     *
+     * @param current  page index
+     * @param pageSize page size
+     * @return a paged request
+     */
+    static PageRequest of(int current, int pageSize) {
+        return new BasicPageRequest(current, pageSize);
+    }
+
+    /**
+     * Obtains an instance of first {@link PageRequest} with given page size.
+     *
+     * @param pageSize page size
+     * @return a paged request
+     */
+    static PageRequest first(int pageSize) {
+        return new BasicPageRequest(0, pageSize);
+    }
 
     /**
      * Returns the page to be returned.

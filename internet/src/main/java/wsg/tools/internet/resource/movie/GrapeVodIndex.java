@@ -6,20 +6,20 @@ import wsg.tools.internet.resource.common.StateSupplier;
 import wsg.tools.internet.resource.common.UpdateDateSupplier;
 
 /**
- * A simple item which points to a {@link GrapeVodItem} in the {@link GrapeSite}.
+ * An index pointing to a {@link GrapeVodItem} in the {@link GrapeSite}.
  *
  * @author Kingen
  * @since 2021/3/9
  */
 @Getter
-public class GrapeVodSimpleItem implements UpdateDateSupplier, StateSupplier {
+public class GrapeVodIndex implements UpdateDateSupplier, StateSupplier {
 
     private final String path;
     private final String title;
     private final LocalDate updateTime;
     private final String state;
 
-    GrapeVodSimpleItem(String path, String title, LocalDate updateTime,
+    GrapeVodIndex(String path, String title, LocalDate updateTime,
         String state) {
         this.path = path;
         this.title = title;

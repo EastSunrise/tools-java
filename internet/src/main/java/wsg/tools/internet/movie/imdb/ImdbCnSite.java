@@ -1,6 +1,5 @@
 package wsg.tools.internet.movie.imdb;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -13,11 +12,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -29,6 +25,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
 
@@ -48,20 +45,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
     private static final String INTERNAL_SERVER_ERROR = "500";
 
     public ImdbCnSite() {
-        super("IMDb CN", new BasicHttpSession("imdb.cn"), new AbstractResponseHandler<>() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                String content = EntityUtils.toString(entity);
-                if (NOT_FOUND.equals(content)) {
-                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
-                }
-                if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
-                    throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                        "Server is limit to access.");
-                }
-                return content;
-            }
-        });
+        super("IMDb CN", new BasicHttpSession("imdb.cn"), new ImdbCnResponseHandler());
     }
 
     @Override
@@ -188,5 +172,20 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                 SnapshotStrategy.never());
         }
         return result;
+    }
+
+    private static final class ImdbCnResponseHandler extends StringResponseHandler {
+
+        @Override
+        protected String handleContent(String content) throws HttpResponseException {
+            if (NOT_FOUND.equals(content)) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
+            }
+            if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
+                throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    "Server is limit to access.");
+            }
+            return content;
+        }
     }
 }

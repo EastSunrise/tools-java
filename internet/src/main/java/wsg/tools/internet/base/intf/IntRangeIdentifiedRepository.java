@@ -8,6 +8,11 @@ package wsg.tools.internet.base.intf;
  * <p>
  * Besides, it provides methods to obtain an iterator over part of the range with given lower bound
  * and upper bound.
+ * <p>
+ * Since the identifiers in the range are not confirmed to be valid, the implementation is not
+ * recommended if the share of the valid identifiers in the whole range is too lower, like less than
+ * 95%. It's better to obtain valid identifiers only before constructing the repository for less
+ * invalid requests.
  *
  * @author Kingen
  * @since 2021/3/9

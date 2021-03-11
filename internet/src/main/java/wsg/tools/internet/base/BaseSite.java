@@ -15,6 +15,7 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.ContentHandlers;
 import wsg.tools.internet.base.impl.JsonHandler;
 import wsg.tools.internet.base.impl.RequestBuilder;
@@ -33,12 +34,13 @@ import wsg.tools.internet.base.intf.SnapshotStrategy;
  */
 public class BaseSite implements HttpSession {
 
-    protected static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER = new BasicResponseHandler() {
-        @Override
-        public String handleEntity(HttpEntity entity) throws IOException {
-            return EntityUtils.toString(entity, Constants.UTF_8);
-        }
-    };
+    protected static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER =
+        new BasicResponseHandler() {
+            @Override
+            public String handleEntity(HttpEntity entity) throws IOException {
+                return EntityUtils.toString(entity, Constants.UTF_8);
+            }
+        };
 
     @Getter
     private final String name;
@@ -53,9 +55,8 @@ public class BaseSite implements HttpSession {
 
     protected BaseSite(String name, HttpSession session, ResponseHandler<String> defaultHandler) {
         this.name = name;
-        this.session = Objects.requireNonNull(session, "Session may not be null.");
-        this.defaultHandler = Objects
-            .requireNonNull(defaultHandler, "ResponseHandler may not be null.");
+        this.session = Objects.requireNonNull(session, "session");
+        this.defaultHandler = Objects.requireNonNull(defaultHandler, "defaultHandler");
     }
 
     @Override
@@ -127,7 +128,7 @@ public class BaseSite implements HttpSession {
      * Creates a builder to construct a get request.
      */
     protected RequestBuilder builder0(String path, Object... args) {
-        return builder("www", path, args);
+        return builder(BasicHttpSession.WWW, path, args);
     }
 
     /**

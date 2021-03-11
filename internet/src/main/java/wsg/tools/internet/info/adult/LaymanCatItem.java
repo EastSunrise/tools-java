@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import wsg.tools.common.lang.Identifier;
 import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
 
 /**
@@ -13,15 +14,14 @@ import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
  * @since 2021/2/28
  */
 @Getter
-public class LaymanCatItem implements Identifier<String>, UpdateDatetimeSupplier,
-    NextSupplier<String> {
+public class LaymanCatItem
+    implements Identifier<String>, UpdateDatetimeSupplier, NextSupplier<String> {
 
     private final String id;
     private String author;
     private LocalDateTime published;
     private LocalDateTime updated;
     private AdultEntry entry;
-    private String description;
     private String next;
 
     LaymanCatItem(String id) {
@@ -42,10 +42,6 @@ public class LaymanCatItem implements Identifier<String>, UpdateDatetimeSupplier
 
     void setEntry(AdultEntry entry) {
         this.entry = entry;
-    }
-
-    void setDescription(String description) {
-        this.description = description;
     }
 
     void setNext(String next) {

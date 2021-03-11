@@ -1,7 +1,11 @@
 package wsg.tools.common.lang;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -83,10 +87,30 @@ public final class AssertUtils {
     }
 
     /**
-     * Validate args to be not blank.
+     * Validate a string to be not blank.
      */
     public static String requireNotBlank(String arg, String message) {
         if (StringUtils.isBlank(arg)) {
+            throw new IllegalArgumentException(message);
+        }
+        return arg;
+    }
+
+    /**
+     * Validate a collection to be not empty.
+     */
+    public static <E, T extends Collection<E>> T requireNotEmpty(T arg, String message) {
+        if (CollectionUtils.isEmpty(arg)) {
+            throw new IllegalArgumentException(message);
+        }
+        return arg;
+    }
+
+    /**
+     * Validate a map to be not empty.
+     */
+    public static <K, V, T extends Map<K, V>> T requireNotEmpty(T arg, String message) {
+        if (MapUtils.isEmpty(arg)) {
             throw new IllegalArgumentException(message);
         }
         return arg;

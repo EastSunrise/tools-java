@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.movie;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
@@ -14,11 +13,8 @@ import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -33,6 +29,7 @@ import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -74,18 +71,12 @@ public final class MovieHeavenSite extends BaseSite
     };
 
     public MovieHeavenSite() {
-        super("Movie Heaven", new BasicHttpSession("993dy.com"), new AbstractResponseHandler<>() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                String content = EntityUtils.toString(entity);
-                if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
-                    throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
-                }
-                return content;
-            }
-        });
+        super("Movie Heaven", new BasicHttpSession("993dy.com"), new MovieHeaverResponseHandler());
     }
 
+    /**
+     * Returns the repository from 1 to {@link #max()}.
+     */
     public IntRangeIdentifiedRepository<MovieHeavenItem> getRepository() {
         return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }
@@ -173,5 +164,16 @@ public final class MovieHeavenSite extends BaseSite
         item.setResources(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private static class MovieHeaverResponseHandler extends StringResponseHandler {
+
+        @Override
+        protected String handleContent(String content) throws HttpResponseException {
+            if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
+                throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
+            }
+            return content;
+        }
     }
 }

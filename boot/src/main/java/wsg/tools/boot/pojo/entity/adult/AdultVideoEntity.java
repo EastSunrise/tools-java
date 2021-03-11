@@ -41,9 +41,6 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(length = 15)
     private String id;
 
-    @Column(unique = true, nullable = false, length = 63)
-    private String cover;
-
     @Column(length = 15)
     private String title;
 
@@ -65,12 +62,12 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(length = 63)
     private String series;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "adult_video_tag")
     @Column(name = "tag", nullable = false, length = 31)
     private List<String> tags;
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "adult_video_image")
     @Column(name = "image", nullable = false, length = 63)
     private List<String> images;

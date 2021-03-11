@@ -14,7 +14,7 @@ import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.info.adult.midnight.MidnightEntryType;
+import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.resource.movie.BdMovieItem;
 import wsg.tools.internet.resource.movie.BdMovieType;
 import wsg.tools.internet.resource.movie.GrapeSite;
@@ -48,7 +48,7 @@ public class ResourceScheduler extends BaseServiceImpl {
         this.manager = manager;
     }
 
-    @Scheduled(cron = "0 0 6 * * ?")
+    @Scheduled(cron = "0 0 9 * * ?")
     public void importLatestResources() {
         String bdDomain = manager.bdMovieSite().getDomain();
         for (BdMovieType type : BdMovieType.values()) {
@@ -87,7 +87,7 @@ public class ResourceScheduler extends BaseServiceImpl {
         } catch (OtherHttpResponseException e) {
             log.error(e.getMessage());
         }
-        for (MidnightEntryType type : MidnightEntryType.values()) {
+        for (MidnightLaymanEntryType type : MidnightLaymanEntryType.values()) {
             try {
                 adultService.importMidnightEntries(manager.midnightSite(), type);
             } catch (OtherHttpResponseException e) {

@@ -31,6 +31,8 @@ public final class CssSelectors {
     public static final String TAG_FONT = "font";
     public static final String TAG_IMG = "img";
     public static final String TAG_EM = "em";
+    public static final String TAG_ARTICLE = "article";
+    public static final String TAG_UL = "ul";
 
     /**
      * Common meta tags
@@ -47,6 +49,7 @@ public final class CssSelectors {
     public static final String ATTR_CONTENT = "content";
     public static final String ATTR_TITLE = "title";
     public static final String ATTR_ALT = "alt";
+    public static final String ATTR_REL = "rel";
 
     private CssSelectors() {
     }

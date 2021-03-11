@@ -1,23 +1,23 @@
-package wsg.tools.internet.info.adult.mr;
+package wsg.tools.internet.info.adult.wiki;
 
 import java.util.Objects;
 import lombok.Getter;
 import wsg.tools.common.lang.IntIdentifier;
 
 /**
- * An album with simple information.
+ * An index pointing to a {@link WikiAlbum}.
  *
  * @author Kingen
  * @since 2021/2/26
  */
 @Getter
-public class SimpleAlbum implements IntIdentifier {
+public class WikiAlbumIndex implements IntIdentifier {
 
     private final int id;
-    private final AlbumType type;
+    private final WikiAlbumType type;
     private final String title;
 
-    SimpleAlbum(int id, AlbumType type, String title) {
+    WikiAlbumIndex(int id, WikiAlbumType type, String title) {
         this.id = id;
         this.type = type;
         this.title = title;
@@ -36,8 +36,8 @@ public class SimpleAlbum implements IntIdentifier {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SimpleAlbum that = (SimpleAlbum) o;
-        return id == that.id && type == that.type;
+        WikiAlbumIndex index = (WikiAlbumIndex) o;
+        return id == index.id && type == index.type;
     }
 
     @Override

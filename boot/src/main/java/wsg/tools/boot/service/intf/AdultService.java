@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.internet.info.adult.LaymanCatSite;
-import wsg.tools.internet.info.adult.midnight.MidnightEntryType;
+import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 
 /**
@@ -30,6 +30,6 @@ public interface AdultService {
      * @param type type of entries in the {@link MidnightSite}.
      * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    void importMidnightEntries(@Nonnull MidnightSite site, @Nonnull MidnightEntryType type)
+    void importMidnightEntries(@Nonnull MidnightSite site, @Nonnull MidnightLaymanEntryType type)
         throws OtherHttpResponseException;
 }

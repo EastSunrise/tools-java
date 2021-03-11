@@ -1,4 +1,4 @@
-package wsg.tools.internet.info.adult.mr;
+package wsg.tools.internet.info.adult.wiki;
 
 import wsg.tools.common.util.function.TextSupplier;
 
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/2/24
  */
-public enum CelebrityType implements TextSupplier {
+public enum WikiCelebrityType implements TextSupplier {
     /**
      * @see <a href="http://www.mrenbaike.net/yule/">Entertainment Stars</a>
      */
@@ -44,7 +44,7 @@ public enum CelebrityType implements TextSupplier {
 
     private final String text;
 
-    CelebrityType(String text) {
+    WikiCelebrityType(String text) {
         this.text = text;
     }
 

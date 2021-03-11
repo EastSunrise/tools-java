@@ -3,7 +3,6 @@ package wsg.tools.internet.resource.movie;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +20,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -44,8 +44,6 @@ import wsg.tools.internet.download.impl.Ed2kLink;
 public final class GrapeSite extends BaseSite {
 
     public static final int MAX_NEWS_ID = 16132;
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern YEAR_REGEX = Pattern.compile("◎年\\s*代\\s+(?<y>\\d{4})\\s*◎");
     private static final Pattern VOD_REGEX = Pattern
@@ -127,11 +125,11 @@ public final class GrapeSite extends BaseSite {
     }
 
     /**
-     * Obtains the page of simple vod items by the given type.
+     * Obtains the page of vod indexes by the given type.
      *
-     * @return the page of the simple items
+     * @return the page of the vod indexes
      */
-    public GrapeVodPageResult findAllVodSimples(@Nonnull GrapeVodType type,
+    public GrapeVodPageResult findAllVodIndexes(@Nonnull GrapeVodType type,
         @Nonnull GrapeVodPageRequest pageRequest) throws HttpResponseException {
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getCode(),
             pageRequest.getOrderBy().getText(), pageRequest.getCurrent() + 1);
@@ -143,7 +141,7 @@ public final class GrapeSite extends BaseSite {
         int total = Integer.parseInt(matcher.group("t"));
 
         Elements lis = document.selectFirst("#contents").select(CssSelectors.TAG_LI);
-        List<GrapeVodSimpleItem> items = new ArrayList<>();
+        List<GrapeVodIndex> indexes = new ArrayList<>();
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_H5).selectFirst(CssSelectors.TAG_A);
             String path = a.attr(CssSelectors.ATTR_HREF);
@@ -151,9 +149,9 @@ public final class GrapeSite extends BaseSite {
             Node node = li.selectFirst(".long").nextSibling();
             LocalDate updateTime = LocalDate.parse(((TextNode) node).text().strip());
             String state = li.selectFirst(".mod_version").text();
-            items.add(new GrapeVodSimpleItem(path, title, updateTime, state));
+            indexes.add(new GrapeVodIndex(path, title, updateTime, state));
         }
-        return new GrapeVodPageResult(items, pageRequest, total);
+        return new GrapeVodPageResult(indexes, pageRequest, total);
     }
 
     public GrapeVodItem findVodItem(@Nonnull String path) throws HttpResponseException {
@@ -167,7 +165,7 @@ public final class GrapeSite extends BaseSite {
         GrapeVodGenre genre = EnumUtilExt
             .deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
         LocalDateTime addTime = LocalDateTime
-            .parse(document.selectFirst("#addtime").text().strip(), FORMATTER);
+            .parse(document.selectFirst("#addtime").text().strip(), Constants.YYYY_MM_DD_HH_MM);
         GrapeVodItem item = new GrapeVodItem(path, builder.toString(), genre, addTime);
 
         Element div = document.selectFirst(".detail-title");

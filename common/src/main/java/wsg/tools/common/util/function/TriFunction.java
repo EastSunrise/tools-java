@@ -10,15 +10,15 @@ import java.util.function.Function;
  * @since 2020/9/11
  */
 @FunctionalInterface
-public interface TriFunction<T1, T2, T3, R> {
+public interface TriFunction<T, U, V, R> {
 
     /**
      * Applies this function to the given arguments.
      *
-     * @param t1 the first function argument
-     * @param t2 the second function argument
-     * @param t3 the third function argument
+     * @param t the first function argument
+     * @param u the second function argument
+     * @param v the third function argument
      * @return the function result
      */
-    R apply(T1 t1, T2 t2, T3 t3);
+    R apply(T t, U u, V v);
 }

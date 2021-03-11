@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.movie;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
@@ -8,10 +7,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -27,6 +23,7 @@ import wsg.tools.internet.base.impl.WithoutNextDocument;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -48,14 +45,14 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         .ofPattern("yyyy/M/d H:mm:ss");
 
     public XlmSite() {
-        super("Xlm", new BasicHttpSession("xleimi.com"), new AbstractResponseHandler<>() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                return EntityUtils.toString(entity, Constants.GBK);
-            }
-        });
+        super("Xlm", new BasicHttpSession("xleimi.com"), new StringResponseHandler(Constants.GBK));
     }
 
+    /**
+     * Returns the repository of the given type.
+     *
+     * @see XlmType
+     */
     public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmType type) {
         return new LinkedRepositoryImpl<>(this, type.first());
     }

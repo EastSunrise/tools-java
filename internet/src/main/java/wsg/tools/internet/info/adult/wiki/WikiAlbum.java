@@ -1,4 +1,4 @@
-package wsg.tools.internet.info.adult.mr;
+package wsg.tools.internet.info.adult.wiki;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -14,7 +14,7 @@ import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
  * @since 2021/2/26
  */
 @Getter
-public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplier,
+public class WikiAlbum extends WikiAlbumIndex implements UpdateDatetimeSupplier,
     NextSupplier<Integer> {
 
     private final LocalDateTime updateTime;
@@ -25,7 +25,7 @@ public class CelebrityAlbum extends SimpleAlbum implements UpdateDatetimeSupplie
 
     private Integer next;
 
-    CelebrityAlbum(int id, AlbumType type, String title, LocalDateTime updateTime,
+    WikiAlbum(int id, WikiAlbumType type, String title, LocalDateTime updateTime,
         List<String> images) {
         super(id, type, title);
         this.updateTime = updateTime;

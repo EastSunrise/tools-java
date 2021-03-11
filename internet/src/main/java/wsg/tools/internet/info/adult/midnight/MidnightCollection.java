@@ -4,26 +4,25 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
 import lombok.Getter;
+import wsg.tools.common.lang.AssertUtils;
 
 /**
- * An actress in the {@link MidnightSite}.
+ * A collection of adult entries.
  *
  * @author Kingen
  * @since 2021/2/22
  */
 @Getter
-public class MidnightActress extends BaseMidnightItem {
+public class MidnightCollection extends BaseMidnightItem {
 
     /**
      * Map of code-cover of adult videos, the cover may be null.
      */
-    private Map<String, String> works;
+    private final Map<String, String> works;
 
-    MidnightActress(int id, String title, LocalDateTime release) {
+    MidnightCollection(int id, String title, LocalDateTime release, Map<String, String> works) {
         super(id, title, release);
-    }
-
-    void setWorks(Map<String, String> works) {
+        AssertUtils.requireNotEmpty(works, "works of the collection");
         this.works = Collections.unmodifiableMap(works);
     }
 }

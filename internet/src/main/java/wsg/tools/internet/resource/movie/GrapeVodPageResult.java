@@ -4,14 +4,14 @@ import java.util.List;
 import wsg.tools.internet.base.impl.BasicPageResult;
 
 /**
- * A paged result of {@link GrapeVodSimpleItem}.
+ * A paged result of {@link GrapeVodIndex}.
  *
  * @author Kingen
  * @since 2021/3/9
  */
-public class GrapeVodPageResult extends BasicPageResult<GrapeVodSimpleItem> {
+public class GrapeVodPageResult extends BasicPageResult<GrapeVodIndex> {
 
-    GrapeVodPageResult(List<GrapeVodSimpleItem> content, GrapeVodPageRequest request, long total) {
+    GrapeVodPageResult(List<GrapeVodIndex> content, GrapeVodPageRequest request, long total) {
         super(content, request, total);
     }
 

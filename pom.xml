@@ -100,6 +100,14 @@
                 <version>${commons-text.version}</version>
             </dependency>
 
+            <!--jsr-->
+            <dependency>
+                <artifactId>jsr305</artifactId>
+                <groupId>com.google.code.findbugs</groupId>
+                <scope>compile</scope>
+                <version>${jsr305.version}</version>
+            </dependency>
+
             <!--google guava-->
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -184,6 +192,7 @@
         <layer.version>3.1.1</layer.version>
         <layui.version>2.5.6</layui.version>
         <poi.version>4.1.2</poi.version>
+        <jsr305.version>3.0.2</jsr305.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
