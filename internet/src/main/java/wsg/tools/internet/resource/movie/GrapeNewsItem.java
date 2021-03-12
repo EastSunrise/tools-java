@@ -1,32 +1,26 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.internet.resource.common.UpdateDateSupplier;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import java.time.LocalDate;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
-import javax.annotation.Nonnull;
-import java.time.LocalDate;
-
 /**
- * News items of Grape site, resources of which are all downloadable.
+ * News items of Grape site, resources of which are all downloadable.All of the items belong to
+ * {@link GrapeVodType#BT_MOVIE}.
  *
  * @author Kingen
  * @since 2021/2/4
  */
-public class GrapeNewsItem extends IdentifiedItem implements VideoTypeSupplier, YearSupplier, UpdateDateSupplier {
+public class GrapeNewsItem extends IdentifiedItem<GrapeVodType>
+    implements YearSupplier, UpdateDateSupplier {
 
     private final LocalDate releaseDate;
     private Integer year;
 
     GrapeNewsItem(int id, @Nonnull String url, LocalDate releaseDate) {
-        super(id, url);
+        super(id, url, GrapeVodType.BT_MOVIE);
         this.releaseDate = releaseDate;
-    }
-
-    @Override
-    public VideoType getType() {
-        return VideoType.MOVIE;
     }
 
     @Override

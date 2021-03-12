@@ -3,6 +3,7 @@ package wsg.tools.internet.resource.movie;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
@@ -30,13 +33,11 @@ import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.StringResponseHandler;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.common.VideoConstants;
-import wsg.tools.internet.resource.common.VideoType;
 
 /**
  * @author Kingen
@@ -48,12 +49,11 @@ public final class MovieHeavenSite extends BaseSite
     implements Repository<Integer, MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
+    private static final Pattern TYPE_HREF_REGEX;
     private static final Pattern ITEM_TITLE_REGEX = Pattern
         .compile("《(?<title>.+)》迅雷下载_(BT种子磁力|全集|最新一期)下载 - LOL电影天堂");
     private static final Pattern ITEM_HREF_REGEX = Pattern
         .compile("/vod-detail-id-(?<id>\\d+)\\.html");
-    private static final Pattern TYPE_PATH_REGEX = Pattern
-        .compile("/vod-type-id-(?<index>\\d+)-pg-1\\.html");
     private static final String UNKNOWN_YEAR = "未知";
     private static final Pattern VAR_URL_REGEX = Pattern
         .compile("var downurls=\"(?<entries>.*)#\";");
@@ -62,13 +62,12 @@ public final class MovieHeavenSite extends BaseSite
     private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
     private static final String XUNLEI = "xunlei";
     private static final String URL_SEPARATOR = "#";
-    private static final VideoType[] TYPES = {
-        null, VideoType.MOVIE, VideoType.SERIES, VideoType.VARIETY, VideoType.ANIME, VideoType.HD,
-        VideoType.FHD, VideoType.THREE_D, VideoType.MANDARIN, VideoType.MOVIE, VideoType.MOVIE,
-        VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE, VideoType.MOVIE,
-        VideoType.MOVIE, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES, VideoType.SERIES,
-        VideoType.SERIES, VideoType.FOUR_K
-    };
+
+    static {
+        String types = Arrays.stream(MovieHeavenType.values()).map(IntCodeSupplier::getCode)
+            .map(String::valueOf).collect(Collectors.joining("|"));
+        TYPE_HREF_REGEX = Pattern.compile("/vod-type-id-(?<id>" + types + ")-pg-1\\.html");
+    }
 
     public MovieHeavenSite() {
         super("Movie Heaven", new BasicHttpSession("993dy.com"), new MovieHeaverResponseHandler());
@@ -77,20 +76,16 @@ public final class MovieHeavenSite extends BaseSite
     /**
      * Returns the repository from 1 to {@link #max()}.
      */
-    public IntRangeIdentifiedRepository<MovieHeavenItem> getRepository() {
+    public IntRangeIdentifiedRepository<MovieHeavenItem> getRepository()
+        throws HttpResponseException {
         return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }
 
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
-    public int max() {
-        Document document;
-        try {
-            document = getDocument(builder0("/"), SnapshotStrategy.always());
-        } catch (HttpResponseException e) {
-            throw new UnexpectedException(e);
-        }
+    public int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/"), SnapshotStrategy.always());
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -108,17 +103,18 @@ public final class MovieHeavenSite extends BaseSite
         Document document = getDocument(builder, SnapshotStrategy.never());
         String title = document.title();
         if (TIP_TITLE.equals(title)) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND,
-                document.selectFirst("h4.infotitle1").text());
+            String message = document.selectFirst("h4.infotitle1").text();
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, message);
         }
 
         Map<String, Element> info = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
             .stream().collect(Collectors.toMap(Element::text, e -> e));
-        String href = info.get("类型：").nextElementSibling().attr(CssSelectors.ATTR_HREF);
-        VideoType type = TYPES[Integer
-            .parseInt(RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, href).group("index"))];
-        LocalDate addDate = LocalDate.parse(((TextNode) info.get("上架时间：").nextSibling()).text(),
-            DateTimeFormatter.ISO_LOCAL_DATE);
+        String typeHref = info.get("类型：").nextElementSibling().attr(CssSelectors.ATTR_HREF);
+        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref);
+        int typeId = Integer.parseInt(typeMatcher.group("id"));
+        MovieHeavenType type = EnumUtilExt.deserializeCode(typeId, MovieHeavenType.class);
+        String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
+        LocalDate addDate = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
         MovieHeavenItem item = new MovieHeavenItem(id, builder.toString(), type, addDate);
 
         item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, title).group(
@@ -161,7 +157,7 @@ public final class MovieHeavenSite extends BaseSite
                 }
             }
         }
-        item.setResources(resources);
+        item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
     }

@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import wsg.tools.common.lang.Identifier;
 import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.common.AdultEntry;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
 
 /**
  * An item in the {@link LicencePlateSite}.

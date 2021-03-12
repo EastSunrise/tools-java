@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import wsg.tools.internet.common.NextSupplier;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * Album including a series of photos.

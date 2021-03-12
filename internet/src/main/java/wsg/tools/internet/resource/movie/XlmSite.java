@@ -2,9 +2,12 @@ package wsg.tools.internet.resource.movie;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
@@ -14,14 +17,18 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
+import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
 import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
+import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -37,24 +44,52 @@ import wsg.tools.internet.download.impl.Thunder;
 public final class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
 
     private static final String DOWNLOAD_ASP = "/download.asp";
+    private static final Pattern COLUMN_HREF_REGEX;
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/dy/k(?<id>\\d+)\\.html");
     private static final Pattern ITEM_TITLE_REGEX = Pattern
         .compile("《(?<title>[^《》]*(《[^《》]+》)?[^《》]*)》\\S+\\1\\S+");
-    private static final Pattern TYPE_HREF_REGEX = Pattern.compile("/lanmu/xz(?<c>\\d+).html");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter
         .ofPattern("yyyy/M/d H:mm:ss");
+
+    static {
+        String columns = Arrays.stream(XlmColumn.values()).map(IntCodeSupplier::getCode)
+            .map(String::valueOf).collect(Collectors.joining("|"));
+        COLUMN_HREF_REGEX = Pattern.compile("/lanmu/xz(?<c>" + columns + ").html");
+    }
 
     public XlmSite() {
         super("Xlm", new BasicHttpSession("xleimi.com"), new StringResponseHandler(Constants.GBK));
     }
 
     /**
-     * Returns the repository of the given type.
-     *
-     * @see XlmType
+     * Returns the repository of all the items.
      */
-    public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmType type) {
+    public IntRangeIdentifiedRepository<XlmItem> getRepository() throws HttpResponseException {
+        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+    }
+
+    /**
+     * Returns the repository of the given type since very first one. May break off.
+     *
+     * @see XlmColumn
+     */
+    public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmColumn type) {
         return new LinkedRepositoryImpl<>(this, type.first());
+    }
+
+    /**
+     * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
+     */
+    public int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/new.html"), SnapshotStrategy.always());
+        Elements tits = document.select(".tit");
+        int max = 1;
+        for (Element tit : tits) {
+            String href = tit.attr(CssSelectors.ATTR_HREF);
+            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, href).group("id");
+            max = Math.max(max, Integer.parseInt(id));
+        }
+        return max;
     }
 
     @Override
@@ -62,18 +97,17 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         RequestBuilder builder = builder0("/dy/k%d.html", id);
         Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
 
-        String typeHref = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).get(1)
-            .attr(
-                CssSelectors.ATTR_HREF);
-        int code = Integer
-            .parseInt(RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("c"));
-        XlmType type = EnumUtilExt.deserializeCode(code, XlmType.class);
-        LocalDateTime releaseTime = LocalDateTime
-            .parse(document.selectFirst(".info").selectFirst(".time").selectFirst(
-                CssSelectors.TAG_FONT).text(), FORMATTER);
+        Elements heads = document.selectFirst("div.conpath").select(CssSelectors.TAG_A);
+        String columnHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
+        Matcher columnMatcher = RegexUtils.matchesOrElseThrow(COLUMN_HREF_REGEX, columnHref);
+        int code = Integer.parseInt(columnMatcher.group("c"));
+        XlmColumn type = EnumUtilExt.deserializeCode(code, XlmColumn.class);
+        Element info = document.selectFirst(".info");
+        Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
+        LocalDateTime releaseTime = LocalDateTime.parse(font.text(), FORMATTER);
         XlmItem item = new XlmItem(id, builder.toString(), releaseTime, type);
-        item.setTitle(RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title()).group(
-            CssSelectors.ATTR_TITLE));
+        Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title());
+        item.setTitle(matcher.group(CssSelectors.ATTR_TITLE));
         item.setNext(getNext(document));
 
         Element downs = document.selectFirst("#downs");
@@ -96,7 +130,7 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
                 exceptions.add(e);
             }
         }
-        item.setResources(resources);
+        item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
     }

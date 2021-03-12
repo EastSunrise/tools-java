@@ -1,9 +1,9 @@
 package wsg.tools.internet.resource.movie;
 
+import javax.annotation.Nonnull;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.common.FirstSupplier;
-
-import javax.annotation.Nonnull;
 
 /**
  * Types of the resources under {@link BdMovieSite}.
@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/3/1
  */
-public enum BdMovieType implements TextSupplier, FirstSupplier<Integer> {
+public enum BdMovieType implements TextSupplier, FirstSupplier<Integer>, IntCodeSupplier {
     /**
      * @see <a href="https://www.bd2020.com/zx/index.htm">Latest</a>
      */
@@ -55,5 +55,10 @@ public enum BdMovieType implements TextSupplier, FirstSupplier<Integer> {
     @Override
     public Integer first() {
         return first;
+    }
+
+    @Override
+    public Integer getCode() {
+        return ordinal();
     }
 }

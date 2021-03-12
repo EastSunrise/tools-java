@@ -1,16 +1,18 @@
 package wsg.tools.boot.service.scheduler;
 
-import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.SiteManager;
-import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
+import wsg.tools.common.util.function.IntCodeSupplier;
+import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
@@ -21,8 +23,8 @@ import wsg.tools.internet.resource.movie.GrapeSite;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 import wsg.tools.internet.resource.movie.MovieHeavenSite;
 import wsg.tools.internet.resource.movie.XlcSite;
+import wsg.tools.internet.resource.movie.XlmColumn;
 import wsg.tools.internet.resource.movie.XlmItem;
-import wsg.tools.internet.resource.movie.XlmType;
 import wsg.tools.internet.resource.movie.Y80sSite;
 
 /**
@@ -35,7 +37,6 @@ import wsg.tools.internet.resource.movie.Y80sSite;
 @Service
 public class ResourceScheduler extends BaseServiceImpl {
 
-    private static final int DEFAULT_SUBTYPE = Source.DEFAULT_SUBTYPE;
     private final ResourceService resourceService;
     private final AdultService adultService;
     private final SiteManager manager;
@@ -60,10 +61,9 @@ public class ResourceScheduler extends BaseServiceImpl {
                 log.error(e.getMessage());
             }
         }
-        importIntRange(manager.movieHeavenSite(), MovieHeavenSite::getRepository);
         importIntRange(manager.xlcSite(), XlcSite::getRepository);
         String xlmDomain = manager.xlmSite().getDomain();
-        for (XlmType type : XlmType.values()) {
+        for (XlmColumn type : XlmColumn.values()) {
             try {
                 LinkedRepository<Integer, XlmItem> repository = manager.xlmSite()
                     .getRepository(type);
@@ -73,6 +73,7 @@ public class ResourceScheduler extends BaseServiceImpl {
             }
         }
         importIntRange(manager.y80sSite(), Y80sSite::getRepository);
+        importIntRange(manager.movieHeavenSite(), MovieHeavenSite::getRepository);
     }
 
     @Scheduled(cron = "0 0 0 1 1 ?")
@@ -96,11 +97,12 @@ public class ResourceScheduler extends BaseServiceImpl {
         }
     }
 
-    private <T extends IdentifiedItem, S extends BaseSite> void importIntRange(S site,
-        Function<S, IntRangeIdentifiedRepository<T>> getRepository) {
-        IntRangeIdentifiedRepository<T> repository = getRepository.apply(site);
+    private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>, S extends BaseSite>
+    void importIntRange(S site,
+        ThrowableFunction<S, IntRangeIdentifiedRepository<T>, HttpResponseException> getRepo) {
         try {
-            resourceService.importIntRangeRepository(repository, site.getDomain(), DEFAULT_SUBTYPE);
+            IntRangeIdentifiedRepository<T> repository = SiteUtilExt.found(site, getRepo);
+            resourceService.importIntRangeRepository(repository, site.getDomain());
         } catch (OtherHttpResponseException e) {
             log.error(e.getMessage());
         }

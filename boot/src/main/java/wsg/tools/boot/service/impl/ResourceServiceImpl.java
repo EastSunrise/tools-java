@@ -37,10 +37,13 @@ import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.common.UpdateDateSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.FilenameSupplier;
 import wsg.tools.internet.download.base.LengthSupplier;
@@ -48,9 +51,6 @@ import wsg.tools.internet.download.base.PasswordProvider;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.UpdateDateSupplier;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
@@ -80,8 +80,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem & NextSupplier<Integer>> void importLinkedRepository(
-        LinkedRepository<Integer, T> repository, String domain, int subtype)
+    public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E> & NextSupplier<Integer>>
+    void importLinkedRepository(LinkedRepository<Integer, T> repository, String domain, int subtype)
         throws OtherHttpResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
         RepositoryIterator<T> iterator;
@@ -106,16 +106,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends IdentifiedItem> void importIntRangeRepository(
-        IntRangeIdentifiedRepository<T> repository, String domain, int subtype)
+    public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
+    void importIntRangeRepository(IntRangeIdentifiedRepository<T> repository, String domain)
         throws OtherHttpResponseException {
-        Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
+        Optional<Long> optional = itemRepository.findMaxRid(domain);
         int start = optional.map(Long::intValue).map(id -> id + 1).orElse(repository.min());
         RepositoryIterator<T> iterator = repository.iteratorAfter(start);
         int success = 0, total = 0, notFound = 0;
         while (iterator.hasNext()) {
             try {
                 T item = SiteUtilExt.ifNotFound(iterator::next, "A record of " + domain);
+                Integer subtype = item.getSubtype().getCode();
                 Source source = Source.record(domain, subtype, item.getId());
                 if (insertItem(item, source) >= 0) {
                     success++;
@@ -132,8 +133,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     /**
      * @return the count of inserted links, or -1 if the item exists.
      */
-    private <T extends IdentifiedItem> int insertItem(T item, Source source) {
-        List<AbstractLink> resources = item.getResources();
+    private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
+    int insertItem(T item, Source source) {
+        List<AbstractLink> resources = item.getLinks();
         if (itemRepository.findBySource(source).isPresent()) {
             failureRepository.insert(new Failure(source, ITEM_EXISTS_MSG));
             return -1;
@@ -143,9 +145,6 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
-        if (item instanceof VideoTypeSupplier) {
-            itemEntity.setType(((VideoTypeSupplier) item).getType());
-        }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());
         }

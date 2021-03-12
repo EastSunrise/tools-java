@@ -3,7 +3,7 @@ package wsg.tools.internet.info.adult.midnight;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * A base item in the {@link MidnightSite}.

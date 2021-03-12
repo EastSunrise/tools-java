@@ -2,10 +2,10 @@ package wsg.tools.internet.resource.movie;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -19,6 +19,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
@@ -29,12 +31,10 @@ import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.Scheme;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.Thunder;
-import wsg.tools.internet.resource.common.VideoType;
 
 /**
  * @author Kingen
@@ -44,28 +44,21 @@ import wsg.tools.internet.resource.common.VideoType;
 @Slf4j
 public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem> {
 
-    private static final Map<String, VideoType> TYPE_AKA = Map.of(
-        "movie", VideoType.MOVIE,
-        "ju", VideoType.SERIES,
-        "zy", VideoType.VARIETY,
-        "dm", VideoType.ANIME,
-        "trailer", VideoType.TRAILER,
-        "mv", VideoType.MV,
-        "video", VideoType.VIDEO,
-        "course", VideoType.COURSE,
-        "weidianying", VideoType.MOVIE
-    );
-    private static final String TYPE_JOINING_STR = StringUtils.join(TYPE_AKA.keySet(), "|");
+    private static final Pattern TYPE_HREF_REGEX;
+    private static final Pattern PLAY_HREF_REGEX;
     private static final Pattern MOVIE_HREF_REGEX = Pattern
         .compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
-    private static final Pattern TYPE_HREF_REGEX = Pattern
-        .compile("//m\\.y80s\\.com/(?<t>" + TYPE_JOINING_STR + ")/\\d+(-\\d){6}");
-    private static final Pattern PLAY_HREF_REGEX = Pattern
-        .compile("//m\\.y80s\\.com/(" + TYPE_JOINING_STR + ")/\\d+/play-\\d+");
     private static final Pattern YEAR_REGEX = Pattern
         .compile("-?(?<y>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
     private static final Pattern DOUBAN_HREF_REGEX = Pattern
         .compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
+
+    static {
+        String types = Arrays.stream(Y80sType.values()).map(TextSupplier::getText)
+            .collect(Collectors.joining("|"));
+        TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+(-\\d){6}");
+        PLAY_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+/play-\\d+");
+    }
 
     public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
@@ -74,7 +67,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
     /**
      * Returns the repository from 1 to {@link #max()}.
      */
-    public IntRangeIdentifiedRepository<Y80sItem> getRepository() {
+    public IntRangeIdentifiedRepository<Y80sItem> getRepository() throws HttpResponseException {
         return new IntRangeIdentifiedRepositoryImpl<>(this, max());
     }
 
@@ -82,13 +75,9 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     @Nonnull
-    public Integer max() {
-        Document document;
-        try {
-            document = getDocument(builder("m", "/movie/1-0-0-0-0-0-0"), SnapshotStrategy.always());
-        } catch (HttpResponseException e) {
-            throw new UnexpectedException(e);
-        }
+    public Integer max() throws HttpResponseException {
+        RequestBuilder builder = builder("m", "/movie/1-0-0-0-0-0-0");
+        Document document = getDocument(builder, SnapshotStrategy.always());
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
@@ -110,12 +99,11 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         Map<String, Element> info = document.select(".movie_attr").stream()
             .collect(Collectors.toMap(Element::text, e -> e));
         Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
-        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX,
-            lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF));
-        VideoType type = Objects.requireNonNull(TYPE_AKA.get(typeMatcher.group("t")));
-        LocalDate updateDate = LocalDate
-            .parse(((TextNode) info.get("资源更新：").nextSibling()).text().strip(),
-                DateTimeFormatter.ISO_LOCAL_DATE);
+        String typeHref = lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
+        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref);
+        Y80sType type = EnumUtilExt.deserializeText(typeMatcher.group("t"), Y80sType.class, false);
+        String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
+        LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
         Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, type);
 
         item.setTitle(lis.last().text().strip());
@@ -157,7 +145,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
                 exceptions.add(e);
             }
         }
-        item.setResources(resources);
+        item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
     }

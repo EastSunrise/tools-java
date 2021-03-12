@@ -1,10 +1,10 @@
 package wsg.tools.internet.resource.movie;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.Getter;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
-
-import java.util.List;
 
 /**
  * A basic item with a title and contained links.
@@ -16,18 +16,18 @@ import java.util.List;
 public class BasicItem {
 
     private String title;
-    private List<AbstractLink> resources;
+    private List<AbstractLink> links;
     private List<InvalidResourceException> exceptions;
 
     void setTitle(String title) {
         this.title = title;
     }
 
-    void setResources(List<AbstractLink> resources) {
-        this.resources = resources;
+    void setLinks(List<AbstractLink> links) {
+        this.links = Collections.unmodifiableList(links);
     }
 
     void setExceptions(List<InvalidResourceException> exceptions) {
-        this.exceptions = exceptions;
+        this.exceptions = Collections.unmodifiableList(exceptions);
     }
 }

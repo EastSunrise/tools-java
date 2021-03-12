@@ -2,8 +2,8 @@ package wsg.tools.internet.resource.movie;
 
 import java.time.LocalDate;
 import lombok.Getter;
+import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.resource.common.StateSupplier;
-import wsg.tools.internet.resource.common.UpdateDateSupplier;
 
 /**
  * An index pointing to a {@link GrapeVodItem} in the {@link GrapeSite}.

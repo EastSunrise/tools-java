@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
@@ -44,13 +46,20 @@ import wsg.tools.internet.download.impl.Ed2kLink;
 public final class GrapeSite extends BaseSite {
 
     public static final int MAX_NEWS_ID = 16132;
+    private static final Pattern TYPE_HREF_REGEX;
+    private static final String BT_ATTACH_SRC = "thunder://url_btbtt";
+    private static final String BT_ATTACH_PREFIX = "http://51btbtt.com/attach-download";
     private static final Pattern TIME_REGEX = Pattern.compile("发布时间：(?<s>\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern YEAR_REGEX = Pattern.compile("◎年\\s*代\\s+(?<y>\\d{4})\\s*◎");
     private static final Pattern VOD_REGEX = Pattern
         .compile("tt\\d+/?|/vod/\\d+/?|/vod/[a-z]+/[a-z]+/?|/html/\\d+\\.html");
-    private static final Pattern VOD_GENRE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>[a-z]+)");
     private static final Pattern PAGE_SUM_REGEX = Pattern.compile("共(?<t>\\d+)部 :\\d+/\\d+");
-    private static final String BT_ATTACH = "url_btbtt";
+
+    static {
+        String types = Arrays.stream(GrapeVodType.values()).map(TextSupplier::getText)
+            .collect(Collectors.joining("|"));
+        TYPE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>" + types + ")/");
+    }
 
     public GrapeSite() {
         super("Grape Vod", new BasicHttpSession("putaoys.com"), GrapeSite::handleResponse);
@@ -68,27 +77,29 @@ public final class GrapeSite extends BaseSite {
     }
 
     /**
-     * The repository including downloadable resources.
+     * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}.
      */
     public IntRangeIdentifiedRepository<GrapeNewsItem> getNewsRepository() {
-        return new IntRangeIdentifiedRepositoryImpl<>(this::findNewsItem, MAX_NEWS_ID);
+        return new IntRangeIdentifiedRepositoryImpl<>(this::findNewsItem, 2, MAX_NEWS_ID);
     }
 
-    public GrapeNewsItem findNewsItem(@Nonnull Integer id) throws HttpResponseException {
+    /**
+     * Finds an item that belongs to {@link GrapeVodType#BT_MOVIE}.
+     */
+    public GrapeNewsItem findNewsItem(int id) throws HttpResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
-        LocalDate releaseDate = LocalDate.parse(
-            RegexUtils.matchesOrElseThrow(TIME_REGEX, document.selectFirst(".updatetime").text())
-                .group("s"));
+        String datetime = document.selectFirst(".updatetime").text();
+        Matcher timeMatcher = RegexUtils.matchesOrElseThrow(TIME_REGEX, datetime);
+        LocalDate releaseDate = LocalDate.parse(timeMatcher.group("s"));
         GrapeNewsItem item = new GrapeNewsItem(id, builder.toString(), releaseDate);
 
-        item.setTitle(
-            document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1).text()
-                .strip());
+        Element h1 = document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1);
+        item.setTitle(h1.text().strip());
         Element info = document.selectFirst(".text");
-        Matcher matcher = YEAR_REGEX.matcher(info.text());
-        if (matcher.find()) {
-            item.setYear(Integer.parseInt(matcher.group("y")));
+        Matcher yearMatcher = YEAR_REGEX.matcher(info.text());
+        if (yearMatcher.find()) {
+            item.setYear(Integer.parseInt(yearMatcher.group("y")));
         }
 
         Elements as = info.select(CssSelectors.TAG_A);
@@ -100,9 +111,8 @@ public final class GrapeSite extends BaseSite {
                 if (StringUtils.isBlank(href) || VOD_REGEX.matcher(href).matches()) {
                     continue;
                 }
-                if (href.contains(BT_ATTACH)) {
-                    href = href
-                        .replace("thunder://url_btbtt", "http://51btbtt.com/attach-download");
+                if (href.contains(BT_ATTACH_SRC)) {
+                    href = href.replace(BT_ATTACH_SRC, BT_ATTACH_PREFIX);
                 }
                 int index = StringUtils.indexOf(href, Ed2kLink.ED2K_PREFIX);
                 if (StringUtils.INDEX_NOT_FOUND != index) {
@@ -119,20 +129,21 @@ public final class GrapeSite extends BaseSite {
                 exceptions.add(e);
             }
         }
-        item.setResources(resources);
+        item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
     }
 
     /**
-     * Obtains the page of vod indexes by the given type.
+     * Finds the page of vod indexes by the given type.
      *
-     * @return the page of the vod indexes
+     * @see GrapeVodType
      */
     public GrapeVodPageResult findAllVodIndexes(@Nonnull GrapeVodType type,
         @Nonnull GrapeVodPageRequest pageRequest) throws HttpResponseException {
-        String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getCode(),
-            pageRequest.getOrderBy().getText(), pageRequest.getCurrent() + 1);
+        String order = pageRequest.getOrderBy().getText();
+        int page = pageRequest.getCurrent() + 1;
+        String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
         RequestBuilder builder = builder0("/index.php").addParameter("s", arg);
         Document document = getDocument(builder, SnapshotStrategy.always());
 
@@ -154,19 +165,18 @@ public final class GrapeSite extends BaseSite {
         return new GrapeVodPageResult(indexes, pageRequest, total);
     }
 
-    public GrapeVodItem findVodItem(@Nonnull String path) throws HttpResponseException {
-        RequestBuilder builder = builder0(path);
+    public GrapeVodItem findVodItem(@Nonnull GrapeVodIndex index) throws HttpResponseException {
+        RequestBuilder builder = builder0(index.getPath());
         Document document = getDocument(builder, SnapshotStrategy.never());
 
-        Elements heads = document.selectFirst("ul.bread-crumbs").select(CssSelectors.TAG_A);
+        Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         AssertUtils.requireEquals(heads.size(), 3);
-        String genreHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(VOD_GENRE_HREF_REGEX, genreHref);
-        GrapeVodGenre genre = EnumUtilExt
-            .deserializeText(matcher.group("t"), GrapeVodGenre.class, false);
-        LocalDateTime addTime = LocalDateTime
-            .parse(document.selectFirst("#addtime").text().strip(), Constants.YYYY_MM_DD_HH_MM);
-        GrapeVodItem item = new GrapeVodItem(path, builder.toString(), genre, addTime);
+        String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
+        String typeText = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("t");
+        GrapeVodType type = EnumUtilExt.deserializeText(typeText, GrapeVodType.class, false);
+        String timeStr = document.selectFirst("#addtime").text().strip();
+        LocalDateTime addTime = LocalDateTime.parse(timeStr, Constants.YYYY_MM_DD_HH_MM);
+        GrapeVodItem item = new GrapeVodItem(index.getPath(), builder.toString(), type, addTime);
 
         Element div = document.selectFirst(".detail-title");
         Element h1 = div.selectFirst(CssSelectors.TAG_H);
@@ -194,7 +204,7 @@ public final class GrapeSite extends BaseSite {
                 exceptions.add(e);
             }
         }
-        item.setResources(resources);
+        item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
     }

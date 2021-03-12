@@ -34,8 +34,7 @@ public enum MidnightColumn implements IntCodeSupplier, TextSupplier {
     /**
      * @see <a href="https://www.shenyequ.com/prestige/">Prestige Laymen</a>
      */
-    PRESTIGE(33, "prestige"),
-    ;
+    PRESTIGE(33, "prestige");
 
     private final int code;
     private final String text;

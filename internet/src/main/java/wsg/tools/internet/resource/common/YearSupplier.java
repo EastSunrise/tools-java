@@ -1,7 +1,7 @@
 package wsg.tools.internet.resource.common;
 
 /**
- * Supply year of the item.
+ * Supplies the year of the item.
  *
  * @author Kingen
  * @since 2020/11/23

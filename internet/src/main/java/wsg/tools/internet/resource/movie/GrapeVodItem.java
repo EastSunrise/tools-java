@@ -2,10 +2,9 @@ package wsg.tools.internet.resource.movie;
 
 import java.time.LocalDateTime;
 import javax.annotation.Nonnull;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.resource.common.StateSupplier;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import wsg.tools.internet.resource.common.SubtypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
@@ -14,27 +13,26 @@ import wsg.tools.internet.resource.common.YearSupplier;
  * @author Kingen
  * @since 2021/2/3
  */
-public class GrapeVodItem extends BasicItem implements VideoTypeSupplier, YearSupplier,
-    UpdateDatetimeSupplier, StateSupplier {
+public class GrapeVodItem extends BasicItem
+    implements SubtypeSupplier<GrapeVodType>, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
 
     private final String path;
     private final String url;
-    private final GrapeVodGenre genre;
+    private final GrapeVodType type;
     private final LocalDateTime addTime;
     private String state;
     private Integer year;
 
-    GrapeVodItem(@Nonnull String path, @Nonnull String url, GrapeVodGenre genre,
+    GrapeVodItem(@Nonnull String path, @Nonnull String url, GrapeVodType type,
         LocalDateTime addTime) {
         this.path = path;
         this.url = url;
-        this.genre = genre;
+        this.type = type;
         this.addTime = addTime;
     }
 
-    @Override
-    public VideoType getType() {
-        return genre.getType();
+    public String getPath() {
+        return path;
     }
 
     @Override
@@ -62,5 +60,10 @@ public class GrapeVodItem extends BasicItem implements VideoTypeSupplier, YearSu
     @Override
     public LocalDateTime lastUpdate() {
         return addTime;
+    }
+
+    @Override
+    public GrapeVodType getSubtype() {
+        return type;
     }
 }

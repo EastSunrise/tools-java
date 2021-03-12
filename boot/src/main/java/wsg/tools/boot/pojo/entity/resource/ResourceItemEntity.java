@@ -12,8 +12,6 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 import wsg.tools.internet.resource.movie.BasicItem;
 
@@ -35,7 +33,7 @@ import wsg.tools.internet.resource.movie.BasicItem;
     }
 )
 public class ResourceItemEntity extends IdentityEntity
-    implements VideoTypeSupplier, YearSupplier, DoubanIdentifier, ImdbIdentifier {
+    implements YearSupplier, DoubanIdentifier, ImdbIdentifier {
 
     private static final long serialVersionUID = -6437618032369837427L;
 
@@ -44,8 +42,6 @@ public class ResourceItemEntity extends IdentityEntity
 
     @Column(nullable = false)
     private String title;
-
-    private VideoType type;
 
     private Integer year;
 

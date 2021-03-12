@@ -18,6 +18,15 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 public interface ResourceItemRepository extends BaseRepository<ResourceItemEntity, Long> {
 
     /**
+     * Finds the maximum rid of the whole repository.
+     *
+     * @param domain the domain of the repository
+     * @return optional of the maximum rid
+     */
+    @Query("select max(source.rid) from ResourceItemEntity where source.domain=?1")
+    Optional<Long> findMaxRid(@Nonnull String domain);
+
+    /**
      * Finds the maximum rid of the subtype of the repository.
      *
      * @param domain  the domain of the repository

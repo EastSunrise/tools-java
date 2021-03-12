@@ -1,36 +1,27 @@
 package wsg.tools.internet.resource.movie;
 
+import java.time.LocalDate;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
-import wsg.tools.internet.resource.common.UpdateDateSupplier;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
-import javax.annotation.Nonnull;
-import java.time.LocalDate;
-
 /**
- * Items of {@link Y80sSite}.
+ * An item in {@link Y80sSite}.
  *
  * @author Kingen
  * @since 2020/10/27
  */
-public class Y80sItem extends IdentifiedItem implements YearSupplier, VideoTypeSupplier, DoubanIdentifier, UpdateDateSupplier {
+public class Y80sItem extends IdentifiedItem<Y80sType>
+    implements YearSupplier, DoubanIdentifier, UpdateDateSupplier {
 
     private final LocalDate updateDate;
-    private final VideoType type;
     private Integer year;
     private Long dbId;
 
-    Y80sItem(int id, @Nonnull String url, LocalDate updateDate, VideoType type) {
-        super(id, url);
+    Y80sItem(int id, @Nonnull String url, LocalDate updateDate, Y80sType type) {
+        super(id, url, type);
         this.updateDate = updateDate;
-        this.type = type;
-    }
-
-    @Override
-    public VideoType getType() {
-        return type;
     }
 
     @Override

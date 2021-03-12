@@ -55,11 +55,11 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds the paged result of indexes under the given column.
      */
-    public MidnightPageResult findAllIndexes(@Nonnull MidnightColumn type,
+    public MidnightPageResult findAllIndexes(@Nonnull MidnightColumn column,
         @Nonnull MidnightPageRequest pageRequest) throws HttpResponseException {
         RequestBuilder builder = builder0("/e/action/ListInfo.php")
             .addParameter("page", pageRequest.getCurrent())
-            .addParameter("classid", type.getCode())
+            .addParameter("classid", column.getCode())
             .addParameter("line", pageRequest.getPageSize())
             .addParameter("tempid", "11")
             .addParameter("orderby", pageRequest.getOrderBy().getText())
@@ -70,7 +70,7 @@ public final class MidnightSite extends BaseSite {
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_A);
             String href = a.attr(CssSelectors.ATTR_HREF);
-            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(type), href);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(column), href);
             int id = Integer.parseInt(matcher.group("id"));
             String title = a.attr(CssSelectors.ATTR_TITLE);
             String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
@@ -85,7 +85,9 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with a collection of adult entries.
      */
-    public MidnightCollection findCollection(int id) throws HttpResponseException {
+    public MidnightCollection findCollection(@Nonnull MidnightIndex index)
+        throws HttpResponseException {
+        int id = index.getId();
         return getItem(MidnightColumn.COLLECTION, id, (title, release, contents) -> {
             Map<String, String> works = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
             for (Element content : contents) {
@@ -116,7 +118,8 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with an album which including a series of images.
      */
-    public MidnightAlbum findAlbum(int id) throws HttpResponseException {
+    public MidnightAlbum findAlbum(@Nonnull MidnightIndex index) throws HttpResponseException {
+        int id = index.getId();
         return getItem(MidnightColumn.ALBUM, id,
             (title, release, contents) -> new MidnightAlbum(id, title, release,
                 getImages(contents)));

@@ -3,9 +3,7 @@ package wsg.tools.internet.resource.movie;
 import java.time.LocalDateTime;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.common.NextSupplier;
-import wsg.tools.internet.resource.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.resource.common.VideoType;
-import wsg.tools.internet.resource.common.VideoTypeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * Items of {@link XlmSite}.
@@ -13,22 +11,15 @@ import wsg.tools.internet.resource.common.VideoTypeSupplier;
  * @author Kingen
  * @since 2021/1/9
  */
-public class XlmItem extends IdentifiedItem implements VideoTypeSupplier, UpdateDatetimeSupplier,
-    NextSupplier<Integer> {
+public class XlmItem extends IdentifiedItem<XlmColumn>
+    implements UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime releaseTime;
-    private final XlmType type;
     private Integer next;
 
-    XlmItem(int id, @Nonnull String url, LocalDateTime releaseTime, XlmType type) {
-        super(id, url);
+    XlmItem(int id, @Nonnull String url, LocalDateTime releaseTime, XlmColumn column) {
+        super(id, url, column);
         this.releaseTime = releaseTime;
-        this.type = type;
-    }
-
-    @Override
-    public VideoType getType() {
-        return type.getVideoType();
     }
 
     @Override

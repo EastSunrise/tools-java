@@ -8,6 +8,7 @@ import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
+import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.common.NextSupplier;
@@ -29,8 +30,8 @@ public interface ResourceService {
      * @param subtype    the subtype whose records are going to import
      * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    <T extends IdentifiedItem & NextSupplier<Integer>> void importLinkedRepository(
-        LinkedRepository<Integer, T> repository, String domain, int subtype)
+    <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E> & NextSupplier<Integer>>
+    void importLinkedRepository(LinkedRepository<Integer, T> repository, String domain, int subtype)
         throws OtherHttpResponseException;
 
     /**
@@ -38,11 +39,10 @@ public interface ResourceService {
      *
      * @param repository the target repository
      * @param domain     the domain of the repository
-     * @param subtype    the subtype whose records are going to import
      * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    <T extends IdentifiedItem> void importIntRangeRepository(
-        IntRangeIdentifiedRepository<T> repository, String domain, int subtype)
+    <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
+    void importIntRangeRepository(IntRangeIdentifiedRepository<T> repository, String domain)
         throws OtherHttpResponseException;
 
     /**

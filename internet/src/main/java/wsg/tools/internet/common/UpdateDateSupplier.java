@@ -1,9 +1,9 @@
-package wsg.tools.internet.resource.common;
+package wsg.tools.internet.common;
 
 import java.time.LocalDate;
 
 /**
- * Supply update date of the item.
+ * Supplies the update date of the record.
  * <p>
  * Conflict with {@link UpdateDatetimeSupplier}.
  *

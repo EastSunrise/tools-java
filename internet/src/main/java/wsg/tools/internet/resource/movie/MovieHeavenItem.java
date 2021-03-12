@@ -1,9 +1,10 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.internet.resource.common.*;
-
-import javax.annotation.Nonnull;
 import java.time.LocalDate;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.common.UpdateDateSupplier;
+import wsg.tools.internet.resource.common.StateSupplier;
+import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * Items of {@link MovieHeavenSite}.
@@ -11,22 +12,16 @@ import java.time.LocalDate;
  * @author Kingen
  * @since 2021/1/10
  */
-public class MovieHeavenItem extends IdentifiedItem implements VideoTypeSupplier, YearSupplier, UpdateDateSupplier, StateSupplier {
+public class MovieHeavenItem extends IdentifiedItem<MovieHeavenType>
+    implements YearSupplier, UpdateDateSupplier, StateSupplier {
 
-    private final VideoType type;
     private final LocalDate addDate;
     private String state;
     private Integer year;
 
-    MovieHeavenItem(int id, @Nonnull String url, VideoType type, LocalDate addDate) {
-        super(id, url);
-        this.type = type;
+    MovieHeavenItem(int id, @Nonnull String url, MovieHeavenType type, LocalDate addDate) {
+        super(id, url, type);
         this.addDate = addDate;
-    }
-
-    @Override
-    public VideoType getType() {
-        return type;
     }
 
     @Override
