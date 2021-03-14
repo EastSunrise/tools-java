@@ -21,13 +21,12 @@ public class Source implements Serializable {
      * Default subtype for the repository which has only one subtype.
      */
     public static final int DEFAULT_SUBTYPE = 0;
-    public static final String DOMAIN_COLUMN = "domain";
     private static final long serialVersionUID = 38168257706310693L;
 
     /**
      * The domain of the {@link Repository}
      */
-    @Column(name = DOMAIN_COLUMN, nullable = false, length = 15)
+    @Column(nullable = false, length = 15)
     private String domain;
 
     /**

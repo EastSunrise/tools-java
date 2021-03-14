@@ -64,7 +64,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     private static final String CODE_EXISTS_MSG = "The target code exists";
     private static final String CODE_NOT_EXIST_MSG = "The code doesn't exist";
     private static final int MAX_CODE_LENGTH = 15;
-    private static final String ILLEGAL_CODE_MSG = "The code is illegal";
+    private static final String CODE_TOO_LONG_MSG = "The code is too long";
 
     private final FastdfsClient client;
     private final AdultVideoRepository videoRepository;
@@ -160,7 +160,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             return 0;
         }
         if (entry.getCode().length() > MAX_CODE_LENGTH) {
-            failureRepository.insert(new Failure(source, ILLEGAL_CODE_MSG));
+            failureRepository.insert(new Failure(source, CODE_TOO_LONG_MSG));
             return 0;
         }
         if (videoRepository.findById(entry.getCode()).isPresent()) {

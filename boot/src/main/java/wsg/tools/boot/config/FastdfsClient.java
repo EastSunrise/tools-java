@@ -21,7 +21,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Client of FastDFS to upload a file to the server.
+ * The client of FastDFS to upload a file to the server.
+ * <p>
+ * Refers to <a href="https://eastsunrise.github.io/wiki-kingen/dev/fastdfs.html">FastDFS</a> to
+ * configure FastDFS.
  *
  * @author Kingen
  * @since 2021/3/7

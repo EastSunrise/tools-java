@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,6 +44,7 @@ import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.UnexpectedContentException;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.movie.common.Parsers;
 import wsg.tools.internet.movie.common.Runtime;
@@ -98,11 +98,10 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      *
      * @throws LoginException if the given user and password is invalid or a CAPTCHA is required.
      */
-    public void login(String username, String password)
-        throws LoginException, HttpResponseException {
+    public void login(String username, String password) throws HttpResponseException {
         logout();
         getDocument(builder0(null), SnapshotStrategy.always());
-        RequestBuilder builder = create(HttpPost.METHOD_NAME, "accounts")
+        RequestBuilder builder = create(METHOD_POST, "accounts")
             .setPath("/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
             .addParameter("password", password)
@@ -152,7 +151,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         try {
             subject = MAPPER.readValue(text, BaseDoubanSubject.class);
         } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
 
         subject.setId(id);
@@ -332,13 +331,13 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @throws LoginException if not logged in first.
      */
     @Nullable
-    public Long getDbIdByImdbId(String imdbId) throws LoginException, HttpResponseException {
+    public Long getDbIdByImdbId(String imdbId) throws HttpResponseException {
         if (user() == null) {
             throw new LoginException("Please log in first.");
         }
         AssertUtils.requireNotBlank(imdbId);
         DoubanCatalog cat = DoubanCatalog.MOVIE;
-        RequestBuilder builder = create(HttpPost.METHOD_NAME, cat.name().toLowerCase(Locale.ROOT))
+        RequestBuilder builder = create(METHOD_POST, cat.name().toLowerCase(Locale.ROOT))
             .setPath("/new_subject")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue())
             .addParameter("type", "0")

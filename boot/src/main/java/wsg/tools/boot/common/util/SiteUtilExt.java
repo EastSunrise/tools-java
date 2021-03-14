@@ -1,14 +1,12 @@
 package wsg.tools.boot.common.util;
 
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.Functions;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.pojo.error.AppException;
-import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
-import wsg.tools.common.util.function.throwable.ThrowableFunction;
-import wsg.tools.common.util.function.throwable.ThrowableSupplier;
-import wsg.tools.common.util.function.throwable.ThrowableTriFunction;
+import wsg.tools.common.util.function.ThrowableTriFunction;
 
 /**
  * Utility when accessing to {@link wsg.tools.internet}.
@@ -29,7 +27,7 @@ public final class SiteUtilExt {
      * @throws NotFoundException          if not found
      * @throws OtherHttpResponseException other response exceptions
      */
-    public static <R> R ifNotFound(ThrowableSupplier<R, HttpResponseException> supplier,
+    public static <R> R ifNotFound(Functions.FailableSupplier<R, HttpResponseException> supplier,
         String message) throws NotFoundException, OtherHttpResponseException {
         try {
             return supplier.get();
@@ -47,7 +45,8 @@ public final class SiteUtilExt {
      * @throws NotFoundException          if not found
      * @throws OtherHttpResponseException other response exceptions
      */
-    public static <T, R> R ifNotFound(T t, ThrowableFunction<T, R, HttpResponseException> function,
+    public static <T, R> R ifNotFound(T t,
+        Functions.FailableFunction<T, R, HttpResponseException> function,
         @Nonnull String message) throws NotFoundException, OtherHttpResponseException {
         try {
             return function.apply(t);
@@ -66,7 +65,8 @@ public final class SiteUtilExt {
      * @throws OtherHttpResponseException other response exceptions
      */
     public static <T, U, R> R ifNotFound(T t, U u,
-        ThrowableBiFunction<T, U, R, HttpResponseException> function, @Nonnull String message)
+        Functions.FailableBiFunction<T, U, R, HttpResponseException> function,
+        @Nonnull String message)
         throws NotFoundException, OtherHttpResponseException {
         try {
             return function.apply(t, u);
@@ -102,7 +102,8 @@ public final class SiteUtilExt {
      *
      * @throws OtherHttpResponseException other response exceptions
      */
-    public static <R> R found(@Nonnull ThrowableSupplier<R, HttpResponseException> supplier)
+    public static <R> R found(
+        @Nonnull Functions.FailableSupplier<R, HttpResponseException> supplier)
         throws OtherHttpResponseException {
         try {
             return supplier.get();
@@ -120,7 +121,7 @@ public final class SiteUtilExt {
      * @throws OtherHttpResponseException other response exceptions
      */
     public static <T, R> R found(@Nonnull T t,
-        @Nonnull ThrowableFunction<T, R, HttpResponseException> function)
+        @Nonnull Functions.FailableFunction<T, R, HttpResponseException> function)
         throws OtherHttpResponseException {
         try {
             return function.apply(t);
@@ -138,7 +139,7 @@ public final class SiteUtilExt {
      * @throws OtherHttpResponseException other response exceptions
      */
     public static <T, U, R> R found(@Nonnull T t, U u,
-        @Nonnull ThrowableBiFunction<T, U, R, HttpResponseException> function)
+        @Nonnull Functions.FailableBiFunction<T, U, R, HttpResponseException> function)
         throws OtherHttpResponseException {
         try {
             return function.apply(t, u);

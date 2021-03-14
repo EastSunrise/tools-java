@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
@@ -21,7 +22,13 @@ import wsg.tools.internet.resource.common.YearSupplier;
  */
 @Setter
 @Entity
-@Table(name = "video_movie")
+@Table(
+    name = "video_movie",
+    indexes = {
+        @Index(name = "unique_movie_db", columnList = "dbId", unique = true),
+        @Index(name = "unique_movie_imdb", columnList = "imdbId", unique = true)
+    }
+)
 public class MovieEntity extends IdentityEntity implements DoubanIdentifier, ImdbIdentifier,
     YearSupplier {
 

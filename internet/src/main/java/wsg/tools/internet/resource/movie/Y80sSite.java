@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -24,9 +24,9 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
@@ -44,6 +44,8 @@ import wsg.tools.internet.download.impl.Thunder;
 @Slf4j
 public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem> {
 
+    private static final int MIN_ID = 32;
+    private static final Range<Integer> NOT_FOUNDS = Range.between(1501, 3008);
     private static final Pattern TYPE_HREF_REGEX;
     private static final Pattern PLAY_HREF_REGEX;
     private static final Pattern MOVIE_HREF_REGEX = Pattern
@@ -65,10 +67,11 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
     }
 
     /**
-     * Returns the repository from 1 to {@link #max()}.
+     * Returns the repository of all items from 1 to {@link #max()} <strong>except those in {@link
+     * #NOT_FOUNDS}</strong>.
      */
-    public IntRangeIdentifiedRepository<Y80sItem> getRepository() throws HttpResponseException {
-        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+    public IntIdentifiedRepository<Y80sItem> getRepository() throws HttpResponseException {
+        return Repositories.rangeClosedExcept(this, MIN_ID, max(), NOT_FOUNDS);
     }
 
     /**
@@ -90,6 +93,9 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
 
     @Override
     public Y80sItem findById(@Nonnull Integer id) throws HttpResponseException {
+        if (NOT_FOUNDS.contains(id)) {
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not found in " + NOT_FOUNDS);
+        }
         RequestBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         if (document.childNodes().size() == 1) {
@@ -100,11 +106,11 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
             .collect(Collectors.toMap(Element::text, e -> e));
         Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
         String typeHref = lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref);
-        Y80sType type = EnumUtilExt.deserializeText(typeMatcher.group("t"), Y80sType.class, false);
+        String typeStr = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("t");
+        Y80sType realType = EnumUtilExt.deserializeText(typeStr, Y80sType.class, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, type);
+        Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, realType);
 
         item.setTitle(lis.last().text().strip());
         Element yearEle = info.get("年代：");

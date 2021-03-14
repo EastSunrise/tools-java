@@ -1,8 +1,8 @@
-package wsg.tools.common.util.function.throwable;
+package wsg.tools.common.util.function;
 
 /**
  * Represents a function that accepts three arguments, produces a result, and throw an exception.
- * This is the three-arity specialization of {@link ThrowableFunction}.
+ * This is the three-arity specialization of {@link org.apache.commons.lang3.Functions.FailableFunction}.
  *
  * @author Kingen
  * @since 2020/9/11

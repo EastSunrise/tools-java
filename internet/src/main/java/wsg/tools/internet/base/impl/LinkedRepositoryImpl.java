@@ -22,7 +22,7 @@ public class LinkedRepositoryImpl<ID, T extends NextSupplier<ID>>
     private final Repository<ID, T> repository;
     private final ID first;
 
-    public LinkedRepositoryImpl(Repository<ID, T> repository, ID first) {
+    LinkedRepositoryImpl(Repository<ID, T> repository, ID first) {
         this.repository = Objects.requireNonNull(repository);
         this.first = Objects.requireNonNull(first);
     }

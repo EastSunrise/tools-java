@@ -10,12 +10,12 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.ContentHandlers;
 import wsg.tools.internet.base.impl.JsonHandler;
 import wsg.tools.internet.base.impl.RequestBuilder;
@@ -33,6 +33,9 @@ import wsg.tools.internet.base.intf.SnapshotStrategy;
  * @since 2021/2/28
  */
 public class BaseSite implements HttpSession {
+
+    protected static final String METHOD_GET = HttpGet.METHOD_NAME;
+    protected static final String METHOD_POST = HttpPost.METHOD_NAME;
 
     protected static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER =
         new BasicResponseHandler() {
@@ -128,13 +131,13 @@ public class BaseSite implements HttpSession {
      * Creates a builder to construct a get request.
      */
     protected RequestBuilder builder0(String path, Object... args) {
-        return builder(BasicHttpSession.WWW, path, args);
+        return builder(null, path, args);
     }
 
     /**
      * Creates a builder to construct a get request under the sub domain.
      */
     protected RequestBuilder builder(String subDomain, String path, Object... args) {
-        return create(HttpGet.METHOD_NAME, subDomain).setPath(path, args);
+        return create(METHOD_GET, subDomain).setPath(path, args);
     }
 }

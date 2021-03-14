@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
@@ -21,11 +22,10 @@ import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
@@ -43,6 +43,7 @@ import wsg.tools.internet.download.impl.Thunder;
  */
 public final class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
 
+    private static final Range<Integer> NOT_FOUNDS = Range.between(31588, 32581);
     private static final String DOWNLOAD_ASP = "/download.asp";
     private static final Pattern COLUMN_HREF_REGEX;
     private static final Pattern ITEM_HREF_REGEX = Pattern.compile("/dy/k(?<id>\\d+)\\.html");
@@ -62,19 +63,21 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
     }
 
     /**
-     * Returns the repository of all the items.
+     * Returns the repository of all the items from 1 to {@link #max()} <strong>except those in
+     * {@link #NOT_FOUNDS}</strong>.
      */
-    public IntRangeIdentifiedRepository<XlmItem> getRepository() throws HttpResponseException {
-        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+    public IntIdentifiedRepository<XlmItem> getRepository() throws HttpResponseException {
+        return Repositories.rangeClosedExcept(this, 1, max(), NOT_FOUNDS);
     }
 
     /**
-     * Returns the repository of the given type since very first one. May break off.
+     * Returns the repository of the given type since very first one. <strong>May break
+     * off</strong>.
      *
      * @see XlmColumn
      */
     public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmColumn type) {
-        return new LinkedRepositoryImpl<>(this, type.first());
+        return Repositories.linked(this, type.first());
     }
 
     /**
@@ -98,7 +101,7 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
 
         Elements heads = document.selectFirst("div.conpath").select(CssSelectors.TAG_A);
-        String columnHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
+        String columnHref = heads.last().attr(CssSelectors.ATTR_HREF);
         Matcher columnMatcher = RegexUtils.matchesOrElseThrow(COLUMN_HREF_REGEX, columnHref);
         int code = Integer.parseInt(columnMatcher.group("c"));
         XlmColumn type = EnumUtilExt.deserializeCode(code, XlmColumn.class);

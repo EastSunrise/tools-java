@@ -90,9 +90,8 @@ public class BasicHttpSession implements HttpSession {
         this.limiters = new HashMap<>(2);
         limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
         limiters.put(HttpPost.METHOD_NAME, RateLimiter.create(postPermitsPerSecond));
-        BasicHeader targetHost = new BasicHeader(HTTP.TARGET_HOST, getHost());
         this.client = HttpClientBuilder.create()
-            .setDefaultHeaders(List.of(USER_AGENT, targetHost))
+            .setDefaultHeaders(List.of(USER_AGENT))
             .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
         this.context = HttpClientContext.create();
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(TIME_OUT)
@@ -167,10 +166,6 @@ public class BasicHttpSession implements HttpSession {
         return subDomain == null ? mainDomain : subDomain + "." + mainDomain;
     }
 
-    public final String getHost() {
-        return (subDomain == null ? WWW : subDomain) + "." + mainDomain;
-    }
-
     @Override
     public <T> T execute(RequestBuilder builder, ResponseHandler<T> handler)
         throws HttpResponseException {
@@ -202,19 +197,12 @@ public class BasicHttpSession implements HttpSession {
             StringUtils.joinWith(File.separator, TMPDIR, "context", filepath + ".cookie"));
     }
 
-    /**
-     * Creates a builder to construct a request of the given method.
-     */
-    public RequestBuilder create(String method) {
-        AssertUtils.requireNotBlank(method);
-        URIBuilder builder = new URIBuilder().setScheme(scheme.toString()).setHost(getHost());
-        return new RequestBuilder(method, builder);
-    }
-
     @Override
     public RequestBuilder create(String method, String subDomain) {
         AssertUtils.requireNotBlank(method);
-        AssertUtils.requireNotBlank(subDomain);
+        if (StringUtils.isBlank(subDomain)) {
+            subDomain = WWW;
+        }
         URIBuilder builder = new URIBuilder().setScheme(scheme.toString())
             .setHost(subDomain + "." + getDomain());
         return new RequestBuilder(method, builder);

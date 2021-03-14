@@ -11,7 +11,6 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
-import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,10 +28,7 @@ import wsg.tools.common.lang.Identifier;
 @Getter
 @Setter
 @Entity
-@Table(
-    name = "adult_video",
-    indexes = @Index(name = "index_adult_video_domain", columnList = Source.DOMAIN_COLUMN)
-)
+@Table(name = "adult_video")
 public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
 
     private static final long serialVersionUID = 718083190465191530L;

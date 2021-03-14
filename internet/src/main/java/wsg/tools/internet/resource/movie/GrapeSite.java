@@ -22,15 +22,14 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -45,7 +44,7 @@ import wsg.tools.internet.download.impl.Ed2kLink;
  */
 public final class GrapeSite extends BaseSite {
 
-    public static final int MAX_NEWS_ID = 16132;
+    private static final int MAX_NEWS_ID = 16132;
     private static final Pattern TYPE_HREF_REGEX;
     private static final String BT_ATTACH_SRC = "thunder://url_btbtt";
     private static final String BT_ATTACH_PREFIX = "http://51btbtt.com/attach-download";
@@ -77,10 +76,11 @@ public final class GrapeSite extends BaseSite {
     }
 
     /**
-     * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}.
+     * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}. <strong>About 1% of
+     * the items are not found.</strong>
      */
-    public IntRangeIdentifiedRepository<GrapeNewsItem> getNewsRepository() {
-        return new IntRangeIdentifiedRepositoryImpl<>(this::findNewsItem, 2, MAX_NEWS_ID);
+    public IntIdentifiedRepository<GrapeNewsItem> getNewsRepository() {
+        return Repositories.rangeClosed(this::findNewsItem, 2, MAX_NEWS_ID);
     }
 
     /**
@@ -170,7 +170,6 @@ public final class GrapeSite extends BaseSite {
         Document document = getDocument(builder, SnapshotStrategy.never());
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
-        AssertUtils.requireEquals(heads.size(), 3);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
         String typeText = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("t");
         GrapeVodType type = EnumUtilExt.deserializeText(typeText, GrapeVodType.class, false);

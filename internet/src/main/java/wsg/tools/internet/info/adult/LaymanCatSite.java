@@ -22,7 +22,7 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
@@ -78,10 +78,12 @@ public final class LaymanCatSite extends BaseSite implements Repository<String, 
     }
 
     /**
+     * Returns the repository of all linked items.
+     *
      * @see <a href="http://www.surenmao.com/200gana-1829">Get Started</a>
      */
     public LinkedRepository<String, LaymanCatItem> getRepository() {
-        return new LinkedRepositoryImpl<>(this, "200gana-1829");
+        return Repositories.linked(this, "200gana-1829");
     }
 
     @Override

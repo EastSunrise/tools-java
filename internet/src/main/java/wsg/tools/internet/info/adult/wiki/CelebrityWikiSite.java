@@ -40,7 +40,7 @@ import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.intf.IterableRepository;
 import wsg.tools.internet.base.intf.Repository;
@@ -154,7 +154,7 @@ public final class CelebrityWikiSite extends BaseSite {
      * @see WikiAlbumType
      */
     public IterableRepository<WikiAlbum> getAlbumRepository(WikiAlbumType type) {
-        return new LinkedRepositoryImpl<>(id -> findAlbum(id, type), type.first());
+        return Repositories.linked(id -> findAlbum(id, type), type.first());
     }
 
     /**

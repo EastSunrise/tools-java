@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Functions;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.function.throwable.ThrowableSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.impl.BaiduDiskLink;
 import wsg.tools.internet.download.impl.Ed2kLink;
@@ -45,7 +45,7 @@ public final class LinkFactory {
     }
 
     public static AbstractLink create(String title, String url,
-        @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
+        @Nullable Functions.FailableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         return create(title, url, Constants.UTF_8, passwordProvider);
     }
@@ -54,7 +54,7 @@ public final class LinkFactory {
      * Create a resource based on the given url and title.
      */
     public static AbstractLink create(String title, String url, @Nonnull Charset charset,
-        @Nullable ThrowableSupplier<String, InvalidPasswordException> passwordProvider)
+        @Nullable Functions.FailableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         Objects.requireNonNull(url);
         if (StringUtils.startsWithIgnoreCase(url, Thunder.THUNDER_PREFIX)) {
@@ -105,8 +105,8 @@ public final class LinkFactory {
      * Extract a password from the given strings.
      */
     public static String getPassword(String... strings) {
-        for (String string : strings) {
-            Matcher matcher = PASSWORD_REGEX.matcher(string);
+        for (String str : strings) {
+            Matcher matcher = PASSWORD_REGEX.matcher(str);
             if (matcher.find()) {
                 return matcher.group("p");
             }

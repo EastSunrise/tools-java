@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
@@ -17,8 +18,16 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
  */
 @Setter
 @Entity
-@Table(name = "video_episode")
+@Table(
+    name = "video_episode",
+    indexes = {
+        @Index(name = "index_episode_season", columnList = "seasonId"),
+        @Index(name = "unique_episode_imdb", columnList = "imdbId", unique = true),
+    }
+)
 public class EpisodeEntity extends IdentityEntity {
+
+    private static final long serialVersionUID = 1768960414227171446L;
 
     @Column(nullable = false, unique = true, length = 10)
     private String imdbId;

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
@@ -29,13 +30,14 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
+import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.UnknownResourceException;
@@ -48,9 +50,11 @@ import wsg.tools.internet.download.impl.HttpLink;
  * @since 2020/9/23
  */
 @Slf4j
-public final class BdMovieSite extends BaseSite {
+public final class BdMovieSite extends BaseSite implements Repository<Integer, BdMovieItem> {
 
+    private static final int MIN_ID = 348;
     private static final Pattern ITEM_URL_REGEX;
+    private static final Range<Integer> EXCEPTS = Range.between(30508, 30508);
     private static final Pattern IMDB_INFO_REGEX = Pattern
         .compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
     private static final Pattern VAR_REGEX = Pattern
@@ -72,7 +76,7 @@ public final class BdMovieSite extends BaseSite {
         String types = Arrays.stream(BdMovieType.values()).map(BdMovieType::getText)
             .collect(Collectors.joining("|"));
         ITEM_URL_REGEX = Pattern
-            .compile("https://www\\.bd2020\\.com/(?<t>" + types + ")/(?<id>\\d+)\\.htm");
+            .compile("https?://www\\.(bd2020|bd-film)\\.com/(?<t>" + types + ")/(?<id>\\d+)\\.htm");
     }
 
     public BdMovieSite() {
@@ -80,42 +84,46 @@ public final class BdMovieSite extends BaseSite {
     }
 
     /**
-     * Returns the repository of the given type since very first one. May break off.
+     * Returns the repository of all items from 1 to {@link #max()}. <strong>Almost 10% of the items
+     * are not found</strong>.
+     */
+    public IntIdentifiedRepository<BdMovieItem> getRepository() throws HttpResponseException {
+        return Repositories.rangeClosedExcept(this, MIN_ID, max(), EXCEPTS);
+    }
+
+    /**
+     * Returns the repository of the given type since very first one. <strong>May break
+     * off</strong>.
      *
      * @see BdMovieType
      */
-    public LinkedRepository<Integer, BdMovieItem> getRepository(BdMovieType type) {
-        return new LinkedRepositoryImpl<>(id -> findByTypeAndId(type, id), type.first());
+    public LinkedRepository<Integer, BdMovieItem> getRepository(@Nonnull BdMovieType type) {
+        return Repositories.linked(this, type.first());
     }
 
     /**
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
-    public int max() {
-        Document document;
-        try {
-            document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
-        } catch (HttpResponseException e) {
-            throw new UnexpectedException(e);
-        }
+    public int max() throws HttpResponseException {
+        Document document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
         Elements lis = document.selectFirst("#content_list").select("li.list-item");
         int max = 1;
         for (Element li : lis) {
             String href = li.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
             Matcher matcher = ITEM_URL_REGEX.matcher(href);
             if (matcher.matches()) {
-                max = Math.max(max, Integer.parseInt(matcher.group("i")));
+                max = Math.max(max, Integer.parseInt(matcher.group("id")));
             }
         }
         return max;
     }
 
     /**
-     * Obtains an item by the given type and id.
+     * Finds an item by the given id.
      */
-    public BdMovieItem findByTypeAndId(@Nonnull BdMovieType type, int id)
-        throws HttpResponseException {
-        RequestBuilder builder = builder0("/%s/%d.htm", type.getText(), id);
+    @Override
+    public BdMovieItem findById(@Nonnull Integer id) throws HttpResponseException {
+        RequestBuilder builder = builder0("/zx/%d.htm", id);
         Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
         Map<String, String> metas = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements properties = document.select("meta[property]");

@@ -5,7 +5,6 @@ import javax.annotation.Nonnull;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import wsg.tools.boot.dao.jpa.base.BaseRepository;
-import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 
 /**
@@ -36,12 +35,4 @@ public interface ResourceItemRepository extends BaseRepository<ResourceItemEntit
     @Query("select max(source.rid) from ResourceItemEntity "
         + "where source.domain=?1 and source.subtype=?2")
     Optional<Long> findMaxRid(@Nonnull String domain, int subtype);
-
-    /**
-     * Finds a record by the given source. All properties of the source will be used.
-     *
-     * @param source the source of the record
-     * @return optional of the record
-     */
-    Optional<ResourceItemEntity> findBySource(Source source);
 }

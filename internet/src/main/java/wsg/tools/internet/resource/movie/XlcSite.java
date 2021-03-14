@@ -26,9 +26,9 @@ import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
@@ -63,10 +63,10 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
     }
 
     /**
-     * Returns the repository from 1 to {@link #max()}.
+     * Returns the repository of all items from 1 to {@link #max()}.
      */
-    public IntRangeIdentifiedRepository<XlcItem> getRepository() throws HttpResponseException {
-        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+    public IntIdentifiedRepository<XlcItem> getRepository() throws HttpResponseException {
+        return Repositories.rangeClosed(this, 1, max());
     }
 
     /**
@@ -79,8 +79,8 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
-            String id = RegexUtils
-                .matchesOrElseThrow(ITEM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF)).group("id");
+            String href = a.attr(CssSelectors.ATTR_HREF);
+            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
@@ -91,16 +91,16 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
 
+        Element pLeft = document.selectFirst(".pleft");
         Map<String, Node> info = new HashMap<>(8);
-        Elements elements = document.selectFirst(".moviecont").select(CssSelectors.TAG_STRONG);
+        Elements elements = pLeft.selectFirst(".moviecont").select(CssSelectors.TAG_STRONG);
         for (Element strong : elements) {
             MapUtilsExt.putIfAbsent(info, strong.text(), strong.nextSibling());
         }
         String dateStr = ((TextNode) info.get("更新时间：")).text();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Elements as = document.selectFirst("div.pleft").selectFirst(CssSelectors.TAG_H3)
-            .select(CssSelectors.TAG_A);
-        String typeHref = as.get(1).attr(CssSelectors.ATTR_HREF);
+        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
+        String typeHref = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
         Matcher matcher = RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, typeHref);
         int typeId = Integer.parseInt(matcher.group("id"));
         XlcType type = EnumUtilExt.deserializeCode(typeId, XlcType.class);
@@ -109,7 +109,7 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
 
         Matcher titleMatcher = RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title());
         item.setTitle(titleMatcher.group(CssSelectors.ATTR_TITLE));
-        Element font = as.last().selectFirst(CssSelectors.TAG_FONT);
+        Element font = header.selectFirst(CssSelectors.TAG_FONT);
         if (font != null) {
             Matcher yearMatcher = RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text());
             int year = Integer.parseInt(yearMatcher.group("y"));

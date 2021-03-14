@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,22 +69,11 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
 
     private static final String MOVIE_NOT_RELEASED_MSSG = "The movie isn't released yet.";
 
-    @Setter(onMethod_ = {@Autowired})
     private SubjectAdapter adapter;
-
-    @Setter(onMethod_ = {@Autowired})
     private MovieRepository movieRepository;
-
-    @Setter(onMethod_ = {@Autowired})
     private SeriesRepository seriesRepository;
-
-    @Setter(onMethod_ = {@Autowired})
     private SeasonRepository seasonRepository;
-
-    @Setter(onMethod_ = {@Autowired})
     private EpisodeRepository episodeRepository;
-
-    @Setter(onMethod_ = {@Autowired})
     private UserRecordRepository userRecordRepository;
 
     /**
@@ -480,5 +468,36 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     @Override
     public Optional<SeasonEntity> getSeason(Long id) {
         return seasonRepository.findById(id);
+    }
+
+    @Autowired
+    public void setAdapter(SubjectAdapter adapter) {
+        this.adapter = adapter;
+    }
+
+    @Autowired
+    public void setMovieRepository(MovieRepository movieRepository) {
+        this.movieRepository = movieRepository;
+    }
+
+    @Autowired
+    public void setSeriesRepository(SeriesRepository seriesRepository) {
+        this.seriesRepository = seriesRepository;
+    }
+
+    @Autowired
+    public void setSeasonRepository(SeasonRepository seasonRepository) {
+        this.seasonRepository = seasonRepository;
+    }
+
+    @Autowired
+    public void setEpisodeRepository(EpisodeRepository episodeRepository) {
+        this.episodeRepository = episodeRepository;
+    }
+
+    @Autowired
+    public void setUserRecordRepository(
+        UserRecordRepository userRecordRepository) {
+        this.userRecordRepository = userRecordRepository;
     }
 }

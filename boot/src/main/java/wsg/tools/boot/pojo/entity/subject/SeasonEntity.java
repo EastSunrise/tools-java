@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -22,7 +23,10 @@ import wsg.tools.internet.resource.common.YearSupplier;
  */
 @Setter
 @Entity
-@Table(name = "video_season")
+@Table(
+    name = "video_season",
+    indexes = @Index(name = "unique_season_db", columnList = "dbId", unique = true)
+)
 public class SeasonEntity extends IdentityEntity implements DoubanIdentifier, YearSupplier {
 
     private static final long serialVersionUID = 4265823069538348592L;

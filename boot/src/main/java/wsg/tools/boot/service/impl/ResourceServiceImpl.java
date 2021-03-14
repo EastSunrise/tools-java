@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
@@ -24,12 +25,10 @@ import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.common.util.SiteUtilExt;
-import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.LinkDto;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
-import wsg.tools.boot.pojo.entity.base.Failure;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
@@ -38,7 +37,7 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
@@ -62,20 +61,15 @@ import wsg.tools.internet.resource.movie.IdentifiedItem;
 @Service
 public class ResourceServiceImpl extends BaseServiceImpl implements ResourceService {
 
-    private static final String ITEM_EXISTS_MSG = "The resource item exists";
     private final ResourceItemRepository itemRepository;
     private final ResourceLinkRepository linkRepository;
-    private final FailureRepository failureRepository;
     private final TransactionTemplate template;
 
     @Autowired
     public ResourceServiceImpl(ResourceItemRepository itemRepository,
-        ResourceLinkRepository linkRepository,
-        FailureRepository failureRepository,
-        TransactionTemplate template) {
+        ResourceLinkRepository linkRepository, TransactionTemplate template) {
         this.itemRepository = itemRepository;
         this.linkRepository = linkRepository;
-        this.failureRepository = failureRepository;
         this.template = template;
     }
 
@@ -107,11 +101,11 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntRangeRepository(IntRangeIdentifiedRepository<T> repository, String domain)
+    void importIntRangeRepository(IntIdentifiedRepository<T> repository, String domain)
         throws OtherHttpResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain);
-        int start = optional.map(Long::intValue).map(id -> id + 1).orElse(repository.min());
-        RepositoryIterator<T> iterator = repository.iteratorAfter(start);
+        RepositoryIterator<T> iterator = optional.map(Long::intValue).map(id -> id + 1)
+            .map(repository::iteratorAfter).orElseGet(repository::iterator);
         int success = 0, total = 0, notFound = 0;
         while (iterator.hasNext()) {
             try {
@@ -135,12 +129,6 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
      */
     private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
     int insertItem(T item, Source source) {
-        List<AbstractLink> resources = item.getLinks();
-        if (itemRepository.findBySource(source).isPresent()) {
-            failureRepository.insert(new Failure(source, ITEM_EXISTS_MSG));
-            return -1;
-        }
-
         ResourceItemEntity itemEntity = new ResourceItemEntity();
         itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
@@ -161,8 +149,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
                 .setUpdateTime(
                     LocalDateTime.of(((UpdateDateSupplier) item).lastUpdate(), LocalTime.MIN));
         }
-        return Objects
-            .requireNonNull(template.execute(status -> insertResource(itemEntity, resources)));
+        List<AbstractLink> resources = item.getLinks();
+        Integer count = template.execute(status -> insertResource(itemEntity, resources));
+        return Objects.requireNonNull(count);
     }
 
     private int insertResource(ResourceItemEntity itemEntity, List<AbstractLink> resources) {
@@ -197,8 +186,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
-        @Nullable String imdbId,
-        @Nullable Boolean identified) {
+        @Nullable String imdbId, @Nullable Boolean identified) {
         Specification<ResourceItemEntity> specification = (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (dbId != null) {
@@ -247,9 +235,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public List<ResourceDto> getResources(Collection<ResourceItemEntity> items) {
-        List<ResourceLinkEntity> links = linkRepository
-            .findAllByItemIdIsIn(
-                items.stream().map(ResourceItemEntity::getId).collect(Collectors.toSet()));
+        Set<Long> itemIds = items.stream().map(ResourceItemEntity::getId)
+            .collect(Collectors.toSet());
+        List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(itemIds);
         Map<Long, List<ResourceLinkEntity>> linkMap =
             links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
         List<ResourceDto> resources = new ArrayList<>();

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Functions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,6 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
-import wsg.tools.common.util.function.throwable.ThrowableFunction;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 
@@ -60,7 +60,7 @@ public class SubjectController extends AbstractController {
 
     private static <T extends IdentityEntity> ResponseEntity<VideoStatus> archive(
         Optional<T> optional,
-        ThrowableFunction<T, VideoStatus, IOException> archive) {
+        Functions.FailableFunction<T, VideoStatus, IOException> archive) {
         if (optional.isEmpty()) {
             return NOT_FOUND.build();
         }
@@ -138,7 +138,7 @@ public class SubjectController extends AbstractController {
             movies.add(movie);
         }
         movies.sort((o1, o2) -> {
-            int dif = o2.getStatus().getCode() - o1.getStatus().getCode();
+            int dif = o2.getStatus().getCode().compareTo(o1.getStatus().getCode());
             if (dif != 0) {
                 return dif;
             }
@@ -165,7 +165,7 @@ public class SubjectController extends AbstractController {
             tvs.add(seriesDto);
         }
         tvs.sort(((o1, o2) -> {
-            int dif = o2.getUnarchived() - o1.getUnarchived();
+            int dif = Integer.compare(o2.getUnarchived(), o1.getUnarchived());
             if (dif != 0) {
                 return dif;
             }

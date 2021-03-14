@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.intf.ContentHandler;
+import wsg.tools.internet.common.UnexpectedException;
 
 /**
  * An implementation of {@link ContentHandler} to handle the json response and return as a Java
@@ -34,7 +34,7 @@ public class JsonHandler<T> implements ContentHandler<T> {
         try {
             return mapper.readValue(content, type);
         } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
     }
 

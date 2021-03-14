@@ -34,12 +34,7 @@ public abstract class AbstractEnumDeserializer<T, E extends Enum<E>> extends Std
             && ctxt.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
             return null;
         }
-        try {
-            return deserialize((Class<E>) handledType(), t);
-        } catch (IllegalArgumentException e) {
-            return (E) ctxt
-                .handleWeirdNativeValue(ctxt.constructType(handledType()), t, p);
-        }
+        return deserialize((Class<E>) handledType(), t);
     }
 
     /**

@@ -21,6 +21,10 @@ public class TimestampDeserializer extends StdDeserializer<LocalDateTime> {
 
     private final ZoneId zoneId;
 
+    protected TimestampDeserializer() {
+        this(ZoneId.systemDefault());
+    }
+
     protected TimestampDeserializer(ZoneId zoneId) {
         super(LocalDateTime.class);
         this.zoneId = zoneId;
@@ -35,7 +39,8 @@ public class TimestampDeserializer extends StdDeserializer<LocalDateTime> {
     }
 
     @Override
-    public LocalDateTime deserialize(JsonParser p, DeserializationContext context) throws IOException {
+    public LocalDateTime deserialize(JsonParser p, DeserializationContext context)
+        throws IOException {
         if (p.hasToken(JsonToken.VALUE_NULL)) {
             return null;
         }

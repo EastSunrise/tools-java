@@ -3,7 +3,6 @@ package wsg.tools.internet.info.adult.wiki;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import lombok.Getter;
 
 /**
  * A celebrity with basic information, works, and albums.
@@ -11,7 +10,6 @@ import lombok.Getter;
  * @author Kingen
  * @since 2021/2/24
  */
-@Getter
 public class WikiCelebrity extends WikiSimpleCelebrity {
 
     private final BasicInfo info;
@@ -27,24 +25,52 @@ public class WikiCelebrity extends WikiSimpleCelebrity {
         this.info = info;
     }
 
+    public BasicInfo getInfo() {
+        return info;
+    }
+
+    public List<String> getWorks() {
+        return works;
+    }
+
     void setWorks(List<String> works) {
         this.works = Collections.unmodifiableList(works);
+    }
+
+    public List<String> getDescriptions() {
+        return descriptions;
     }
 
     void setDescriptions(List<String> descriptions) {
         this.descriptions = Collections.unmodifiableList(descriptions);
     }
 
+    public List<String> getExperiences() {
+        return experiences;
+    }
+
     void setExperiences(List<String> experiences) {
         this.experiences = Collections.unmodifiableList(experiences);
+    }
+
+    public List<String> getGroupLives() {
+        return groupLives;
     }
 
     void setGroupLives(List<String> groupLives) {
         this.groupLives = Collections.unmodifiableList(groupLives);
     }
 
+    public List<String> getAwards() {
+        return awards;
+    }
+
     void setAwards(List<String> awards) {
         this.awards = Collections.unmodifiableList(awards);
+    }
+
+    public Set<WikiAlbumIndex> getAlbums() {
+        return albums;
     }
 
     void setAlbums(Set<WikiAlbumIndex> albums) {

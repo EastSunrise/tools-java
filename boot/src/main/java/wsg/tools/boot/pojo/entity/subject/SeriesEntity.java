@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
@@ -17,7 +18,10 @@ import wsg.tools.internet.enums.Language;
  */
 @Setter
 @Entity
-@Table(name = "video_series")
+@Table(
+    name = "video_series",
+    indexes = @Index(name = "unique_series_imdb", columnList = "imdbId", unique = true)
+)
 public class SeriesEntity extends IdentityEntity {
 
     private static final long serialVersionUID = 8249371344171811042L;

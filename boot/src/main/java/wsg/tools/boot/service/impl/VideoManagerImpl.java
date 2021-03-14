@@ -19,6 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.Functions;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.PathConfiguration;
@@ -29,7 +30,6 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.util.function.throwable.ThrowableBiFunction;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.resource.common.YearSupplier;
 
@@ -176,7 +176,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     private <T extends YearSupplier> VideoStatus archive(T t, Function<T, Optional<File>> getFile,
         int count,
         String zhTitle,
-        @Nullable ThrowableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
+        @Nullable Functions.FailableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
         throws IOException {
         if (Year.now().getValue() < t.getYear()) {
             return VideoStatus.COMING;

@@ -16,7 +16,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.LinkedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
@@ -41,10 +41,12 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
     }
 
     /**
+     * Returns the repository of all linked items.
+     *
      * @see <a href="https://www.chepaishe1.com/xiyouchepai/">Rare Entries</a>
      */
     public LinkedRepository<String, LicencePlateItem> getRepository() {
-        return new LinkedRepositoryImpl<>(this, "259luxu-959");
+        return Repositories.linked(this, "259luxu-959");
     }
 
     @Override

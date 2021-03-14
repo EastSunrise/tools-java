@@ -2,6 +2,7 @@ package wsg.tools.boot.pojo.entity.resource;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +20,10 @@ import wsg.tools.internet.download.base.AbstractLink;
 @Getter
 @Setter
 @Entity
-@Table(name = "resource_link")
+@Table(
+    name = "resource_link",
+    indexes = @Index(name = "index_resource_link_item_id", columnList = "itemId")
+)
 public class ResourceLinkEntity extends IdentityEntity {
 
     private static final long serialVersionUID = 868731424501072343L;

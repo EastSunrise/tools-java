@@ -6,6 +6,7 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
@@ -28,9 +29,13 @@ import wsg.tools.internet.resource.movie.BasicItem;
 @Table(
     name = "resource_item",
     indexes = {
-        @Index(name = "index_imdb", columnList = "imdbId"),
-        @Index(name = "index_resource_item_domain", columnList = Source.DOMAIN_COLUMN)
-    }
+        @Index(name = "index_resource_item_imdb", columnList = "imdbId"),
+        @Index(name = "index_resource_item_db", columnList = "dbId")
+    },
+    uniqueConstraints = @UniqueConstraint(
+        name = "unique_resource_item_source",
+        columnNames = {"domain", "rid"}
+    )
 )
 public class ResourceItemEntity extends IdentityEntity
     implements YearSupplier, DoubanIdentifier, ImdbIdentifier {

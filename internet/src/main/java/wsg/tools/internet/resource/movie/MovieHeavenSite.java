@@ -26,9 +26,9 @@ import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.IntRangeIdentifiedRepositoryImpl;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntRangeIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIdentifiedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
@@ -42,11 +42,12 @@ import wsg.tools.internet.movie.common.VideoConstants;
 /**
  * @author Kingen
  * @see <a href="https://www.993dy.com/">Movie Heaven</a>
+ * @see <a href="https://www.993vod.com/">Backup</a>
  * @since 2020/10/18
  */
 @Slf4j
-public final class MovieHeavenSite extends BaseSite
-    implements Repository<Integer, MovieHeavenItem> {
+public final class MovieHeavenSite extends BaseSite implements
+    Repository<Integer, MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final Pattern TYPE_HREF_REGEX;
@@ -70,22 +71,23 @@ public final class MovieHeavenSite extends BaseSite
     }
 
     public MovieHeavenSite() {
-        super("Movie Heaven", new BasicHttpSession("993dy.com"), new MovieHeaverResponseHandler());
+        super("Movie Heaven", new BasicHttpSession("993vod.com"), new MovieHeaverResponseHandler());
     }
 
     /**
-     * Returns the repository from 1 to {@link #max()}.
+     * Returns the repository of all items from 1 to {@link #max()}. Only several items are not
+     * found.
      */
-    public IntRangeIdentifiedRepository<MovieHeavenItem> getRepository()
+    public IntIdentifiedRepository<MovieHeavenItem> getRepository()
         throws HttpResponseException {
-        return new IntRangeIdentifiedRepositoryImpl<>(this, max());
+        return Repositories.rangeClosed(this, 1, max());
     }
 
     /**
      * @see <a href="https://www.993dy.com/">Home</a>
      */
     public int max() throws HttpResponseException {
-        Document document = getDocument(builder0("/"), SnapshotStrategy.always());
+        Document document = getDocument(builder0(""), SnapshotStrategy.always());
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
