@@ -37,7 +37,7 @@ public final class BasicDownloader implements Downloader {
 
     @Override
     public File download(File dir, URL url) throws IOException {
-        String file = url.getFile();
+        String file = StringUtils.stripEnd(url.getFile(), "/");
         String path = FilenameUtils.getPath(file);
         return execute(new File(dir, path), url, FilenameUtils.getName(file));
     }

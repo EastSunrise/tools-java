@@ -37,7 +37,7 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
@@ -101,7 +101,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntRangeRepository(IntIdentifiedRepository<T> repository, String domain)
+    void importIntRangeRepository(IntIndicesRepository<T> repository, String domain)
         throws OtherHttpResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain);
         RepositoryIterator<T> iterator = optional.map(Long::intValue).map(id -> id + 1)

@@ -1,22 +1,22 @@
 package wsg.tools.internet.base.intf;
 
 /**
- * An extension of {@link IterableRepository}
+ * An extension of {@link IndicesRepository} based on integer indices.
  * <p>
- * The iteration of the repository will go on with that of an iterator over the integer
+ * The iteration of the repository will go on with that of the integer indices, usually
  * identifiers.
  * <p>
- * Besides, it provides methods to obtain an iterator over part of the identifiers with given lower
+ * Besides, it provides methods to obtain an iterator over part of the indices with given lower
  * bound and upper bound.
  * <p>
- * Since the identifiers are not confirmed to be valid, the implementation is not recommended if the
- * share of the valid identifiers is too lower, like less than 95%. It's better to obtain valid
- * identifiers only before constructing the repository for less invalid requests.
+ * Since the indices are not confirmed to be valid, the implementation is not recommended if the
+ * share of the valid indices is too lower, like less than 95%. It's better to obtain valid indices
+ * only before constructing the repository for less invalid requests.
  *
  * @author Kingen
  * @since 2021/3/9
  */
-public interface IntIdentifiedRepository<T> extends IterableRepository<T> {
+public interface IntIndicesRepository<T> extends IndicesRepository<T> {
 
     /**
      * Returns an iterator over records within the given range.

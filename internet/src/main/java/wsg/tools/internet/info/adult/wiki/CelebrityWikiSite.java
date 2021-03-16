@@ -114,9 +114,9 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     /**
-     * Finds the paged result of the indexes under the given type.
+     * Finds the paged result of the indices under the given type.
      */
-    public WikiPageResult findAllCelebrityIndexes(
+    public WikiPageResult findAllCelebrityIndices(
         @Nonnull WikiCelebrityType type, @Nonnull WikiPageRequest request)
         throws HttpResponseException {
         int current = request.getCurrent();
@@ -128,7 +128,7 @@ public final class CelebrityWikiSite extends BaseSite {
         Elements lis = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_LI);
         Pattern urlRegex = Pattern
             .compile("http://www\\.mrenbaike\\.net/" + type.getText() + "/m(?<id>\\d+)/");
-        List<WikiCelebrityIndex> indexes = lis.stream()
+        List<WikiCelebrityIndex> indices = lis.stream()
             .map(li -> li.selectFirst(CssSelectors.TAG_A))
             .map(a -> {
                 String href = a.attr(CssSelectors.ATTR_HREF);
@@ -140,12 +140,12 @@ public final class CelebrityWikiSite extends BaseSite {
         int total;
         Element a1 = box.selectFirst(".pagePg").selectFirst(".a1");
         if (a1 == null) {
-            total = indexes.size();
+            total = indices.size();
         } else {
             Matcher matcher = RegexUtils.matchesOrElseThrow(TOTAL_REGEX, a1.text());
             total = Integer.parseInt(matcher.group("t"));
         }
-        return new WikiPageResult(indexes, request, total);
+        return new WikiPageResult(indices, request, total);
     }
 
     /**

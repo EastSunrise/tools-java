@@ -124,16 +124,16 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
         MidnightPageRequest request = MidnightPageRequest.first();
         boolean finished = false;
-        List<MidnightIndex> indexes = new ArrayList<>();
+        List<MidnightIndex> indices = new ArrayList<>();
         while (true) {
             MidnightPageResult page = SiteUtilExt
-                .found(type.getColumn(), request, site::findAllIndexes);
+                .found(type.getColumn(), request, site::findAllIndices);
             for (MidnightIndex index : page.getContent()) {
                 if (index.getId() <= max) {
                     finished = true;
                     break;
                 }
-                indexes.add(index);
+                indices.add(index);
             }
             if (finished || !page.hasNext()) {
                 break;
@@ -141,9 +141,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             request = page.nextPageRequest();
         }
 
-        indexes.sort(Comparator.comparing(MidnightIndex::getId));
+        indices.sort(Comparator.comparing(MidnightIndex::getId));
         int success = 0;
-        for (MidnightIndex index : indexes) {
+        for (MidnightIndex index : indices) {
             BaseMidnightEntry entry = SiteUtilExt.found(type, index.getId(), site::findLaymanEntry);
             if (entry instanceof MidnightAdultEntry) {
                 Source source = Source.record(domain, subtype, entry.getId());
@@ -151,7 +151,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             }
         }
         log.info("Imported adult entries of {} from {}: {} succeed, {} failed.", type, domain,
-            success, indexes.size() - success);
+            success, indices.size() - success);
     }
 
     private int insertEntry(AdultEntry entry, Source source) {

@@ -1,28 +1,25 @@
 package wsg.tools.internet.base.impl;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 
 /**
- * Base implementation of {@link IntIdentifiedRepository}.
+ * Base implementation of {@link IntIndicesRepository}.
  *
  * @author Kingen
  * @since 2021/1/12
  */
-public final class IntIdentifiedRepositoryImpl<T> implements IntIdentifiedRepository<T> {
+public final class IntIndicesRepositoryImpl<T> implements IntIndicesRepository<T> {
 
     private final Repository<Integer, T> repository;
-    private final List<Integer> ids;
+    private final Collection<Integer> ids;
 
-    IntIdentifiedRepositoryImpl(@Nonnull Repository<Integer, T> repository,
-        @Nonnull List<Integer> ids) {
+    IntIndicesRepositoryImpl(Repository<Integer, T> repository, Collection<Integer> ids) {
         this.repository = repository;
-        this.ids = Collections.unmodifiableList(ids);
+        this.ids = ids;
     }
 
     @Override

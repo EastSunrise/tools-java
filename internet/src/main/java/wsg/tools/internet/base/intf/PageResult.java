@@ -34,13 +34,6 @@ public interface PageResult<T> {
     int getTotalPages();
 
     /**
-     * Returns the total amount of elements.
-     *
-     * @return the total amount of elements
-     */
-    long getTotalElements();
-
-    /**
      * Returns whether the {@link PageResult} has content at all.
      *
      * @return whether the {@link PageResult} has content at all

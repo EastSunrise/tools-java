@@ -18,7 +18,15 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Get Enum from the name
+     * Deserializes an enum from the given name, ignoring case.
+     */
+    public static <E extends Enum<E>> E deserializeIgnoreCase(String name, Class<E> eClass) {
+        return findOne(eClass, e -> e.name().equalsIgnoreCase(name), "Unknown name '%s' for '%s'",
+            name, eClass);
+    }
+
+    /**
+     * Get Enum from the aka.
      */
     public static <A, E extends Enum<E> & AkaPredicate<A>> E deserializeAka(A object,
         Class<E> clazz) {
@@ -62,14 +70,6 @@ public final class EnumUtilExt {
         }
         return findOne(clazz, anEnum -> anEnum.getTitle().equals(title),
             "Unknown title '%s' for '%s'", title, clazz);
-    }
-
-    /**
-     * Get Enum matching the given predicate.
-     */
-    public static <E extends Enum<E>> E deserialize(Class<E> clazz,
-        Predicate<? super E> predicate) {
-        return findOne(clazz, predicate, "Unknown enum '%s' by '%s'", clazz, predicate.toString());
     }
 
     private static <T extends Enum<T>> T findOne(Class<T> clazz, Predicate<? super T> predicate,

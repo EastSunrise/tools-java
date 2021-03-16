@@ -53,9 +53,9 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Finds the paged result of indexes under the given column.
+     * Finds the paged result of indices under the given column.
      */
-    public MidnightPageResult findAllIndexes(@Nonnull MidnightColumn column,
+    public MidnightPageResult findAllIndices(@Nonnull MidnightColumn column,
         @Nonnull MidnightPageRequest pageRequest) throws HttpResponseException {
         RequestBuilder builder = builder0("/e/action/ListInfo.php")
             .addParameter("page", pageRequest.getCurrent())
@@ -75,11 +75,11 @@ public final class MidnightSite extends BaseSite {
             String title = a.attr(CssSelectors.ATTR_TITLE);
             String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
             LocalDateTime release = DocumentUtils.parseInterval(time);
-            indexes.add(new MidnightIndex(id, title, release));
+            indices.add(new MidnightIndex(id, title, release));
         }
         Element nav = document.selectFirst(NAV_NAVIGATION);
         int total = Integer.parseInt(nav.selectFirst("a[title=总数]").selectFirst("b").text());
-        return new MidnightPageResult(indexes, pageRequest, total);
+        return new MidnightPageResult(indices, pageRequest, total);
     }
 
     /**

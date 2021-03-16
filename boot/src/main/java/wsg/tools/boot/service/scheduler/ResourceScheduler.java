@@ -10,13 +10,11 @@ import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.SiteManager;
 import wsg.tools.boot.service.base.BaseServiceImpl;
-import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.common.UnexpectedException;
-import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.resource.movie.BdMovieSite;
 import wsg.tools.internet.resource.movie.GrapeSite;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
@@ -37,38 +35,35 @@ public class ResourceScheduler extends BaseServiceImpl {
 
     private static final long MILLISECONDS_PER_HOUR = 3_600_000;
     private final ResourceService resourceService;
-    private final AdultService adultService;
     private final SiteManager manager;
 
     @Autowired
-    public ResourceScheduler(ResourceService resourceService,
-        AdultService adultService, SiteManager manager) {
+    public ResourceScheduler(ResourceService resourceService, SiteManager manager) {
         this.resourceService = resourceService;
-        this.adultService = adultService;
         this.manager = manager;
     }
 
-    @Scheduled(initialDelay = MILLISECONDS_PER_HOUR, fixedDelay = MILLISECONDS_PER_HOUR)
+    @Scheduled(cron = "0 0 13 * * ?")
     public void importBdMovie() {
         importIntRange(manager.bdMovieSite(), BdMovieSite::getRepository);
     }
 
-    @Scheduled(initialDelay = MILLISECONDS_PER_HOUR, fixedDelay = MILLISECONDS_PER_HOUR)
+    @Scheduled(cron = "0 0 5 * * ?")
     public void importMovieHeaven() {
         importIntRange(manager.movieHeavenSite(), MovieHeavenSite::getRepository);
     }
 
-    @Scheduled(initialDelay = MILLISECONDS_PER_HOUR, fixedDelay = MILLISECONDS_PER_HOUR)
+    @Scheduled(cron = "0 0 5 * * ?")
     public void importXlc() {
         importIntRange(manager.xlcSite(), XlcSite::getRepository);
     }
 
-    @Scheduled(initialDelay = MILLISECONDS_PER_HOUR, fixedDelay = MILLISECONDS_PER_HOUR)
+    @Scheduled(cron = "0 0 1 * * ?")
     public void importXlm() {
         importIntRange(manager.xlmSite(), XlmSite::getRepository);
     }
 
-    @Scheduled(initialDelay = MILLISECONDS_PER_HOUR, fixedDelay = MILLISECONDS_PER_HOUR)
+    @Scheduled(cron = "0 0 5 * * ?")
     public void importY80s() {
         importIntRange(manager.y80sSite(), Y80sSite::getRepository);
     }
@@ -78,27 +73,11 @@ public class ResourceScheduler extends BaseServiceImpl {
         importIntRange(manager.grapeSite(), GrapeSite::getNewsRepository);
     }
 
-    @Scheduled(cron = "0 0 12 * * ?")
-    public void importAdultEntries() {
-        try {
-            adultService.importLaymanCatSite(manager.laymanCatSite());
-        } catch (OtherHttpResponseException e) {
-            log.error(e.getMessage());
-        }
-        for (MidnightLaymanEntryType type : MidnightLaymanEntryType.values()) {
-            try {
-                adultService.importMidnightEntries(manager.midnightSite(), type);
-            } catch (OtherHttpResponseException e) {
-                log.error(e.getMessage());
-            }
-        }
-    }
-
     private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>, S extends BaseSite>
     void importIntRange(S site,
-        Functions.FailableFunction<S, IntIdentifiedRepository<T>, HttpResponseException> getRepo) {
+        Functions.FailableFunction<S, IntIndicesRepository<T>, HttpResponseException> getRepo) {
         try {
-            IntIdentifiedRepository<T> repository = SiteUtilExt.found(site, getRepo);
+            IntIndicesRepository<T> repository = SiteUtilExt.found(site, getRepo);
             resourceService.importIntRangeRepository(repository, site.getDomain());
         } catch (OtherHttpResponseException e) {
             log.error(e.getMessage());

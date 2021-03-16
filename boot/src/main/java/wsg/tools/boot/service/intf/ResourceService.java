@@ -9,7 +9,7 @@ import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.common.NextSupplier;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
@@ -35,14 +35,14 @@ public interface ResourceService {
         throws OtherHttpResponseException;
 
     /**
-     * Imports latest resources from {@link IntIdentifiedRepository}.
+     * Imports latest resources from {@link IntIndicesRepository}.
      *
      * @param repository the target repository
      * @param domain     the domain of the repository
      * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
     <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntRangeRepository(IntIdentifiedRepository<T> repository, String domain)
+    void importIntRangeRepository(IntIndicesRepository<T> repository, String domain)
         throws OtherHttpResponseException;
 
     /**

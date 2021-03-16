@@ -25,7 +25,7 @@ import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
@@ -66,7 +66,7 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
      * Returns the repository of all the items from 1 to {@link #max()} <strong>except those in
      * {@link #NOT_FOUNDS}</strong>.
      */
-    public IntIdentifiedRepository<XlmItem> getRepository() throws HttpResponseException {
+    public IntIndicesRepository<XlmItem> getRepository() throws HttpResponseException {
         return Repositories.rangeClosedExcept(this, 1, max(), NOT_FOUNDS);
     }
 

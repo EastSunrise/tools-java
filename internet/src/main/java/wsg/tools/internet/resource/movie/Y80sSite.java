@@ -26,7 +26,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
@@ -70,7 +70,7 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
      * Returns the repository of all items from 1 to {@link #max()} <strong>except those in {@link
      * #NOT_FOUNDS}</strong>.
      */
-    public IntIdentifiedRepository<Y80sItem> getRepository() throws HttpResponseException {
+    public IntIndicesRepository<Y80sItem> getRepository() throws HttpResponseException {
         return Repositories.rangeClosedExcept(this, MIN_ID, max(), NOT_FOUNDS);
     }
 

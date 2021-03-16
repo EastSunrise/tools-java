@@ -1,12 +1,14 @@
 package wsg.tools.internet.base.impl;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.Range;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IndicesRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.common.NextSupplier;
@@ -31,25 +33,25 @@ public final class Repositories {
     }
 
     /**
-     * Returns a repository whose identifiers are in the range of the given lower bound and upper
+     * Returns a repository whose indices are in the range of the given lower bound and upper
      * bound.
      */
-    public static <V> IntIdentifiedRepository<V> rangeClosed(
+    public static <V> IntIndicesRepository<V> rangeClosed(
         @Nonnull Repository<Integer, V> repository, int startInclusive, int endInclusive) {
         Stream<Integer> stream = IntStream.rangeClosed(startInclusive, endInclusive).boxed();
         List<Integer> ids = stream.collect(Collectors.toList());
-        return new IntIdentifiedRepositoryImpl<>(repository, ids);
+        return new IntIndicesRepositoryImpl<>(repository, ids);
     }
 
     /**
-     * Returns a repository whose identifiers are in the range of the given lower bound and upper
-     * bound except those in the {@code excepts}.
+     * Returns a repository whose indices are in the range of the given lower bound and upper bound
+     * except those in the {@code excepts}.
      */
-    public static <V> IntIdentifiedRepository<V> rangeClosedExcept(
+    public static <V> IntIndicesRepository<V> rangeClosedExcept(
         @Nonnull Repository<Integer, V> repository, int startInclusive, int endInclusive,
         @Nonnull Range<Integer> excepts) {
         Stream<Integer> stream = IntStream.rangeClosed(startInclusive, endInclusive).boxed();
         List<Integer> ids = stream.filter(id -> !excepts.contains(id)).collect(Collectors.toList());
-        return new IntIdentifiedRepositoryImpl<>(repository, ids);
+        return new IntIndicesRepositoryImpl<>(repository, ids);
     }
 }

@@ -29,7 +29,7 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -79,7 +79,7 @@ public final class GrapeSite extends BaseSite {
      * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}. <strong>About 1% of
      * the items are not found.</strong>
      */
-    public IntIdentifiedRepository<GrapeNewsItem> getNewsRepository() {
+    public IntIndicesRepository<GrapeNewsItem> getNewsRepository() {
         return Repositories.rangeClosed(this::findNewsItem, 2, MAX_NEWS_ID);
     }
 
@@ -135,11 +135,11 @@ public final class GrapeSite extends BaseSite {
     }
 
     /**
-     * Finds the page of vod indexes by the given type.
+     * Finds the page of vod indices by the given type.
      *
      * @see GrapeVodType
      */
-    public GrapeVodPageResult findAllVodIndexes(@Nonnull GrapeVodType type,
+    public GrapeVodPageResult findAllVodIndices(@Nonnull GrapeVodType type,
         @Nonnull GrapeVodPageRequest pageRequest) throws HttpResponseException {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
@@ -152,7 +152,7 @@ public final class GrapeSite extends BaseSite {
         int total = Integer.parseInt(matcher.group("t"));
 
         Elements lis = document.selectFirst("#contents").select(CssSelectors.TAG_LI);
-        List<GrapeVodIndex> indexes = new ArrayList<>();
+        List<GrapeVodIndex> indices = new ArrayList<>();
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_H5).selectFirst(CssSelectors.TAG_A);
             String path = a.attr(CssSelectors.ATTR_HREF);
@@ -160,9 +160,9 @@ public final class GrapeSite extends BaseSite {
             Node node = li.selectFirst(".long").nextSibling();
             LocalDate updateTime = LocalDate.parse(((TextNode) node).text().strip());
             String state = li.selectFirst(".mod_version").text();
-            indexes.add(new GrapeVodIndex(path, title, updateTime, state));
+            indices.add(new GrapeVodIndex(path, title, updateTime, state));
         }
-        return new GrapeVodPageResult(indexes, pageRequest, total);
+        return new GrapeVodPageResult(indices, pageRequest, total);
     }
 
     public GrapeVodItem findVodItem(@Nonnull GrapeVodIndex index) throws HttpResponseException {

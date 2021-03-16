@@ -33,7 +33,7 @@ import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
 import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IntIdentifiedRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
@@ -87,7 +87,7 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
      * Returns the repository of all items from 1 to {@link #max()}. <strong>Almost 10% of the items
      * are not found</strong>.
      */
-    public IntIdentifiedRepository<BdMovieItem> getRepository() throws HttpResponseException {
+    public IntIndicesRepository<BdMovieItem> getRepository() throws HttpResponseException {
         return Repositories.rangeClosedExcept(this, MIN_ID, max(), EXCEPTS);
     }
 
