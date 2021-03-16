@@ -33,7 +33,6 @@ import wsg.tools.internet.resource.movie.Y80sSite;
 @Service
 public class ResourceScheduler extends BaseServiceImpl {
 
-    private static final long MILLISECONDS_PER_HOUR = 3_600_000;
     private final ResourceService resourceService;
     private final SiteManager manager;
 

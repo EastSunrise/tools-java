@@ -41,7 +41,7 @@ public class Source implements Serializable {
     @Column(nullable = false)
     private Long rid;
 
-    private Source(String domain, int subtype, Long rid) {
+    private Source(String domain, Integer subtype, Long rid) {
         this.domain = domain;
         this.subtype = subtype;
         this.rid = rid;
@@ -55,15 +55,7 @@ public class Source implements Serializable {
      * repository, usually the whole repository which only has one subtype.
      */
     public static Source repo(@Nonnull String domain) {
-        return new Source(domain, DEFAULT_SUBTYPE, null);
-    }
-
-    /**
-     * Returns an instance of {@link Source} representing a record of the default subtype of the
-     * given repository.
-     */
-    public static Source record(@Nonnull String domain, long rid) {
-        return new Source(domain, DEFAULT_SUBTYPE, rid);
+        return new Source(domain, null, null);
     }
 
     /**

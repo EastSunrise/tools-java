@@ -42,7 +42,8 @@ import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
 import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IterableRepository;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
+import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.Repository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
@@ -64,6 +65,9 @@ import wsg.tools.internet.info.adult.common.CupEnum;
  */
 public final class CelebrityWikiSite extends BaseSite {
 
+    private static final Set<Integer> NOT_FOUNDS = Set.of(
+        1757, 1568, 1539, 821
+    );
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
     private static final String SEPARATOR = "、";
@@ -114,6 +118,25 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     /**
+     * Returns the repository of the celebrities of the given type.
+     */
+    public IntIndicesRepository<WikiCelebrity> getCelebrityRepository(
+        @Nonnull WikiCelebrityType type) throws HttpResponseException {
+        List<Integer> ids = new ArrayList<>();
+        WikiPageRequest request = new WikiPageRequest(0);
+        while (true) {
+            WikiPageResult result = findAllCelebrityIndices(type, request);
+            result.getContent().stream().map(WikiCelebrityIndex::getId)
+                .filter(id -> !NOT_FOUNDS.contains(id)).forEach(ids::add);
+            if (!result.hasNext()) {
+                break;
+            }
+            request = result.nextPageRequest();
+        }
+        return Repositories.intIndices(id -> findCelebrity(id, type), ids);
+    }
+
+    /**
      * Finds the paged result of the indices under the given type.
      */
     public WikiPageResult findAllCelebrityIndices(
@@ -153,7 +176,7 @@ public final class CelebrityWikiSite extends BaseSite {
      *
      * @see WikiAlbumType
      */
-    public IterableRepository<WikiAlbum> getAlbumRepository(WikiAlbumType type) {
+    public LinkedRepository<Integer, WikiAlbum> getAlbumRepository(WikiAlbumType type) {
         return Repositories.linked(id -> findAlbum(id, type), type.first());
     }
 

@@ -1,7 +1,9 @@
 package wsg.tools.internet.info.adult.common;
 
+import java.util.Arrays;
+import java.util.Locale;
+import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
 
 /**
  * Enum for headers of serial numbers.
@@ -9,26 +11,15 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/8
  */
-public enum SerialNumHeader implements IntCodeSupplier, TextSupplier {
-    /**
-     * Various headers of serial numbers
-     */
-    SIRO(1001, "SIRO"),
-    GANA_200(1200, "200GANA"),
-    SCUTE_229(1229, "229SCUTE"),
-    LUXU_259(1259, "259LUXU"),
-    ARA_261(1261, "261ARA"),
-    DCV_277(1277, "277DCV"),
-    MAAN_300(1300, "300MAAN"),
-    MIUM_300(2300, "300MIUM"),
+public enum SerialNumHeader implements IntCodeSupplier, AkaPredicate<String> {
     ;
 
     private final int code;
-    private final String text;
+    private final String[] headers;
 
-    SerialNumHeader(int code, String text) {
+    SerialNumHeader(int code, String... headers) {
         this.code = code;
-        this.text = text;
+        this.headers = headers;
     }
 
     @Override
@@ -37,7 +28,13 @@ public enum SerialNumHeader implements IntCodeSupplier, TextSupplier {
     }
 
     @Override
-    public String getText() {
-        return text;
+    public boolean alsoKnownAs(String other) {
+        String upperCase = other.toUpperCase(Locale.ROOT);
+        return Arrays.stream(headers).map(s -> s.toUpperCase(Locale.ENGLISH))
+            .anyMatch(s -> s.equals(upperCase));
+    }
+
+    public String[] getHeaders() {
+        return headers;
     }
 }

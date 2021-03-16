@@ -63,7 +63,8 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
     }
 
     /**
-     * Returns the repository of all items from 1 to {@link #max()}.
+     * Returns the repository of all items from 1 to {@link #max()}. <strong>About 8% of the items
+     * are not found.</strong>
      */
     public IntIndicesRepository<XlcItem> getRepository() throws HttpResponseException {
         return Repositories.rangeClosed(this, 1, max());

@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,7 +26,9 @@ import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
+import wsg.tools.internet.base.impl.Repositories;
 import wsg.tools.internet.base.impl.RequestBuilder;
+import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.SnapshotStrategy;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
@@ -53,6 +56,56 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
+     * Returns the repository of all {@link MidnightCollection}s.
+     */
+    public IntIndicesRepository<MidnightCollection> getCollectionRepository()
+        throws HttpResponseException {
+        List<Integer> ids = getIdentifiers(MidnightColumn.COLLECTION);
+        return Repositories.intIndices(this::findCollection, ids);
+    }
+
+    /**
+     * Returns the repository of all {@link MidnightAlbum}s.
+     */
+    public IntIndicesRepository<MidnightAlbum> getAlbumRepository()
+        throws HttpResponseException {
+        List<Integer> ids = getIdentifiers(MidnightColumn.ALBUM);
+        return Repositories.intIndices(this::findAlbum, ids);
+    }
+
+    /**
+     * Returns the repository of all items each of which may contain a layman adult entry.
+     */
+    public IntIndicesRepository<BaseMidnightEntry> getLaymanRepository(
+        @Nonnull MidnightLaymanEntryType type) throws HttpResponseException {
+        List<Integer> ids = getIdentifiers(type.getColumn());
+        return Repositories.intIndices(id -> findLaymanEntry(type, id), ids);
+    }
+
+    /**
+     * Returns the repository of all items each of which may contain a formal adult entry.
+     */
+    public IntIndicesRepository<BaseMidnightEntry> getFormalRepository()
+        throws HttpResponseException {
+        List<Integer> ids = getIdentifiers(MidnightColumn.ENTRY);
+        return Repositories.intIndices(this::findFormalEntry, ids);
+    }
+
+    private List<Integer> getIdentifiers(MidnightColumn column) throws HttpResponseException {
+        List<Integer> ids = new ArrayList<>();
+        MidnightPageRequest request = MidnightPageRequest.first();
+        while (true) {
+            MidnightPageResult result = findAllIndices(column, request);
+            result.getContent().stream().map(MidnightIndex::getId).forEach(ids::add);
+            if (!result.hasNext()) {
+                break;
+            }
+            request = result.nextPageRequest();
+        }
+        return ids;
+    }
+
+    /**
      * Finds the paged result of indices under the given column.
      */
     public MidnightPageResult findAllIndices(@Nonnull MidnightColumn column,
@@ -65,7 +118,7 @@ public final class MidnightSite extends BaseSite {
             .addParameter("orderby", pageRequest.getOrderBy().getText())
             .addParameter("myorder", 0);
         Document document = getDocument(builder, SnapshotStrategy.always());
-        List<MidnightIndex> indexes = new ArrayList<>();
+        List<MidnightIndex> indices = new ArrayList<>();
         Elements lis = document.selectFirst("div[role=main]").select(CssSelectors.TAG_LI);
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_A);
@@ -85,15 +138,13 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with a collection of adult entries.
      */
-    public MidnightCollection findCollection(@Nonnull MidnightIndex index)
+    public MidnightCollection findCollection(int id)
         throws HttpResponseException {
-        int id = index.getId();
         return getItem(MidnightColumn.COLLECTION, id, (title, release, contents) -> {
-            Map<String, String> works = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+            List<Pair<String, String>> works = new ArrayList<>();
             for (Element content : contents) {
-                Element current =
-                    content.selectFirst(NAV_NAVIGATION).previousElementSibling()
-                        .previousElementSibling();
+                Element nav = content.selectFirst(NAV_NAVIGATION);
+                Element current = nav.previousElementSibling().previousElementSibling();
                 while (current != null) {
                     Elements elements = current.select(CssSelectors.TAG_IMG);
                     for (Element img : elements) {
@@ -101,12 +152,17 @@ public final class MidnightSite extends BaseSite {
                         if (code.endsWith(".jpg")) {
                             code = code.substring(0, code.length() - 4);
                         }
-                        Matcher matcher = IMG_FILE_HREF_REGEX
-                            .matcher(img.attr(CssSelectors.ATTR_SRC));
-                        if (StringUtils.isNotBlank(code)) {
-                            works.put(code,
-                                matcher.find() ? IMG_HOST + matcher.group() : null);
+                        if (StringUtils.isBlank(code)) {
+                            code = null;
                         }
+                        String src = img.attr(CssSelectors.ATTR_SRC);
+                        Matcher matcher = IMG_FILE_HREF_REGEX.matcher(src);
+                        if (matcher.find()) {
+                            src = IMG_HOST + matcher.group();
+                        } else {
+                            src = null;
+                        }
+                        works.add(Pair.of(code, src));
                     }
                     current = current.previousElementSibling();
                 }
@@ -118,8 +174,7 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with an album which including a series of images.
      */
-    public MidnightAlbum findAlbum(@Nonnull MidnightIndex index) throws HttpResponseException {
-        int id = index.getId();
+    public MidnightAlbum findAlbum(int id) throws HttpResponseException {
         return getItem(MidnightColumn.ALBUM, id,
             (title, release, contents) -> new MidnightAlbum(id, title, release,
                 getImages(contents)));
@@ -154,6 +209,7 @@ public final class MidnightSite extends BaseSite {
             if (code == null) {
                 return new MidnightAlbum(id, title, release, images);
             }
+            info.remove("监督");
             AdultEntry entry = builder.apply(info, code)
                 .duration().release().producer().distributor().series()
                 .title(title).images(images).build();

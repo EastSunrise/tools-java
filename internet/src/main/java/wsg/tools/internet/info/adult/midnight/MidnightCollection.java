@@ -1,9 +1,9 @@
 package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.Pair;
 import wsg.tools.common.lang.AssertUtils;
 
 /**
@@ -16,13 +16,14 @@ import wsg.tools.common.lang.AssertUtils;
 public class MidnightCollection extends BaseMidnightItem {
 
     /**
-     * Map of code-cover of adult videos, the cover may be null.
+     * Pairs of code-cover of adult entries, one of the two elements may be null.
      */
-    private final Map<String, String> works;
+    private final List<Pair<String, String>> works;
 
-    MidnightCollection(int id, String title, LocalDateTime release, Map<String, String> works) {
+    MidnightCollection(int id, String title, LocalDateTime release,
+        List<Pair<String, String>> works) {
         super(id, title, release);
         AssertUtils.requireNotEmpty(works, "works of the collection");
-        this.works = Collections.unmodifiableMap(works);
+        this.works = works;
     }
 }

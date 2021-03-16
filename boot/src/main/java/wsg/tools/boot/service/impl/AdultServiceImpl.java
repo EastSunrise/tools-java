@@ -39,8 +39,8 @@ import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.impl.BasicDownloader;
-import wsg.tools.internet.info.adult.LaymanCatItem;
-import wsg.tools.internet.info.adult.LaymanCatSite;
+import wsg.tools.internet.info.adult.LicencePlateItem;
+import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
 import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
@@ -82,7 +82,8 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public void importLaymanCatSite(@Nonnull LaymanCatSite site) throws OtherHttpResponseException {
+    public void importLicencePlateSite(@Nonnull LicencePlateSite site)
+        throws OtherHttpResponseException {
         String domain = site.getDomain();
         Sort sort = Sort.by(Sort.Direction.DESC, AdultVideoEntity_.GMT_CREATED);
         Pageable pageable = PageRequest.of(0, 1, sort);
@@ -91,8 +92,8 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         Example<AdultVideoEntity> example = Example.of(probe);
         Page<AdultVideoEntity> page = videoRepository.findAll(example, pageable);
 
-        LinkedRepository<String, LaymanCatItem> repository = site.getRepository();
-        RepositoryIterator<LaymanCatItem> iterator;
+        LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
+        RepositoryIterator<LicencePlateItem> iterator;
         if (page.hasContent()) {
             long rid = page.iterator().next().getSource().getRid();
             String start = EntityUtils.deserialize(rid);
@@ -103,10 +104,10 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         }
         int success = 0, total = 0;
         while (iterator.hasNext()) {
-            LaymanCatItem item = SiteUtilExt.found(iterator::next);
+            LicencePlateItem item = SiteUtilExt.found(iterator::next);
             AdultEntry entry = item.getEntry();
             long rid = EntityUtils.serialize(item.getId());
-            Source source = Source.record(domain, rid);
+            Source source = Source.record(domain, Source.DEFAULT_SUBTYPE, rid);
             success += insertEntry(entry, source);
             total++;
         }

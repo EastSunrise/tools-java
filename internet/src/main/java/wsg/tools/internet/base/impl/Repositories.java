@@ -33,6 +33,22 @@ public final class Repositories {
     }
 
     /**
+     * Returns a repository with given indices.
+     */
+    public static <ID, T> IndicesRepository<T> indices(
+        @Nonnull Repository<ID, T> repository, @Nonnull Collection<ID> ids) {
+        return new IndicesRepositoryImpl<>(repository, ids);
+    }
+
+    /**
+     * Returns a repository with given integer indices.
+     */
+    public static <V> IntIndicesRepository<V> intIndices(
+        @Nonnull Repository<Integer, V> repository, @Nonnull List<Integer> ids) {
+        return new IntIndicesRepositoryImpl<>(repository, ids);
+    }
+
+    /**
      * Returns a repository whose indices are in the range of the given lower bound and upper
      * bound.
      */

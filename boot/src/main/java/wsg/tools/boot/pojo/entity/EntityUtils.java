@@ -1,13 +1,9 @@
 package wsg.tools.boot.pojo.entity;
 
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.info.adult.common.SerialNumHeader;
+import wsg.tools.internet.info.adult.common.SerialNumber;
 
 /**
  * Utility to handle entities.
@@ -18,14 +14,6 @@ import wsg.tools.internet.info.adult.common.SerialNumHeader;
 public final class EntityUtils {
 
     private static final long HEADER_BASE = 1_000_000_000;
-    private static final Pattern SERIAL_NUM_REGEX;
-
-    static {
-        String headers = Arrays.stream(SerialNumHeader.values())
-            .map(SerialNumHeader::getText).collect(Collectors.joining("|"));
-        SERIAL_NUM_REGEX = Pattern
-            .compile("(?<h>" + headers + ")-(?<n>\\d+)", Pattern.CASE_INSENSITIVE);
-    }
 
     private EntityUtils() {
     }
@@ -41,12 +29,10 @@ public final class EntityUtils {
      * SerialNumHeader#getCode()} which is deserialized from the header part.
      */
     public static long serialize(@Nonnull String serialNum) {
-        Matcher matcher = RegexUtils.matchesOrElseThrow(SERIAL_NUM_REGEX, serialNum);
-        SerialNumHeader header = EnumUtilExt
-            .deserializeText(matcher.group("h"), SerialNumHeader.class, true);
-        String numStr = matcher.group("n");
-        int number = Integer.parseInt(numStr);
-        return (header.getCode() * HEADER_BASE + number) * 10 + numStr.length();
+        SerialNumber serialNumber = SerialNumber.of(serialNum);
+        SerialNumHeader header = serialNumber.getHeader();
+        String number = serialNumber.getNumber();
+        return (header.getCode() * HEADER_BASE + Integer.parseInt(number)) * 10 + number.length();
     }
 
     /**
@@ -57,9 +43,8 @@ public final class EntityUtils {
         id /= 10;
         long number = id % HEADER_BASE;
         long header = id / HEADER_BASE;
-        SerialNumHeader anEnum = EnumUtilExt
-            .deserializeCode((int) header, SerialNumHeader.class);
+        SerialNumHeader anEnum = EnumUtilExt.deserializeCode((int) header, SerialNumHeader.class);
         String format = "%s-%0" + length + "d";
-        return String.format(format, anEnum.getText(), number);
+        return String.format(format, anEnum.getHeaders()[0], number);
     }
 }

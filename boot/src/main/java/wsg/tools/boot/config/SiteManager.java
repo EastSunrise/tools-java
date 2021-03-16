@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.info.adult.LaymanCatSite;
+import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.imdb.ImdbCnSite;
@@ -42,7 +42,7 @@ public class SiteManager implements DisposableBean {
     private XlmSite xlmSite;
     private Y80sSite y80sSite;
     private GrapeSite grapeSite;
-    private LaymanCatSite laymanCatSite;
+    private LicencePlateSite licencePlateSite;
     private MidnightSite midnightSite;
 
     @Autowired
@@ -116,11 +116,11 @@ public class SiteManager implements DisposableBean {
         return grapeSite;
     }
 
-    public LaymanCatSite laymanCatSite() {
-        if (laymanCatSite == null) {
-            laymanCatSite = new LaymanCatSite();
+    public LicencePlateSite licencePlateSite() {
+        if (licencePlateSite == null) {
+            licencePlateSite = new LicencePlateSite();
         }
-        return laymanCatSite;
+        return licencePlateSite;
     }
 
     public MidnightSite midnightSite() {
@@ -136,7 +136,7 @@ public class SiteManager implements DisposableBean {
             ((Closeable) imdbRepository).close();
         }
         close(doubanSite, bdMovieSite, movieHeavenSite, xlcSite, xlmSite, y80sSite, grapeSite,
-            laymanCatSite, midnightSite);
+            licencePlateSite, midnightSite);
     }
 
     private void close(Closeable... sites) throws IOException {

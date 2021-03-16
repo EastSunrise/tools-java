@@ -3,7 +3,7 @@ package wsg.tools.boot.service.intf;
 import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.util.OtherHttpResponseException;
-import wsg.tools.internet.info.adult.LaymanCatSite;
+import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 
@@ -16,12 +16,12 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
 public interface AdultService {
 
     /**
-     * Import latest adult entries from {@link LaymanCatSite}.
+     * Import latest adult entries from {@link LicencePlateSite}.
      *
-     * @param site an instance of {@link LaymanCatSite}
+     * @param site an instance of {@link LicencePlateSite}
      * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
      */
-    void importLaymanCatSite(@Nonnull LaymanCatSite site) throws OtherHttpResponseException;
+    void importLicencePlateSite(@Nonnull LicencePlateSite site) throws OtherHttpResponseException;
 
     /**
      * Import latest adult entries from {@link MidnightSite}.
