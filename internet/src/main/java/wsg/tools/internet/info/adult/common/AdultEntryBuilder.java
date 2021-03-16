@@ -50,17 +50,17 @@ public class AdultEntryBuilder {
     }
 
     /**
-     * Initializes a builder with an adult entry, a {@link LaymanAdultEntry} if any performer found,
-     * or an {@link AdultEntry} without any performer
+     * Initializes a builder with an adult entry, a {@link AmateurAdultEntry} if any performer
+     * found, or an {@link AdultEntry} without any performer
      */
-    public static AdultEntryMapBuilder layman(@Nonnull Map<String, String> map,
+    public static AdultEntryMapBuilder amateur(@Nonnull Map<String, String> map,
         @Nonnull String code) {
         map.remove("商品発売日");
         String performer = MapUtilsExt.getString(map, "出演", "出演者");
         if (performer == null) {
             return entry(map, code);
         }
-        return new AdultEntryMapBuilder(new LaymanAdultEntry(code, performer), map);
+        return new AdultEntryMapBuilder(new AmateurAdultEntry(code, performer), map);
     }
 
     /**

@@ -8,13 +8,13 @@ import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 
 /**
- * Adult videos on the {@link LaymanCatSite}.
+ * Adult videos on the {@link AmateurCatSite}.
  *
  * @author Kingen
  * @since 2021/2/28
  */
 @Getter
-public class LaymanCatItem
+public class AmateurCatItem
     implements Identifier<String>, UpdateDatetimeSupplier, NextSupplier<String> {
 
     private final String id;
@@ -24,7 +24,7 @@ public class LaymanCatItem
     private AdultEntry entry;
     private String next;
 
-    LaymanCatItem(String id) {
+    AmateurCatItem(String id) {
         this.id = id;
     }
 

@@ -15,7 +15,7 @@ import wsg.tools.common.util.function.TitleSupplier;
 public enum Region implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     AkaPredicate<String> {
     /**
-     * Common ISO regions.
+     * ISO regions.
      */
     WW("World", "世界", "World-wide"),
     CN("China", "中国", "中国大陆", "大陆", "中华人民共和国"),
@@ -32,11 +32,6 @@ public enum Region implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     DE("Germany", "德国"),
     ES("Spain", "西班牙"),
     IT("Italy", "意大利"),
-
-    /**
-     * Other ISO regions
-     */
-    OTH("Others", "其他"),
     AQ("Antarctica", "南极洲"),
     AR("Argentina", "阿根廷"),
     AU("Australia", "澳大利亚"),

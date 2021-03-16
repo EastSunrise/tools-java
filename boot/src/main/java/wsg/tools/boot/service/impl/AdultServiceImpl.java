@@ -45,8 +45,8 @@ import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
 import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightAdultEntry;
+import wsg.tools.internet.info.adult.midnight.MidnightAmateurEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightIndex;
-import wsg.tools.internet.info.adult.midnight.MidnightLaymanEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightPageRequest;
 import wsg.tools.internet.info.adult.midnight.MidnightPageResult;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
@@ -117,7 +117,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
     @Override
     public void importMidnightEntries(@Nonnull MidnightSite site,
-        @Nonnull MidnightLaymanEntryType type)
+        @Nonnull MidnightAmateurEntryType type)
         throws OtherHttpResponseException {
         Integer subtype = type.getColumn().getCode();
         String domain = site.getDomain();
@@ -145,7 +145,8 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         indices.sort(Comparator.comparing(MidnightIndex::getId));
         int success = 0;
         for (MidnightIndex index : indices) {
-            BaseMidnightEntry entry = SiteUtilExt.found(type, index.getId(), site::findLaymanEntry);
+            BaseMidnightEntry entry = SiteUtilExt
+                .found(type, index.getId(), site::findAmateurEntry);
             if (entry instanceof MidnightAdultEntry) {
                 Source source = Source.record(domain, subtype, entry.getId());
                 success += insertEntry(((MidnightAdultEntry) entry).getEntry(), source);

@@ -1,14 +1,14 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.internet.info.adult.common.LaymanAdultEntry;
+import wsg.tools.internet.info.adult.common.AmateurAdultEntry;
 
 /**
- * Part types of {@link MidnightColumn} each of whose items has a {@link LaymanAdultEntry}.
+ * Part types of {@link MidnightColumn} each of whose items has a {@link AmateurAdultEntry}.
  *
  * @author Kingen
  * @since 2021/3/2
  */
-public enum MidnightLaymanEntryType {
+public enum MidnightAmateurEntryType {
 
     /**
      * @see MidnightColumn#ARA
@@ -25,7 +25,7 @@ public enum MidnightLaymanEntryType {
 
     private final MidnightColumn column;
 
-    MidnightLaymanEntryType(MidnightColumn column) {
+    MidnightAmateurEntryType(MidnightColumn column) {
         this.column = column;
     }
 

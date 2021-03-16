@@ -75,10 +75,10 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
                 .description(description).images(images).build();
             return new LicencePlateItem(id, update, entry, getNext(document));
         }
-        Map<String, String> info = LaymanCatSite.extractInfo(lines);
+        Map<String, String> info = AmateurCatSite.extractInfo(lines);
         info.remove("対応デバイス");
         info.remove("評価");
-        AdultEntry entry = AdultEntryBuilder.layman(info, code)
+        AdultEntry entry = AdultEntryBuilder.amateur(info, code)
             .duration().release().producer().distributor().series().tags(Constants.WHITESPACE)
             .validateCode().description(description).images(images).build();
         return new LicencePlateItem(id, update, entry, getNext(document));

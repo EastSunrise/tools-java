@@ -10,11 +10,11 @@ import wsg.tools.common.lang.AssertUtils;
  * @since 2021/3/9
  */
 @Getter
-public class LaymanAdultEntry extends AdultEntry {
+public class AmateurAdultEntry extends AdultEntry {
 
     private final String performer;
 
-    LaymanAdultEntry(String code, String performer) {
+    AmateurAdultEntry(String code, String performer) {
         super(code);
         this.performer = AssertUtils.requireNotBlank(performer, "Performer");
     }

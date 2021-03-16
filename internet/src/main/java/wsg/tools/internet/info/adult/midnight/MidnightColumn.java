@@ -24,15 +24,15 @@ public enum MidnightColumn implements IntCodeSupplier, TextSupplier {
      */
     ALBUM(30, "xiezhen"),
     /**
-     * @see <a href="https://www.shenyequ.com/ara/">ARA Laymen</a>
+     * @see <a href="https://www.shenyequ.com/ara/">ARA Amateurs</a>
      */
     ARA(31, "ara"),
     /**
-     * @see <a href="https://www.shenyequ.com/259LUXU/">ラグジュTV Laymen</a>
+     * @see <a href="https://www.shenyequ.com/259LUXU/">ラグジュTV Amateurs</a>
      */
     LUXU(32, "259LUXU"),
     /**
-     * @see <a href="https://www.shenyequ.com/prestige/">Prestige Laymen</a>
+     * @see <a href="https://www.shenyequ.com/prestige/">Prestige Amateurs</a>
      */
     PRESTIGE(33, "prestige");
 

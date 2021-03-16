@@ -37,18 +37,18 @@ import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
  * The site is suspected as a partial copy of {@link LicencePlateSite}.
  *
  * @author Kingen
- * @see <a href="http://www.surenmao.com/">Layman Cat</a>
+ * @see <a href="http://www.surenmao.com/">Amateur Cat</a>
  * @since 2021/2/28
  */
-public final class LaymanCatSite extends BaseSite implements Repository<String, LaymanCatItem> {
+public final class AmateurCatSite extends BaseSite implements Repository<String, AmateurCatItem> {
 
     private static final Pattern HREF_REGEX = Pattern
         .compile("http://www\\.surenmao\\.com/(?<id>[0-9a-z-]+)/");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     private static final String FIRST_KEY = "収録時間";
 
-    public LaymanCatSite() {
-        super("Layman Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
+    public AmateurCatSite() {
+        super("Amateur Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
     }
 
     /**
@@ -82,15 +82,15 @@ public final class LaymanCatSite extends BaseSite implements Repository<String, 
      *
      * @see <a href="http://www.surenmao.com/200gana-1829">Get Started</a>
      */
-    public LinkedRepository<String, LaymanCatItem> getRepository() {
+    public LinkedRepository<String, AmateurCatItem> getRepository() {
         return Repositories.linked(this, "200gana-1829");
     }
 
     @Override
-    public LaymanCatItem findById(@Nonnull String id) throws HttpResponseException {
+    public AmateurCatItem findById(@Nonnull String id) throws HttpResponseException {
         WithoutNextDocument<String> strategy = new WithoutNextDocument<>(this::getNext);
         Document document = getDocument(builder0("/%s", id), strategy);
-        LaymanCatItem item = new LaymanCatItem(id);
+        AmateurCatItem item = new AmateurCatItem(id);
 
         Element main = document.selectFirst("#main");
         item.setAuthor(main.selectFirst("span.author").text());
@@ -110,7 +110,7 @@ public final class LaymanCatSite extends BaseSite implements Repository<String, 
             builder = AdultEntryBuilder.basic(code).images(Collections.singletonList(cover));
         } else {
             Map<String, String> info = extractInfo(lines);
-            builder = AdultEntryBuilder.layman(info, code)
+            builder = AdultEntryBuilder.amateur(info, code)
                 .duration().release().producer().distributor().series()
                 .validateCode().tags(Constants.WHITESPACE).images(Collections.singletonList(cover));
         }

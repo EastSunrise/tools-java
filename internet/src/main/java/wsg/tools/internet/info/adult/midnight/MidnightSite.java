@@ -74,12 +74,12 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Returns the repository of all items each of which may contain a layman adult entry.
+     * Returns the repository of all items each of which may contain a amateur adult entry.
      */
-    public IntIndicesRepository<BaseMidnightEntry> getLaymanRepository(
-        @Nonnull MidnightLaymanEntryType type) throws HttpResponseException {
+    public IntIndicesRepository<BaseMidnightEntry> getAmateurRepository(
+        @Nonnull MidnightAmateurEntryType type) throws HttpResponseException {
         List<Integer> ids = getIdentifiers(type.getColumn());
-        return Repositories.intIndices(id -> findLaymanEntry(type, id), ids);
+        return Repositories.intIndices(id -> findAmateurEntry(type, id), ids);
     }
 
     /**
@@ -181,11 +181,11 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Finds an item with an album or a layman adult entry.
+     * Finds an item with an album or a amateur adult entry.
      */
-    public BaseMidnightEntry findLaymanEntry(@Nonnull MidnightLaymanEntryType type, int id)
+    public BaseMidnightEntry findAmateurEntry(@Nonnull MidnightAmateurEntryType type, int id)
         throws HttpResponseException {
-        return findEntry(type.getColumn(), id, AdultEntryBuilder::layman);
+        return findEntry(type.getColumn(), id, AdultEntryBuilder::amateur);
     }
 
     /**

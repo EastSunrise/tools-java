@@ -16,9 +16,11 @@ import wsg.tools.common.util.function.TitleSupplier;
 public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     AkaPredicate<String> {
     /**
-     * Common ISO languages
+     * ISO languages
+     *
+     * @see Locale#getISOLanguages()
      */
-    ZH("Chinese", "汉语"),
+    ZH("Chinese", "中文"),
     EN("English", "英语", "英文"),
     FR("French", "法语", "法文"),
     RU("Russian", "俄语"),
@@ -31,25 +33,6 @@ public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplie
     DE("German", "德语"),
     HI("Hindi", "印地语"),
     TH("Thai", "泰语"),
-
-    /**
-     * Non-ISO languages, with three-letter abbreviation as code
-     */
-    NON("None", "默片"),
-    CAN("Cantonese", "粤语", "基本粤语"),
-    SIN("Sindarin", "辛达林语"),
-    QUE("Quenya", "昆雅语"),
-    SIL("Sign Languages", "手语"),
-    ASL("American Sign Language", "美国手语"),
-    KSL("Korean Sign Language", "韩国手语"),
-    BSL("British Sign Language", "英国手语"),
-    DOT("Dothraki", "多斯拉克语"),
-    KLI("Klingon", "克林贡语"),
-    CRE("Creole", "克里奥尔语"),
-
-    /**
-     * Other ISO languages
-     */
     EO("Esperanto", "世界语"),
     IA("Interlingua", "国际语"),
     BO("Tibetan", "藏语"),
@@ -65,7 +48,64 @@ public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplie
     KK("Kazakh", "哈萨克语"),
     LA("Latin", "拉丁语"),
     TR("Turkish", "土耳其语"),
-    VI("Vietnamese", "越南语");
+    VI("Vietnamese", "越南语"),
+    SO("Somali", "索马里语"),
+    UR("Urdu", "乌尔都语"),
+    NL("Dutch", "荷兰语"),
+    IW("Hebrew", "希伯来文"),
+    PL("Polish", "波兰语"),
+    KL("Kalaallisut", "格陵兰语"),
+    UK("Ukrainian", "乌克兰语"),
+    MY("Burmese", "缅甸语"),
+    AM("Amharic", "阿姆哈拉语"),
+    IN("Indonesian", "印度尼西亚文"),
+    ET("Estonian", "爱沙尼亚语"),
+    UG("Uyghur", "维吾尔语"),
+    SW("Swahili", "斯瓦希里语"),
+    XH("Xhosa", "科萨语"),
+    ZU("Zulu", "祖鲁语"),
+    TA("Tamil", "泰米尔语"),
+    NO("Norwegian", "挪威语"),
+    MN("Mongolian", "蒙古语"),
+    HR("Croatian", "克罗地亚语"),
+    EU("Basque", "巴斯克语"),
+    AF("Afrikaans", "南非荷兰语"),
+    SK("Slovak", "斯洛伐克语"),
+    FA("Persian", "波斯语"),
+    LB("Luxembourgish", "卢森堡语"),
+    LT("Lithuanian", "立陶宛语"),
+    SV("Swedish", "瑞典语"),
+    JI("Yiddish", "依地文"),
+
+    /**
+     * Available non-ISO languages
+     *
+     * @see Locale#getAvailableLocales()
+     */
+    YUE("Cantonese", "粤语", "基本粤语"),
+    FIL("Filipino", "菲律宾语"),
+    GSW("Swiss German", "瑞士德语"),
+
+    /**
+     * Other languages, with three-letter abbreviation as codes except those used in {@link
+     * Locale#getAvailableLocales()}
+     */
+    NON("None", "默片"),
+    SID("Sindarin", "辛达林语"),
+    QUN("Quenya", "昆雅语"),
+    SIL("Sign Languages", "手语"),
+    ASL("American Sign Language", "美国手语"),
+    KSL("Korean Sign Language", "韩国手语"),
+    BSL("British Sign Language", "英国手语"),
+    DOT("Dothraki", "多斯拉克语"),
+    KLI("Klingon", "克林贡语"),
+    CRO("Creole", "克里奥尔语"),
+    PAW("Pawnee", "波尼语"),
+    HUS("Huns", "匈奴语"),
+    FLE("Flemish", "弗拉芒语"),
+    LAD("Ladakh", "拉达克语"),
+    NAP("Neapolitan", "那不勒斯语"),
+    ;
 
     private final String text;
     private final String title;
