@@ -48,7 +48,7 @@ public final class CodeEnumJpaConverters {
 
         @Override
         protected E deserialize(Integer dbData) {
-            return EnumUtilExt.deserializeCode(dbData, eClass);
+            return EnumUtilExt.valueOfCode(dbData, eClass);
         }
 
         @Override

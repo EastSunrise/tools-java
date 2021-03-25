@@ -7,6 +7,7 @@ import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.util.function.ThrowableTriFunction;
+import wsg.tools.internet.common.OtherHttpResponseException;
 
 /**
  * Utility when accessing to {@link wsg.tools.internet}.

@@ -1,22 +1,15 @@
 package wsg.tools.internet.download.impl;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.download.FileExistStrategy;
-import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.base.Downloader;
 
 /**
@@ -28,28 +21,31 @@ import wsg.tools.internet.download.base.Downloader;
 @Slf4j
 public final class BasicDownloader implements Downloader {
 
-    private final CloseableHttpClient client;
+    private static final int TIMEOUT = 15000;
     private FileExistStrategy strategy = FileExistStrategy.RENAME;
 
     public BasicDownloader() {
-        this.client = HttpClientBuilder.create().build();
     }
 
     @Override
     public File download(File dir, URL url) throws IOException {
-        String file = StringUtils.stripEnd(url.getFile(), "/");
-        String path = FilenameUtils.getPath(file);
-        return execute(new File(dir, path), url, FilenameUtils.getName(file));
+        String file = StringUtilsExt.toFilename(StringUtils.stripEnd(url.getFile(), "/"));
+        return execute(dir, url, FilenameUtils.getName(file));
     }
 
     /**
      * Downloads the given url and names the downloaded file with the given basename.
      */
+    @Override
     public File download(File dir, URL url, @Nonnull String basename)
-        throws IOException, InvalidResourceException {
-        String extension = FilenameUtils.getExtension(url.getFile());
-        String newName = basename + FilenameUtils.EXTENSION_SEPARATOR + extension;
-        return execute(dir, url, newName);
+        throws IOException {
+        String file = StringUtilsExt.toFilename(StringUtils.stripEnd(url.getFile(), "/"));
+        String extension = FilenameUtils.getExtension(file);
+        if (!extension.isEmpty()) {
+            extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
+        }
+        String filename = basename + extension;
+        return execute(dir, url, filename);
     }
 
     /**
@@ -68,26 +64,38 @@ public final class BasicDownloader implements Downloader {
         }
 
         File dest = new File(dir, filename);
-        if (dest.isFile()) {
-            if (FileExistStrategy.FINISH == strategy) {
-                return dest;
-            }
-
-            if (FileExistStrategy.RENAME == strategy) {
-                int count = 1;
-                String baseName = FilenameUtils.getBaseName(filename);
-                String extension = FilenameUtils.getExtension(filename);
-                if (!extension.isEmpty()) {
-                    extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
+        if (dest.exists()) {
+            if (dest.isDirectory()) {
+                // rename if the destination is a directory
+                dest = rename(dir, filename);
+            } else {
+                if (FileExistStrategy.FINISH == strategy) {
+                    return dest;
                 }
-                do {
-                    count++;
-                    dest = new File(dir, baseName + "_" + count + extension);
-                } while (dest.isFile());
+                if (FileExistStrategy.RENAME == strategy) {
+                    dest = rename(dir, filename);
+                }
             }
         }
         log.info("Downloading from {} to {}", url, dest);
-        return client.execute(new HttpGet(url.toString()), new FileHandler(dest));
+        FileUtils.copyURLToFile(url, dest, TIMEOUT, TIMEOUT);
+        return dest;
+    }
+
+    private File rename(File dir, String filename) {
+        int count = 1;
+        String baseName = FilenameUtils.getBaseName(filename);
+        String extension = FilenameUtils.getExtension(filename);
+        if (!extension.isEmpty()) {
+            extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
+        }
+        while (true) {
+            count++;
+            File dest = new File(dir, baseName + "_" + count + extension);
+            if (!dest.exists()) {
+                return dest;
+            }
+        }
     }
 
     public BasicDownloader strategy(@Nonnull FileExistStrategy strategy) {
@@ -97,27 +105,5 @@ public final class BasicDownloader implements Downloader {
 
     public FileExistStrategy getStrategy() {
         return strategy;
-    }
-
-    private static class FileHandler extends AbstractResponseHandler<File> {
-
-        private final File dest;
-
-        FileHandler(@Nonnull File dest) {
-            this.dest = dest;
-        }
-
-        @Override
-        public File handleEntity(HttpEntity entity) throws IOException {
-            InputStream inputStream = entity.getContent();
-            try (FileOutputStream fos = new FileOutputStream(dest)) {
-                byte[] data = new byte[Constants.KILOBYTE];
-                int len;
-                while ((len = inputStream.read(data)) != -1) {
-                    fos.write(data, 0, len);
-                }
-            }
-            return dest;
-        }
     }
 }

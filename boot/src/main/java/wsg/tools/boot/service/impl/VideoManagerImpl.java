@@ -101,8 +101,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     private <T extends YearSupplier> VideoStatus getStatus(T t, Function<T, Optional<File>> getFile,
-        int count,
-        String zhTitle) {
+        int count, String zhTitle) {
         try {
             return archive(t, getFile, count, zhTitle, null);
         } catch (IOException e) {
@@ -174,8 +173,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     }
 
     private <T extends YearSupplier> VideoStatus archive(T t, Function<T, Optional<File>> getFile,
-        int count,
-        String zhTitle,
+        int count, String zhTitle,
         @Nullable Functions.FailableBiFunction<File, Collection<File>, VideoStatus, IOException> ifToArchive)
         throws IOException {
         if (Year.now().getValue() < t.getYear()) {

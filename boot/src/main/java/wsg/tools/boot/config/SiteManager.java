@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.download.FileExistStrategy;
+import wsg.tools.internet.download.base.Downloader;
+import wsg.tools.internet.download.impl.BasicDownloader;
 import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.movie.douban.DoubanSite;
@@ -42,6 +45,7 @@ public class SiteManager implements DisposableBean {
     private XlmSite xlmSite;
     private Y80sSite y80sSite;
     private GrapeSite grapeSite;
+    private Downloader downloader;
     private LicencePlateSite licencePlateSite;
     private MidnightSite midnightSite;
 
@@ -128,6 +132,13 @@ public class SiteManager implements DisposableBean {
             midnightSite = new MidnightSite();
         }
         return midnightSite;
+    }
+
+    public Downloader downloader() {
+        if (downloader == null) {
+            downloader = new BasicDownloader().strategy(FileExistStrategy.FINISH);
+        }
+        return downloader;
     }
 
     @Override

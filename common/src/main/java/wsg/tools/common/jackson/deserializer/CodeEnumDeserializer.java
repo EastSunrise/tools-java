@@ -24,6 +24,6 @@ public class CodeEnumDeserializer<C, E extends Enum<E> & CodeSupplier<C>> extend
 
     @Override
     public E deserialize(Class<E> eClass, C value) {
-        return EnumUtilExt.deserializeCode(value, eClass);
+        return EnumUtilExt.valueOfCode(value, eClass);
     }
 }

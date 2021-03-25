@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult;
 
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -18,6 +19,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
@@ -101,7 +103,8 @@ public final class AmateurCatSite extends BaseSite implements Repository<String,
         item.setNext(getNext(document));
 
         String code = main.selectFirst("h1.entry-title").text();
-        String cover = main.selectFirst("img.size-full").attr(CssSelectors.ATTR_SRC);
+        String src = main.selectFirst("img.size-full").attr(CssSelectors.ATTR_SRC);
+        URL cover = NetUtils.createURL(src);
         Element content = main.selectFirst("div.entry-content");
         Pair<String, List<String>> pair = getLinesAndDesc(content);
         AdultEntryBuilder builder;

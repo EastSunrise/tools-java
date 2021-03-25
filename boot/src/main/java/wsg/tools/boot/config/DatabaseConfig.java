@@ -17,7 +17,7 @@ public class DatabaseConfig {
     private static final long EPISODE_ID_START = 60_000_000L;
 
     public static boolean isMovie(long id) {
-        return id >= MOVIE_ID_START && id < SEASON_ID_START;
+        return id >= MOVIE_ID_START && id < SERIES_ID_START;
     }
 
     public static boolean isSeries(long id) {

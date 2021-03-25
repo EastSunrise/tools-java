@@ -1,18 +1,23 @@
 package wsg.tools.internet.info.adult;
 
+import java.net.URL;
 import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.net.NetUtils;
+import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.impl.BasicHttpSession;
@@ -52,19 +57,21 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
     @Override
     public LicencePlateItem findById(@Nonnull String id) throws HttpResponseException {
         SnapshotStrategy<Document> strategy = new WithoutNextDocument<>(this::getNext);
-        Document document = getDocument(builder0("/%s", id), strategy);
+        Document document = getDocument(builder0("/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);
         String code = article.selectFirst(".entry-title").text();
         Element content = article.selectFirst(".single-content");
-        List<String> images = content.select(CssSelectors.TAG_IMG).eachAttr(CssSelectors.ATTR_SRC);
+        List<URL> images = content.select(CssSelectors.TAG_IMG).eachAttr(CssSelectors.ATTR_SRC)
+            .stream().map(NetUtils::createURL).collect(Collectors.toList());
 
         Deque<String> lines = new LinkedList<>();
-        Iterator<Element> it = content.children().stream().filter(Element::hasText).iterator();
-        lines.add(it.next().text());
-        while (it.hasNext()) {
-            lines.addAll(DocumentUtils.collectTexts(it.next()));
+        Iterator<Element> iterator = content.children().stream().filter(Element::hasText)
+            .iterator();
+        lines.add(iterator.next().text());
+        while (iterator.hasNext()) {
+            lines.addAll(DocumentUtils.collectTexts(iterator.next()));
         }
         String description = lines.removeFirst();
         if (!lines.isEmpty()) {
@@ -78,10 +85,13 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
         Map<String, String> info = AmateurCatSite.extractInfo(lines);
         info.remove("対応デバイス");
         info.remove("評価");
+        String intro = MapUtilsExt.getString(info, "简介", "剧情简介");
         AdultEntry entry = AdultEntryBuilder.amateur(info, code)
             .duration().release().producer().distributor().series().tags(Constants.WHITESPACE)
             .validateCode().description(description).images(images).build();
-        return new LicencePlateItem(id, update, entry, getNext(document));
+        LicencePlateItem item = new LicencePlateItem(id, update, entry, getNext(document));
+        item.setIntro(intro);
+        return item;
     }
 
     private String getNext(Document document) {

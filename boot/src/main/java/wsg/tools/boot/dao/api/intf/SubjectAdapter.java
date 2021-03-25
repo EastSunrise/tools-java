@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.BaseDoubanSubject;
 import wsg.tools.internet.movie.douban.DoubanSite;

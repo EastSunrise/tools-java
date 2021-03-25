@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.wiki;
 
+import java.net.URL;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TextSupplier;
@@ -247,7 +249,7 @@ public final class CelebrityWikiSite extends BaseSite {
         String title = show.selectFirst(CssSelectors.TAG_H1).text();
         LocalDateTime updateTime = LocalDateTime
             .parse(((TextNode) show.selectFirst(".info").childNode(0)).text(),
-                Constants.DATE_TIME_FORMATTER);
+                Constants.YYYY_MM_DD_HH_MM_SS);
         List<String> images = show.selectFirst("#pictureurls").select(CssSelectors.TAG_IMG)
             .eachAttr(CssSelectors.ATTR_REL);
         WikiAlbum album = new WikiAlbum(id, type, title, updateTime, images);
@@ -282,7 +284,8 @@ public final class CelebrityWikiSite extends BaseSite {
             throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
         }
         String code = id.toUpperCase(Locale.ROOT);
-        String cover = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
+        String src = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
+        URL cover = NetUtils.createURL(src);
 
         Map<String, String> info = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : div.select(CssSelectors.TAG_EM)) {
@@ -312,7 +315,7 @@ public final class CelebrityWikiSite extends BaseSite {
         int id = Integer.parseInt(matcher.group("id"));
         String name = document.selectFirst(".mx_name").text();
         WikiCelebrityType type = EnumUtilExt
-            .deserializeText(matcher.group("t"), WikiCelebrityType.class, false);
+            .valueOfText(matcher.group("t"), WikiCelebrityType.class, false);
         T t = constructor.apply(id, name, type);
         Element block01 = document.selectFirst("div.cm_block01");
         String image = block01.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
@@ -332,7 +335,7 @@ public final class CelebrityWikiSite extends BaseSite {
             if (FAKE_FEMALE.equals(s)) {
                 return Gender.MALE;
             }
-            return EnumUtilExt.deserializeTitle(s, Gender.class, false);
+            return EnumUtilExt.valueOfTitle(s, Gender.class, false);
         }, "性别"));
         info.setBirthday(MapUtilsExt.getValue(map, this::parseBirthday, "出生日期"));
         info.setFullName(MapUtilsExt.getString(map, "姓名"));
@@ -342,7 +345,7 @@ public final class CelebrityWikiSite extends BaseSite {
         setStringList(map, info, BasicInfo::setAka, "别名");
 
         info.setZodiac(MapUtilsExt.getValue(map,
-            text -> EnumUtilExt.deserializeTitle(text.substring(0, 1), Zodiac.class, false), "生肖"));
+            text -> EnumUtilExt.valueOfTitle(text.substring(0, 1), Zodiac.class, false), "生肖"));
         info.setConstellation(
             MapUtilsExt.getValue(map, text -> deserializeAka(text, Constellation.class), "星座"));
         setStringList(map, info, BasicInfo::setInterests, "兴趣", "爱好");
@@ -457,7 +460,7 @@ public final class CelebrityWikiSite extends BaseSite {
         if (tbody != null) {
             Elements trs = tbody.select(CssSelectors.TAG_TR);
             for (Element tr : trs) {
-                String code = tr.selectFirst("td").text();
+                String code = tr.selectFirst("td").text().strip();
                 if (code.isBlank()) {
                     continue;
                 }
@@ -486,7 +489,7 @@ public final class CelebrityWikiSite extends BaseSite {
                 .matchesOrElseThrow(ALBUM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF));
             int albumId = Integer.parseInt(matcher.group("id"));
             WikiAlbumType albumType = EnumUtilExt
-                .deserializeText(matcher.group("t"), WikiAlbumType.class, false);
+                .valueOfText(matcher.group("t"), WikiAlbumType.class, false);
             String title = a.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_ALT);
             albums.add(new WikiAlbumIndex(albumId, albumType, title));
         }

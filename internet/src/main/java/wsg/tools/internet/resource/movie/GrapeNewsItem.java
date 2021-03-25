@@ -1,9 +1,11 @@
 package wsg.tools.internet.resource.movie;
 
+import java.net.URL;
 import java.time.LocalDate;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.common.UpdateDateSupplier;
-import wsg.tools.internet.resource.common.YearSupplier;
+import wsg.tools.internet.resource.common.CoverSupplier;
 
 /**
  * News items of Grape site, resources of which are all downloadable.All of the items belong to
@@ -13,23 +15,23 @@ import wsg.tools.internet.resource.common.YearSupplier;
  * @since 2021/2/4
  */
 public class GrapeNewsItem extends IdentifiedItem<GrapeVodType>
-    implements YearSupplier, UpdateDateSupplier {
+    implements UpdateDateSupplier, CoverSupplier {
 
     private final LocalDate releaseDate;
-    private Integer year;
+    private URL cover;
 
     GrapeNewsItem(int id, @Nonnull String url, LocalDate releaseDate) {
         super(id, url, GrapeVodType.BT_MOVIE);
-        this.releaseDate = releaseDate;
+        this.releaseDate = Objects.requireNonNull(releaseDate, "the release date of an item");
     }
 
     @Override
-    public Integer getYear() {
-        return year;
+    public URL getCover() {
+        return cover;
     }
 
-    void setYear(Integer year) {
-        this.year = year;
+    void setCover(URL cover) {
+        this.cover = Objects.requireNonNull(cover, "the cover of an item");
     }
 
     @Override

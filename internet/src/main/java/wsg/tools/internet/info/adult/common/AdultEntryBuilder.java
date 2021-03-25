@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.common;
 
+import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
@@ -86,7 +87,7 @@ public class AdultEntryBuilder {
         return this;
     }
 
-    public AdultEntryBuilder images(@Nonnull List<String> images) {
+    public AdultEntryBuilder images(@Nonnull List<URL> images) {
         entry.setImages(images);
         return this;
     }
@@ -130,7 +131,7 @@ public class AdultEntryBuilder {
 
         public AdultEntryMapBuilder mosaic() {
             getEntry().setMosaic(MapUtilsExt.getValue(info,
-                s -> EnumUtilExt.deserializeTitle(s, Mosaic.class, false), "是否有码"));
+                s -> EnumUtilExt.valueOfTitle(s, Mosaic.class, false), "是否有码"));
             return this;
         }
 

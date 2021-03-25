@@ -1,5 +1,7 @@
 package wsg.tools.internet.common;
 
+import java.util.Locale;
+
 /**
  * Scheme of the website.
  *
@@ -14,6 +16,6 @@ public enum Scheme {
 
     @Override
     public String toString() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ENGLISH);
     }
 }

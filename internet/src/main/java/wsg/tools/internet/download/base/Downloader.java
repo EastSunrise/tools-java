@@ -10,7 +10,6 @@ import java.net.URL;
  * @author Kingen
  * @since 2020/9/14
  */
-@FunctionalInterface
 public interface Downloader {
 
     /**
@@ -19,7 +18,19 @@ public interface Downloader {
      * @param dir target directory
      * @param url the url which points to the file to download
      * @return downloaded file
-     * @throws IOException i/o exception
+     * @throws IOException if an IO error occurs during downloading
      */
     File download(File dir, URL url) throws IOException;
+
+    /**
+     * Downloads the given url with a specific basename.
+     *
+     * @param dir      target directory
+     * @param url      the url which points to the file to download
+     * @param basename assign the basename of the file to download
+     * @return downloaded file
+     * @throws IllegalArgumentException if basename is empty
+     * @throws IOException              if an IO error occurs during downloading
+     */
+    File download(File dir, URL url, String basename) throws IOException;
 }

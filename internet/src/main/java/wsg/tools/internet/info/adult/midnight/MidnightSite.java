@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.midnight;
 
 import java.net.URI;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,6 +22,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -203,7 +205,7 @@ public final class MidnightSite extends BaseSite {
         BiFunction<Map<String, String>, String, AdultEntryBuilder.AdultEntryMapBuilder> builder)
         throws HttpResponseException {
         return getItem(column, id, (title, release, contents) -> {
-            List<String> images = Objects.requireNonNull(getImages(contents));
+            List<URL> images = Objects.requireNonNull(getImages(contents));
             Map<String, String> info = getInfo(contents);
             String code = AdultEntryBuilder.getCode(info);
             if (code == null) {
@@ -231,7 +233,7 @@ public final class MidnightSite extends BaseSite {
         RequestBuilder builder = builder0("/%s/%d.html", column.getText(), id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         String datetime = document.selectFirst("time.data-time").text();
-        LocalDateTime release = LocalDateTime.parse(datetime, Constants.DATE_TIME_FORMATTER);
+        LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
         T t = constructor.apply(title, release, getContents(document));
         String keywords = document.selectFirst(CssSelectors.META_KEYWORDS)
@@ -282,8 +284,8 @@ public final class MidnightSite extends BaseSite {
         return info;
     }
 
-    private List<String> getImages(List<Element> contents) {
-        List<String> images = new ArrayList<>();
+    private List<URL> getImages(List<Element> contents) {
+        List<URL> images = new ArrayList<>();
         for (Element content : contents) {
             Element nav = content.selectFirst(NAV_NAVIGATION);
             Node current = nav.previousElementSibling().previousSibling();
@@ -300,7 +302,7 @@ public final class MidnightSite extends BaseSite {
                         if (matcher.matches()) {
                             href = IMG_HOST + href;
                         }
-                        images.add(href);
+                        images.add(NetUtils.createURL(href));
                     }
                 }
                 current = current.previousSibling();

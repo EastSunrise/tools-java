@@ -2,6 +2,7 @@ package wsg.tools.internet.resource.movie;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -20,7 +21,7 @@ public class BasicItem {
     private List<InvalidResourceException> exceptions;
 
     void setTitle(String title) {
-        this.title = title;
+        this.title = Objects.requireNonNull(title, "the title of an item");
     }
 
     void setLinks(List<AbstractLink> links) {

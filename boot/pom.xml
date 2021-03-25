@@ -119,8 +119,8 @@
             <artifactId>jave-core</artifactId>
         </dependency>
         <dependency>
-            <artifactId>fastdfs-client-java</artifactId>
-            <groupId>org.csource</groupId>
+            <artifactId>minio</artifactId>
+            <groupId>io.minio</groupId>
         </dependency>
     </dependencies>
 

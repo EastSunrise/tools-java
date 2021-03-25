@@ -8,13 +8,13 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.pojo.result.SingleResult;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**

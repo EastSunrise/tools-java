@@ -30,7 +30,7 @@
           <#list items?sort_by('gmtModified')?reverse as item>
             <tr>
               <td>${item_index+1}</td>
-              <td style="width: 400px">
+              <td style="width: 400px;">
                   ${item.title}<#if item.year??>(${item.year?c})</#if>
                 <a href="https://search.douban.com/movie/subject_search?search_text=${item.title}&cat=1002"
                    class="layui-icon layui-icon-search"
@@ -72,7 +72,7 @@
           </tbody>
         </table>
       <#else>
-        <h3 style="text-align: center">None Resources!</h3>
+        <h3 style="text-align: center;">None Resources!</h3>
       </#if>
   </div>
 </div>

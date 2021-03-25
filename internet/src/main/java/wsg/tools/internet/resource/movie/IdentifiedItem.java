@@ -1,6 +1,7 @@
 package wsg.tools.internet.resource.movie;
 
-import javax.annotation.Nonnull;
+import java.util.Objects;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.IntIdentifier;
 import wsg.tools.internet.resource.common.SubtypeSupplier;
 
@@ -17,10 +18,10 @@ public class IdentifiedItem<E extends Enum<E>> extends BasicItem
     private final String url;
     private final E subtype;
 
-    IdentifiedItem(int id, @Nonnull String url, @Nonnull E subtype) {
+    IdentifiedItem(int id, String url, E subtype) {
         this.id = id;
-        this.url = url;
-        this.subtype = subtype;
+        this.url = AssertUtils.requireNotBlank(url, "the url of an item");
+        this.subtype = Objects.requireNonNull(subtype, "the subtype of an item");
     }
 
     @Override

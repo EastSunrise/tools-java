@@ -73,7 +73,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         .registerModule(new SimpleModule()
             .addDeserializer(MovieGenre.class, new TitleEnumDeserializer<>(MovieGenre.class)))
         .registerModule(new JavaTimeModule().addDeserializer(LocalDateTime.class,
-            new LocalDateTimeDeserializer(Constants.DATE_TIME_FORMATTER)));
+            new LocalDateTimeDeserializer(Constants.YYYY_MM_DD_HH_MM_SS)));
 
     private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern
         .compile("[^()\\s]+\\((\\d+)\\)");

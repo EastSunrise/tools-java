@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.common;
 
+import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -28,7 +29,7 @@ public class AdultEntry {
     private String distributor;
     private String series;
     private List<String> tags;
-    private List<String> images;
+    private List<URL> images;
 
     AdultEntry(String code) {
         this.code = AssertUtils.requireNotBlank(code, "code of an adult entry");
@@ -76,7 +77,7 @@ public class AdultEntry {
         }
     }
 
-    void setImages(List<String> images) {
+    void setImages(List<URL> images) {
         if (CollectionUtils.isNotEmpty(images)) {
             this.images = Collections.unmodifiableList(images);
         }

@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Common constant variables
@@ -23,6 +24,7 @@ public final class Constants {
     public static final String FILE_EXTENSION_SEPARATOR = ".";
     public static final String URL_PATH_SEPARATOR = "/";
     public static final String URL_SCHEME_SEPARATOR = ":";
+    public static final String HTTP_SCHEME = "http:";
     public static final String EMPTY_STRING = "";
     public static final String WHITESPACE = " ";
     /**
@@ -35,7 +37,7 @@ public final class Constants {
      */
     public static final DateTimeFormatter YYYY_MM_DD_HH_MM = DateTimeFormatter
         .ofPattern("yyyy-MM-dd HH:mm");
-    public static final DateTimeFormatter DATE_TIME_FORMATTER =
+    public static final DateTimeFormatter YYYY_MM_DD_HH_MM_SS =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.CHINESE)
             .withZone(ZoneId.systemDefault());
     /**
@@ -48,10 +50,17 @@ public final class Constants {
     }
 
     /**
-     * Common functions.
+     * Empty consumer.
      */
     public static <T> Consumer<T> emptyConsumer() {
         return t -> {
         };
+    }
+
+    /**
+     * Self function.
+     */
+    public static <T> Function<T, T> self() {
+        return t -> t;
     }
 }

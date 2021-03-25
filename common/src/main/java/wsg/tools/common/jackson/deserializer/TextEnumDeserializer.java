@@ -26,6 +26,6 @@ public class TextEnumDeserializer<E extends Enum<E> & TextSupplier> extends
 
     @Override
     public E deserialize(Class<E> eClass, String value) {
-        return EnumUtilExt.deserializeText(value, eClass, ignoreCase);
+        return EnumUtilExt.valueOfText(value, eClass, ignoreCase);
     }
 }

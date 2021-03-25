@@ -1,5 +1,7 @@
 package wsg.tools.boot.service.impl;
 
+import java.net.URL;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -23,8 +25,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.common.util.BeanUtilExt;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.common.util.SiteUtilExt;
+import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
 import wsg.tools.boot.pojo.dto.LinkDto;
@@ -41,6 +43,7 @@ import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
 import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -50,6 +53,8 @@ import wsg.tools.internet.download.base.PasswordProvider;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.resource.common.CoverSupplier;
+import wsg.tools.internet.resource.common.StateSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
@@ -64,13 +69,16 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     private final ResourceItemRepository itemRepository;
     private final ResourceLinkRepository linkRepository;
     private final TransactionTemplate template;
+    private final MinioConfig config;
 
     @Autowired
     public ResourceServiceImpl(ResourceItemRepository itemRepository,
-        ResourceLinkRepository linkRepository, TransactionTemplate template) {
+        ResourceLinkRepository linkRepository, TransactionTemplate template,
+        MinioConfig config) {
         this.itemRepository = itemRepository;
         this.linkRepository = linkRepository;
         this.template = template;
+        this.config = config;
     }
 
     @Override
@@ -133,8 +141,20 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
+        if (item instanceof CoverSupplier) {
+            URL cover = ((CoverSupplier) item).getCover();
+            if (cover != null) {
+                try {
+                    itemEntity.setCover(config.uploadCover(cover, source));
+                } catch (NotFoundException | OtherHttpResponseException ignored) {
+                }
+            }
+        }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());
+        }
+        if (item instanceof StateSupplier) {
+            itemEntity.setState(((StateSupplier) item).getState());
         }
         if (item instanceof DoubanIdentifier) {
             itemEntity.setDbId(((DoubanIdentifier) item).getDbId());
@@ -145,9 +165,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         if (item instanceof UpdateDatetimeSupplier) {
             itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
         } else if (item instanceof UpdateDateSupplier) {
-            itemEntity
-                .setUpdateTime(
-                    LocalDateTime.of(((UpdateDateSupplier) item).lastUpdate(), LocalTime.MIN));
+            LocalDate date = ((UpdateDateSupplier) item).lastUpdate();
+            itemEntity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
         }
         List<AbstractLink> resources = item.getLinks();
         Integer count = template.execute(status -> insertResource(itemEntity, resources));

@@ -1,18 +1,13 @@
 package wsg.tools.boot.service.impl;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
-import org.csource.common.MyException;
-import org.csource.common.NameValuePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -21,12 +16,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.common.util.SiteUtilExt;
-import wsg.tools.boot.config.FastdfsClient;
+import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.AdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
-import wsg.tools.boot.pojo.entity.EntityUtils;
 import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity;
 import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity_;
 import wsg.tools.boot.pojo.entity.base.Failure;
@@ -34,15 +27,14 @@ import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.base.intf.RepositoryIterator;
-import wsg.tools.internet.download.FileExistStrategy;
-import wsg.tools.internet.download.impl.BasicDownloader;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.info.adult.LicencePlateItem;
 import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
+import wsg.tools.internet.info.adult.common.SerialNumber;
 import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightAdultEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurEntryType;
@@ -60,25 +52,18 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
 @Service
 public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
-    private static final File TMPDIR = new File(Constants.SYSTEM_TMPDIR);
     private static final String CODE_EXISTS_MSG = "The target code exists";
-    private static final String CODE_NOT_EXIST_MSG = "The code doesn't exist";
-    private static final int MAX_CODE_LENGTH = 15;
-    private static final String CODE_TOO_LONG_MSG = "The code is too long";
 
-    private final FastdfsClient client;
     private final AdultVideoRepository videoRepository;
     private final FailureRepository failureRepository;
-
-    private final BasicDownloader downloader = new BasicDownloader()
-        .strategy(FileExistStrategy.FINISH);
+    private final MinioConfig config;
 
     @Autowired
-    public AdultServiceImpl(FastdfsClient client, AdultVideoRepository videoRepository,
-        FailureRepository failureRepository) {
-        this.client = client;
+    public AdultServiceImpl(AdultVideoRepository videoRepository,
+        FailureRepository failureRepository, MinioConfig config) {
         this.videoRepository = videoRepository;
         this.failureRepository = failureRepository;
+        this.config = config;
     }
 
     @Override
@@ -95,8 +80,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
         RepositoryIterator<LicencePlateItem> iterator;
         if (page.hasContent()) {
-            long rid = page.iterator().next().getSource().getRid();
-            String start = EntityUtils.deserialize(rid);
+            String start = page.iterator().next().getId();
             iterator = repository.iteratorAfter(start);
             SiteUtilExt.found(iterator::next);
         } else {
@@ -106,8 +90,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         while (iterator.hasNext()) {
             LicencePlateItem item = SiteUtilExt.found(iterator::next);
             AdultEntry entry = item.getEntry();
-            long rid = EntityUtils.serialize(item.getId());
-            Source source = Source.record(domain, Source.DEFAULT_SUBTYPE, rid);
+            Source source = Source.record(domain, Source.DEFAULT_SUBTYPE, 0);
             success += insertEntry(entry, source);
             total++;
         }
@@ -117,8 +100,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
     @Override
     public void importMidnightEntries(@Nonnull MidnightSite site,
-        @Nonnull MidnightAmateurEntryType type)
-        throws OtherHttpResponseException {
+        @Nonnull MidnightAmateurEntryType type) throws OtherHttpResponseException {
         Integer subtype = type.getColumn().getCode();
         String domain = site.getDomain();
         long max = videoRepository.findMaxRid(domain, subtype).orElse(0L);
@@ -157,20 +139,21 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     private int insertEntry(AdultEntry entry, Source source) {
-        if (entry == null) {
-            failureRepository.insert(new Failure(source, CODE_NOT_EXIST_MSG));
+        Objects.requireNonNull(entry, "the entry to save");
+        Objects.requireNonNull(source, "the source of the entry");
+        String code = entry.getCode();
+        try {
+            code = SerialNumber.format(entry.getCode());
+        } catch (IllegalArgumentException e) {
+            failureRepository.insert(new Failure(source, "The code is invalid: " + code));
             return 0;
         }
-        if (entry.getCode().length() > MAX_CODE_LENGTH) {
-            failureRepository.insert(new Failure(source, CODE_TOO_LONG_MSG));
-            return 0;
-        }
-        if (videoRepository.findById(entry.getCode()).isPresent()) {
+        if (videoRepository.findById(code).isPresent()) {
             failureRepository.insert(new Failure(source, CODE_EXISTS_MSG));
             return 0;
         }
         AdultVideoEntity entity = new AdultVideoEntity();
-        entity.setId(entry.getCode());
+        entity.setId(code);
         entity.setTitle(entry.getTitle());
         Mosaic mosaic = entry.getMosaic();
         if (mosaic != null) {
@@ -184,14 +167,16 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         entity.setSeries(entry.getSeries());
         entity.setTags(entry.getTags());
         entity.setSource(source);
-        List<String> images = entry.getImages();
+        List<URL> images = entry.getImages();
         if (CollectionUtils.isNotEmpty(images)) {
             List<String> uploads = new ArrayList<>();
-            for (String image : images) {
+            for (URL image : images) {
                 String upload = null;
                 try {
-                    upload = upload(image);
+                    upload = config.uploadEntryImage(image, code);
                 } catch (NotFoundException ignored) {
+                } catch (OtherHttpResponseException e) {
+                    throw new AppException(e);
                 }
                 uploads.add(upload);
             }
@@ -199,20 +184,5 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         }
         videoRepository.insert(entity);
         return 1;
-    }
-
-    private String upload(String url) throws NotFoundException {
-        try {
-            File file = downloader.download(TMPDIR, new URL(url));
-            NameValuePair meta = new NameValuePair(FastdfsClient.META_SOURCE, url);
-            return client.uploadLocal(file, meta).getFullPath();
-        } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                throw new NotFoundException(e.getMessage());
-            }
-            throw new AppException(e);
-        } catch (IOException | MyException e) {
-            throw new AppException(e);
-        }
     }
 }

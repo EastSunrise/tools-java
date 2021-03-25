@@ -21,6 +21,7 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -46,42 +47,33 @@ import wsg.tools.internet.movie.common.VideoConstants;
 @Slf4j
 public final class XlcSite extends BaseSite implements Repository<Integer, XlcItem> {
 
-    private static final Pattern ITEM_TITLE_REGEX = Pattern.compile("(?<title>.*)_迅雷下载_高清电影_迅雷仓");
-    private static final Pattern YEAR_REGEX = Pattern.compile("\\((?<y>\\d+)\\)");
-    private static final Pattern ITEM_HREF_REGEX = Pattern
-        .compile("/vod-read-id-(?<id>\\d+)\\.html");
-    private static final Pattern TYPE_PATH_REGEX;
-
-    static {
-        String types = Arrays.stream(XlcType.values()).map(IntCodeSupplier::getCode)
-            .map(String::valueOf).collect(Collectors.joining("|"));
-        TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<id>" + types + ")\\.html");
-    }
+    private static final int TITLE_SUFFIX_LENGTH = 14;
+    private static final String NO_PIC = "nopic.jpg";
+    private static final String NO_PHOTO = "nophoto_xunleicang.in.png";
 
     public XlcSite() {
         super("XLC", new BasicHttpSession("xunleicang.in"));
     }
 
     /**
-     * Returns the repository of all items from 1 to {@link #max()}. <strong>About 8% of the items
-     * are not found.</strong>
+     * Returns the repository of all items from 1 to {@link #latest()}. <strong>About 8% of the
+     * items are not found.</strong>
      */
     public IntIndicesRepository<XlcItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosed(this, 1, max());
+        return Repositories.rangeClosed(this, 1, latest());
     }
 
     /**
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
-    @Nonnull
-    public Integer max() throws HttpResponseException {
+    public int latest() throws HttpResponseException {
         RequestBuilder builder = builder0("/ajax-show-id-new.html");
         Document document = getDocument(builder, SnapshotStrategy.always());
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
             String href = a.attr(CssSelectors.ATTR_HREF);
-            String id = RegexUtils.matchesOrElseThrow(ITEM_HREF_REGEX, href).group("id");
+            String id = RegexUtils.findOrElseThrow(Lazy.ITEM_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
@@ -102,18 +94,21 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
         Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
         String typeHref = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(TYPE_PATH_REGEX, typeHref);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_PATH_REGEX, typeHref);
         int typeId = Integer.parseInt(matcher.group("id"));
-        XlcType type = EnumUtilExt.deserializeCode(typeId, XlcType.class);
+        XlcType type = EnumUtilExt.valueOfCode(typeId, XlcType.class);
         String state = ((TextNode) info.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 
-        Matcher titleMatcher = RegexUtils.matchesOrElseThrow(ITEM_TITLE_REGEX, document.title());
-        item.setTitle(titleMatcher.group(CssSelectors.ATTR_TITLE));
+        String tit = document.title();
+        item.setTitle(tit.substring(0, tit.length() - TITLE_SUFFIX_LENGTH));
+        String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
+        if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
+            item.setCover(NetUtils.createURL(cover));
+        }
         Element font = header.selectFirst(CssSelectors.TAG_FONT);
         if (font != null) {
-            Matcher yearMatcher = RegexUtils.matchesOrElseThrow(YEAR_REGEX, font.text());
-            int year = Integer.parseInt(yearMatcher.group("y"));
+            int year = Integer.parseInt(StringUtils.strip(font.text(), "()"));
             if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
                 item.setYear(year);
             }
@@ -139,5 +134,18 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private static class Lazy {
+
+        private static final Pattern ITEM_HREF_REGEX = Pattern
+            .compile("/vod-read-id-(?<id>\\d+)\\.html");
+        private static final Pattern TYPE_PATH_REGEX;
+
+        static {
+            String types = Arrays.stream(XlcType.values()).map(IntCodeSupplier::getCode)
+                .map(String::valueOf).collect(Collectors.joining("|"));
+            TYPE_PATH_REGEX = Pattern.compile("/vod-show-id-(?<id>" + types + ")\\.html");
+        }
     }
 }

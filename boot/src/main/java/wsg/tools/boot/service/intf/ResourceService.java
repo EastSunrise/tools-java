@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.http.client.HttpResponseException;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
@@ -12,6 +11,7 @@ import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.internet.base.intf.IntIndicesRepository;
 import wsg.tools.internet.base.intf.LinkedRepository;
 import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
 /**

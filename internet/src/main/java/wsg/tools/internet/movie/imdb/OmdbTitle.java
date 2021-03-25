@@ -12,7 +12,6 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.enums.Region;
 import wsg.tools.internet.movie.common.Runtime;
-import wsg.tools.internet.movie.common.enums.ImdbRating;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 import wsg.tools.internet.movie.common.enums.RatingSource;
 import wsg.tools.internet.movie.common.jackson.JoinedValue;
@@ -35,7 +34,7 @@ public class OmdbTitle extends BaseImdbTitle {
 
     @JsonProperty(CssSelectors.ATTR_TITLE)
     private String enTitle;
-    private ImdbRating rated;
+    private String rated;
     @JsonProperty("released")
     @JsonFormat(pattern = "dd MMM yyyy")
     private LocalDate release;
@@ -72,7 +71,8 @@ public class OmdbTitle extends BaseImdbTitle {
     }
 
     @Getter
-    static class Rating {
+    private static class Rating {
+
         private String value;
         private RatingSource source;
     }

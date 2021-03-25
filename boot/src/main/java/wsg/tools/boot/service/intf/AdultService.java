@@ -2,7 +2,7 @@ package wsg.tools.boot.service.intf;
 
 import javax.annotation.Nonnull;
 import org.apache.http.client.HttpResponseException;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurEntryType;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;

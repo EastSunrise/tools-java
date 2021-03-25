@@ -48,7 +48,13 @@ public class ResourceItemEntity extends IdentityEntity
     @Column(nullable = false)
     private String title;
 
+    @Column(length = 63)
+    private String cover;
+
     private Integer year;
+
+    @Column(length = 63)
+    private String state;
 
     private Long dbId;
 

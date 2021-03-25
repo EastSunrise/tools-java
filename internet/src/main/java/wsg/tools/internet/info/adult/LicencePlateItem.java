@@ -21,6 +21,7 @@ public class LicencePlateItem
     private final LocalDateTime updateTime;
     private final AdultEntry entry;
     private final String nextId;
+    private String intro;
 
     LicencePlateItem(String id, LocalDateTime updateTime, AdultEntry entry, String nextId) {
         this.id = id;
@@ -37,5 +38,13 @@ public class LicencePlateItem
     @Override
     public LocalDateTime lastUpdate() {
         return updateTime;
+    }
+
+    public String getIntro() {
+        return intro;
+    }
+
+    void setIntro(String intro) {
+        this.intro = intro;
     }
 }

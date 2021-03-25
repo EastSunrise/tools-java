@@ -1,5 +1,5 @@
 /**
- * todo {@link wsg.tools.boot.config.FastdfsClient} uploads images too slowly, handles concurrency,
+ * todo {@link wsg.tools.boot.config.MinioConfig} uploads images too slowly, handles concurrency,
  * and removes duplicate images.
  *
  * @author Kingen

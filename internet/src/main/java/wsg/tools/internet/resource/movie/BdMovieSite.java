@@ -26,6 +26,7 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
@@ -53,42 +54,18 @@ import wsg.tools.internet.download.impl.HttpLink;
 public final class BdMovieSite extends BaseSite implements Repository<Integer, BdMovieItem> {
 
     private static final int MIN_ID = 348;
-    private static final Pattern ITEM_URL_REGEX;
     private static final Range<Integer> EXCEPTS = Range.between(30508, 30508);
-    private static final Pattern IMDB_INFO_REGEX = Pattern
-        .compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
-    private static final Pattern VAR_REGEX = Pattern
-        .compile("var urls = \"(?<urls>[0-9A-Za-z+/=]*)\", " +
-            "adsUrls = \"[0-9A-Za-z+/=]*\", " +
-            "diskUrls = \"(?<disk>[0-9A-Za-z+/=]*)\", " +
-            "scoreData = \"(?<imdb>tt\\d+)? ?###(?<db>\\d+)?\"");
-    private static final Pattern DISK_RESOURCE_REGEX = Pattern.compile(
-        "(\\+链接: )?(?<pwd>[0-9A-Za-z]{4})?" +
-            "(\\|\\|(https?|ttps| https|whttps|\\|https)|\\|?https|\\s+\\|\\|https)" +
-            "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com|pan\\.xunlei\\.com)" +
-            "(?<path>/[\\w-./?=&]+)\\s*"
-    );
-    private static final Pattern URLS_SEPARATOR = Pattern.compile("#{3,4}\r\n|#{3,4}");
-    private static final Pattern KEYWORDS_SEPARATOR = Pattern.compile(",免费下载");
-    private static final Pattern DISK_URLS_SEPARATOR = Pattern.compile("###?\r\n|###|\r\n");
-
-    static {
-        String types = Arrays.stream(BdMovieType.values()).map(BdMovieType::getText)
-            .collect(Collectors.joining("|"));
-        ITEM_URL_REGEX = Pattern
-            .compile("https?://www\\.(bd2020|bd-film)\\.com/(?<t>" + types + ")/(?<id>\\d+)\\.htm");
-    }
 
     public BdMovieSite() {
         super("BD-Movie", new BasicHttpSession("bd2020.com"));
     }
 
     /**
-     * Returns the repository of all items from 1 to {@link #max()}. <strong>Almost 10% of the items
-     * are not found</strong>.
+     * Returns the repository of all items from 1 to {@link #latest()}. <strong>Almost 10% of the
+     * items are not found</strong>.
      */
     public IntIndicesRepository<BdMovieItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosedExcept(this, MIN_ID, max(), EXCEPTS);
+        return Repositories.rangeClosedExcept(this, MIN_ID, latest(), EXCEPTS);
     }
 
     /**
@@ -102,20 +79,22 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
     }
 
     /**
+     * Returns the identifier of the latest item.
+     *
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
-    public int max() throws HttpResponseException {
+    public int latest() throws HttpResponseException {
         Document document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
-        Elements lis = document.selectFirst("#content_list").select("li.list-item");
-        int max = 1;
+        Elements lis = document.selectFirst("#content_list").select(".list-item");
+        int latest = 1;
         for (Element li : lis) {
             String href = li.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-            Matcher matcher = ITEM_URL_REGEX.matcher(href);
+            Matcher matcher = Lazy.ITEM_URL_REGEX.matcher(href);
             if (matcher.matches()) {
-                max = Math.max(max, Integer.parseInt(matcher.group("id")));
+                latest = Math.max(latest, Integer.parseInt(matcher.group("id")));
             }
         }
-        return max;
+        return latest;
     }
 
     /**
@@ -139,22 +118,27 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
             }
         }
         String location = Objects.requireNonNull(metas.get("og:url"));
-        Matcher urlMatcher = ITEM_URL_REGEX.matcher(location);
+        Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
         if (!urlMatcher.matches()) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND,
-                "Not a movie page: " + location);
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a movie page");
         }
         String realTypeText = urlMatcher.group("t");
-        BdMovieType realType = EnumUtilExt.deserializeText(realTypeText, BdMovieType.class, false);
+        BdMovieType realType = EnumUtilExt.valueOfText(realTypeText, BdMovieType.class, false);
         String release = metas.get("og:video:release_date");
-        LocalDateTime updateTime = LocalDateTime.parse(release, Constants.DATE_TIME_FORMATTER);
+        LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         BdMovieItem item = new BdMovieItem(id, location, realType, updateTime);
-
         item.setNext(getNext(document));
-        item.setTitle(KEYWORDS_SEPARATOR.split(metas.get("keywords"))[0].strip());
+        item.setTitle(metas.get("og:title"));
+        String cover = metas.get("og:image");
+        if (!cover.isEmpty()) {
+            if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
+                cover = builder0(cover).toString();
+            }
+            item.setCover(NetUtils.createURL(cover));
+        }
 
         String varUrls = getVarUrls(document);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(VAR_REGEX, varUrls);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_REGEX, varUrls);
         String db = matcher.group("db");
         item.setDbId(db == null ? null : Long.parseLong(db));
         item.setImdbId(matcher.group("imdb"));
@@ -163,7 +147,7 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
         List<InvalidResourceException> exceptions = new ArrayList<>();
         String urls = decode(matcher.group("urls"));
         urls = StringEscapeUtils.unescapeHtml4(urls).replace("<p>", "").replace("</p>", "");
-        for (String url : URLS_SEPARATOR.split(urls)) {
+        for (String url : Lazy.URLS_SEPARATOR.split(urls)) {
             if (StringUtils.isNotBlank(url)) {
                 try {
                     links.add(LinkFactory.create(null, url));
@@ -186,7 +170,7 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
         }
         String text = content.text();
         if (item.getImdbId() == null) {
-            Matcher matcher1 = IMDB_INFO_REGEX.matcher(text);
+            Matcher matcher1 = Lazy.IMDB_INFO_REGEX.matcher(text);
             if (matcher1.find()) {
                 item.setImdbId(matcher1.group("id"));
             }
@@ -216,15 +200,15 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
             return null;
         }
         String href = next.attr(CssSelectors.ATTR_HREF);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEX, href);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ITEM_URL_REGEX, href);
         return Integer.parseInt(matcher.group("id"));
     }
 
     private void getDiskResources(String diskStr, List<AbstractLink> links,
         List<InvalidResourceException> exceptions) {
-        String[] diskUrls = DISK_URLS_SEPARATOR.split(diskStr);
+        String[] diskUrls = Lazy.DISK_URLS_SEPARATOR.split(diskStr);
         for (String diskUrl : diskUrls) {
-            Matcher matcher = DISK_RESOURCE_REGEX.matcher(diskUrl);
+            Matcher matcher = Lazy.DISK_RESOURCE_REGEX.matcher(diskUrl);
             if (matcher.matches()) {
                 String host = matcher.group("host");
                 String url = HttpLink.HTTP_PREFIXES[0] + host + matcher.group("path");
@@ -243,5 +227,33 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
         urls = new StringBuilder(urls).reverse().toString();
         urls = new String(Base64.getDecoder().decode(urls), Constants.UTF_8);
         return new String(urls.getBytes(StandardCharsets.UTF_16), StandardCharsets.UTF_16);
+    }
+
+    private static class Lazy {
+
+        private static final Pattern ITEM_URL_REGEX;
+        private static final Pattern IMDB_INFO_REGEX = Pattern
+            .compile("(title/? ?|((?i)imdb|Db).{0,4})(?<id>tt\\d+)");
+        private static final Pattern VAR_REGEX = Pattern.compile(
+            "var urls = \"(?<urls>[0-9A-Za-z+/=]*)\", " +
+                "adsUrls = \"[0-9A-Za-z+/=]*\", " +
+                "diskUrls = \"(?<disk>[0-9A-Za-z+/=]*)\", " +
+                "scoreData = \"(?<imdb>tt\\d+)? ?###(?<db>\\d+)?\""
+        );
+        private static final Pattern DISK_RESOURCE_REGEX = Pattern.compile(
+            "(\\+链接: )?(?<pwd>[0-9A-Za-z]{4})?" +
+                "(\\|\\|(https?|ttps| https|whttps|\\|https)|\\|?https|\\s+\\|\\|https)" +
+                "://(?<host>www\\.yun\\.cn|pan\\.baidu\\.com|pan\\.xunlei\\.com)" +
+                "(?<path>/[\\w-./?=&]+)\\s*"
+        );
+        private static final Pattern URLS_SEPARATOR = Pattern.compile("#{3,4}\r\n|#{3,4}");
+        private static final Pattern DISK_URLS_SEPARATOR = Pattern.compile("###?\r\n|###|\r\n");
+
+        static {
+            String types = Arrays.stream(BdMovieType.values()).map(BdMovieType::getText)
+                .collect(Collectors.joining("|"));
+            ITEM_URL_REGEX = Pattern.compile(
+                "https?://www\\.(bd2020|bd-film)\\.com/(?<t>" + types + ")/(?<id>\\d+)\\.htm");
+        }
     }
 }

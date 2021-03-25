@@ -32,8 +32,7 @@ public final class EnumUtilExt {
     /**
      * Deserializes an enum from the given name, ignoring case.
      */
-    public static <E extends Enum<E>> E deserializeIgnoreCase(@Nonnull String name,
-        Class<E> clazz) {
+    public static <E extends Enum<E>> E valueOfIgnoreCase(@Nonnull String name, Class<E> clazz) {
         Map<String, String> map = NAMES.get(clazz);
         if (map == null) {
             map = Arrays.stream(clazz.getEnumConstants())
@@ -66,7 +65,7 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the code
      */
-    public static <C, E extends Enum<E> & CodeSupplier<C>> E deserializeCode(@Nonnull C code,
+    public static <C, E extends Enum<E> & CodeSupplier<C>> E valueOfCode(@Nonnull C code,
         Class<E> clazz) {
         Map<?, String> map = CODES.get(clazz);
         if (map == null) {
@@ -85,7 +84,7 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the text
      */
-    public static <E extends Enum<E> & TextSupplier> E deserializeText(@Nonnull String text,
+    public static <E extends Enum<E> & TextSupplier> E valueOfText(@Nonnull String text,
         Class<E> clazz, boolean ignoreCase) {
         String name;
         if (ignoreCase) {
@@ -117,7 +116,7 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the title
      */
-    public static <E extends Enum<E> & TitleSupplier> E deserializeTitle(@Nonnull String title,
+    public static <E extends Enum<E> & TitleSupplier> E valueOfTitle(@Nonnull String title,
         Class<E> clazz, boolean ignoreCase) {
         String name;
         if (ignoreCase) {

@@ -35,6 +35,6 @@ public class JacksonConfig {
                 new JavaTimeModule()
                     .addSerializer(new LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE))
                     .addSerializer(
-                        new LocalDateTimeSerializer(Constants.DATE_TIME_FORMATTER)));
+                        new LocalDateTimeSerializer(Constants.YYYY_MM_DD_HH_MM_SS)));
     }
 }

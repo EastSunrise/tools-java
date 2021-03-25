@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.VideoStatus;
-import wsg.tools.boot.common.util.OtherHttpResponseException;
 import wsg.tools.boot.config.DatabaseConfig;
 import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
@@ -36,6 +35,7 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.internet.common.LoginException;
+import wsg.tools.internet.common.OtherHttpResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
@@ -129,8 +129,8 @@ public class SubjectController extends AbstractController {
         return OK.body(HttpStatus.OK.getReasonPhrase());
     }
 
-    @GetMapping(path = "/subject/index")
-    public String subjects(Model model) {
+    @GetMapping(path = "/movie/index")
+    public String movies(Model model) {
         List<MovieDto> movies = new ArrayList<>();
         for (MovieEntity entity : subjectService.listMovies()) {
             MovieDto movie = MovieDto.fromEntity(entity);
@@ -145,6 +145,11 @@ public class SubjectController extends AbstractController {
             return o2.getGmtModified().compareTo(o1.getGmtModified());
         });
         model.addAttribute("movies", movies);
+        return "video/movie/index";
+    }
+
+    @GetMapping(path = "/series/index")
+    public String series(Model model) {
         List<SeriesDto> tvs = new ArrayList<>();
         for (Map.Entry<SeriesEntity, List<SeasonEntity>> entry : subjectService.listSeries()
             .entrySet()) {
@@ -172,7 +177,7 @@ public class SubjectController extends AbstractController {
             return o2.getSeries().getYear().compareTo(o1.getSeries().getYear());
         }));
         model.addAttribute("tvs", tvs);
-        return "video/subject/index";
+        return "video/series/index";
     }
 
     @PostMapping(path = "/subject/archive")

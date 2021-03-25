@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -16,10 +17,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
@@ -46,46 +49,30 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
 
     private static final int MIN_ID = 32;
     private static final Range<Integer> NOT_FOUNDS = Range.between(1501, 3008);
-    private static final Pattern TYPE_HREF_REGEX;
-    private static final Pattern PLAY_HREF_REGEX;
-    private static final Pattern MOVIE_HREF_REGEX = Pattern
-        .compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
-    private static final Pattern YEAR_REGEX = Pattern
-        .compile("-?(?<y>\\d{4})(年|-\\d{2}-\\d{2})?|未知|\\d\\.\\d|\\d{5}|\\d{1,3}|");
-    private static final Pattern DOUBAN_HREF_REGEX = Pattern
-        .compile("//movie\\.douban\\.com/subject/((?<id>\\d+)( +|/|c|v|)|[^\\d].*?|)/reviews");
-
-    static {
-        String types = Arrays.stream(Y80sType.values()).map(TextSupplier::getText)
-            .collect(Collectors.joining("|"));
-        TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+(-\\d){6}");
-        PLAY_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+/play-\\d+");
-    }
 
     public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
     }
 
     /**
-     * Returns the repository of all items from 1 to {@link #max()} <strong>except those in {@link
-     * #NOT_FOUNDS}</strong>.
+     * Returns the repository of all items from 1 to {@link #latest()} <strong>except those in
+     * {@link #NOT_FOUNDS}</strong>.
      */
     public IntIndicesRepository<Y80sItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosedExcept(this, MIN_ID, max(), NOT_FOUNDS);
+        return Repositories.rangeClosedExcept(this, MIN_ID, latest(), NOT_FOUNDS);
     }
 
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
-    @Nonnull
-    public Integer max() throws HttpResponseException {
+    public int latest() throws HttpResponseException {
         RequestBuilder builder = builder("m", "/movie/1-0-0-0-0-0-0");
         Document document = getDocument(builder, SnapshotStrategy.always());
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
             String href = div.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-            String id = RegexUtils.matchesOrElseThrow(MOVIE_HREF_REGEX, href).group("id");
+            String id = RegexUtils.matchesOrElseThrow(Lazy.MOVIE_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }
         return max;
@@ -106,28 +93,26 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
             .collect(Collectors.toMap(Element::text, e -> e));
         Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
         String typeHref = lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-        String typeStr = RegexUtils.matchesOrElseThrow(TYPE_HREF_REGEX, typeHref).group("t");
-        Y80sType realType = EnumUtilExt.deserializeText(typeStr, Y80sType.class, false);
+        String typeStr = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref).group("t");
+        Y80sType realType = EnumUtilExt.valueOfText(typeStr, Y80sType.class, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
         Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, realType);
 
         item.setTitle(lis.last().text().strip());
-        Element yearEle = info.get("年代：");
-        if (yearEle != null) {
-            String year = RegexUtils
-                .matchesOrElseThrow(YEAR_REGEX, yearEle.nextElementSibling().text()).group("y");
-            if (year != null) {
-                item.setYear(Integer.parseInt(year));
-            }
+        String src = document.selectFirst(".img-responsive").attr(CssSelectors.ATTR_SRC);
+        item.setCover(NetUtils.createURL(Constants.HTTP_SCHEME + src));
+        Node first = document.selectFirst(".movie-h1").selectFirst("small").childNode(0);
+        Matcher matcher = Lazy.YEAR_REGEX.matcher(((TextNode) first).text());
+        if (matcher.find()) {
+            item.setYear(Integer.parseInt(matcher.group()));
         }
         Element dbEle = info.get("豆瓣评分：");
         if (dbEle != null) {
-            String doubanHref = dbEle.nextElementSibling().nextElementSibling()
-                .attr(CssSelectors.ATTR_HREF);
-            String dbId = RegexUtils.matchesOrElseThrow(DOUBAN_HREF_REGEX, doubanHref).group("id");
-            if (dbId != null) {
-                item.setDbId(Long.parseLong(dbId));
+            dbEle = dbEle.nextElementSibling().nextElementSibling();
+            Matcher dbMatcher = Lazy.DOUBAN_HREF_REGEX.matcher(dbEle.attr(CssSelectors.ATTR_HREF));
+            if (dbMatcher.find()) {
+                item.setDbId(Long.parseLong(dbMatcher.group("id")));
             }
         }
 
@@ -140,8 +125,8 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
-            if (PLAY_HREF_REGEX.matcher(href).matches()) {
-                href = Scheme.HTTP + Constants.URL_SCHEME_SEPARATOR + href;
+            if (Lazy.PLAY_HREF_REGEX.matcher(href).matches()) {
+                href = Constants.HTTP_SCHEME + href;
             }
             String title = a.text().strip();
             try {
@@ -154,5 +139,25 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private static class Lazy {
+
+        private static final Pattern MOVIE_HREF_REGEX = Pattern
+            .compile("//m\\.y80s\\.com/movie/(?<id>\\d+)");
+        private static final Pattern TYPE_HREF_REGEX;
+        private static final Pattern PLAY_HREF_REGEX;
+        private static final Pattern YEAR_REGEX = Pattern.compile("(?<y>\\d{4,5})");
+        private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("/subject/(?<id>\\d+)");
+        private static final Pattern COVER_REGEX = Pattern.compile(
+            "//img\\.mimiming\\.com/upload/img/\\d+/[\\d_]+\\.(jpg|png|gif|JPG|jpeg|webp)");
+
+        static {
+            String types = Arrays.stream(Y80sType.values()).map(TextSupplier::getText)
+                .collect(Collectors.joining("|"));
+            TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+(-\\d){6}");
+            PLAY_HREF_REGEX = Pattern
+                .compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+/play-\\d+");
+        }
     }
 }
