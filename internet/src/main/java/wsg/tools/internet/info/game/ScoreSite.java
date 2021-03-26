@@ -8,13 +8,14 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.enums.DomesticCity;
 
 /**
@@ -41,7 +42,7 @@ public class ScoreSite extends BaseSite {
      * Finds paged result of tournaments by the given arguments.
      */
     public TournamentPageResult findAllTournaments(@Nonnull TournamentPageRequest request)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         String type = request.getStatus() == null ? "all" : request.getStatus().getText();
         RequestBuilder builder = create(METHOD_POST, null)
             .setPath("/services/api_url.php")
@@ -61,7 +62,10 @@ public class ScoreSite extends BaseSite {
             res -> res.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES || !res.getData()
                 .getList().stream().allMatch(t -> t.getStatus() == ScoreStatus.FINISHED));
         if (response.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES) {
-            throw new HttpResponseException(response.getStatusCode(), response.getMessage());
+            if (response.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                throw new NotFoundException(response.getMessage());
+            }
+            throw new OtherResponseException(response.getStatusCode(), response.getMessage());
         }
         TournamentPageResponse.TournamentData data = response.getData();
         return new TournamentPageResult(data.getList(), request, data.getCount());
@@ -71,7 +75,7 @@ public class ScoreSite extends BaseSite {
      * Finds rounds of a tournament.
      */
     public List<TournamentRound> findRoundsByTournament(@Nonnull Tournament tournament)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder("img1", "/tr/%d.json", tournament.getId());
         SnapshotStrategy<List<TournamentRound>> strategy;
         if (tournament.getStatus() == ScoreStatus.FINISHED) {
@@ -89,7 +93,7 @@ public class ScoreSite extends BaseSite {
      * @see TournamentRound#getRoundSon()
      */
     public List<MatchRecord> findMatchRecordsByRoundItem(@Nonnull RoundItem item)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder("img1", "/tr_round/%d.json", item.getId());
         return getObject(builder, MAPPER, new TypeReference<>() {
         }, records -> !records.stream().allMatch(r -> r.getStatus() == ScoreStatus.FINISHED));

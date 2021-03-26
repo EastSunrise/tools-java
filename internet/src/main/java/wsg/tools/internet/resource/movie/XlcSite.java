@@ -8,13 +8,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -25,14 +27,16 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -59,16 +63,17 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
      * Returns the repository of all items from 1 to {@link #latest()}. <strong>About 8% of the
      * items are not found.</strong>
      */
-    public IntIndicesRepository<XlcItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosed(this, 1, latest());
+    public ListRepository<Integer, XlcItem> getRepository() throws OtherResponseException {
+        Stream<Integer> stream = IntStream.rangeClosed(1, latest()).boxed();
+        return Repositories.list(this, stream.collect(Collectors.toList()));
     }
 
     /**
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
-    public int latest() throws HttpResponseException {
+    public int latest() throws OtherResponseException {
         RequestBuilder builder = builder0("/ajax-show-id-new.html");
-        Document document = getDocument(builder, SnapshotStrategy.always());
+        Document document = findDocument(builder, SnapshotStrategy.always());
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -79,8 +84,10 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         return max;
     }
 
+    @Nonnull
     @Override
-    public XlcItem findById(@Nonnull Integer id) throws HttpResponseException {
+    public XlcItem findById(Integer id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
 

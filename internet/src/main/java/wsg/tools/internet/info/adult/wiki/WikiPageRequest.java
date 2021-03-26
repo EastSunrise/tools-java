@@ -1,10 +1,10 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import wsg.tools.internet.base.impl.BasicPageRequest;
+import wsg.tools.internet.base.page.BasicPageRequest;
+import wsg.tools.internet.base.page.PageRequest;
 
 /**
- * An implementation of {@link wsg.tools.internet.base.intf.PageRequest} for {@link
- * CelebrityWikiSite}, with a fixed page size.
+ * An implementation of {@link PageRequest} for {@link CelebrityWikiSite}, with a fixed page size.
  *
  * @author Kingen
  * @since 2021/3/11

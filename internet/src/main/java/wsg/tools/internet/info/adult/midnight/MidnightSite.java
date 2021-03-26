@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -26,14 +25,16 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
 
@@ -60,44 +61,45 @@ public final class MidnightSite extends BaseSite {
     /**
      * Returns the repository of all {@link MidnightCollection}s.
      */
-    public IntIndicesRepository<MidnightCollection> getCollectionRepository()
-        throws HttpResponseException {
+    public ListRepository<Integer, MidnightCollection> getCollectionRepository()
+        throws NotFoundException, OtherResponseException {
         List<Integer> ids = getIdentifiers(MidnightColumn.COLLECTION);
-        return Repositories.intIndices(this::findCollection, ids);
+        return Repositories.list(this::findCollection, ids);
     }
 
     /**
      * Returns the repository of all {@link MidnightAlbum}s.
      */
-    public IntIndicesRepository<MidnightAlbum> getAlbumRepository()
-        throws HttpResponseException {
+    public ListRepository<Integer, MidnightAlbum> getAlbumRepository()
+        throws NotFoundException, OtherResponseException {
         List<Integer> ids = getIdentifiers(MidnightColumn.ALBUM);
-        return Repositories.intIndices(this::findAlbum, ids);
+        return Repositories.list(this::findAlbum, ids);
     }
 
     /**
      * Returns the repository of all items each of which may contain a amateur adult entry.
      */
-    public IntIndicesRepository<BaseMidnightEntry> getAmateurRepository(
-        @Nonnull MidnightAmateurEntryType type) throws HttpResponseException {
+    public ListRepository<Integer, BaseMidnightEntry> getAmateurRepository(
+        @Nonnull MidnightAmateurEntryType type) throws NotFoundException, OtherResponseException {
         List<Integer> ids = getIdentifiers(type.getColumn());
-        return Repositories.intIndices(id -> findAmateurEntry(type, id), ids);
+        return Repositories.list(id -> findAmateurEntry(type, id), ids);
     }
 
     /**
      * Returns the repository of all items each of which may contain a formal adult entry.
      */
-    public IntIndicesRepository<BaseMidnightEntry> getFormalRepository()
-        throws HttpResponseException {
+    public ListRepository<Integer, BaseMidnightEntry> getFormalRepository()
+        throws NotFoundException, OtherResponseException {
         List<Integer> ids = getIdentifiers(MidnightColumn.ENTRY);
-        return Repositories.intIndices(this::findFormalEntry, ids);
+        return Repositories.list(this::findFormalEntry, ids);
     }
 
-    private List<Integer> getIdentifiers(MidnightColumn column) throws HttpResponseException {
+    private List<Integer> getIdentifiers(MidnightColumn column)
+        throws NotFoundException, OtherResponseException {
         List<Integer> ids = new ArrayList<>();
         MidnightPageRequest request = MidnightPageRequest.first();
         while (true) {
-            MidnightPageResult result = findAllIndices(column, request);
+            MidnightPageResult result = findPage(column, request);
             result.getContent().stream().map(MidnightIndex::getId).forEach(ids::add);
             if (!result.hasNext()) {
                 break;
@@ -110,8 +112,8 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds the paged result of indices under the given column.
      */
-    public MidnightPageResult findAllIndices(@Nonnull MidnightColumn column,
-        @Nonnull MidnightPageRequest pageRequest) throws HttpResponseException {
+    public MidnightPageResult findPage(@Nonnull MidnightColumn column,
+        @Nonnull MidnightPageRequest pageRequest) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/e/action/ListInfo.php")
             .addParameter("page", pageRequest.getCurrent())
             .addParameter("classid", column.getCode())
@@ -140,8 +142,9 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with a collection of adult entries.
      */
+    @Nonnull
     public MidnightCollection findCollection(int id)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getItem(MidnightColumn.COLLECTION, id, (title, release, contents) -> {
             List<Pair<String, String>> works = new ArrayList<>();
             for (Element content : contents) {
@@ -176,7 +179,8 @@ public final class MidnightSite extends BaseSite {
     /**
      * Finds an item with an album which including a series of images.
      */
-    public MidnightAlbum findAlbum(int id) throws HttpResponseException {
+    @Nonnull
+    public MidnightAlbum findAlbum(int id) throws NotFoundException, OtherResponseException {
         return getItem(MidnightColumn.ALBUM, id,
             (title, release, contents) -> new MidnightAlbum(id, title, release,
                 getImages(contents)));
@@ -186,14 +190,16 @@ public final class MidnightSite extends BaseSite {
      * Finds an item with an album or a amateur adult entry.
      */
     public BaseMidnightEntry findAmateurEntry(@Nonnull MidnightAmateurEntryType type, int id)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return findEntry(type.getColumn(), id, AdultEntryBuilder::amateur);
     }
 
     /**
      * Finds an item with an album or a formal adult entry.
      */
-    public BaseMidnightEntry findFormalEntry(int id) throws HttpResponseException {
+    @Nonnull
+    public BaseMidnightEntry findFormalEntry(int id)
+        throws NotFoundException, OtherResponseException {
         return findEntry(MidnightColumn.ENTRY, id,
             (info, code) -> AdultEntryBuilder.formal(info, code, ", "));
     }
@@ -203,7 +209,7 @@ public final class MidnightSite extends BaseSite {
      */
     private BaseMidnightEntry findEntry(MidnightColumn column, int id,
         BiFunction<Map<String, String>, String, AdultEntryBuilder.AdultEntryMapBuilder> builder)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getItem(column, id, (title, release, contents) -> {
             List<URL> images = Objects.requireNonNull(getImages(contents));
             Map<String, String> info = getInfo(contents);
@@ -229,7 +235,7 @@ public final class MidnightSite extends BaseSite {
      */
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/%d.html", column.getText(), id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         String datetime = document.selectFirst("time.data-time").text();
@@ -244,7 +250,8 @@ public final class MidnightSite extends BaseSite {
         return t;
     }
 
-    private List<Element> getContents(Document document) throws HttpResponseException {
+    private List<Element> getContents(Document document)
+        throws NotFoundException, OtherResponseException {
         List<Element> contents = new ArrayList<>();
         while (true) {
             Element content = document.selectFirst("div.single-content");

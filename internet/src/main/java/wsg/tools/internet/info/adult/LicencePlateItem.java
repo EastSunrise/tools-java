@@ -3,7 +3,7 @@ package wsg.tools.internet.info.adult;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import wsg.tools.common.lang.Identifier;
-import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 

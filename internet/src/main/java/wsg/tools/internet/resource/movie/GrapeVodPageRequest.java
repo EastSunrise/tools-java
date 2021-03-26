@@ -2,11 +2,11 @@ package wsg.tools.internet.resource.movie;
 
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.internet.base.impl.BasicPageRequest;
+import wsg.tools.internet.base.page.BasicPageRequest;
+import wsg.tools.internet.base.page.PageRequest;
 
 /**
- * An implementation of {@link wsg.tools.internet.base.intf.PageRequest} for {@link GrapeSite},
- * including a {@link OrderBy}.
+ * An implementation of {@link PageRequest} for {@link GrapeSite}, including a {@link OrderBy}.
  *
  * @author Kingen
  * @since 2021/3/9

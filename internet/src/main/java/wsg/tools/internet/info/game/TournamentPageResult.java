@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.game;
 
 import java.util.List;
-import wsg.tools.internet.base.impl.BasicPageResult;
+import wsg.tools.internet.base.page.BasicCountablePageResult;
 
 /**
  * A paged result of tournaments from the {@link ScoreSite}.
@@ -9,7 +9,7 @@ import wsg.tools.internet.base.impl.BasicPageResult;
  * @author Kingen
  * @since 2021/3/13
  */
-public class TournamentPageResult extends BasicPageResult<Tournament> {
+public class TournamentPageResult extends BasicCountablePageResult<Tournament> {
 
     TournamentPageResult(List<Tournament> content, TournamentPageRequest pageRequest, long total) {
         super(content, pageRequest, total);

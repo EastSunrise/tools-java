@@ -1,8 +1,6 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.internet.common.FirstSupplier;
 
 /**
  * Type of an album.
@@ -10,7 +8,7 @@ import wsg.tools.internet.common.FirstSupplier;
  * @author Kingen
  * @since 2021/2/26
  */
-public enum WikiAlbumType implements TextSupplier, FirstSupplier<Integer> {
+public enum WikiAlbumType implements TextSupplier {
 
     /**
      * @see <a href="http://www.mrenbaike.net/tuku/xiezhen/">Photos</a>
@@ -38,9 +36,7 @@ public enum WikiAlbumType implements TextSupplier, FirstSupplier<Integer> {
         return text;
     }
 
-    @Nonnull
-    @Override
-    public Integer first() {
+    public int first() {
         return first;
     }
 }

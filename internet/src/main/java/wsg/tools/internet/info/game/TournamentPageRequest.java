@@ -4,7 +4,7 @@ import java.time.Year;
 import javax.annotation.Nonnull;
 import lombok.Getter;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.impl.BasicPageRequest;
+import wsg.tools.internet.base.page.BasicPageRequest;
 
 /**
  * A paged request to query tournaments in the {@link ScoreSite}.

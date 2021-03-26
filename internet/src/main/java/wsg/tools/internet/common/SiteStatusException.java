@@ -10,6 +10,8 @@ import wsg.tools.internet.base.SiteStatus;
  */
 public class SiteStatusException extends RuntimeException {
 
+    private static final long serialVersionUID = -1889934561941062365L;
+
     private final SiteStatus status;
 
     public SiteStatusException(SiteStatus status) {

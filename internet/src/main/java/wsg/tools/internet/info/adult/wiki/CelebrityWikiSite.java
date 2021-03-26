@@ -40,15 +40,17 @@ import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.PageRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.enums.BloodType;
@@ -67,9 +69,6 @@ import wsg.tools.internet.info.adult.common.CupEnum;
  */
 public final class CelebrityWikiSite extends BaseSite {
 
-    private static final Set<Integer> NOT_FOUNDS = Set.of(
-        1757, 1568, 1539, 821
-    );
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
     private static final String SEPARATOR = "、";
@@ -122,28 +121,20 @@ public final class CelebrityWikiSite extends BaseSite {
     /**
      * Returns the repository of the celebrities of the given type.
      */
-    public IntIndicesRepository<WikiCelebrity> getCelebrityRepository(
-        @Nonnull WikiCelebrityType type) throws HttpResponseException {
-        List<Integer> ids = new ArrayList<>();
+    @Nonnull
+    public PageRepository<WikiCelebrityIndex, WikiCelebrity> getCelebrityRepository(
+        @Nonnull WikiCelebrityType type) {
         WikiPageRequest request = new WikiPageRequest(0);
-        while (true) {
-            WikiPageResult result = findAllCelebrityIndices(type, request);
-            result.getContent().stream().map(WikiCelebrityIndex::getId)
-                .filter(id -> !NOT_FOUNDS.contains(id)).forEach(ids::add);
-            if (!result.hasNext()) {
-                break;
-            }
-            request = result.nextPageRequest();
-        }
-        return Repositories.intIndices(id -> findCelebrity(id, type), ids);
+        return Repositories
+            .page(index -> findCelebrity(index.getId(), type), req -> findPage(type, req), request);
     }
 
     /**
      * Finds the paged result of the indices under the given type.
      */
-    public WikiPageResult findAllCelebrityIndices(
-        @Nonnull WikiCelebrityType type, @Nonnull WikiPageRequest request)
-        throws HttpResponseException {
+    public WikiPageResult findPage(WikiCelebrityType type, @Nonnull WikiPageRequest request)
+        throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(type);
         int current = request.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
         RequestBuilder builder = builder0("/%s/index%s.html", type.getText(), page);
@@ -192,7 +183,7 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     public WikiCelebrity findCelebrity(int id, @Nonnull WikiCelebrityType type)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/m%d/info.html", type.getText(), id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
@@ -242,7 +233,8 @@ public final class CelebrityWikiSite extends BaseSite {
         return celebrity;
     }
 
-    public WikiAlbum findAlbum(int id, WikiAlbumType type) throws HttpResponseException {
+    public WikiAlbum findAlbum(int id, WikiAlbumType type)
+        throws NotFoundException, OtherResponseException {
         Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id),
             SnapshotStrategy.never());
         Element show = document.selectFirst("div.picshow");
@@ -275,13 +267,16 @@ public final class CelebrityWikiSite extends BaseSite {
         return album;
     }
 
-    public WikiAdultEntry findAdultEntry(@Nonnull String id) throws HttpResponseException {
+    @Nonnull
+    public WikiAdultEntry findAdultEntry(String id)
+        throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/fanhao/%s.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, div.text());
+            throw new NotFoundException(div.text());
         }
         String code = id.toUpperCase(Locale.ROOT);
         String src = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
@@ -475,7 +470,7 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/m%s/pic.html", type.getText(), id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);

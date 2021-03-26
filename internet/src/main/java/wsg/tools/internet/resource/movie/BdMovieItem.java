@@ -4,7 +4,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -21,10 +22,13 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
@@ -48,15 +52,16 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         super("IMDb CN", new BasicHttpSession("imdb.cn"), new ImdbCnResponseHandler());
     }
 
+    @Nonnull
     @Override
-    public ImdbTitle findById(@Nonnull String imdbId) throws HttpResponseException {
+    public ImdbTitle findById(String imdbId) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(imdbId);
         Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.never());
-
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        Document editForm =
-            getDocument(builder0("/index/video.editform/index.html")
-                .addParameter("m_id", dataset.get("movie_id"))
-                .addParameter("location", dataset.get("location")), SnapshotStrategy.never());
+        RequestBuilder builder = builder0("/index/video.editform/index.html")
+            .addParameter("m_id", dataset.get("movie_id"))
+            .addParameter("location", dataset.get("location"));
+        Document editForm = getDocument(builder, SnapshotStrategy.never());
         Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -117,7 +122,8 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         return imdbTitle;
     }
 
-    private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
+    private List<String[]> getEpisodes(String seriesId)
+        throws NotFoundException, OtherResponseException {
         Document document = getDocument(
             builder0("/title/%s/episodelist", seriesId).addParameter("season", "1"),
             SnapshotStrategy.never());

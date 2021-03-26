@@ -8,9 +8,12 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -26,14 +29,16 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -65,16 +70,16 @@ public final class MovieHeavenSite extends BaseSite implements
      * Returns the repository of all items from 1 to {@link #latest()}. Only several items are not
      * found.
      */
-    public IntIndicesRepository<MovieHeavenItem> getRepository()
-        throws HttpResponseException {
-        return Repositories.rangeClosed(this, 1, latest());
+    public ListRepository<Integer, MovieHeavenItem> getRepository() throws OtherResponseException {
+        Stream<Integer> stream = IntStream.rangeClosed(1, latest()).boxed();
+        return Repositories.list(this, stream.collect(Collectors.toList()));
     }
 
     /**
      * @see <a href="https://www.993vod.com/">Home</a>
      */
-    public int latest() throws HttpResponseException {
-        Document document = getDocument(builder0(""), SnapshotStrategy.always());
+    public int latest() throws OtherResponseException {
+        Document document = findDocument(builder0(""), SnapshotStrategy.always());
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -85,25 +90,27 @@ public final class MovieHeavenSite extends BaseSite implements
         return max;
     }
 
+    @Nonnull
     @Override
-    public MovieHeavenItem findById(@Nonnull Integer id) throws HttpResponseException {
+    public MovieHeavenItem findById(Integer id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
-        Document document = getDocument(builder, SnapshotStrategy.never());
-        if (TIP_TITLE.equals(document.title())) {
-            String message = document.selectFirst("h4.infotitle1").text();
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, message);
+        Document doc = getDocument(builder, SnapshotStrategy.never());
+        if (TIP_TITLE.equals(doc.title())) {
+            String message = doc.selectFirst("h4.infotitle1").text();
+            throw new NotFoundException(message);
         }
-        Map<String, Element> info = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
+        Map<String, Element> info = doc.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
             .stream().collect(Collectors.toMap(Element::text, e -> e));
 
-        Elements children = document.selectFirst(".location").children();
+        Elements children = doc.selectFirst(".location").children();
         String typeHref = children.get(1).attr(CssSelectors.ATTR_HREF);
         Matcher typeMatcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref);
         int typeId = Integer.parseInt(typeMatcher.group("id"));
         MovieHeavenType type = EnumUtilExt.valueOfCode(typeId, MovieHeavenType.class);
         String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
         LocalDate addDate = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
-        Element image = document.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
+        Element image = doc.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
         String src = image.attr(CssSelectors.ATTR_SRC);
         if (src.startsWith(EXTRA_COVER_HEAD)) {
             src = src.substring(EXTRA_COVER_HEAD.length() - 4);
@@ -127,7 +134,7 @@ public final class MovieHeavenSite extends BaseSite implements
         List<AbstractLink> resources = new LinkedList<>();
         List<InvalidResourceException> exceptions = new LinkedList<>();
         final String downUl = "ul.downurl";
-        for (Element ul : document.select(downUl)) {
+        for (Element ul : doc.select(downUl)) {
             Element script = ul.selectFirst(CssSelectors.TAG_SCRIPT);
             String varUrls = script.html().strip().split("\n")[0].strip();
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_URL_REGEX, varUrls);

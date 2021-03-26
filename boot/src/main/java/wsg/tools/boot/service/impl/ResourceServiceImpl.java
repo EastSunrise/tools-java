@@ -22,10 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.common.util.BeanUtilExt;
-import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.ResourceItemRepository;
 import wsg.tools.boot.dao.jpa.mapper.ResourceLinkRepository;
@@ -39,11 +37,14 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
-import wsg.tools.internet.common.NextSupplier;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.base.NextSupplier;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.ListRepoIterator;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.RepoIterator;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -84,19 +85,19 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Override
     public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E> & NextSupplier<Integer>>
     void importLinkedRepository(LinkedRepository<Integer, T> repository, String domain, int subtype)
-        throws OtherHttpResponseException {
+        throws OtherResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
-        RepositoryIterator<T> iterator;
+        RepoIterator<T> iterator;
         if (optional.isPresent()) {
             int start = Math.toIntExact(optional.get());
-            iterator = repository.iteratorAfter(start);
-            SiteUtilExt.found(iterator::next);
+            iterator = repository.linkedRepoIterator(start);
+            SiteUtils.found(iterator::next);
         } else {
-            iterator = repository.iterator();
+            iterator = repository.linkedRepoIterator();
         }
         int success = 0, failure = 0;
         while (iterator.hasNext()) {
-            T item = SiteUtilExt.found(iterator::next);
+            T item = SiteUtils.found(iterator::next);
             Source source = Source.record(domain, subtype, item.getId());
             if (insertItem(item, source) >= 0) {
                 success++;
@@ -109,15 +110,16 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
 
     @Override
     public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntRangeRepository(IntIndicesRepository<T> repository, String domain)
-        throws OtherHttpResponseException {
+    void importIntListRepository(ListRepository<Integer, T> repository, String domain)
+        throws OtherResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain);
-        RepositoryIterator<T> iterator = optional.map(Long::intValue).map(id -> id + 1)
-            .map(repository::iteratorAfter).orElseGet(repository::iterator);
+        int startIndex = optional.map(Long::intValue).map(repository::indexOf)
+            .map(index -> index + 1).orElse(0);
+        ListRepoIterator<Integer, T> iterator = repository.listRepoIterator(startIndex);
         int success = 0, total = 0, notFound = 0;
         while (iterator.hasNext()) {
             try {
-                T item = SiteUtilExt.ifNotFound(iterator::next, "A record of " + domain);
+                T item = iterator.next();
                 Integer subtype = item.getSubtype().getCode();
                 Source source = Source.record(domain, subtype, item.getId());
                 if (insertItem(item, source) >= 0) {
@@ -146,7 +148,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             if (cover != null) {
                 try {
                     itemEntity.setCover(config.uploadCover(cover, source));
-                } catch (NotFoundException | OtherHttpResponseException ignored) {
+                } catch (NotFoundException | OtherResponseException ignored) {
                 }
             }
         }

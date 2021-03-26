@@ -3,14 +3,14 @@ package wsg.tools.internet.common;
 import java.util.Locale;
 
 /**
- * Scheme of the website.
+ * Protocols of urls.
  *
  * @author Kingen
  * @since 2020/6/15
  */
 public enum Scheme {
     /**
-     * Protocol of the url
+     * Protocols of the url
      */
     HTTPS, HTTP, FTP;
 

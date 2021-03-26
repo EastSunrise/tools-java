@@ -1,6 +1,6 @@
 package wsg.tools.boot.pojo.error;
 
-import wsg.tools.boot.common.NotFoundException;
+import wsg.tools.internet.common.NotFoundException;
 
 /**
  * Exceptions thrown when catching a {@link NotFoundException} which should not have been thrown.

@@ -37,12 +37,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.xmlpull.v1.XmlPullParserException;
-import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 
 /**
  * Configurations for MinIO.
@@ -84,11 +84,11 @@ public class MinioConfig implements InitializingBean {
      *
      * @param url    url pointing to the cover, not null
      * @param source the source of the cover, not null
-     * @throws NotFoundException          if not found
-     * @throws OtherHttpResponseException if an unexpected {@code HttpResponseException} occurs
+     * @throws NotFoundException      if not found
+     * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
     public String uploadCover(URL url, Source source)
-        throws NotFoundException, OtherHttpResponseException {
+        throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(url, "the url of the cover");
         Objects.requireNonNull(source, "the source of the cover");
         File file = download(url);
@@ -97,7 +97,7 @@ public class MinioConfig implements InitializingBean {
     }
 
     public String uploadEntryImage(URL url, String code)
-        throws NotFoundException, OtherHttpResponseException {
+        throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(url, "the url of the image");
         Objects.requireNonNull(code, "the code of the entry");
         File file = download(url);
@@ -152,30 +152,30 @@ public class MinioConfig implements InitializingBean {
         }
     }
 
-    private File download(URL url) throws NotFoundException, OtherHttpResponseException {
+    private File download(URL url) throws NotFoundException, OtherResponseException {
         try {
             String file = StringUtils.stripEnd(url.getFile(), Constants.URL_PATH_SEPARATOR);
             String path = FilenameUtils.getPath(StringUtilsExt.toFilename(file));
             return manager.downloader().download(new File(tmpdir, path), url);
         } catch (ConnectException e) {
             if (CONNECTION_REFUSED.equals(e.getMessage())) {
-                throw new OtherHttpResponseException(HttpStatus.SC_FORBIDDEN, CONNECTION_REFUSED);
+                throw new OtherResponseException(HttpStatus.SC_FORBIDDEN, CONNECTION_REFUSED);
             }
             throw new AppException(e);
         } catch (UnknownHostException e) {
-            throw new OtherHttpResponseException(HttpStatus.SC_BAD_REQUEST, e.getMessage());
+            throw new OtherResponseException(HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (FileNotFoundException e) {
             throw new NotFoundException(e.getMessage());
         } catch (SocketTimeoutException e) {
-            throw new OtherHttpResponseException(HttpStatus.SC_REQUEST_TIMEOUT, e.getMessage());
+            throw new OtherResponseException(HttpStatus.SC_REQUEST_TIMEOUT, e.getMessage());
         } catch (SSLException | SocketException e) {
             String message = e.getMessage();
-            throw new OtherHttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, message);
+            throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, message);
         } catch (IOException e) {
             Matcher matcher = Lazy.RESPONSE_EXCEPTION_REGEX.matcher(e.getMessage());
             if (matcher.lookingAt()) {
                 int code = Integer.parseInt(matcher.group("c"));
-                throw new OtherHttpResponseException(code, e.getMessage());
+                throw new OtherResponseException(code, e.getMessage());
             }
             throw new AppException(e);
         }

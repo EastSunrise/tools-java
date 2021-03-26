@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.midnight;
 
 import java.util.List;
-import wsg.tools.internet.base.impl.BasicPageResult;
+import wsg.tools.internet.base.page.BasicCountablePageResult;
 
 /**
  * A paged result of {@link MidnightIndex}.
@@ -9,7 +9,7 @@ import wsg.tools.internet.base.impl.BasicPageResult;
  * @author Kingen
  * @since 2021/3/8
  */
-public class MidnightPageResult extends BasicPageResult<MidnightIndex> {
+public class MidnightPageResult extends BasicCountablePageResult<MidnightIndex> {
 
     MidnightPageResult(List<MidnightIndex> content, MidnightPageRequest request, long total) {
         super(content, request, total);

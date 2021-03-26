@@ -12,26 +12,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedContentException;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.enums.ImdbRating;
@@ -46,7 +49,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
 @SiteStatus(status = SiteStatus.Status.BLOCKED)
 public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
-    private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-\u00FF]+";
+    private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-ÿ]+";
     private static final Pattern TITLE_HREF_REGEX = Pattern.compile("/title/(tt\\d+)/?");
     private static final Pattern MOVIE_PAGE_TITLE_REGEX =
         Pattern.compile("(?<text>" + TEXT_REGEX_STR + ") (\\((?<year>\\d{4})\\) )?- IMDb");
@@ -76,16 +79,17 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         super("IMDb", new BasicHttpSession("imdb.com"));
     }
 
+    @Nonnull
     @Override
-    public ImdbTitle findById(@Nonnull String tt) throws HttpResponseException {
+    public ImdbTitle findById(String tt) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(tt);
         Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategy.never());
         ImdbTitle title;
         try {
-            title = MAPPER
-                .readValue(document.selectFirst("script[type=application/ld+json]").html(),
-                    ImdbTitle.class);
+            String html = document.selectFirst("script[type=application/ld+json]").html();
+            title = MAPPER.readValue(html, ImdbTitle.class);
         } catch (JsonProcessingException e) {
-            throw AssertUtils.runtimeException(e);
+            throw new UnexpectedException(e);
         }
 
         title.setImdbId(tt);
@@ -153,15 +157,15 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         return title;
     }
 
-    private List<String[]> getEpisodes(String seriesId) throws HttpResponseException {
+    private List<String[]> getEpisodes(String seriesId)
+        throws NotFoundException, OtherResponseException {
         List<String[]> result = new ArrayList<>();
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            Document document = getDocument(
-                builder0("/title/%s/episodes", seriesId)
-                    .addParameter("season", currentSeason),
-                SnapshotStrategy.never());
+            RequestBuilder builder = builder0("/title/%s/episodes", seriesId)
+                .addParameter("season", currentSeason);
+            Document document = getDocument(builder, SnapshotStrategy.never());
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;

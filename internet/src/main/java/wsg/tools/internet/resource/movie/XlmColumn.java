@@ -1,8 +1,6 @@
 package wsg.tools.internet.resource.movie;
 
-import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.common.FirstSupplier;
 
 /**
  * The column that an item belongs to in the {@link XlmSite}.
@@ -10,7 +8,7 @@ import wsg.tools.internet.common.FirstSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-public enum XlmColumn implements IntCodeSupplier, FirstSupplier<Integer> {
+public enum XlmColumn implements IntCodeSupplier {
     /**
      * @see <a href="https://www.xleimi.com/lanmu/xz1.html">Mainland Movies</a>
      */
@@ -74,9 +72,7 @@ public enum XlmColumn implements IntCodeSupplier, FirstSupplier<Integer> {
         return code;
     }
 
-    @Nonnull
-    @Override
-    public Integer first() {
+    public int first() {
         return first;
     }
 }

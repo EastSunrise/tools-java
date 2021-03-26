@@ -15,8 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.AdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
@@ -27,9 +25,11 @@ import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.RepositoryIterator;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.RepoIterator;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.info.adult.LicencePlateItem;
 import wsg.tools.internet.info.adult.LicencePlateSite;
 import wsg.tools.internet.info.adult.common.AdultEntry;
@@ -38,6 +38,7 @@ import wsg.tools.internet.info.adult.common.SerialNumber;
 import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightAdultEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurEntryType;
+import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightIndex;
 import wsg.tools.internet.info.adult.midnight.MidnightPageRequest;
 import wsg.tools.internet.info.adult.midnight.MidnightPageResult;
@@ -68,7 +69,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
     @Override
     public void importLicencePlateSite(@Nonnull LicencePlateSite site)
-        throws OtherHttpResponseException {
+        throws OtherResponseException {
         String domain = site.getDomain();
         Sort sort = Sort.by(Sort.Direction.DESC, AdultVideoEntity_.GMT_CREATED);
         Pageable pageable = PageRequest.of(0, 1, sort);
@@ -78,17 +79,17 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         Page<AdultVideoEntity> page = videoRepository.findAll(example, pageable);
 
         LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
-        RepositoryIterator<LicencePlateItem> iterator;
+        RepoIterator<LicencePlateItem> iterator;
         if (page.hasContent()) {
             String start = page.iterator().next().getId();
-            iterator = repository.iteratorAfter(start);
-            SiteUtilExt.found(iterator::next);
+            iterator = repository.linkedRepoIterator(start);
+            SiteUtils.found(iterator::next);
         } else {
-            iterator = repository.iterator();
+            iterator = repository.linkedRepoIterator();
         }
         int success = 0, total = 0;
         while (iterator.hasNext()) {
-            LicencePlateItem item = SiteUtilExt.found(iterator::next);
+            LicencePlateItem item = SiteUtils.found(iterator::next);
             AdultEntry entry = item.getEntry();
             Source source = Source.record(domain, Source.DEFAULT_SUBTYPE, 0);
             success += insertEntry(entry, source);
@@ -100,8 +101,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
     @Override
     public void importMidnightEntries(@Nonnull MidnightSite site,
-        @Nonnull MidnightAmateurEntryType type) throws OtherHttpResponseException {
-        Integer subtype = type.getColumn().getCode();
+        @Nonnull MidnightAmateurEntryType type) throws OtherResponseException {
+        MidnightColumn column = type.getColumn();
+        Integer subtype = column.getCode();
         String domain = site.getDomain();
         long max = videoRepository.findMaxRid(domain, subtype).orElse(0L);
 
@@ -109,8 +111,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         boolean finished = false;
         List<MidnightIndex> indices = new ArrayList<>();
         while (true) {
-            MidnightPageResult page = SiteUtilExt
-                .found(type.getColumn(), request, site::findAllIndices);
+            MidnightPageResult page = SiteUtils.found(request, req -> site.findPage(column, req));
             for (MidnightIndex index : page.getContent()) {
                 if (index.getId() <= max) {
                     finished = true;
@@ -127,8 +128,12 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         indices.sort(Comparator.comparing(MidnightIndex::getId));
         int success = 0;
         for (MidnightIndex index : indices) {
-            BaseMidnightEntry entry = SiteUtilExt
-                .found(type, index.getId(), site::findAmateurEntry);
+            BaseMidnightEntry entry = null;
+            try {
+                entry = site.findAmateurEntry(type, index.getId());
+            } catch (NotFoundException e) {
+                throw new AppException(e);
+            }
             if (entry instanceof MidnightAdultEntry) {
                 Source source = Source.record(domain, subtype, entry.getId());
                 success += insertEntry(((MidnightAdultEntry) entry).getEntry(), source);
@@ -175,7 +180,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 try {
                     upload = config.uploadEntryImage(image, code);
                 } catch (NotFoundException ignored) {
-                } catch (OtherHttpResponseException e) {
+                } catch (OtherResponseException e) {
                     throw new AppException(e);
                 }
                 uploads.add(upload);

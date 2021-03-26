@@ -9,12 +9,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -22,14 +22,16 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.WithoutNextDocument;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.info.adult.common.AdultEntry;
@@ -44,8 +46,6 @@ import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
  */
 public final class AmateurCatSite extends BaseSite implements Repository<String, AmateurCatItem> {
 
-    private static final Pattern HREF_REGEX = Pattern
-        .compile("http://www\\.surenmao\\.com/(?<id>[0-9a-z-]+)/");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     private static final String FIRST_KEY = "収録時間";
 
@@ -88,8 +88,10 @@ public final class AmateurCatSite extends BaseSite implements Repository<String,
         return Repositories.linked(this, "200gana-1829");
     }
 
+    @Nonnull
     @Override
-    public AmateurCatItem findById(@Nonnull String id) throws HttpResponseException {
+    public AmateurCatItem findById(String id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         WithoutNextDocument<String> strategy = new WithoutNextDocument<>(this::getNext);
         Document document = getDocument(builder0("/%s", id), strategy);
         AmateurCatItem item = new AmateurCatItem(id);
@@ -168,6 +170,12 @@ public final class AmateurCatSite extends BaseSite implements Repository<String,
             return null;
         }
         String href = next.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-        return RegexUtils.matchesOrElseThrow(HREF_REGEX, href).group("id");
+        return RegexUtils.matchesOrElseThrow(Lazy.HREF_REGEX, href).group("id");
+    }
+
+    private static class Lazy {
+
+        private static final Pattern HREF_REGEX = Pattern
+            .compile("http://www\\.surenmao\\.com/(?<id>[0-9a-z-]+)/");
     }
 }

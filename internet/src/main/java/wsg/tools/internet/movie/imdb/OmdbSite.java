@@ -14,10 +14,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.enums.Language;
@@ -65,11 +67,13 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     /**
      * @see <a href="https://www.omdbapi.com/#parameters">By ID</a>
      */
+    @Nonnull
     @Override
-    public OmdbTitle findById(@Nonnull String imdbId) throws HttpResponseException {
-        OmdbTitle title =
-            getObject(builder0("/").addParameter("i", imdbId).addParameter("plot", "full"),
-                OmdbTitle.class);
+    public OmdbTitle findById(String imdbId) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(imdbId);
+        RequestBuilder builder = builder0("/").addParameter("i", imdbId)
+            .addParameter("plot", "full");
+        OmdbTitle title = getObject(builder, OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
     }
@@ -79,10 +83,11 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      *
      * @param season start with 1
      */
-    public OmdbSeason season(String seriesId, int season) throws HttpResponseException {
-        return getObject(builder0("/").addParameter("i", seriesId)
-                .addParameter("season", season),
-            OmdbSeason.class);
+    public OmdbSeason season(String seriesId, int season)
+        throws NotFoundException, OtherResponseException {
+        RequestBuilder builder = builder0("/").addParameter("i", seriesId)
+            .addParameter("season", season);
+        return getObject(builder, OmdbSeason.class);
     }
 
     /**
@@ -91,7 +96,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @param season start with 1
      */
     public OmdbEpisode episode(String seriesId, int season, int episode)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getObject(
             builder0("/").addParameter("i", seriesId)
                 .addParameter("season", season)
@@ -101,7 +106,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     /**
      * Search subject fast.
      */
-    public OmdbTitle search(String s) throws HttpResponseException {
+    public OmdbTitle search(String s) throws NotFoundException, OtherResponseException {
         return search(s, null, null, 1);
     }
 
@@ -113,7 +118,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      * @see <a href="https://www.omdbapi.com/#parameters">By Search</a>
      */
     public OmdbTitle search(String s, SearchType type, Integer year, int page)
-        throws HttpResponseException {
+        throws OtherResponseException, NotFoundException {
         RequestBuilder builder = builder0("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
@@ -129,7 +134,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         return getObject(builder, OmdbTitle.class);
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
+        throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, clazz, SnapshotStrategy.never());
     }

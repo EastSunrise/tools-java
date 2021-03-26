@@ -2,7 +2,7 @@ package wsg.tools.internet.info.adult;
 
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.internet.base.impl.BasicPageRequest;
+import wsg.tools.internet.base.page.BasicPageRequest;
 
 /**
  * Paged request in the {@link BabesTubeSite} with a {@link #orderBy}.

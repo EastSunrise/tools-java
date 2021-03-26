@@ -6,18 +6,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import wsg.tools.boot.common.NotFoundException;
-import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.SiteManager;
 import wsg.tools.boot.dao.api.intf.ImdbView;
 import wsg.tools.boot.dao.api.intf.SubjectAdapter;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
+import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.pojo.error.UnknownTypeException;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.common.util.function.BiThrowableFunction;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanCatalog;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.BaseDoubanSubject;
@@ -53,9 +55,9 @@ public class SubjectAdapterImpl implements SubjectAdapter {
 
     @Override
     public BaseDoubanSubject doubanSubject(long dbId)
-        throws NotFoundException, OtherHttpResponseException {
-        BaseDoubanSubject subject = SiteUtilExt
-            .ifNotFound(dbId, manager.doubanSite()::findById, "Douban subject of " + dbId);
+        throws NotFoundException, OtherResponseException {
+        BaseDoubanSubject subject = ifNotFound(dbId, manager.doubanSite()::findById,
+            "Douban subject of " + dbId);
         if (subject.getImdbId() != null) {
             saveIdRelation(dbId, subject.getImdbId());
         }
@@ -64,12 +66,17 @@ public class SubjectAdapterImpl implements SubjectAdapter {
 
     @Override
     public Long getDbIdByImdbId(String imdbId)
-        throws NotFoundException, OtherHttpResponseException {
+        throws NotFoundException, OtherResponseException {
         Optional<IdRelationEntity> optional = relationRepository.findById(imdbId);
         if (optional.isPresent()) {
             return optional.get().getDbId();
         }
-        Long dbIdByImdbId = SiteUtilExt.found(imdbId, manager.doubanSite()::getDbIdByImdbId);
+        Long dbIdByImdbId = null;
+        try {
+            dbIdByImdbId = manager.doubanSite().getDbIdByImdbId(imdbId);
+        } catch (NotFoundException e) {
+            throw new AppException(e);
+        }
         if (dbIdByImdbId != null) {
             return saveIdRelation(dbIdByImdbId, imdbId);
         }
@@ -89,19 +96,23 @@ public class SubjectAdapterImpl implements SubjectAdapter {
 
     @Override
     public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since, DoubanMark mark)
-        throws NotFoundException, OtherHttpResponseException {
-        return SiteUtilExt.ifNotFound(userId, since, mark, (id, date, ma) -> manager.doubanSite()
-            .collectUserSubjects(id, date, DoubanCatalog.MOVIE, ma), "Collections of " + userId);
+        throws NotFoundException, OtherResponseException {
+        try {
+            return manager.doubanSite()
+                .collectUserSubjects(userId, since, DoubanCatalog.MOVIE, mark);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Collections of " + userId);
+        }
     }
 
     @Override
-    public ImdbView imdbView(String imdbId) throws NotFoundException, OtherHttpResponseException {
+    public ImdbView imdbView(String imdbId) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(imdbId);
         ImdbRepository<? extends ImdbIdentifier> imdbRepository = manager.imdbRepository();
         if (imdbRepository instanceof OmdbSite) {
             OmdbSite omdbSite = (OmdbSite) imdbRepository;
-            OmdbTitle omdbTitle = SiteUtilExt
-                .ifNotFound(imdbId, omdbSite::findById, "OMDb title of " + imdbId);
+            omdbSite.findById(imdbId);
+            OmdbTitle omdbTitle = ifNotFound(imdbId, omdbSite::findById, "OMDb title of " + imdbId);
             if (omdbTitle instanceof OmdbMovie) {
                 return new OmdbMovieAdapter((OmdbMovie) omdbTitle);
             }
@@ -112,8 +123,12 @@ public class SubjectAdapterImpl implements SubjectAdapter {
                 }
                 List<String[]> allEpisodes = new ArrayList<>();
                 for (int i = 1; i <= totalSeasons; i++) {
-                    OmdbSeason season = SiteUtilExt.ifNotFound(imdbId, i, omdbSite::season,
-                        "OMDb season " + i + " of " + imdbId);
+                    OmdbSeason season = null;
+                    try {
+                        season = omdbSite.season(imdbId, i);
+                    } catch (NotFoundException e) {
+                        throw new NotFoundException("OMDb season " + i + " of " + imdbId);
+                    }
                     List<OmdbSeason.Episode> episodes = season.getEpisodes();
                     int maxEpisode =
                         episodes.stream().mapToInt(OmdbSeason.Episode::getCurrentEpisode).max()
@@ -129,7 +144,7 @@ public class SubjectAdapterImpl implements SubjectAdapter {
             }
             throw new UnknownTypeException(omdbTitle.getClass());
         }
-        ImdbIdentifier identifier = SiteUtilExt.ifNotFound(imdbId, imdbRepository::findById,
+        ImdbIdentifier identifier = ifNotFound(imdbId, imdbRepository::findById,
             "IMDb title of " + imdbId);
         if (identifier instanceof ImdbTitle) {
             if (identifier instanceof ImdbMovie) {
@@ -143,5 +158,15 @@ public class SubjectAdapterImpl implements SubjectAdapter {
             }
         }
         throw new UnknownTypeException(identifier.getClass());
+    }
+
+    private <T, R> R ifNotFound(T t,
+        @Nonnull BiThrowableFunction<T, R, NotFoundException, OtherResponseException> function,
+        @Nonnull String message) throws NotFoundException, OtherResponseException {
+        try {
+            return function.apply(t);
+        } catch (NotFoundException e) {
+            throw new NotFoundException(message);
+        }
     }
 }

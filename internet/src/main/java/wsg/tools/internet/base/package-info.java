@@ -1,11 +1,9 @@
 /**
- * todo {@link java.util.Spliterator}
- * <p>
  * todo update snapshots regularly, such as every day todo concurrency of sessions under the same
  * domain.
  * <p>
- * todo remove host part from {@link wsg.tools.internet.base.impl.RequestBuilder} and keep path and
- * query only
+ * todo remove host part from {@link wsg.tools.internet.base.support.RequestBuilder} and keep path
+ * and query only
  * <p>
  * todo make each method in the sites static?
  *

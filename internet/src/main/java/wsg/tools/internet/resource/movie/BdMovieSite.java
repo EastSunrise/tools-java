@@ -13,13 +13,12 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -29,16 +28,18 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.WithoutNextDocument;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.UnknownResourceException;
@@ -64,8 +65,10 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
      * Returns the repository of all items from 1 to {@link #latest()}. <strong>Almost 10% of the
      * items are not found</strong>.
      */
-    public IntIndicesRepository<BdMovieItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosedExcept(this, MIN_ID, latest(), EXCEPTS);
+    public ListRepository<Integer, BdMovieItem> getRepository() throws OtherResponseException {
+        IntStream stream = IntStream.rangeClosed(MIN_ID, latest())
+            .filter(id -> !EXCEPTS.contains(id));
+        return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
     }
 
     /**
@@ -83,8 +86,8 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
      *
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
-    public int latest() throws HttpResponseException {
-        Document document = getDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
+    public int latest() throws OtherResponseException {
+        Document document = findDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -100,10 +103,13 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
     /**
      * Finds an item by the given id.
      */
+    @Nonnull
     @Override
-    public BdMovieItem findById(@Nonnull Integer id) throws HttpResponseException {
+    public BdMovieItem findById(Integer id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/zx/%d.htm", id);
-        Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
+        WithoutNextDocument<Integer> strategy = new WithoutNextDocument<>(this::getNext);
+        Document document = getDocument(builder, strategy);
         Map<String, String> metas = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements properties = document.select("meta[property]");
         for (Element ele : properties) {
@@ -120,7 +126,7 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
         String location = Objects.requireNonNull(metas.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
         if (!urlMatcher.matches()) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not a movie page");
+            throw new NotFoundException("Not a movie page");
         }
         String realTypeText = urlMatcher.group("t");
         BdMovieType realType = EnumUtilExt.valueOfText(realTypeText, BdMovieType.class, false);

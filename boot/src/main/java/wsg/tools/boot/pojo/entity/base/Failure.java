@@ -7,9 +7,10 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.internet.base.repository.Repository;
 
 /**
- * Failures when importing from {@link wsg.tools.internet.base.intf.Repository}.
+ * Failures when importing from {@link Repository}.
  *
  * @author Kingen
  * @since 2021/3/5

@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.util.LinkedList;
 import java.util.List;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.enums.DomesticCity;
 import wsg.tools.internet.enums.Language;
 import wsg.tools.internet.enums.Region;
@@ -60,22 +62,24 @@ public class ApiDoubanSite extends DoubanSite {
      * This method can't obtain x-rated subjects probably which are restricted to be accessed only
      * after logging in.
      */
-    public Subject apiMovieSubject(long subjectId) throws HttpResponseException {
+    public Subject apiMovieSubject(long subjectId)
+        throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
-    public ImdbInfo apiMovieImdb(String imdbId) throws HttpResponseException {
+    public ImdbInfo apiMovieImdb(String imdbId) throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
-    public Celebrity apiMovieCelebrity(long celebrityId) throws HttpResponseException {
+    public Celebrity apiMovieCelebrity(long celebrityId)
+        throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
-    public RankedResult apiMovieWeekly() throws HttpResponseException {
+    public RankedResult apiMovieWeekly() throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class,
             SnapshotStrategy.always());
     }
@@ -83,26 +87,29 @@ public class ApiDoubanSite extends DoubanSite {
     /**
      * It's updated every Friday.
      */
-    public BoxResult apiMovieUsBox() throws HttpResponseException {
+    public BoxResult apiMovieUsBox() throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class,
             SnapshotStrategy.always());
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieTop250() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieTop250()
+        throws NotFoundException, OtherResponseException {
         return getApiChart(apiBuilder("/v2/movie/top250"));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieNewMovies() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieNewMovies()
+        throws NotFoundException, OtherResponseException {
         return getApiChart(apiBuilder("/v2/movie/new_movies"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(DomesticCity city)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiChart(
             apiBuilder("/v2/movie/in_theaters").addParameter("city", city.getText()));
     }
 
-    public Pair<String, List<SimpleSubject>> apiMovieComingSoon() throws HttpResponseException {
+    public Pair<String, List<SimpleSubject>> apiMovieComingSoon()
+        throws NotFoundException, OtherResponseException {
         return getApiChart(apiBuilder("/v2/movie/coming_soon"));
     }
 
@@ -112,7 +119,7 @@ public class ApiDoubanSite extends DoubanSite {
      * @return pair of title-subjects
      */
     private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
@@ -135,31 +142,31 @@ public class ApiDoubanSite extends DoubanSite {
      * Only include official photos.
      */
     public Pair<SimpleSubject, List<Photo>> apiMovieSubjectPhotos(long subjectId)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiContent(new TypeReference<>() {
         }, "/v2/movie/subject/%d/photos", subjectId);
     }
 
     public Pair<SimpleSubject, List<Review>> apiMovieSubjectReviews(long subjectId)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiContent(new TypeReference<>() {
         }, "/v2/movie/subject/%d/reviews", subjectId);
     }
 
     public Pair<SimpleSubject, List<Comment>> apiMovieSubjectComments(long subjectId)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiContent(new TypeReference<>() {
         }, "/v2/movie/subject/%d/comments", subjectId);
     }
 
     public Pair<SimpleCelebrity, List<Photo>> apiMovieCelebrityPhotos(long celebrityId)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiContent(new TypeReference<>() {
         }, "/v2/movie/celebrity/%d/photos", celebrityId);
     }
 
     public Pair<SimpleCelebrity, List<Work>> apiMovieCelebrityWorks(long celebrityId)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         return getApiContent(new TypeReference<>() {
         }, "/v2/movie/celebrity/%d/works", celebrityId);
     }
@@ -170,8 +177,7 @@ public class ApiDoubanSite extends DoubanSite {
      * @return pair of owner-content
      */
     private <O, C> Pair<O, List<C>> getApiContent(TypeReference<ContentResult<O, C>> type,
-        String path, long ownerId)
-        throws HttpResponseException {
+        String path, long ownerId) throws NotFoundException, OtherResponseException {
         int start = 0;
         List<C> content = new LinkedList<>();
         O owner;
@@ -190,18 +196,19 @@ public class ApiDoubanSite extends DoubanSite {
         return Pair.of(owner, content);
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz) throws HttpResponseException {
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
+        throws NotFoundException, OtherResponseException {
         return getObject(builder, clazz, SnapshotStrategy.never());
     }
 
-    private <T> T getObject(RequestBuilder builder, TypeReference<T> type)
-        throws HttpResponseException {
+    private <T> T getObject(@Nonnull RequestBuilder builder, TypeReference<T> type)
+        throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, type, SnapshotStrategy.never());
     }
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, clazz, strategy);
     }

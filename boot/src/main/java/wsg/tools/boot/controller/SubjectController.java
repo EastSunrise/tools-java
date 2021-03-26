@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import wsg.tools.boot.common.NotFoundException;
 import wsg.tools.boot.common.enums.VideoStatus;
 import wsg.tools.boot.config.DatabaseConfig;
 import wsg.tools.boot.pojo.dto.MovieDto;
@@ -35,7 +34,8 @@ import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
 import wsg.tools.internet.common.LoginException;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
@@ -102,7 +102,7 @@ public class SubjectController extends AbstractController {
         for (DoubanMark mark : DoubanMark.values()) {
             try {
                 result = result.plus(subjectService.importDouban(user, since, mark));
-            } catch (OtherHttpResponseException | LoginException e) {
+            } catch (OtherResponseException | LoginException e) {
                 log.error(e.getMessage());
                 return SERVER_ERROR.build();
             } catch (NotFoundException e) {
@@ -121,7 +121,7 @@ public class SubjectController extends AbstractController {
         }
         try {
             subjectService.importSubjectByDb(id);
-        } catch (OtherHttpResponseException | DataIntegrityException | LoginException e) {
+        } catch (OtherResponseException | DataIntegrityException | LoginException e) {
             return SERVER_ERROR.body(e.getMessage());
         } catch (NotFoundException e) {
             return NOT_FOUND.body(e.getMessage());

@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.util.List;
-import wsg.tools.internet.base.impl.BasicPageResult;
-import wsg.tools.internet.base.intf.PageRequest;
+import wsg.tools.internet.base.page.BasicCountablePageResult;
+import wsg.tools.internet.base.page.PageRequest;
 
 /**
  * A paged result of {@link WikiCelebrityIndex}.
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.intf.PageRequest;
  * @author Kingen
  * @since 2021/3/11
  */
-public class WikiPageResult extends BasicPageResult<WikiCelebrityIndex> {
+public class WikiPageResult extends BasicCountablePageResult<WikiCelebrityIndex> {
 
     public WikiPageResult(List<WikiCelebrityIndex> content, PageRequest pageRequest, long total) {
         super(content, pageRequest, total);

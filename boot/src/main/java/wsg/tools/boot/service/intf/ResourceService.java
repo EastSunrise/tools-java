@@ -8,10 +8,10 @@ import wsg.tools.boot.pojo.dto.ResourceCheckDto;
 import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.common.NextSupplier;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.base.NextSupplier;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.resource.movie.IdentifiedItem;
 
 /**
@@ -28,22 +28,22 @@ public interface ResourceService {
      * @param repository the target repository
      * @param domain     the domain of the repository
      * @param subtype    the subtype whose records are going to import
-     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws OtherResponseException if an unexpected {@link HttpResponseException} occurs
      */
     <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E> & NextSupplier<Integer>>
     void importLinkedRepository(LinkedRepository<Integer, T> repository, String domain, int subtype)
-        throws OtherHttpResponseException;
+        throws OtherResponseException;
 
     /**
-     * Imports latest resources from {@link IntIndicesRepository}.
+     * Imports latest resources from an integer {@link ListRepository}.
      *
      * @param repository the target repository
      * @param domain     the domain of the repository
-     * @throws OtherHttpResponseException if an unexpected {@link HttpResponseException} occurs
+     * @throws OtherResponseException if an unexpected error occurs when requesting
      */
     <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntRangeRepository(IntIndicesRepository<T> repository, String domain)
-        throws OtherHttpResponseException;
+    void importIntListRepository(ListRepository<Integer, T> repository, String domain)
+        throws OtherResponseException;
 
     /**
      * Search resources of the given key.

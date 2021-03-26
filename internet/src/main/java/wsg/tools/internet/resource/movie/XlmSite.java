@@ -5,13 +5,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -22,17 +23,19 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.WithoutNextDocument;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -47,7 +50,7 @@ import wsg.tools.internet.download.impl.Thunder;
 @SiteStatus(status = SiteStatus.Status.INVALID)
 public final class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
 
-    private static final Range<Integer> NOT_FOUNDS = Range.between(31588, 32581);
+    private static final Range<Integer> EXCEPTS = Range.between(31588, 32581);
     private static final String DOWNLOAD_ASP = "/download.asp";
 
     public XlmSite() {
@@ -56,10 +59,12 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
 
     /**
      * Returns the repository of all the items from 1 to {@link #latest()} <strong>except those in
-     * {@link #NOT_FOUNDS}</strong>.
+     * {@link #EXCEPTS}</strong>.
      */
-    public IntIndicesRepository<XlmItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosedExcept(this, 1, latest(), NOT_FOUNDS);
+    public ListRepository<Integer, XlmItem> getRepository() throws OtherResponseException {
+        IntStream stream = IntStream.rangeClosed(1, latest())
+            .filter(i -> !EXCEPTS.contains(i));
+        return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
     }
 
     /**
@@ -75,8 +80,8 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
     /**
      * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
      */
-    public int latest() throws HttpResponseException {
-        Document document = getDocument(builder0("/new.html"), SnapshotStrategy.always());
+    public int latest() throws OtherResponseException {
+        Document document = findDocument(builder0("/new.html"), SnapshotStrategy.always());
         Elements tits = document.select(".tit");
         int max = 1;
         for (Element tit : tits) {
@@ -87,10 +92,13 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         return max;
     }
 
+    @Nonnull
     @Override
-    public XlmItem findById(@Nonnull Integer id) throws HttpResponseException {
+    public XlmItem findById(Integer id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/dy/k%d.html", id);
-        Document document = getDocument(builder, new WithoutNextDocument<>(this::getNext));
+        WithoutNextDocument<Integer> strategy = new WithoutNextDocument<>(this::getNext);
+        Document document = getDocument(builder, strategy);
 
         Element last = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).last();
         String columnHref = last.attr(CssSelectors.ATTR_HREF);

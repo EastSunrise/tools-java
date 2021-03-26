@@ -6,15 +6,15 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -25,14 +25,16 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
@@ -48,7 +50,7 @@ import wsg.tools.internet.download.impl.Thunder;
 public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem> {
 
     private static final int MIN_ID = 32;
-    private static final Range<Integer> NOT_FOUNDS = Range.between(1501, 3008);
+    private static final Range<Integer> EXCEPTS = Range.between(1501, 3008);
 
     public Y80sSite() {
         super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
@@ -56,18 +58,20 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
 
     /**
      * Returns the repository of all items from 1 to {@link #latest()} <strong>except those in
-     * {@link #NOT_FOUNDS}</strong>.
+     * {@link #EXCEPTS}</strong>.
      */
-    public IntIndicesRepository<Y80sItem> getRepository() throws HttpResponseException {
-        return Repositories.rangeClosedExcept(this, MIN_ID, latest(), NOT_FOUNDS);
+    public ListRepository<Integer, Y80sItem> getRepository() throws OtherResponseException {
+        IntStream stream = IntStream.rangeClosed(MIN_ID, latest())
+            .filter(i -> !EXCEPTS.contains(i));
+        return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
     }
 
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
-    public int latest() throws HttpResponseException {
+    public int latest() throws OtherResponseException {
         RequestBuilder builder = builder("m", "/movie/1-0-0-0-0-0-0");
-        Document document = getDocument(builder, SnapshotStrategy.always());
+        Document document = findDocument(builder, SnapshotStrategy.always());
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
@@ -78,15 +82,14 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         return max;
     }
 
+    @Nonnull
     @Override
-    public Y80sItem findById(@Nonnull Integer id) throws HttpResponseException {
-        if (NOT_FOUNDS.contains(id)) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Not found in " + NOT_FOUNDS);
-        }
+    public Y80sItem findById(Integer id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         RequestBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         if (document.childNodes().size() == 1) {
-            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, "Target page is empty.");
+            throw new NotFoundException("Target page is empty.");
         }
 
         Map<String, Element> info = document.select(".movie_attr").stream()
@@ -149,8 +152,6 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         private static final Pattern PLAY_HREF_REGEX;
         private static final Pattern YEAR_REGEX = Pattern.compile("(?<y>\\d{4,5})");
         private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("/subject/(?<id>\\d+)");
-        private static final Pattern COVER_REGEX = Pattern.compile(
-            "//img\\.mimiming\\.com/upload/img/\\d+/[\\d_]+\\.(jpg|png|gif|JPG|jpeg|webp)");
 
         static {
             String types = Arrays.stream(Y80sType.values()).map(TextSupplier::getText)

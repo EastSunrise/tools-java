@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import lombok.Getter;
-import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.repository.Repository;
 
 /**
  * The source of a record from a {@link Repository}.

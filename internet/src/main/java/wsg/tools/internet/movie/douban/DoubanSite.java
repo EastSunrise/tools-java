@@ -23,7 +23,6 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,14 +34,16 @@ import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.Loggable;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.enums.Language;
@@ -98,18 +99,22 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      *
      * @throws LoginException if the given user and password is invalid or a CAPTCHA is required.
      */
-    public void login(String username, String password) throws HttpResponseException {
+    public void login(String username, String password) throws OtherResponseException {
         logout();
-        getDocument(builder0(null), SnapshotStrategy.always());
+        findDocument(builder0(null), SnapshotStrategy.always());
         RequestBuilder builder = create(METHOD_POST, "accounts")
             .setPath("/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
             .addParameter("password", password)
             .addParameter("remember", true);
-        LoginResult loginResult = getObject(builder, MAPPER, LoginResult.class,
-            SnapshotStrategy.always());
-        if (!loginResult.isSuccess()) {
-            throw new LoginException(loginResult.getMessage());
+        LoginResult result = null;
+        try {
+            result = getObject(builder, MAPPER, LoginResult.class, SnapshotStrategy.always());
+        } catch (NotFoundException e) {
+            throw new UnexpectedException(e);
+        }
+        if (!result.isSuccess()) {
+            throw new LoginException(result.getMessage());
         }
     }
 
@@ -123,15 +128,15 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
             RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id"));
     }
 
-    public void logout() throws HttpResponseException {
+    public void logout() throws OtherResponseException {
         if (user() == null) {
             return;
         }
-        getDocument(builder0(null), SnapshotStrategy.always());
+        findDocument(builder0(null), SnapshotStrategy.always());
         RequestBuilder builder = builder0("/accounts/logout")
             .addParameter("source", "main")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        getDocument(builder, SnapshotStrategy.always());
+        findDocument(builder, SnapshotStrategy.always());
     }
 
     /**
@@ -139,12 +144,13 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * <p>
      * Some x-rated subjects may be restricted to access without logging in.
      */
+    @Nonnull
     @Override
-    public BaseDoubanSubject findById(@Nonnull Long id) throws HttpResponseException {
-        Document document =
-            getDocument(
-                builder(DoubanCatalog.MOVIE.name().toLowerCase(Locale.ROOT), "/subject/%d", id),
-                SnapshotStrategy.never());
+    public BaseDoubanSubject findById(Long id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
+        String subDomain = DoubanCatalog.MOVIE.name().toLowerCase(Locale.ROOT);
+        RequestBuilder builder = builder(subDomain, "/subject/%d", id);
+        Document document = getDocument(builder, SnapshotStrategy.never());
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -248,8 +254,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @return map of (id, mark date)
      */
     public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since,
-        DoubanCatalog catalog, DoubanMark mark)
-        throws HttpResponseException {
+        DoubanCatalog catalog, DoubanMark mark) throws NotFoundException, OtherResponseException {
         if (since == null) {
             since = DOUBAN_START_DATE;
         }
@@ -296,7 +301,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @param catalog movie/book/music/...
      */
     public List<Long> collectUserCreators(long userId, DoubanCatalog catalog)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         log.info("Collect {} of user {}", catalog.getCreator().getPlurality(), userId);
         List<Long> ids = new LinkedList<>();
         int start = 0;
@@ -331,7 +336,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @throws LoginException if not logged in first.
      */
     @Nullable
-    public Long getDbIdByImdbId(String imdbId) throws HttpResponseException {
+    public Long getDbIdByImdbId(String imdbId) throws NotFoundException, OtherResponseException {
         if (user() == null) {
             throw new LoginException("Please log in first.");
         }
@@ -370,7 +375,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @param keyword not blank
      */
     public List<SearchItem> searchSubject(@Nonnull DoubanCatalog catalog, String keyword)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
         RequestBuilder builder = builder("search", "/%s/subject_search", catalog.name().toLowerCase(
             Locale.ROOT))
@@ -391,7 +396,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
      * @param keyword not blank
      */
     public List<SearchItem> search(@Nullable DoubanCatalog catalog, String keyword)
-        throws HttpResponseException {
+        throws NotFoundException, OtherResponseException {
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }

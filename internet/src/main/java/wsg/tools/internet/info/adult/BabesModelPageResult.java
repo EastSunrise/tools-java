@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult;
 
 import java.util.List;
-import wsg.tools.internet.base.impl.UncountablePageResult;
-import wsg.tools.internet.base.intf.PageRequest;
+import wsg.tools.internet.base.page.BasicPageResult;
+import wsg.tools.internet.base.page.PageRequest;
 
 /**
  * Pages result of {@link BabesModelIndex}.
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.intf.PageRequest;
  * @author Kingen
  * @since 2021/3/15
  */
-public class BabesModelPageResult extends UncountablePageResult<BabesModelIndex> {
+public class BabesModelPageResult extends BasicPageResult<BabesModelIndex> {
 
     BabesModelPageResult(List<BabesModelIndex> content, PageRequest pageRequest, int totalPages) {
         super(content, pageRequest, totalPages);

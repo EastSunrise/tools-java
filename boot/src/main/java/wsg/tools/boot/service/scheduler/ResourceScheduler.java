@@ -2,18 +2,16 @@ package wsg.tools.boot.service.scheduler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Functions;
-import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import wsg.tools.boot.common.util.SiteUtilExt;
 import wsg.tools.boot.config.SiteManager;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.common.OtherHttpResponseException;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.resource.movie.BdMovieSite;
 import wsg.tools.internet.resource.movie.GrapeSite;
@@ -74,11 +72,11 @@ public class ResourceScheduler extends BaseServiceImpl {
 
     private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>, S extends BaseSite>
     void importIntRange(S site,
-        Functions.FailableFunction<S, IntIndicesRepository<T>, HttpResponseException> getRepo) {
+        Functions.FailableFunction<S, ListRepository<Integer, T>, OtherResponseException> getRepo) {
         try {
-            IntIndicesRepository<T> repository = SiteUtilExt.found(site, getRepo);
-            resourceService.importIntRangeRepository(repository, site.getDomain());
-        } catch (OtherHttpResponseException e) {
+            ListRepository<Integer, T> repository = getRepo.apply(site);
+            resourceService.importIntListRepository(repository, site.getDomain());
+        } catch (OtherResponseException e) {
             log.error(e.getMessage());
         } catch (UnexpectedException e) {
             log.error(e.getCause().getMessage());

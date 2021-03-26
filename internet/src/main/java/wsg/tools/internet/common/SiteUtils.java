@@ -2,13 +2,16 @@ package wsg.tools.internet.common;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.common.util.function.BiThrowableFunction;
+import wsg.tools.common.util.function.BiThrowableSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.intf.HttpSession;
 
 /**
  * Utility for operations on sites.
@@ -71,6 +74,36 @@ public final class SiteUtils {
             if (SiteStatus.Status.NORMAL != status) {
                 throw new SiteStatusException(annotation);
             }
+        }
+    }
+
+    /**
+     * Handles the not found exception.
+     *
+     * @throws OtherResponseException if an unexpected error occurs when requesting
+     */
+    public static <R> R found(
+        @Nonnull BiThrowableSupplier<R, NotFoundException, OtherResponseException> supplier)
+        throws OtherResponseException {
+        try {
+            return supplier.get();
+        } catch (NotFoundException e) {
+            throw new UnexpectedException(e);
+        }
+    }
+
+    /**
+     * Handles the not found exception.
+     *
+     * @throws OtherResponseException other response exceptions
+     */
+    public static <T, R> R found(@Nonnull T t,
+        @Nonnull BiThrowableFunction<T, R, NotFoundException, OtherResponseException> function)
+        throws OtherResponseException {
+        try {
+            return function.apply(t);
+        } catch (NotFoundException e) {
+            throw new UnexpectedException(e);
         }
     }
 }

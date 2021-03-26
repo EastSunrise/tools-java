@@ -1,8 +1,9 @@
 package wsg.tools.internet.movie.imdb;
 
 import javax.annotation.Nonnull;
-import org.apache.http.client.HttpResponseException;
-import wsg.tools.internet.base.intf.Repository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 
 /**
  * Service of IMDb.com.
@@ -18,8 +19,11 @@ public interface ImdbRepository<T extends ImdbIdentifier> extends Repository<Str
      *
      * @param imdbId identifier, starting with 'tt'
      * @return the item with detailed info
-     * @throws HttpResponseException if an error occurs.
+     * @throws NullPointerException   if the specified identifier is null
+     * @throws NotFoundException      if the item is not found
+     * @throws OtherResponseException if an unexpected error occurs when requesting
      */
+    @Nonnull
     @Override
-    T findById(@Nonnull String imdbId) throws HttpResponseException;
+    T findById(String imdbId) throws NotFoundException, OtherResponseException;
 }

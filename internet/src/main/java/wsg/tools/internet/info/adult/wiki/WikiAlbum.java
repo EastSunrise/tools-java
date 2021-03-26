@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
-import wsg.tools.internet.common.NextSupplier;
+import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**

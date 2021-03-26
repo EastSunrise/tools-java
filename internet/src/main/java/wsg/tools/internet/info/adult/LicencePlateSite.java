@@ -9,25 +9,27 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.http.client.HttpResponseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.WithoutNextDocument;
-import wsg.tools.internet.base.intf.LinkedRepository;
-import wsg.tools.internet.base.intf.Repository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.WithoutNextDocument;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
 
@@ -37,9 +39,6 @@ import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
  * @since 2021/3/9
  */
 public class LicencePlateSite extends BaseSite implements Repository<String, LicencePlateItem> {
-
-    private static final Pattern URL_REGEX =
-        Pattern.compile("https://www\\.chepaishe1\\.com/(?<id>[^/]+)/");
 
     public LicencePlateSite() {
         super("Licence Plate", new BasicHttpSession("chepaishe1.com"));
@@ -54,8 +53,10 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
         return Repositories.linked(this, "259luxu-959");
     }
 
+    @Nonnull
     @Override
-    public LicencePlateItem findById(@Nonnull String id) throws HttpResponseException {
+    public LicencePlateItem findById(String id) throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(id);
         SnapshotStrategy<Document> strategy = new WithoutNextDocument<>(this::getNext);
         Document document = getDocument(builder0("/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
@@ -100,7 +101,13 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
             return null;
         }
         String href = a.attr(CssSelectors.ATTR_HREF);
-        String id = RegexUtils.matchesOrElseThrow(URL_REGEX, href).group("id");
+        String id = RegexUtils.matchesOrElseThrow(Lazy.URL_REGEX, href).group("id");
         return URLDecoder.decode(id, Constants.UTF_8);
+    }
+
+    private static class Lazy {
+
+        private static final Pattern URL_REGEX =
+            Pattern.compile("https://www\\.chepaishe1\\.com/(?<id>[^/]+)/");
     }
 }

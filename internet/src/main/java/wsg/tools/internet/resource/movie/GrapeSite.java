@@ -8,9 +8,12 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -24,15 +27,20 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.common.util.function.BiThrowableFunction;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.impl.BasicHttpSession;
-import wsg.tools.internet.base.impl.Repositories;
-import wsg.tools.internet.base.impl.RequestBuilder;
-import wsg.tools.internet.base.intf.IntIndicesRepository;
-import wsg.tools.internet.base.intf.SnapshotStrategy;
+import wsg.tools.internet.base.SnapshotStrategy;
+import wsg.tools.internet.base.page.PageResult;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.PageRepository;
+import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.NotFoundException;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.LinkFactory;
 import wsg.tools.internet.download.base.AbstractLink;
@@ -68,14 +76,24 @@ public final class GrapeSite extends BaseSite {
      * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}. <strong>About 1% of
      * the items are not found.</strong>
      */
-    public IntIndicesRepository<GrapeNewsItem> getNewsRepository() {
-        return Repositories.rangeClosed(this::findNewsItem, 2, MAX_NEWS_ID);
+    @Nonnull
+    public ListRepository<Integer, GrapeNewsItem> getNewsRepository() {
+        Stream<Integer> stream = IntStream.rangeClosed(2, MAX_NEWS_ID).boxed();
+        return Repositories.list(this::findNewsItem, stream.collect(Collectors.toList()));
+    }
+
+    public PageRepository<GrapeVodIndex, GrapeVodItem> getVodRepository(GrapeVodType type) {
+        Objects.requireNonNull(type);
+        return Repositories.page(this::findVodItem,
+            (BiThrowableFunction<GrapeVodPageRequest, PageResult<GrapeVodIndex>, NotFoundException, OtherResponseException>)
+                pageRequest -> findPage(type, pageRequest), GrapeVodPageRequest.first());
     }
 
     /**
      * Finds an item that belongs to {@link GrapeVodType#BT_MOVIE}.
      */
-    public GrapeNewsItem findNewsItem(int id) throws HttpResponseException {
+    @Nonnull
+    public GrapeNewsItem findNewsItem(int id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         String datetime = document.selectFirst(".updatetime").text();
@@ -126,8 +144,8 @@ public final class GrapeSite extends BaseSite {
      *
      * @see GrapeVodType
      */
-    public GrapeVodPageResult findAllVodIndices(@Nonnull GrapeVodType type,
-        @Nonnull GrapeVodPageRequest pageRequest) throws HttpResponseException {
+    public GrapeVodPageResult findPage(@Nonnull GrapeVodType type,
+        @Nonnull GrapeVodPageRequest pageRequest) throws NotFoundException, OtherResponseException {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
@@ -150,7 +168,9 @@ public final class GrapeSite extends BaseSite {
         return new GrapeVodPageResult(indices, pageRequest, total);
     }
 
-    public GrapeVodItem findVodItem(@Nonnull GrapeVodIndex index) throws HttpResponseException {
+    public GrapeVodItem findVodItem(GrapeVodIndex index)
+        throws NotFoundException, OtherResponseException {
+        Objects.requireNonNull(index);
         RequestBuilder builder = builder0(index.getPath());
         Document document = getDocument(builder, SnapshotStrategy.never());
 
