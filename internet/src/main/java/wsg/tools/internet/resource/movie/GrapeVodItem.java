@@ -2,9 +2,9 @@ package wsg.tools.internet.resource.movie;
 
 import java.time.LocalDateTime;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.SubtypeSupplier;
+import wsg.tools.internet.base.UpdateDatetimeSupplier;
 import wsg.tools.internet.resource.common.StateSupplier;
-import wsg.tools.internet.resource.common.SubtypeSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
@@ -14,7 +14,7 @@ import wsg.tools.internet.resource.common.YearSupplier;
  * @since 2021/2/3
  */
 public class GrapeVodItem extends BasicItem
-    implements SubtypeSupplier<GrapeVodType>, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
+    implements SubtypeSupplier, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
 
     private final String path;
     private final String url;
@@ -63,7 +63,7 @@ public class GrapeVodItem extends BasicItem
     }
 
     @Override
-    public GrapeVodType getSubtype() {
-        return type;
+    public int getSubtype() {
+        return type.getId();
     }
 }

@@ -25,11 +25,10 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
@@ -47,7 +46,8 @@ import wsg.tools.internet.download.impl.Thunder;
  * @since 2020/9/9
  */
 @Slf4j
-public final class Y80sSite extends BaseSite implements Repository<Integer, Y80sItem> {
+@ConcreteSite
+public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
 
     private static final int MIN_ID = 32;
     private static final Range<Integer> EXCEPTS = Range.between(1501, 3008);
@@ -60,6 +60,8 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
      * Returns the repository of all items from 1 to {@link #latest()} <strong>except those in
      * {@link #EXCEPTS}</strong>.
      */
+    @Override
+    @Nonnull
     public ListRepository<Integer, Y80sItem> getRepository() throws OtherResponseException {
         IntStream stream = IntStream.rangeClosed(MIN_ID, latest())
             .filter(i -> !EXCEPTS.contains(i));
@@ -97,10 +99,10 @@ public final class Y80sSite extends BaseSite implements Repository<Integer, Y80s
         Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
         String typeHref = lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
         String typeStr = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref).group("t");
-        Y80sType realType = EnumUtilExt.valueOfText(typeStr, Y80sType.class, false);
+        Y80sType realType = EnumUtilExt.valueOfText(Y80sType.class, typeStr, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Y80sItem item = new Y80sItem(id, builder.toString(), updateDate, realType);
+        Y80sItem item = new Y80sItem(id, builder.toString(), realType, updateDate);
 
         item.setTitle(lis.last().text().strip());
         String src = document.selectFirst(".img-responsive").attr(CssSelectors.ATTR_SRC);

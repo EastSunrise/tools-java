@@ -117,7 +117,7 @@ public class SubjectController extends AbstractController {
     @ResponseBody
     public ResponseEntity<String> importSubject(Long id) {
         if (id == null) {
-            return ResponseEntity.badRequest().body("ID must be not null");
+            return ResponseEntity.badRequest().body("ID must not be null");
         }
         try {
             subjectService.importSubjectByDb(id);

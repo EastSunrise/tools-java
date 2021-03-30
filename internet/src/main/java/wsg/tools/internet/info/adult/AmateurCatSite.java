@@ -22,8 +22,9 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.LinkedRepository;
-import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -34,8 +35,9 @@ import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.UnexpectedContentException;
-import wsg.tools.internet.info.adult.common.AdultEntry;
-import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.entry.BasicAdultEntryBuilder;
 
 /**
  * The site is suspected as a partial copy of {@link LicencePlateSite}.
@@ -44,7 +46,9 @@ import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
  * @see <a href="http://www.surenmao.com/">Amateur Cat</a>
  * @since 2021/2/28
  */
-public final class AmateurCatSite extends BaseSite implements Repository<String, AmateurCatItem> {
+@ConcreteSite
+public final class AmateurCatSite extends BaseSite
+    implements RepoRetrievable<String, AmateurCatItem> {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
     private static final String FIRST_KEY = "収録時間";
@@ -109,17 +113,18 @@ public final class AmateurCatSite extends BaseSite implements Repository<String,
         URL cover = NetUtils.createURL(src);
         Element content = main.selectFirst("div.entry-content");
         Pair<String, List<String>> pair = getLinesAndDesc(content);
-        AdultEntryBuilder builder;
+        BasicAdultEntryBuilder builder;
         List<String> lines = pair.getRight();
         if (lines == null) {
-            builder = AdultEntryBuilder.basic(code).images(Collections.singletonList(cover));
+            builder = BasicAdultEntryBuilder.builder(code);
         } else {
             Map<String, String> info = extractInfo(lines);
-            builder = AdultEntryBuilder.amateur(info, code)
+            builder = AdultEntryBuilder.builder(code, info)
                 .duration().release().producer().distributor().series()
-                .validateCode().tags(Constants.WHITESPACE).images(Collections.singletonList(cover));
+                .validateCode().tags(Constants.WHITESPACE);
         }
-        AdultEntry entry = builder.description(pair.getLeft()).build();
+        AmateurAdultEntry entry = builder.description(pair.getLeft())
+            .images(Collections.singletonList(cover)).amateur();
         item.setEntry(entry);
         return item;
     }

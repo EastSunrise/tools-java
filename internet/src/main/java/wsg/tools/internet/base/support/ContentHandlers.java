@@ -29,7 +29,7 @@ public final class ContentHandlers {
         }
 
         @Override
-        public String suffix() {
+        public String extension() {
             return "html";
         }
     }

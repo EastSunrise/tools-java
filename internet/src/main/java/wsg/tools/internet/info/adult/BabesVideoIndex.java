@@ -1,7 +1,9 @@
 package wsg.tools.internet.info.adult;
 
+import java.net.URL;
 import java.time.Duration;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.internet.base.IntIdentifier;
 import wsg.tools.internet.info.adult.common.VideoQuality;
 
 /**
@@ -10,13 +12,13 @@ import wsg.tools.internet.info.adult.common.VideoQuality;
  * @author Kingen
  * @since 2021/3/16
  */
-public class BabesVideoIndex {
+public class BabesVideoIndex implements IntIdentifier {
 
     private final int id;
     private final String path;
     private final String title;
-    private String cover;
-    private String preview;
+    private URL cover;
+    private URL preview;
     private VideoQuality quality;
     private Duration duration;
     private String author;
@@ -29,6 +31,7 @@ public class BabesVideoIndex {
         this.title = AssertUtils.requireNotBlank(title, "title of a video");
     }
 
+    @Override
     public int getId() {
         return id;
     }
@@ -41,19 +44,19 @@ public class BabesVideoIndex {
         return title;
     }
 
-    public String getCover() {
+    public URL getCover() {
         return cover;
     }
 
-    void setCover(String cover) {
+    void setCover(URL cover) {
         this.cover = cover;
     }
 
-    public String getPreview() {
+    public URL getPreview() {
         return preview;
     }
 
-    void setPreview(String preview) {
+    void setPreview(URL preview) {
         this.preview = preview;
     }
 

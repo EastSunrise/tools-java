@@ -4,9 +4,8 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.common.UpdateDateSupplier;
+import wsg.tools.internet.base.UpdateDateSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
-import wsg.tools.internet.resource.common.CoverSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
@@ -15,16 +14,18 @@ import wsg.tools.internet.resource.common.YearSupplier;
  * @author Kingen
  * @since 2020/10/27
  */
-public class Y80sItem extends IdentifiedItem<Y80sType>
-    implements YearSupplier, DoubanIdentifier, UpdateDateSupplier, CoverSupplier {
+public class Y80sItem extends BaseIdentifiedItem
+    implements YearSupplier, DoubanIdentifier, UpdateDateSupplier {
 
+    private final Y80sType type;
     private final LocalDate updateDate;
     private URL cover;
     private Integer year;
     private Long dbId;
 
-    Y80sItem(int id, @Nonnull String url, LocalDate updateDate, Y80sType type) {
-        super(id, url, type);
+    Y80sItem(int id, @Nonnull String url, Y80sType type, LocalDate updateDate) {
+        super(id, url);
+        this.type = Objects.requireNonNull(type);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
     }
 
@@ -58,5 +59,10 @@ public class Y80sItem extends IdentifiedItem<Y80sType>
 
     void setCover(URL cover) {
         this.cover = Objects.requireNonNull(cover, "the cover of an item");
+    }
+
+    @Override
+    public int getSubtype() {
+        return type.getId();
     }
 }

@@ -9,19 +9,10 @@ import wsg.tools.internet.base.page.BasicCountablePageResult;
  * @author Kingen
  * @since 2021/3/13
  */
-public class TournamentPageResult extends BasicCountablePageResult<Tournament> {
+public class TournamentPageResult
+    extends BasicCountablePageResult<Tournament, TournamentPageReq> {
 
-    TournamentPageResult(List<Tournament> content, TournamentPageRequest pageRequest, long total) {
-        super(content, pageRequest, total);
-    }
-
-    @Override
-    public TournamentPageRequest nextPageRequest() {
-        return (TournamentPageRequest) super.nextPageRequest();
-    }
-
-    @Override
-    public TournamentPageRequest previousPageRequest() {
-        return (TournamentPageRequest) super.previousPageRequest();
+    TournamentPageResult(List<Tournament> content, TournamentPageReq request, long total) {
+        super(content, request, total);
     }
 }

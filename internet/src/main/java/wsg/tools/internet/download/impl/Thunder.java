@@ -4,8 +4,6 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import org.apache.commons.io.IOCase;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -54,12 +52,5 @@ public final class Thunder {
             url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("u").strip();
         }
         return url;
-    }
-
-    /**
-     * Filter temporary files of thunder application.
-     */
-    public static SuffixFileFilter tmpFileFilter() {
-        return new SuffixFileFilter("xltd", IOCase.INSENSITIVE);
     }
 }

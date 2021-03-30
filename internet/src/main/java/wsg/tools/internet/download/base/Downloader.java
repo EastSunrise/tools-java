@@ -18,18 +18,20 @@ public interface Downloader {
      * @param dir target directory
      * @param url the url which points to the file to download
      * @return downloaded file
-     * @throws IOException if an IO error occurs during downloading
+     * @throws IllegalArgumentException if can't construct a filename by the given url
+     * @throws IOException              if an IO error occurs during downloading
      */
     File download(File dir, URL url) throws IOException;
 
     /**
-     * Downloads the given url with a specific basename.
+     * Downloads the given url with a specific basename. If the given basename is null or blank, the
+     * source name will be applied.
      *
      * @param dir      target directory
      * @param url      the url which points to the file to download
      * @param basename assign the basename of the file to download
      * @return downloaded file
-     * @throws IllegalArgumentException if basename is empty
+     * @throws IllegalArgumentException if can't construct a filename by the given arguments
      * @throws IOException              if an IO error occurs during downloading
      */
     File download(File dir, URL url, String basename) throws IOException;

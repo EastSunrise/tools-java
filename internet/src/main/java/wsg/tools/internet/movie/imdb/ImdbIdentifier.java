@@ -1,18 +1,20 @@
 package wsg.tools.internet.movie.imdb;
 
+import wsg.tools.internet.base.EntityInterface;
+
 /**
- * Supply id of IMDb.
+ * Supplies the identifier on IMDb.
  *
  * @author Kingen
  * @since 2020/11/4
  */
-@FunctionalInterface
+@EntityInterface
 public interface ImdbIdentifier {
 
     /**
-     * Return id of IMDb.
+     * Returns the identifier on IMDb.
      *
-     * @return id
+     * @return the identifier
      */
     String getImdbId();
 }

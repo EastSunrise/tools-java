@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,6 @@ import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.pojo.error.UnknownTypeException;
-import wsg.tools.common.util.function.BiThrowableFunction;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanCatalog;
@@ -56,8 +54,12 @@ public class SubjectAdapterImpl implements SubjectAdapter {
     @Override
     public BaseDoubanSubject doubanSubject(long dbId)
         throws NotFoundException, OtherResponseException {
-        BaseDoubanSubject subject = ifNotFound(dbId, manager.doubanSite()::findById,
-            "Douban subject of " + dbId);
+        BaseDoubanSubject subject = null;
+        try {
+            subject = manager.doubanSite().findById(dbId);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Douban subject of " + dbId);
+        }
         if (subject.getImdbId() != null) {
             saveIdRelation(dbId, subject.getImdbId());
         }
@@ -112,7 +114,12 @@ public class SubjectAdapterImpl implements SubjectAdapter {
         if (imdbRepository instanceof OmdbSite) {
             OmdbSite omdbSite = (OmdbSite) imdbRepository;
             omdbSite.findById(imdbId);
-            OmdbTitle omdbTitle = ifNotFound(imdbId, omdbSite::findById, "OMDb title of " + imdbId);
+            OmdbTitle omdbTitle;
+            try {
+                omdbTitle = omdbSite.findById(imdbId);
+            } catch (NotFoundException e) {
+                throw new NotFoundException("OMDb title of " + imdbId);
+            }
             if (omdbTitle instanceof OmdbMovie) {
                 return new OmdbMovieAdapter((OmdbMovie) omdbTitle);
             }
@@ -144,8 +151,12 @@ public class SubjectAdapterImpl implements SubjectAdapter {
             }
             throw new UnknownTypeException(omdbTitle.getClass());
         }
-        ImdbIdentifier identifier = ifNotFound(imdbId, imdbRepository::findById,
-            "IMDb title of " + imdbId);
+        ImdbIdentifier identifier;
+        try {
+            identifier = imdbRepository.findById(imdbId);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("IMDb title of " + imdbId);
+        }
         if (identifier instanceof ImdbTitle) {
             if (identifier instanceof ImdbMovie) {
                 return new ImdbMovieAdapter((ImdbMovie) identifier);
@@ -158,15 +169,5 @@ public class SubjectAdapterImpl implements SubjectAdapter {
             }
         }
         throw new UnknownTypeException(identifier.getClass());
-    }
-
-    private <T, R> R ifNotFound(T t,
-        @Nonnull BiThrowableFunction<T, R, NotFoundException, OtherResponseException> function,
-        @Nonnull String message) throws NotFoundException, OtherResponseException {
-        try {
-            return function.apply(t);
-        } catch (NotFoundException e) {
-            throw new NotFoundException(message);
-        }
     }
 }

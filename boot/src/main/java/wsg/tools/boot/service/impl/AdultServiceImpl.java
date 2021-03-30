@@ -1,48 +1,49 @@
 package wsg.tools.boot.service.impl;
 
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.AdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
 import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity;
-import wsg.tools.boot.pojo.entity.adult.AdultVideoEntity_;
+import wsg.tools.boot.pojo.entity.adult.ImagePreview;
 import wsg.tools.boot.pojo.entity.base.Failure;
+import wsg.tools.boot.pojo.entity.base.IdView;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
+import wsg.tools.common.io.NotFiletypeException;
+import wsg.tools.internet.base.IntIdentifier;
+import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.base.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.page.PageReq;
+import wsg.tools.internet.base.page.PageResult;
+import wsg.tools.internet.base.repository.LinkedRepoIterator;
 import wsg.tools.internet.base.repository.LinkedRepository;
-import wsg.tools.internet.base.repository.RepoIterator;
+import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.info.adult.LicencePlateItem;
-import wsg.tools.internet.info.adult.LicencePlateSite;
-import wsg.tools.internet.info.adult.common.AdultEntry;
 import wsg.tools.internet.info.adult.common.Mosaic;
 import wsg.tools.internet.info.adult.common.SerialNumber;
-import wsg.tools.internet.info.adult.midnight.BaseMidnightEntry;
-import wsg.tools.internet.info.adult.midnight.MidnightAdultEntry;
-import wsg.tools.internet.info.adult.midnight.MidnightAmateurEntryType;
-import wsg.tools.internet.info.adult.midnight.MidnightColumn;
-import wsg.tools.internet.info.adult.midnight.MidnightIndex;
-import wsg.tools.internet.info.adult.midnight.MidnightPageRequest;
-import wsg.tools.internet.info.adult.midnight.MidnightPageResult;
-import wsg.tools.internet.info.adult.midnight.MidnightSite;
+import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.entry.AmateurSupplier;
 
 /**
  * @author Kingen
@@ -53,7 +54,7 @@ import wsg.tools.internet.info.adult.midnight.MidnightSite;
 @Service
 public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
-    private static final String CODE_EXISTS_MSG = "The target code exists";
+    private static final LocalDateTime START = LocalDateTime.MIN;
 
     private final AdultVideoRepository videoRepository;
     private final FailureRepository failureRepository;
@@ -68,31 +69,31 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public void importLicencePlateSite(@Nonnull LicencePlateSite site)
+    public <T extends AmateurSupplier>
+    void importLinkedRepository(String domain, int subtype, LinkedRepository<String, T> repository)
         throws OtherResponseException {
-        String domain = site.getDomain();
-        Sort sort = Sort.by(Sort.Direction.DESC, AdultVideoEntity_.GMT_CREATED);
-        Pageable pageable = PageRequest.of(0, 1, sort);
-        AdultVideoEntity probe = new AdultVideoEntity();
-        probe.setSource(Source.repo(domain));
-        Example<AdultVideoEntity> example = Example.of(probe);
-        Page<AdultVideoEntity> page = videoRepository.findAll(example, pageable);
-
-        LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
-        RepoIterator<LicencePlateItem> iterator;
-        if (page.hasContent()) {
-            String start = page.iterator().next().getId();
-            iterator = repository.linkedRepoIterator(start);
-            SiteUtils.found(iterator::next);
+        Optional<IdView<String>> optional = videoRepository.getFirstOrderUpdateTime(domain);
+        LinkedRepoIterator<String, T> iterator;
+        if (optional.isPresent()) {
+            iterator = repository.linkedRepoIterator(optional.get().getId());
+            try {
+                iterator.next();
+            } catch (NotFoundException e) {
+                throw new AppException(e);
+            }
         } else {
             iterator = repository.linkedRepoIterator();
         }
         int success = 0, total = 0;
+        Source source = Source.record(domain, subtype, 0);
         while (iterator.hasNext()) {
-            LicencePlateItem item = SiteUtils.found(iterator::next);
-            AdultEntry entry = item.getEntry();
-            Source source = Source.record(domain, Source.DEFAULT_SUBTYPE, 0);
-            success += insertEntry(entry, source);
+            T item = null;
+            try {
+                item = iterator.next();
+            } catch (NotFoundException e) {
+                throw new AppException(e);
+            }
+            success += insertEntry(item, source);
             total++;
         }
         log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
@@ -100,61 +101,77 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public void importMidnightEntries(@Nonnull MidnightSite site,
-        @Nonnull MidnightAmateurEntryType type) throws OtherResponseException {
-        MidnightColumn column = type.getColumn();
-        Integer subtype = column.getCode();
-        String domain = site.getDomain();
-        long max = videoRepository.findMaxRid(domain, subtype).orElse(0L);
-
-        MidnightPageRequest request = MidnightPageRequest.first();
-        boolean finished = false;
-        List<MidnightIndex> indices = new ArrayList<>();
+    public <I, T extends IntIdentifier & AmateurSupplier & UpdateDatetimeSupplier, P extends PageReq>
+    void importLatestByPage(String domain, int subtype,
+        @Nonnull RepoPageable<P, PageResult<I, P>> pageable, P firstReq,
+        RepoRetrievable<I, T> retrievable) throws OtherResponseException {
+        List<T> entities = new ArrayList<>();
+        LocalDateTime deadline = videoRepository.findLatestUpdate(domain, subtype).orElse(START);
+        P req = firstReq;
         while (true) {
-            MidnightPageResult page = SiteUtils.found(request, req -> site.findPage(column, req));
-            for (MidnightIndex index : page.getContent()) {
-                if (index.getId() <= max) {
-                    finished = true;
-                    break;
-                }
-                indices.add(index);
-            }
-            if (finished || !page.hasNext()) {
-                break;
-            }
-            request = page.nextPageRequest();
-        }
-
-        indices.sort(Comparator.comparing(MidnightIndex::getId));
-        int success = 0;
-        for (MidnightIndex index : indices) {
-            BaseMidnightEntry entry = null;
+            PageResult<I, P> result = null;
             try {
-                entry = site.findAmateurEntry(type, index.getId());
+                result = pageable.findPage(req);
             } catch (NotFoundException e) {
                 throw new AppException(e);
             }
-            if (entry instanceof MidnightAdultEntry) {
-                Source source = Source.record(domain, subtype, entry.getId());
-                success += insertEntry(((MidnightAdultEntry) entry).getEntry(), source);
+            boolean dead = false;
+            for (I index : result.getContent()) {
+                T t;
+                try {
+                    t = retrievable.findById(index);
+                } catch (NotFoundException e) {
+                    throw new AppException(e);
+                }
+                if (t.lastUpdate().compareTo(deadline) <= 0) {
+                    dead = true;
+                    break;
+                }
+                entities.add(t);
             }
+            if (dead || !result.hasNext()) {
+                break;
+            }
+            req = result.nextPageRequest();
         }
-        log.info("Imported adult entries of {} from {}: {} succeed, {} failed.", type, domain,
-            success, indices.size() - success);
+        if (entities.isEmpty()) {
+            return;
+        }
+        LocalDateTime latest = entities.get(0).lastUpdate();
+        int success = 0, total = 0;
+        for (int i = entities.size() - 1; i >= 0; i--) {
+            T t = entities.get(i);
+            // the latest update entries will be imported next in case of importing duplicate entries
+            if (t.lastUpdate().compareTo(latest) >= 0) {
+                break;
+            }
+            Source source = Source.record(domain, subtype, t.getId());
+            success += insertEntry(t, source);
+            total++;
+        }
+        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
+            total - success);
     }
 
-    private int insertEntry(AdultEntry entry, Source source) {
-        Objects.requireNonNull(entry, "the entry to save");
-        Objects.requireNonNull(source, "the source of the entry");
+    @Override
+    public List<ImagePreview> findImages(Pageable pageable) {
+        return videoRepository.findAllByImagesIsNotNullOrderByGmtModified();
+    }
+
+    /**
+     * Saves an entry in the item.
+     * <p>
+     * todo concrete type
+     *
+     * @return 0 if failed or 1 if succeeded
+     */
+    private <T extends AmateurSupplier> int insertEntry(@Nonnull T item, Source source) {
+        AmateurAdultEntry entry = item.getAmateurEntry();
         String code = entry.getCode();
         try {
             code = SerialNumber.format(entry.getCode());
         } catch (IllegalArgumentException e) {
             failureRepository.insert(new Failure(source, "The code is invalid: " + code));
-            return 0;
-        }
-        if (videoRepository.findById(code).isPresent()) {
-            failureRepository.insert(new Failure(source, CODE_EXISTS_MSG));
             return 0;
         }
         AdultVideoEntity entity = new AdultVideoEntity();
@@ -172,6 +189,12 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         entity.setSeries(entry.getSeries());
         entity.setTags(entry.getTags());
         entity.setSource(source);
+        if (item instanceof UpdateDatetimeSupplier) {
+            entity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
+        } else if (item instanceof UpdateDateSupplier) {
+            LocalDate date = ((UpdateDateSupplier) item).lastUpdate();
+            entity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
+        }
         List<URL> images = entry.getImages();
         if (CollectionUtils.isNotEmpty(images)) {
             List<String> uploads = new ArrayList<>();
@@ -179,7 +202,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 String upload = null;
                 try {
                     upload = config.uploadEntryImage(image, code);
-                } catch (NotFoundException ignored) {
+                } catch (NotFoundException | NotFiletypeException ignored) {
                 } catch (OtherResponseException e) {
                     throw new AppException(e);
                 }
@@ -187,7 +210,61 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             }
             entity.setImages(uploads);
         }
-        videoRepository.insert(entity);
+        Optional<AdultVideoEntity> optional = videoRepository.findById(code);
+        if (optional.isEmpty()) {
+            videoRepository.insert(entity);
+            return 1;
+        }
+
+        AdultVideoEntity exists = optional.get();
+        if (merge(exists, entity)) {
+            failureRepository.insert(new Failure(source, "The target code exists: " + code));
+            return 0;
+        }
+        if (exists.getImages() != null) {
+            if (entity.getImages() == null) {
+                entity.setImages(exists.getImages());
+            } else {
+                entity.getImages().addAll(exists.getImages());
+            }
+        }
+        Set<String> tags = new HashSet<>(videoRepository.findTagsById(code));
+        if (entity.getTags() != null) {
+            tags.addAll(entity.getTags());
+        }
+        entity.setTags(new ArrayList<>(tags));
+        videoRepository.updateById(entity);
         return 1;
+    }
+
+    private boolean merge(AdultVideoEntity old, AdultVideoEntity add) {
+        return merge(old, add, AdultVideoEntity::getTitle, AdultVideoEntity::setTitle)
+            || merge(old, add, AdultVideoEntity::getMosaic, AdultVideoEntity::setMosaic)
+            || merge(old, add, AdultVideoEntity::getDuration, AdultVideoEntity::setDuration)
+            || merge(old, add, AdultVideoEntity::getReleaseDate, AdultVideoEntity::setReleaseDate)
+            || merge(old, add, AdultVideoEntity::getDirector, AdultVideoEntity::setDirector)
+            || merge(old, add, AdultVideoEntity::getProducer, AdultVideoEntity::setProducer)
+            || merge(old, add, AdultVideoEntity::getDistributor, AdultVideoEntity::setDistributor)
+            || merge(old, add, AdultVideoEntity::getSeries, AdultVideoEntity::setSeries);
+    }
+
+    /**
+     * Returns {@code true} if the two values of the specific property are both not null and not
+     * equivalent. Otherwise, return {@code false} and merge the non-null value, if exists, to the
+     * new entity.
+     */
+    private <T> boolean merge(AdultVideoEntity exists, AdultVideoEntity newEntity,
+        @Nonnull Function<AdultVideoEntity, T> getter,
+        @Nonnull BiConsumer<AdultVideoEntity, T> setter) {
+        T existsValue = getter.apply(exists);
+        if (existsValue == null) {
+            return false;
+        }
+        T newValue = getter.apply(newEntity);
+        if (newValue == null) {
+            setter.accept(exists, existsValue);
+            return false;
+        }
+        return !newValue.equals(existsValue);
     }
 }

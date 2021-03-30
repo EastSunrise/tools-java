@@ -6,7 +6,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import lombok.Setter;
-import wsg.tools.common.lang.Identifier;
 
 /**
  * Base entity with an generated id.
@@ -16,7 +15,7 @@ import wsg.tools.common.lang.Identifier;
  */
 @Setter
 @MappedSuperclass
-public class IdentityEntity extends BaseEntity implements Identifier<Long> {
+public class IdentityEntity extends BaseEntity {
 
     private static final long serialVersionUID = -7472130300615133460L;
 
@@ -24,7 +23,6 @@ public class IdentityEntity extends BaseEntity implements Identifier<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Override
     public Long getId() {
         return id;
     }

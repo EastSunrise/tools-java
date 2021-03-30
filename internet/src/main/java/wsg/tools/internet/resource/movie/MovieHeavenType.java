@@ -89,13 +89,16 @@ public enum MovieHeavenType implements IntCodeSupplier {
     /**
      * @see <a href="https://www.993vod.com/vod-type-id-22-pg-1.html">4K</a>
      */
-    FOUR_K(22),
-    ;
+    FOUR_K(22);
 
     private final int id;
 
     MovieHeavenType(int id) {
         this.id = id;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override

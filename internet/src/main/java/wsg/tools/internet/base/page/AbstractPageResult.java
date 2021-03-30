@@ -12,32 +12,32 @@ import java.util.Objects;
  * @author Kingen
  * @since 2021/3/8
  */
-abstract class AbstractPageResult<T> implements PageResult<T> {
+abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T, P> {
 
     private final List<T> content = new ArrayList<>();
-    private final PageRequest pageRequest;
+    private final P request;
 
     /**
      * Constructs an instance of {@link PageResult}.
      *
-     * @param content     the content of this page, must not be {@literal null}.
-     * @param pageRequest the paging information, must not be {@literal null}.
+     * @param content the content of this page, must not be {@literal null}.
+     * @param request the paging information, must not be {@literal null}.
      */
-    AbstractPageResult(List<T> content, PageRequest pageRequest) {
+    AbstractPageResult(List<T> content, P request) {
         Objects.requireNonNull(content, "Content must not be null!");
-        Objects.requireNonNull(pageRequest, "PageRequest must not be null!");
+        Objects.requireNonNull(request, "PageRequest must not be null!");
         this.content.addAll(content);
-        this.pageRequest = pageRequest;
+        this.request = request;
     }
 
     @Override
     public int getCurrent() {
-        return pageRequest.getCurrent();
+        return request.getCurrent();
     }
 
     @Override
     public int getPageSize() {
-        return pageRequest.getPageSize();
+        return request.getPageSize();
     }
 
     @Override
@@ -61,19 +61,21 @@ abstract class AbstractPageResult<T> implements PageResult<T> {
     }
 
     @Override
-    public PageRequest nextPageRequest() {
+    @SuppressWarnings("unchecked")
+    public P nextPageRequest() {
         if (!hasNext()) {
             throw new NoSuchElementException("Doesn't have next page.");
         }
-        return pageRequest.next();
+        return (P) request.next();
     }
 
     @Override
-    public PageRequest previousPageRequest() {
+    @SuppressWarnings("unchecked")
+    public P previousPageRequest() {
         if (!hasPrevious()) {
             throw new NoSuchElementException("Doesn't have previous page.");
         }
-        return pageRequest.previous();
+        return (P) request.previous();
     }
 
 }

@@ -1,21 +1,22 @@
 package wsg.tools.internet.movie.imdb;
 
 import javax.annotation.Nonnull;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
 /**
- * Service of IMDb.com.
+ * Service for IMDb objects.
  *
  * @author Kingen
  * @since 2020/12/12
  */
-@FunctionalInterface
-public interface ImdbRepository<T extends ImdbIdentifier> extends Repository<String, T> {
+public interface ImdbRepository<T extends ImdbIdentifier>
+    extends Repository<String, T>, RepoRetrievable<String, T> {
 
     /**
-     * Obtains an item by the given identifier.
+     * Retrieve an item by the given identifier.
      *
      * @param imdbId identifier, starting with 'tt'
      * @return the item with detailed info

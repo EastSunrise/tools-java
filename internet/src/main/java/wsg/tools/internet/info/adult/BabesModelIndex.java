@@ -1,7 +1,10 @@
 package wsg.tools.internet.info.adult;
 
+import java.net.URL;
+import java.util.Objects;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.common.lang.Identifier;
+import wsg.tools.internet.base.Identifier;
+import wsg.tools.internet.resource.common.CoverSupplier;
 
 /**
  * An index pointing to a model in the {@link BabesTubeSite}.
@@ -9,18 +12,18 @@ import wsg.tools.common.lang.Identifier;
  * @author Kingen
  * @since 2021/3/15
  */
-public class BabesModelIndex implements Identifier<String> {
+public class BabesModelIndex implements Identifier<String>, CoverSupplier {
 
     private final String id;
     private final String name;
-    private final String cover;
+    private final URL cover;
     private final int videos;
     private final int photos;
 
-    BabesModelIndex(String id, String name, String cover, int videos, int photos) {
-        this.id = id;
+    BabesModelIndex(String id, String name, URL cover, int videos, int photos) {
+        this.id = AssertUtils.requireNotBlank(id, "id of a model");
         this.name = AssertUtils.requireNotBlank(name, "name of a model");
-        this.cover = AssertUtils.requireNotBlank(cover, "cover of a model");
+        this.cover = Objects.requireNonNull(cover, "cover of a model");
         this.videos = videos;
         this.photos = photos;
     }
@@ -34,7 +37,8 @@ public class BabesModelIndex implements Identifier<String> {
         return name;
     }
 
-    public String getCover() {
+    @Override
+    public URL getCover() {
         return cover;
     }
 

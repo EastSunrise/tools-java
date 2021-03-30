@@ -133,6 +133,6 @@ public final class StringUtilsExt {
         for (char sign : NOT_PERMIT_CHARS_FOR_FILENAME) {
             result = StringUtils.replace(result, String.valueOf(sign), "#" + ((int) sign));
         }
-        return result;
+        return StringUtils.replace(result, "\n", "");
     }
 }

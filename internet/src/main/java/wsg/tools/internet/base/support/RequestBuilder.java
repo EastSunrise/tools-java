@@ -75,10 +75,13 @@ public class RequestBuilder {
     }
 
     /**
-     * Adds a parameter to the request.
+     * Adds a parameter to the request. Do nothing if the value is {@literal null}.
      */
     public RequestBuilder addParameter(String name, Object value) {
-        return addParameter(new BasicNameValuePair(name, Objects.requireNonNull(value).toString()));
+        if (value != null) {
+            addParameter(new BasicNameValuePair(name, value.toString()));
+        }
+        return this;
     }
 
     /**

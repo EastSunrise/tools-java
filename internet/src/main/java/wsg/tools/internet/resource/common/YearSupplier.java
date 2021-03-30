@@ -1,12 +1,14 @@
 package wsg.tools.internet.resource.common;
 
+import wsg.tools.internet.base.EntityInterface;
+
 /**
  * Supplies the year of the item.
  *
  * @author Kingen
  * @since 2020/11/23
  */
-@FunctionalInterface
+@EntityInterface
 public interface YearSupplier {
 
     /**

@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 
 /**
@@ -9,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/1
  */
-public enum BdMovieType implements TextSupplier, IntCodeSupplier {
+public enum BdMovieType implements TextSupplier {
     /**
      * @see <a href="https://www.bd2020.com/zx/index.htm">Latest</a>
      */
@@ -33,8 +32,7 @@ public enum BdMovieType implements TextSupplier, IntCodeSupplier {
     /**
      * @see <a href="https://www.bd2020.com/dh/index.htm">Animes</a>
      */
-    ANIME("dh", 387),
-    ;
+    ANIME("dh", 387);
 
     private final String text;
     private final int first;
@@ -51,10 +49,5 @@ public enum BdMovieType implements TextSupplier, IntCodeSupplier {
 
     public int first() {
         return first;
-    }
-
-    @Override
-    public Integer getCode() {
-        return ordinal();
     }
 }

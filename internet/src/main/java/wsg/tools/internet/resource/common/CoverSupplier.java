@@ -1,6 +1,7 @@
 package wsg.tools.internet.resource.common;
 
 import java.net.URL;
+import wsg.tools.internet.base.EntityInterface;
 
 /**
  * Supplies the cover of an item.
@@ -8,6 +9,7 @@ import java.net.URL;
  * @author Kingen
  * @since 2021/3/19
  */
+@EntityInterface
 public interface CoverSupplier {
 
     /**

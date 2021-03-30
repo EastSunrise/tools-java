@@ -27,15 +27,12 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.function.BiThrowableFunction;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.PageRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
@@ -51,7 +48,8 @@ import wsg.tools.internet.download.impl.Ed2kLink;
  * @see <a href="https://www.putaoys.com">Grape Video</a>
  * @since 2021/3/2
  */
-public final class GrapeSite extends BaseSite {
+@ConcreteSite
+public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
 
     private static final int MAX_NEWS_ID = 16132;
     private static final String BT_ATTACH_SRC = "thunder://url_btbtt";
@@ -76,24 +74,19 @@ public final class GrapeSite extends BaseSite {
      * The repository of the items that belong to {@link GrapeVodType#BT_MOVIE}. <strong>About 1% of
      * the items are not found.</strong>
      */
+    @Override
     @Nonnull
-    public ListRepository<Integer, GrapeNewsItem> getNewsRepository() {
+    public ListRepository<Integer, GrapeNewsItem> getRepository() {
         Stream<Integer> stream = IntStream.rangeClosed(2, MAX_NEWS_ID).boxed();
-        return Repositories.list(this::findNewsItem, stream.collect(Collectors.toList()));
-    }
-
-    public PageRepository<GrapeVodIndex, GrapeVodItem> getVodRepository(GrapeVodType type) {
-        Objects.requireNonNull(type);
-        return Repositories.page(this::findVodItem,
-            (BiThrowableFunction<GrapeVodPageRequest, PageResult<GrapeVodIndex>, NotFoundException, OtherResponseException>)
-                pageRequest -> findPage(type, pageRequest), GrapeVodPageRequest.first());
+        return Repositories.list(this, stream.collect(Collectors.toList()));
     }
 
     /**
-     * Finds an item that belongs to {@link GrapeVodType#BT_MOVIE}.
+     * Retrieves an item that belongs to {@link GrapeVodType#BT_MOVIE}.
      */
+    @Override
     @Nonnull
-    public GrapeNewsItem findNewsItem(int id) throws NotFoundException, OtherResponseException {
+    public GrapeNewsItem findById(Integer id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategy.never());
         String datetime = document.selectFirst(".updatetime").text();
@@ -140,12 +133,13 @@ public final class GrapeSite extends BaseSite {
     }
 
     /**
-     * Finds the page of vod indices by the given type.
+     * Retrieves the page of vod indices by the given type.
      *
      * @see GrapeVodType
      */
+    @Nonnull
     public GrapeVodPageResult findPage(@Nonnull GrapeVodType type,
-        @Nonnull GrapeVodPageRequest pageRequest) throws NotFoundException, OtherResponseException {
+        @Nonnull GrapeVodPageReq pageRequest) throws NotFoundException, OtherResponseException {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
@@ -168,6 +162,10 @@ public final class GrapeSite extends BaseSite {
         return new GrapeVodPageResult(indices, pageRequest, total);
     }
 
+    /**
+     * Retrieves a vod item by the given index.
+     */
+    @Nonnull
     public GrapeVodItem findVodItem(GrapeVodIndex index)
         throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(index);
@@ -177,7 +175,7 @@ public final class GrapeSite extends BaseSite {
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
         String typeText = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref).group("t");
-        GrapeVodType type = EnumUtilExt.valueOfText(typeText, GrapeVodType.class, false);
+        GrapeVodType type = EnumUtilExt.valueOfText(GrapeVodType.class, typeText, false);
         String timeStr = document.selectFirst("#addtime").text().strip();
         LocalDateTime addTime = LocalDateTime.parse(timeStr, Constants.YYYY_MM_DD_HH_MM);
         GrapeVodItem item = new GrapeVodItem(index.getPath(), builder.toString(), type, addTime);

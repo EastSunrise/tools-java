@@ -7,6 +7,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
+import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 
@@ -35,11 +37,14 @@ import wsg.tools.boot.service.intf.SubjectService;
 public class ResourceController extends AbstractController {
 
     private final ResourceService resourceService;
+    private final AdultService adultService;
     private final SubjectService subjectService;
 
     @Autowired
-    public ResourceController(ResourceService resourceService, SubjectService subjectService) {
+    public ResourceController(ResourceService resourceService,
+        AdultService adultService, SubjectService subjectService) {
         this.resourceService = resourceService;
+        this.adultService = adultService;
         this.subjectService = subjectService;
     }
 
@@ -72,8 +77,9 @@ public class ResourceController extends AbstractController {
         if (StringUtils.isBlank(key)) {
             key = seriesEntity.getZhTitle();
         }
-        Set<ResourceItemEntity> items = new HashSet<>();
-        items.addAll(resourceService.search(key, null, seriesEntity.getImdbId()));
+        String imdbId = seriesEntity.getImdbId();
+        List<ResourceItemEntity> entities = resourceService.search(key, null, imdbId);
+        Set<ResourceItemEntity> items = new HashSet<>(entities);
         seasons.forEach(seasonEntity ->
             items.addAll(resourceService.search(null, seasonEntity.getDbId(), null))
         );
@@ -95,5 +101,11 @@ public class ResourceController extends AbstractController {
     @ResponseBody
     public long identifyResources(@RequestBody List<ResourceCheckDto> checkDto) {
         return resourceService.identifyResources(checkDto);
+    }
+
+    @GetMapping("/adult/preview")
+    public String preview(Model model) {
+        model.addAttribute("views", adultService.findImages(Pageable.unpaged()));
+        return "info/adult/preview";
     }
 }

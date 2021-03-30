@@ -6,13 +6,15 @@ import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
 /**
- * A repository with an <strong>unmodifiable</strong> {@code ArrayList} of identifiers mapped to the
+ * A repository that manages an <strong>unmodifiable</strong> list of identifiers mapped to the
  * entities.
  *
  * @author Kingen
+ * @see ListRepoIterator
  * @since 2021/3/26
  */
-public interface ListRepository<ID, T> extends Repository<ID, T>, RepoIterable<T> {
+public interface ListRepository<ID, T>
+    extends Repository<ID, T>, RepoRetrievable<ID, T>, RepoIterable<T> {
 
     /**
      * Returns {@code true} if this repository contains no identifiers.
@@ -98,22 +100,24 @@ public interface ListRepository<ID, T> extends Repository<ID, T>, RepoIterable<T
     int lastIndexOf(ID id);
 
     /**
-     * Returns an array iterator over the identifiers and entities in this repository (in proper
+     * Returns a list iterator over the identifiers and entities in this repository (in proper
      * sequence).
      *
-     * @return an array iteration in either direction
+     * @return a list iteration in proper sequence
      * @see List#listIterator()
      */
     @Nonnull
     ListRepoIterator<ID, T> listRepoIterator();
 
     /**
-     * Returns an array iterator over the identifiers and entities in this repository (in proper
+     * Returns a list iterator over the identifiers and entities in this repository (in proper
      * sequence), starting at the specified position in the repository.
      *
      * @param index index of the first entity to be returned from the repository iterator (by a call
      *              to {@link ListRepoIterator#next})
-     * @return an array iteration in proper sequence
+     * @return a list iteration in proper sequence
+     * @throws IndexOutOfBoundsException if the index is out of range ({@code index < 0 || index >
+     *                                   size()})
      * @see List#listIterator(int)
      */
     @Nonnull
@@ -122,7 +126,7 @@ public interface ListRepository<ID, T> extends Repository<ID, T>, RepoIterable<T
     /**
      * Returns a view of the portion of this repository between the specified {@code fromInclusive},
      * inclusive, and {@code toExclusive}, exclusive. (If {@code fromInclusive} and {@code
-     * toExclusive} are equal, the returned list is empty.)
+     * toExclusive} are equal, the returned repository is empty.)
      *
      * @param fromInclusive low endpoint (inclusive) of the subRepository
      * @param toExclusive   high endpoint (exclusive) of the subRepository

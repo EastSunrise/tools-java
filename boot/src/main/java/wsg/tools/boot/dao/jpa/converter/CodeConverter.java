@@ -21,11 +21,11 @@ class CodeConverter<T, E extends Enum<E> & IntCodeSupplier & Supplier<T> & AkaPr
 
     @Override
     protected T deserialize(Integer dbData) {
-        return EnumUtilExt.valueOfCode(dbData, eClass).get();
+        return EnumUtilExt.valueOfCode(eClass, dbData).get();
     }
 
     @Override
     protected Integer serialize(T attribute) {
-        return EnumUtilExt.deserializeAka(attribute, eClass).getCode();
+        return EnumUtilExt.valueOfAka(eClass, attribute).getCode();
     }
 }

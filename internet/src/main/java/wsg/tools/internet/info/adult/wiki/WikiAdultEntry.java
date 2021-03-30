@@ -2,7 +2,7 @@ package wsg.tools.internet.info.adult.wiki;
 
 import javax.annotation.Nonnull;
 import lombok.Getter;
-import wsg.tools.internet.info.adult.common.AdultEntry;
+import wsg.tools.internet.info.adult.entry.FormalAdultEntry;
 
 /**
  * An adult entry of a celebrity.
@@ -13,10 +13,10 @@ import wsg.tools.internet.info.adult.common.AdultEntry;
 @Getter
 public class WikiAdultEntry {
 
-    private final AdultEntry entry;
+    private final FormalAdultEntry entry;
     private final WikiSimpleCelebrity celebrity;
 
-    WikiAdultEntry(@Nonnull AdultEntry entry, WikiSimpleCelebrity celebrity) {
+    WikiAdultEntry(@Nonnull FormalAdultEntry entry, WikiSimpleCelebrity celebrity) {
         this.entry = entry;
         this.celebrity = celebrity;
     }

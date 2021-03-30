@@ -9,19 +9,10 @@ import wsg.tools.internet.base.page.BasicCountablePageResult;
  * @author Kingen
  * @since 2021/3/8
  */
-public class MidnightPageResult extends BasicCountablePageResult<MidnightIndex> {
+public class MidnightPageResult
+    extends BasicCountablePageResult<MidnightIndex, MidnightPageReq> {
 
-    MidnightPageResult(List<MidnightIndex> content, MidnightPageRequest request, long total) {
+    MidnightPageResult(List<MidnightIndex> content, MidnightPageReq request, long total) {
         super(content, request, total);
-    }
-
-    @Override
-    public MidnightPageRequest nextPageRequest() {
-        return (MidnightPageRequest) super.nextPageRequest();
-    }
-
-    @Override
-    public MidnightPageRequest previousPageRequest() {
-        return (MidnightPageRequest) super.previousPageRequest();
     }
 }

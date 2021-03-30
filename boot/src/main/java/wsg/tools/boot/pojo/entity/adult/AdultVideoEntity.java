@@ -14,22 +14,23 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
+import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
-import wsg.tools.common.lang.Identifier;
+import wsg.tools.common.io.Filetype;
 
 /**
  * Entity of adult video.
  *
  * @author Kingen
+ * @see wsg.tools.internet.info.adult.entry.AbstractAdultEntry
  * @since 2021/2/23
  */
 @Getter
 @Setter
 @Entity
 @Table(name = "adult_video")
-public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
+public class AdultVideoEntity extends BaseEntity {
 
     private static final long serialVersionUID = 718083190465191530L;
 
@@ -63,19 +64,18 @@ public class AdultVideoEntity extends BaseEntity implements Identifier<String> {
     @Column(name = "tag", nullable = false, length = 31)
     private List<String> tags;
 
+    @MinioStored(type = Filetype.IMAGE)
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "adult_video_image")
-    @Column(name = "image", nullable = false, length = 63)
+    @Column(name = "image", nullable = false, length = 127)
     private List<String> images;
 
     @Embedded
     private Source source;
 
-    @CreationTimestamp
-    @Column(nullable = false, length = 6)
-    private LocalDateTime gmtCreated;
+    @Column(length = 0)
+    private LocalDateTime updateTime;
 
-    @Override
     public String getId() {
         return id;
     }

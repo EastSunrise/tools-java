@@ -1,6 +1,6 @@
 package wsg.tools.internet.common;
 
-import wsg.tools.internet.base.SiteStatus;
+import wsg.tools.internet.base.ConcreteSite;
 
 /**
  * Exception if the status of the site is abnormal.
@@ -12,14 +12,14 @@ public class SiteStatusException extends RuntimeException {
 
     private static final long serialVersionUID = -1889934561941062365L;
 
-    private final SiteStatus status;
+    private final ConcreteSite status;
 
-    public SiteStatusException(SiteStatus status) {
+    public SiteStatusException(ConcreteSite status) {
         super("The status of the site is " + status.status());
         this.status = status;
     }
 
-    public SiteStatus getStatus() {
+    public ConcreteSite getStatus() {
         return status;
     }
 }

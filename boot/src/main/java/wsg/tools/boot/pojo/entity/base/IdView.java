@@ -7,7 +7,6 @@ package wsg.tools.boot.pojo.entity.base;
  * @since 2020/9/9
  */
 @EntityView
-@FunctionalInterface
 public interface IdView<ID> {
 
     /**

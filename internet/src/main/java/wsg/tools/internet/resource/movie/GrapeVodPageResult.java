@@ -9,19 +9,10 @@ import wsg.tools.internet.base.page.BasicCountablePageResult;
  * @author Kingen
  * @since 2021/3/9
  */
-public class GrapeVodPageResult extends BasicCountablePageResult<GrapeVodIndex> {
+public class GrapeVodPageResult
+    extends BasicCountablePageResult<GrapeVodIndex, GrapeVodPageReq> {
 
-    GrapeVodPageResult(List<GrapeVodIndex> content, GrapeVodPageRequest request, long total) {
+    GrapeVodPageResult(List<GrapeVodIndex> content, GrapeVodPageReq request, long total) {
         super(content, request, total);
-    }
-
-    @Override
-    public GrapeVodPageRequest nextPageRequest() {
-        return (GrapeVodPageRequest) super.nextPageRequest();
-    }
-
-    @Override
-    public GrapeVodPageRequest previousPageRequest() {
-        return (GrapeVodPageRequest) super.previousPageRequest();
     }
 }

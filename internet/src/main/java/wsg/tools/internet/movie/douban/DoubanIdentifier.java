@@ -1,18 +1,20 @@
 package wsg.tools.internet.movie.douban;
 
+import wsg.tools.internet.base.EntityInterface;
+
 /**
- * Supply id of Douban.
+ * Supplies the identifier on douban.
  *
  * @author Kingen
  * @since 2020/11/4
  */
-@FunctionalInterface
+@EntityInterface
 public interface DoubanIdentifier {
 
     /**
-     * Obtains id of Douban.
+     * Returns the identifier on douban.
      *
-     * @return id
+     * @return the identifier
      */
     Long getDbId();
 }

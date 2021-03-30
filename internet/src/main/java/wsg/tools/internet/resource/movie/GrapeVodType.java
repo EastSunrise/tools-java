@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 
 /**
@@ -9,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/4
  */
-public enum GrapeVodType implements IntCodeSupplier, TextSupplier {
+public enum GrapeVodType implements TextSupplier {
 
     /**
      * @see <a href="https://www.putaoys.com/vod/list/dongman/">Animes</a>
@@ -102,11 +101,6 @@ public enum GrapeVodType implements IntCodeSupplier, TextSupplier {
     }
 
     public int getId() {
-        return id;
-    }
-
-    @Override
-    public Integer getCode() {
         return id;
     }
 }

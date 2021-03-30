@@ -5,10 +5,9 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.NextSupplier;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.UpdateDatetimeSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.CoverSupplier;
 
 /**
  * Items of {@link BdMovieSite}.
@@ -16,10 +15,10 @@ import wsg.tools.internet.resource.common.CoverSupplier;
  * @author Kingen
  * @since 2020/10/27
  */
-public class BdMovieItem extends IdentifiedItem<BdMovieType>
-    implements DoubanIdentifier, ImdbIdentifier, UpdateDatetimeSupplier, NextSupplier<Integer>,
-    CoverSupplier {
+public class BdMovieItem extends BaseIdentifiedItem
+    implements DoubanIdentifier, ImdbIdentifier, UpdateDatetimeSupplier, NextSupplier<Integer> {
 
+    private final BdMovieType type;
     private final LocalDateTime updateTime;
     private Long dbId;
     private String imdbId;
@@ -27,7 +26,8 @@ public class BdMovieItem extends IdentifiedItem<BdMovieType>
     private URL cover;
 
     BdMovieItem(int id, @Nonnull String url, BdMovieType type, LocalDateTime updateTime) {
-        super(id, url, type);
+        super(id, url);
+        this.type = Objects.requireNonNull(type);
         this.updateTime = Objects.requireNonNull(updateTime, "the update time of an item");
     }
 
@@ -70,5 +70,10 @@ public class BdMovieItem extends IdentifiedItem<BdMovieType>
     @Override
     public Integer nextId() {
         return next;
+    }
+
+    @Override
+    public int getSubtype() {
+        return type.ordinal();
     }
 }

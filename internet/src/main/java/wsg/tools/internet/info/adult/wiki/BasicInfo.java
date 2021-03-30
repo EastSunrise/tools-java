@@ -1,7 +1,5 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +21,6 @@ import wsg.tools.internet.info.adult.common.CupEnum;
 class BasicInfo {
 
     private Gender gender;
-    private TemporalAccessor birthday;
     private String fullName;
     private List<String> zhNames;
     private List<String> jaNames;
@@ -35,11 +32,8 @@ class BasicInfo {
     private Integer height;
     private Integer weight;
     private CupEnum cup;
-    private Figure figure;
     private BloodType bloodType;
     private List<String> occupations;
-    private Temporal start;
-    private Temporal retire;
     private String agency;
     private String firm;
     private String school;
@@ -53,10 +47,6 @@ class BasicInfo {
 
     void setGender(Gender gender) {
         this.gender = gender;
-    }
-
-    void setBirthday(TemporalAccessor birthday) {
-        this.birthday = birthday;
     }
 
     void setFullName(String fullName) {
@@ -103,24 +93,14 @@ class BasicInfo {
         this.cup = cup;
     }
 
-    void setFigure(Figure figure) {
-        this.figure = figure;
-    }
-
     void setBloodType(BloodType bloodType) {
         this.bloodType = bloodType;
     }
 
     void setOccupations(List<String> occupations) {
-        this.occupations = Collections.unmodifiableList(occupations);
-    }
-
-    void setStart(Temporal start) {
-        this.start = start;
-    }
-
-    void setRetire(Temporal retire) {
-        this.retire = retire;
+        if (occupations != null) {
+            this.occupations = Collections.unmodifiableList(occupations);
+        }
     }
 
     void setAgency(String agency) {

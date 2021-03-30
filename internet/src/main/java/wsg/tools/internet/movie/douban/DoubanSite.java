@@ -34,9 +34,10 @@ import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.Loggable;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
@@ -60,8 +61,9 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @since 2020/6/15
  */
 @Slf4j
-public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanSubject>,
-    Loggable<Long> {
+@ConcreteSite
+public class DoubanSite extends BaseSite
+    implements RepoRetrievable<Long, BaseDoubanSubject>, Loggable<Long> {
 
     public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
 
@@ -205,7 +207,7 @@ public class DoubanSite extends BaseSite implements Repository<Long, BaseDoubanS
         if (null != ls) {
             String[] languages = StringUtils.split(((TextNode) ls.nextSibling()).text(), "/");
             subject.setLanguages(Arrays.stream(languages)
-                .map(language -> EnumUtilExt.deserializeAka(language.strip(), Language.class))
+                .map(language -> EnumUtilExt.valueOfAka(Language.class, language.strip()))
                 .collect(Collectors.toList()));
         }
         Element imdb = spans.get("IMDb链接:");

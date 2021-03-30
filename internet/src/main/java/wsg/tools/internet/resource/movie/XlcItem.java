@@ -5,8 +5,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.common.UpdateDateSupplier;
-import wsg.tools.internet.resource.common.CoverSupplier;
+import wsg.tools.internet.base.UpdateDateSupplier;
 import wsg.tools.internet.resource.common.StateSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
 
@@ -16,16 +15,18 @@ import wsg.tools.internet.resource.common.YearSupplier;
  * @author Kingen
  * @since 2021/1/10
  */
-public class XlcItem extends IdentifiedItem<XlcType>
-    implements YearSupplier, UpdateDateSupplier, StateSupplier, CoverSupplier {
+public class XlcItem extends BaseIdentifiedItem
+    implements YearSupplier, UpdateDateSupplier, StateSupplier {
 
+    private final XlcType type;
     private final LocalDate updateDate;
     private final String state;
     private URL cover;
     private Integer year;
 
     XlcItem(int id, @Nonnull String url, LocalDate updateDate, XlcType type, String state) {
-        super(id, url, type);
+        super(id, url);
+        this.type = Objects.requireNonNull(type);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
         this.state = AssertUtils.requireNotBlank(state, "the state of an item");
     }
@@ -56,5 +57,10 @@ public class XlcItem extends IdentifiedItem<XlcType>
 
     void setCover(URL cover) {
         this.cover = Objects.requireNonNull(cover, "the cover of an item");
+    }
+
+    @Override
+    public int getSubtype() {
+        return type.getId();
     }
 }

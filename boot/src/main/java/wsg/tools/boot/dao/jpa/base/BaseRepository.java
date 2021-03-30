@@ -20,46 +20,44 @@ public interface BaseRepository<E extends BaseEntity, ID> extends
     JpaRepositoryImplementation<E, ID> {
 
     /**
-     * Insert a new entity.
+     * Inserts a new entity.
      *
-     * @param entity entity to insert
+     * @param entity entity to be inserted
      * @return entity inserted
-     * @throws EntityExistsException if the entity exists.
+     * @throws EntityExistsException if the entity already exists
      */
     <S extends E> S insert(S entity);
 
     /**
-     * Update an entity by {@link ID}.
+     * Updates an entity by {@link ID}. Only not-null properties are updated.
      *
-     * @param entity entity to update
+     * @param entity entity to be update
      * @return updated entity
-     * @throws IllegalArgumentException if the given entity doesn't contain id or not exist
+     * @throws NullPointerException    if the given entity is {@literal null}
+     * @throws EntityNotFoundException if the given entity is not found
+     */
+    <S extends E> S updateByIdExceptNull(S entity);
+
+    /**
+     * Updates an entity by {@link ID}. All properties are updated even null.
+     *
+     * @param entity entity to be update
+     * @return updated entity
+     * @throws NullPointerException    if the given entity is {@literal null}
+     * @throws EntityNotFoundException if the given entity is not found
      */
     <S extends E> S updateById(S entity);
 
     /**
-     * Update an entity by the given supplier.
+     * Updates the entity if found by the supplier or id of the given entity or inserts the given
+     * entity if not.
      *
-     * @param entity   entity to update
-     * @param supplier supply the source entity
-     * @return updated entity
-     * @throws EntityNotFoundException  if can't find an entity by the supplier or id of the given
-     *                                  entity
-     * @throws IllegalArgumentException if the entity found by the supplier differs from the given
-     *                                  one
-     */
-    <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier);
-
-    /**
-     * Update the entity if found by the supplier or id of the given entity Insert the given entity
-     * if not found.
-     *
-     * @param entity   object to update or save
-     * @param supplier supplier to supply source entity
+     * @param entity   entity to be update or inserted
+     * @param supplier function to retrieve source entity
      * @return updated entity with flag of inserting or updating
      * @throws IllegalArgumentException if the entity found by the supplier differs from the given
      *                                  one
      */
-    <S extends E> InsertOrUpdate<S> updateOrInsert(S entity,
-        @Nullable Supplier<Optional<E>> supplier);
+    <S extends E>
+    InsertOrUpdate<S> updateOrInsert(S entity, @Nullable Supplier<Optional<E>> supplier);
 }

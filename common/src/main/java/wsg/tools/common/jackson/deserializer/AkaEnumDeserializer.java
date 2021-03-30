@@ -18,6 +18,6 @@ public class AkaEnumDeserializer<A, E extends Enum<E> & AkaPredicate<A>> extends
 
     @Override
     public E deserialize(Class<E> eClass, A value) {
-        return EnumUtilExt.deserializeAka(value, eClass);
+        return EnumUtilExt.valueOfAka(eClass, value);
     }
 }

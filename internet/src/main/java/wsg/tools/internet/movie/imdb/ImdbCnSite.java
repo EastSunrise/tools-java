@@ -22,6 +22,7 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -39,6 +40,7 @@ import wsg.tools.internet.movie.common.Release;
  * @author Kingen
  * @since 2020/12/12
  */
+@ConcreteSite
 public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final Pattern EPISODE_LIST_REGEX = Pattern

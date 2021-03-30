@@ -25,6 +25,7 @@ import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
@@ -46,7 +47,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @author Kingen
  * @since 2020/6/16
  */
-@SiteStatus(status = SiteStatus.Status.BLOCKED)
+@ConcreteSite(status = SiteStatus.BLOCKED)
 public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-ÿ]+";
@@ -140,7 +141,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         block = details.get("Language");
         if (null != block) {
             List<Language> languages = block.select(CssSelectors.TAG_A).stream()
-                .map(a -> EnumUtilExt.deserializeAka(a.text(), Language.class))
+                .map(a -> EnumUtilExt.valueOfAka(Language.class, a.text()))
                 .collect(Collectors.toList());
             title.setLanguages(languages);
         }

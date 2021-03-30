@@ -6,25 +6,24 @@ import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
 /**
- * A variant of {@link java.util.Iterator} over a {@code Repository}.
+ * A variant of {@code Iterator} over entities of a repository.
  *
  * @param <T> the type of entities returned by this iterator
  * @author Kingen
  * @see RepoIterable
- * @see Repository
  * @since 2021/3/1
  */
 public interface RepoIterator<T> {
 
     /**
-     * Returns {@code true} if the repository has more identifiers.
+     * Returns {@code true} if the repository has more entities.
      *
-     * @return {@code true} if the iteration has more identifiers
+     * @return {@code true} if the iteration has more entities
      */
     boolean hasNext();
 
     /**
-     * Retrieves the next entity in the repository and movies the cursor position.
+     * Retrieves the next entity in the repository and moves the cursor position.
      *
      * @return the next entity
      * @throws NoSuchElementException if the iteration has no next entity

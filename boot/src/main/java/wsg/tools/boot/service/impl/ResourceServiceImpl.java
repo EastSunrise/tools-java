@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
@@ -35,18 +36,14 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
+import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.NextSupplier;
-import wsg.tools.internet.base.repository.LinkedRepository;
+import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.base.UpdateDatetimeSupplier;
 import wsg.tools.internet.base.repository.ListRepoIterator;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.RepoIterator;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.common.UpdateDateSupplier;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.download.base.AbstractLink;
 import wsg.tools.internet.download.base.FilenameSupplier;
 import wsg.tools.internet.download.base.LengthSupplier;
@@ -54,10 +51,9 @@ import wsg.tools.internet.download.base.PasswordProvider;
 import wsg.tools.internet.download.impl.Thunder;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.CoverSupplier;
 import wsg.tools.internet.resource.common.StateSupplier;
 import wsg.tools.internet.resource.common.YearSupplier;
-import wsg.tools.internet.resource.movie.IdentifiedItem;
+import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
 
 /**
  * @author Kingen
@@ -83,34 +79,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E> & NextSupplier<Integer>>
-    void importLinkedRepository(LinkedRepository<Integer, T> repository, String domain, int subtype)
-        throws OtherResponseException {
-        Optional<Long> optional = itemRepository.findMaxRid(domain, subtype);
-        RepoIterator<T> iterator;
-        if (optional.isPresent()) {
-            int start = Math.toIntExact(optional.get());
-            iterator = repository.linkedRepoIterator(start);
-            SiteUtils.found(iterator::next);
-        } else {
-            iterator = repository.linkedRepoIterator();
-        }
-        int success = 0, failure = 0;
-        while (iterator.hasNext()) {
-            T item = SiteUtils.found(iterator::next);
-            Source source = Source.record(domain, subtype, item.getId());
-            if (insertItem(item, source) >= 0) {
-                success++;
-            } else {
-                failure++;
-            }
-        }
-        log.info("Imported resources from {}: {} succeed, {} failed", domain, success, failure);
-    }
-
-    @Override
-    public <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
-    void importIntListRepository(ListRepository<Integer, T> repository, String domain)
+    public <T extends BaseIdentifiedItem>
+    void importIntListRepository(@Nonnull ListRepository<Integer, T> repository, String domain)
         throws OtherResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain);
         int startIndex = optional.map(Long::intValue).map(repository::indexOf)
@@ -120,8 +90,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         while (iterator.hasNext()) {
             try {
                 T item = iterator.next();
-                Integer subtype = item.getSubtype().getCode();
-                Source source = Source.record(domain, subtype, item.getId());
+                Source source = Source.record(domain, item.getSubtype(), item.getId());
                 if (insertItem(item, source) >= 0) {
                     success++;
                 }
@@ -137,19 +106,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     /**
      * @return the count of inserted links, or -1 if the item exists.
      */
-    private <E extends Enum<E> & IntCodeSupplier, T extends IdentifiedItem<E>>
+    private <T extends BaseIdentifiedItem>
     int insertItem(T item, Source source) {
         ResourceItemEntity itemEntity = new ResourceItemEntity();
         itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
-        if (item instanceof CoverSupplier) {
-            URL cover = ((CoverSupplier) item).getCover();
-            if (cover != null) {
-                try {
-                    itemEntity.setCover(config.uploadCover(cover, source));
-                } catch (NotFoundException | OtherResponseException ignored) {
-                }
+        URL cover = item.getCover();
+        if (cover != null) {
+            try {
+                itemEntity.setCover(config.uploadCover(cover, source));
+            } catch (NotFoundException | NotFiletypeException | OtherResponseException ignored) {
             }
         }
         if (item instanceof YearSupplier) {
@@ -183,7 +150,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             linkEntity.setItemId(itemId);
             linkEntity.setTitle(resource.getTitle());
             linkEntity.setUrl(resource.getUrl());
-            linkEntity.setType(EnumUtilExt.deserializeAka(resource.getClass(), ResourceType.class));
+            linkEntity.setType(EnumUtilExt.valueOfAka(ResourceType.class, resource.getClass()));
             if (resource instanceof FilenameSupplier) {
                 linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
             }
@@ -248,7 +215,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             entity.setDbId(checkDto.getDbId());
             entity.setImdbId(checkDto.getImdbId());
             entity.setIdentified(true);
-            itemRepository.updateById(entity);
+            itemRepository.updateByIdExceptNull(entity);
             count++;
         }
         return count;

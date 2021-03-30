@@ -3,14 +3,12 @@ package wsg.tools.internet.info.adult.midnight;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.UpdateDatetimeSupplier;
 
 /**
  * A base item in the {@link MidnightSite}.
  *
  * @author Kingen
- * @see MidnightCollection
- * @see BaseMidnightEntry
  * @since 2021/3/2
  */
 @Getter

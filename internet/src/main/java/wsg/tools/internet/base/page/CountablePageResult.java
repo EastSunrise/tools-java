@@ -6,7 +6,7 @@ package wsg.tools.internet.base.page;
  * @author Kingen
  * @since 2021/3/26
  */
-public interface CountablePageResult<T> extends PageResult<T> {
+public interface CountablePageResult<T, P extends PageReq> extends PageResult<T, P> {
 
     /**
      * Returns the total amount of elements.

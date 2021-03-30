@@ -9,18 +9,20 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
+import wsg.tools.common.io.Filetype;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 import wsg.tools.internet.resource.common.YearSupplier;
-import wsg.tools.internet.resource.movie.BasicItem;
+import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
 
 /**
  * Items of resources.
  *
  * @author Kingen
- * @see BasicItem
+ * @see BaseIdentifiedItem
  * @since 2020/11/3
  */
 @Getter
@@ -49,6 +51,7 @@ public class ResourceItemEntity extends IdentityEntity
     private String title;
 
     @Column(length = 63)
+    @MinioStored(type = Filetype.IMAGE)
     private String cover;
 
     private Integer year;

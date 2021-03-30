@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,11 +22,11 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
+import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
@@ -35,23 +34,18 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.common.AdultEntry;
-import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.entry.FormalAdultEntry;
 
 /**
  * @author Kingen
  * @see <a href="https://www.shenyequ.com/">Midnight Zone</a>
  * @since 2021/2/22
  */
+@ConcreteSite
 public final class MidnightSite extends BaseSite {
 
-    private static final String IMG_HOST = "https://syqpic.hantangrx.com";
-    private static final String MG_STAGE_HOST = "https://image.mgstage.com/";
-    private static final Pattern IMG_FILE_HREF_REGEX =
-        Pattern.compile("/d/file/\\d{4}-\\d{2}-\\d{2}/[a-z0-9]{32}\\.(jpg|gif)");
-    private static final Map<MidnightColumn, Pattern> ITEM_URL_REGEXES = Arrays
-        .stream(MidnightColumn.values()).collect(Collectors.toMap(type -> type, type -> Pattern
-            .compile("https://www\\.shenyequ\\.com/" + type.getText() + "/(?<id>\\d+).html")));
     private static final String NAV_NAVIGATION = "nav.navigation";
 
     public MidnightSite() {
@@ -59,67 +53,18 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Returns the repository of all {@link MidnightCollection}s.
-     */
-    public ListRepository<Integer, MidnightCollection> getCollectionRepository()
-        throws NotFoundException, OtherResponseException {
-        List<Integer> ids = getIdentifiers(MidnightColumn.COLLECTION);
-        return Repositories.list(this::findCollection, ids);
-    }
-
-    /**
-     * Returns the repository of all {@link MidnightAlbum}s.
-     */
-    public ListRepository<Integer, MidnightAlbum> getAlbumRepository()
-        throws NotFoundException, OtherResponseException {
-        List<Integer> ids = getIdentifiers(MidnightColumn.ALBUM);
-        return Repositories.list(this::findAlbum, ids);
-    }
-
-    /**
-     * Returns the repository of all items each of which may contain a amateur adult entry.
-     */
-    public ListRepository<Integer, BaseMidnightEntry> getAmateurRepository(
-        @Nonnull MidnightAmateurEntryType type) throws NotFoundException, OtherResponseException {
-        List<Integer> ids = getIdentifiers(type.getColumn());
-        return Repositories.list(id -> findAmateurEntry(type, id), ids);
-    }
-
-    /**
-     * Returns the repository of all items each of which may contain a formal adult entry.
-     */
-    public ListRepository<Integer, BaseMidnightEntry> getFormalRepository()
-        throws NotFoundException, OtherResponseException {
-        List<Integer> ids = getIdentifiers(MidnightColumn.ENTRY);
-        return Repositories.list(this::findFormalEntry, ids);
-    }
-
-    private List<Integer> getIdentifiers(MidnightColumn column)
-        throws NotFoundException, OtherResponseException {
-        List<Integer> ids = new ArrayList<>();
-        MidnightPageRequest request = MidnightPageRequest.first();
-        while (true) {
-            MidnightPageResult result = findPage(column, request);
-            result.getContent().stream().map(MidnightIndex::getId).forEach(ids::add);
-            if (!result.hasNext()) {
-                break;
-            }
-            request = result.nextPageRequest();
-        }
-        return ids;
-    }
-
-    /**
-     * Finds the paged result of indices under the given column.
+     * Retrieves the paged result of indices under the given column.
      */
     public MidnightPageResult findPage(@Nonnull MidnightColumn column,
-        @Nonnull MidnightPageRequest pageRequest) throws NotFoundException, OtherResponseException {
+        @Nonnull MidnightPageReq req) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/e/action/ListInfo.php")
-            .addParameter("page", pageRequest.getCurrent())
+            .addParameter("page", req.getCurrent())
             .addParameter("classid", column.getCode())
-            .addParameter("line", pageRequest.getPageSize())
+            .addParameter("starttime", req.getStart())
+            .addParameter("endtime", req.getEnd())
+            .addParameter("line", req.getPageSize())
             .addParameter("tempid", "11")
-            .addParameter("orderby", pageRequest.getOrderBy().getText())
+            .addParameter("orderby", req.getOrderBy().getText())
             .addParameter("myorder", 0);
         Document document = getDocument(builder, SnapshotStrategy.always());
         List<MidnightIndex> indices = new ArrayList<>();
@@ -127,7 +72,7 @@ public final class MidnightSite extends BaseSite {
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_A);
             String href = a.attr(CssSelectors.ATTR_HREF);
-            Matcher matcher = RegexUtils.matchesOrElseThrow(ITEM_URL_REGEXES.get(column), href);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ITEM_URL_REGEX, href);
             int id = Integer.parseInt(matcher.group("id"));
             String title = a.attr(CssSelectors.ATTR_TITLE);
             String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
@@ -136,17 +81,17 @@ public final class MidnightSite extends BaseSite {
         }
         Element nav = document.selectFirst(NAV_NAVIGATION);
         int total = Integer.parseInt(nav.selectFirst("a[title=总数]").selectFirst("b").text());
-        return new MidnightPageResult(indices, pageRequest, total);
+        return new MidnightPageResult(indices, req, total);
     }
 
     /**
-     * Finds an item with a collection of adult entries.
+     * Retrieves an item with a collection of adult entries.
      */
     @Nonnull
     public MidnightCollection findCollection(int id)
         throws NotFoundException, OtherResponseException {
         return getItem(MidnightColumn.COLLECTION, id, (title, release, contents) -> {
-            List<Pair<String, String>> works = new ArrayList<>();
+            List<Pair<String, URL>> works = new ArrayList<>();
             for (Element content : contents) {
                 Element nav = content.selectFirst(NAV_NAVIGATION);
                 Element current = nav.previousElementSibling().previousElementSibling();
@@ -161,13 +106,7 @@ public final class MidnightSite extends BaseSite {
                             code = null;
                         }
                         String src = img.attr(CssSelectors.ATTR_SRC);
-                        Matcher matcher = IMG_FILE_HREF_REGEX.matcher(src);
-                        if (matcher.find()) {
-                            src = IMG_HOST + matcher.group();
-                        } else {
-                            src = null;
-                        }
-                        works.add(Pair.of(code, src));
+                        works.add(Pair.of(code, NetUtils.createURL(src)));
                     }
                     current = current.previousElementSibling();
                 }
@@ -177,7 +116,7 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Finds an item with an album which including a series of images.
+     * Retrieves an item with images.
      */
     @Nonnull
     public MidnightAlbum findAlbum(int id) throws NotFoundException, OtherResponseException {
@@ -187,46 +126,46 @@ public final class MidnightSite extends BaseSite {
     }
 
     /**
-     * Finds an item with an album or a amateur adult entry.
+     * Retrieves an item with an amateur adult entry.
      */
-    public BaseMidnightEntry findAmateurEntry(@Nonnull MidnightAmateurEntryType type, int id)
+    public MidnightAmateurEntry findAmateurEntry(@Nonnull MidnightAmateurColumn type, int id)
         throws NotFoundException, OtherResponseException {
-        return findEntry(type.getColumn(), id, AdultEntryBuilder::amateur);
-    }
-
-    /**
-     * Finds an item with an album or a formal adult entry.
-     */
-    @Nonnull
-    public BaseMidnightEntry findFormalEntry(int id)
-        throws NotFoundException, OtherResponseException {
-        return findEntry(MidnightColumn.ENTRY, id,
-            (info, code) -> AdultEntryBuilder.formal(info, code, ", "));
-    }
-
-    /**
-     * Finds an item with an album or an adult entry.
-     */
-    private BaseMidnightEntry findEntry(MidnightColumn column, int id,
-        BiFunction<Map<String, String>, String, AdultEntryBuilder.AdultEntryMapBuilder> builder)
-        throws NotFoundException, OtherResponseException {
-        return getItem(column, id, (title, release, contents) -> {
-            List<URL> images = Objects.requireNonNull(getImages(contents));
+        return getItem(type.getColumn(), id, (title, release, contents) -> {
+            List<URL> images = getImages(contents);
             Map<String, String> info = getInfo(contents);
             String code = AdultEntryBuilder.getCode(info);
             if (code == null) {
-                return new MidnightAlbum(id, title, release, images);
+                code = title;
             }
-            info.remove("监督");
-            AdultEntry entry = builder.apply(info, code)
-                .duration().release().producer().distributor().series()
-                .title(title).images(images).build();
-            return new MidnightAdultEntry(id, title, release, entry);
+            AmateurAdultEntry entry = AdultEntryBuilder.builder(code, info)
+                .duration().producer().release().series().distributor()
+                .images(images).ignore("商品発売日").amateur();
+            return new MidnightAmateurEntry(id, title, release, entry);
         });
     }
 
     /**
-     * Obtains an item.
+     * Retrieves an item with a formal adult entry.
+     */
+    @Nonnull
+    public MidnightFormalAdultEntry findFormalEntry(int id)
+        throws NotFoundException, OtherResponseException {
+        return getItem(MidnightColumn.ENTRY, id, (title, release, contents) -> {
+            List<URL> images = Objects.requireNonNull(getImages(contents));
+            Map<String, String> info = getInfo(contents);
+            String code = AdultEntryBuilder.getCode(info);
+            if (code == null) {
+                code = title;
+            }
+            FormalAdultEntry entry = AdultEntryBuilder.builder(code, info)
+                .duration().release().producer().distributor().series()
+                .images(images).ignoreAllRemaining().formal(", ");
+            return new MidnightFormalAdultEntry(id, title, release, entry);
+        });
+    }
+
+    /**
+     * Retrieves an item.
      *
      * @param column      column that the item belongs to
      * @param id          the id of target item
@@ -284,7 +223,7 @@ public final class MidnightSite extends BaseSite {
             if (parts.length < 2) {
                 continue;
             }
-            String[] parts0 = parts[0].split(Constants.WHITESPACE);
+            String[] parts0 = parts[0].split(Constants.WHITESPACE, 2);
             String key = parts0[parts0.length - 1];
             MapUtilsExt.putIfAbsent(info, key, parts[1]);
         }
@@ -301,13 +240,8 @@ public final class MidnightSite extends BaseSite {
                     Elements elements = ((Element) current).select(CssSelectors.TAG_IMG);
                     for (Element img : elements) {
                         String href = img.attr(CssSelectors.ATTR_SRC);
-                        if (href.startsWith(MG_STAGE_HOST)) {
-                            current = current.previousSibling();
-                            continue;
-                        }
-                        Matcher matcher = IMG_FILE_HREF_REGEX.matcher(href);
-                        if (matcher.matches()) {
-                            href = IMG_HOST + href;
+                        if (href.startsWith(Constants.URL_PATH_SEPARATOR)) {
+                            href = builder0(href).toString();
                         }
                         images.add(NetUtils.createURL(href));
                     }
@@ -316,5 +250,17 @@ public final class MidnightSite extends BaseSite {
             }
         }
         return images.isEmpty() ? null : images;
+    }
+
+    private static class Lazy {
+
+        private static final Pattern ITEM_URL_REGEX;
+
+        static {
+            String columns = Arrays.stream(MidnightColumn.values()).map(TextSupplier::getText)
+                .collect(Collectors.joining("|"));
+            ITEM_URL_REGEX = Pattern.compile(
+                "https://www\\.shenyequ\\.com/(?<t>" + columns + ")/(?<id>\\d+).html");
+        }
     }
 }

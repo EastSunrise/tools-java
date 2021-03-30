@@ -125,7 +125,7 @@ public class BasicHttpSession implements HttpSession {
         ContentHandler<T> contentHandler, SnapshotStrategy<T> strategy)
         throws HttpResponseException {
         String filepath = builder.filepath();
-        filepath += Constants.FILE_EXTENSION_SEPARATOR + contentHandler.suffix();
+        filepath += Constants.EXTENSION_SEPARATOR + contentHandler.extension();
         File file = new File(TMPDIR + filepath);
 
         String content;

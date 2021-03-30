@@ -1,6 +1,5 @@
 package wsg.tools.internet.resource.movie;
 
-import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 
 /**
@@ -9,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/12
  */
-public enum Y80sType implements IntCodeSupplier, TextSupplier {
+public enum Y80sType implements TextSupplier {
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Movies</a>
      */
@@ -49,8 +48,7 @@ public enum Y80sType implements IntCodeSupplier, TextSupplier {
     /**
      * @see <a href="http://m.y80s.com/weidianying/15-0-0-0-0-0-0">Micro Movies</a>
      */
-    MICRO(15, "weidianying"),
-    ;
+    MICRO(15, "weidianying");
 
     private final int id;
     private final String text;
@@ -60,13 +58,12 @@ public enum Y80sType implements IntCodeSupplier, TextSupplier {
         this.text = text;
     }
 
-    @Override
-    public String getText() {
-        return text;
+    public int getId() {
+        return id;
     }
 
     @Override
-    public Integer getCode() {
-        return id;
+    public String getText() {
+        return text;
     }
 }

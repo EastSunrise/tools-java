@@ -8,13 +8,13 @@ import wsg.tools.internet.download.InvalidResourceException;
 import wsg.tools.internet.download.base.AbstractLink;
 
 /**
- * A basic item with a title and contained links.
+ * A basic item with a title and links of resources.
  *
  * @author Kingen
  * @since 2020/9/10
  */
 @Getter
-public class BasicItem {
+class BasicItem {
 
     private String title;
     private List<AbstractLink> links;

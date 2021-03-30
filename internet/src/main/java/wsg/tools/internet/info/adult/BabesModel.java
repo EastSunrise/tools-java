@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult;
 
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
 import wsg.tools.internet.enums.Color;
@@ -23,7 +24,7 @@ public class BabesModel extends BabesModelIndex {
     private String website;
     private List<BabesVideoIndex> videoIndices;
 
-    BabesModel(String id, String name, String cover, int videos, int photos) {
+    BabesModel(String id, String name, URL cover, int videos, int photos) {
         super(id, name, cover, videos, photos);
     }
 

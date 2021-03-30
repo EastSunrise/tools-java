@@ -19,9 +19,10 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.LinkedRepository;
-import wsg.tools.internet.base.repository.Repository;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -30,15 +31,18 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.common.AdultEntry;
-import wsg.tools.internet.info.adult.common.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.entry.BasicAdultEntryBuilder;
 
 /**
  * @author Kingen
  * @see <a href="https://www.chepaishe1.com/">Che Pai She</a>
  * @since 2021/3/9
  */
-public class LicencePlateSite extends BaseSite implements Repository<String, LicencePlateItem> {
+@ConcreteSite
+public class LicencePlateSite extends BaseSite
+    implements RepoRetrievable<String, LicencePlateItem> {
 
     public LicencePlateSite() {
         super("Licence Plate", new BasicHttpSession("chepaishe1.com"));
@@ -79,17 +83,16 @@ public class LicencePlateSite extends BaseSite implements Repository<String, Lic
             description += lines.removeLast();
         }
         if (lines.isEmpty()) {
-            AdultEntry entry = AdultEntryBuilder.basic(code)
-                .description(description).images(images).build();
+            AmateurAdultEntry entry = BasicAdultEntryBuilder.builder(code)
+                .description(description).images(images).amateur();
             return new LicencePlateItem(id, update, entry, getNext(document));
         }
         Map<String, String> info = AmateurCatSite.extractInfo(lines);
-        info.remove("対応デバイス");
-        info.remove("評価");
         String intro = MapUtilsExt.getString(info, "简介", "剧情简介");
-        AdultEntry entry = AdultEntryBuilder.amateur(info, code)
+        AmateurAdultEntry entry = AdultEntryBuilder.builder(code, info)
             .duration().release().producer().distributor().series().tags(Constants.WHITESPACE)
-            .validateCode().description(description).images(images).build();
+            .validateCode().description(description).images(images)
+            .ignore("商品発売日", "対応デバイス", "評価").amateur();
         LicencePlateItem item = new LicencePlateItem(id, update, entry, getNext(document));
         item.setIntro(intro);
         return item;

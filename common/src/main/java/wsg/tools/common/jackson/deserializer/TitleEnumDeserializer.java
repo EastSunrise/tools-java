@@ -26,6 +26,6 @@ public class TitleEnumDeserializer<E extends Enum<E> & TitleSupplier> extends
 
     @Override
     public E deserialize(Class<E> eClass, String value) {
-        return EnumUtilExt.valueOfTitle(value, eClass, ignoreCase);
+        return EnumUtilExt.valueOfTitle(eClass, value, ignoreCase);
     }
 }

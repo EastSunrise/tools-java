@@ -50,6 +50,6 @@ public final class SerialNumber {
 
     private static class Lazy {
 
-        private static final Pattern SERIAL_NUMBER_REGEX = Pattern.compile("[\\w-]{5,}");
+        private static final Pattern SERIAL_NUMBER_REGEX = Pattern.compile("[A-Z\\d]+-[A-Z\\d]+");
     }
 }

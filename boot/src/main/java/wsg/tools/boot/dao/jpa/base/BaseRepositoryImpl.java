@@ -3,6 +3,8 @@ package wsg.tools.boot.dao.jpa.base;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.metamodel.SingularAttribute;
@@ -46,30 +48,14 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public <S extends E> S updateById(S entity) {
+    public <S extends E> S updateByIdExceptNull(@Nonnull S entity) {
         ID id = info.getId(entity);
         if (info.isNew(entity) || id == null) {
             throw new EntityNotFoundException("The entity doesn't exist.");
         }
         Optional<E> optional = findById(id);
         if (optional.isEmpty()) {
-            throw new IllegalArgumentException("Can't update a entity which doesn't exist.");
-        }
-        BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
-        return manager.merge(entity);
-    }
-
-    @Override
-    public <S extends E> S updateBy(S entity, Supplier<Optional<E>> supplier) {
-        ID id = info.getId(entity);
-        Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
-        if (optional.isEmpty()) {
-            if (id == null || (optional = findById(id)).isEmpty()) {
-                throw new EntityNotFoundException("Can't find an entity to update.");
-            }
-        }
-        if (id != null && info.getId(optional.get()) != id) {
-            throw new IllegalArgumentException(CONFLICT_ID_MSG);
+            throw new EntityExistsException("The entity doesn't exist.");
         }
         BeanUtilExt.copyPropertiesExceptNull(entity, optional.get(), false, true);
         return manager.merge(entity);
@@ -77,8 +63,17 @@ public class BaseRepositoryImpl<E extends BaseEntity, ID> extends SimpleJpaRepos
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public <S extends E> InsertOrUpdate<S> updateOrInsert(S entity,
-        Supplier<Optional<E>> supplier) {
+    public <S extends E> S updateById(S entity) {
+        if (info.isNew(entity) || info.getId(entity) == null) {
+            throw new EntityNotFoundException("The entity doesn't exist.");
+        }
+        return manager.merge(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public <S extends E>
+    InsertOrUpdate<S> updateOrInsert(S entity, Supplier<Optional<E>> supplier) {
         ID id = info.getId(entity);
         Optional<E> optional = supplier == null ? Optional.empty() : supplier.get();
         if (optional.isEmpty()) {

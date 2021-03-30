@@ -29,11 +29,10 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
@@ -52,9 +51,9 @@ import wsg.tools.internet.movie.common.VideoConstants;
  * @see <a href="https://www.993vod.com/">Backup</a>
  * @since 2020/10/18
  */
+@ConcreteSite
 @Slf4j
-public final class MovieHeavenSite extends BaseSite implements
-    Repository<Integer, MovieHeavenItem> {
+public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenItem> {
 
     private static final String TIP_TITLE = "系统提示";
     private static final String UNKNOWN_YEAR = "未知";
@@ -70,6 +69,8 @@ public final class MovieHeavenSite extends BaseSite implements
      * Returns the repository of all items from 1 to {@link #latest()}. Only several items are not
      * found.
      */
+    @Override
+    @Nonnull
     public ListRepository<Integer, MovieHeavenItem> getRepository() throws OtherResponseException {
         Stream<Integer> stream = IntStream.rangeClosed(1, latest()).boxed();
         return Repositories.list(this, stream.collect(Collectors.toList()));
@@ -107,7 +108,7 @@ public final class MovieHeavenSite extends BaseSite implements
         String typeHref = children.get(1).attr(CssSelectors.ATTR_HREF);
         Matcher typeMatcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref);
         int typeId = Integer.parseInt(typeMatcher.group("id"));
-        MovieHeavenType type = EnumUtilExt.valueOfCode(typeId, MovieHeavenType.class);
+        MovieHeavenType type = EnumUtilExt.valueOfCode(MovieHeavenType.class, typeId);
         String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
         LocalDate addDate = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
         Element image = doc.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);

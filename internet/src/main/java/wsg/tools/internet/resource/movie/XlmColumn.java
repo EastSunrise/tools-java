@@ -56,8 +56,7 @@ public enum XlmColumn implements IntCodeSupplier {
     /**
      * @see <a href="https://www.xleimi.com/lanmu/xz12.html">TVB Series</a>
      */
-    TVB(12, 68),
-    ;
+    TVB(12, 68);
 
     private final int code;
     private final int first;

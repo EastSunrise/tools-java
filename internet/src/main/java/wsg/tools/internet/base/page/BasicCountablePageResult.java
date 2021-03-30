@@ -8,8 +8,8 @@ import java.util.List;
  * @author Kingen
  * @since 2021/3/26
  */
-public class BasicCountablePageResult<T> extends AbstractPageResult<T>
-    implements CountablePageResult<T> {
+public class BasicCountablePageResult<T, P extends PageReq> extends AbstractPageResult<T, P>
+    implements CountablePageResult<T, P> {
 
     private final long total;
 
@@ -20,11 +20,11 @@ public class BasicCountablePageResult<T> extends AbstractPageResult<T>
      *              the length of the content given, if it is going to be the content of the last
      *              page.
      */
-    public BasicCountablePageResult(List<T> content, PageRequest pageRequest, long total) {
-        super(content, pageRequest);
+    public BasicCountablePageResult(List<T> content, P request, long total) {
+        super(content, request);
         if (!content.isEmpty()) {
-            int offset = pageRequest.getCurrent() * pageRequest.getPageSize();
-            if (offset + pageRequest.getPageSize() > total) {
+            int offset = request.getCurrent() * request.getPageSize();
+            if (offset + request.getPageSize() > total) {
                 total = offset + content.size();
             }
         }

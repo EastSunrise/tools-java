@@ -39,7 +39,7 @@ public class JsonHandler<T> implements ContentHandler<T> {
     }
 
     @Override
-    public String suffix() {
+    public String extension() {
         return "json";
     }
 }

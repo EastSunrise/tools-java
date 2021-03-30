@@ -8,7 +8,7 @@ import java.util.List;
  * @author Kingen
  * @since 2021/3/26
  */
-public class BasicPageResult<T> extends AbstractPageResult<T> {
+public class BasicPageResult<T, P extends PageReq> extends AbstractPageResult<T, P> {
 
     private final int totalPages;
 
@@ -17,8 +17,8 @@ public class BasicPageResult<T> extends AbstractPageResult<T> {
      *
      * @param totalPages the total amount of pages, must be positive
      */
-    public BasicPageResult(List<T> content, PageRequest pageRequest, int totalPages) {
-        super(content, pageRequest);
+    public BasicPageResult(List<T> content, P request, int totalPages) {
+        super(content, request);
         if (totalPages < 1) {
             throw new IllegalArgumentException("Total pages must not be less than one!");
         }

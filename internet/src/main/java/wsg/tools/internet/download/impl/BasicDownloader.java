@@ -3,12 +3,16 @@ package wsg.tools.internet.download.impl;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.base.Downloader;
 
@@ -28,23 +32,19 @@ public final class BasicDownloader implements Downloader {
     }
 
     @Override
-    public File download(File dir, URL url) throws IOException {
-        String file = StringUtilsExt.toFilename(StringUtils.stripEnd(url.getFile(), "/"));
-        return execute(dir, url, FilenameUtils.getName(file));
+    public File download(File dir, @Nonnull URL url) throws IOException {
+        return execute(dir, url, StringUtilsExt.toFilename(FilenameUtils.getName(url.getFile())));
     }
 
     /**
      * Downloads the given url and names the downloaded file with the given basename.
      */
     @Override
-    public File download(File dir, URL url, @Nonnull String basename)
-        throws IOException {
-        String file = StringUtilsExt.toFilename(StringUtils.stripEnd(url.getFile(), "/"));
-        String extension = FilenameUtils.getExtension(file);
-        if (!extension.isEmpty()) {
-            extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
+    public File download(File dir, @Nonnull URL url, String basename) throws IOException {
+        if (StringUtils.isBlank(basename)) {
+            return download(dir, url);
         }
-        String filename = basename + extension;
+        String filename = FileUtilExt.copyExtension(url.getFile(), basename);
         return execute(dir, url, filename);
     }
 
@@ -78,10 +78,20 @@ public final class BasicDownloader implements Downloader {
             }
         }
         log.info("Downloading from {} to {}", url, dest);
-        FileUtils.copyURLToFile(url, dest, TIMEOUT, TIMEOUT);
+        try {
+            FileUtils.copyURLToFile(url, dest, TIMEOUT, TIMEOUT);
+        } catch (IOException e) {
+            Matcher matcher = Lazy.RESPONSE_EXCEPTION_REGEX.matcher(e.getMessage());
+            if (matcher.lookingAt()) {
+                int code = Integer.parseInt(matcher.group("c"));
+                throw new OtherResponseException(code, e.getMessage());
+            }
+            throw e;
+        }
         return dest;
     }
 
+    @Nonnull
     private File rename(File dir, String filename) {
         int count = 1;
         String baseName = FilenameUtils.getBaseName(filename);
@@ -105,5 +115,11 @@ public final class BasicDownloader implements Downloader {
 
     public FileExistStrategy getStrategy() {
         return strategy;
+    }
+
+    private static class Lazy {
+
+        private static final Pattern RESPONSE_EXCEPTION_REGEX = Pattern
+            .compile("Server returned HTTP response code: (?<c>[45]\\d{2})");
     }
 }

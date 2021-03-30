@@ -16,9 +16,7 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.Functions;
 import org.springframework.stereotype.Service;
 import wsg.tools.boot.common.enums.VideoStatus;
@@ -29,8 +27,8 @@ import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
-import wsg.tools.common.constant.Constants;
-import wsg.tools.internet.download.impl.Thunder;
+import wsg.tools.common.io.FileUtilExt;
+import wsg.tools.common.io.Filetype;
 import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
@@ -47,10 +45,7 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         Pattern.compile("[^\\d]*((?<year>\\d{4})[^\\d]+)?(S(?<s>\\d{1,2})E)?(?<e>\\d{1,3})([^\\d]+"
             + "(AC3|X264|1080P|720P|1280x720|1024X576))*[^\\d]*", Pattern.CASE_INSENSITIVE);
 
-    private static final String[] VIDEO_SUFFIXES = {"mp4", "mkv"};
-
-    private static final SuffixFileFilter VIDEO_FILTER = new SuffixFileFilter(VIDEO_SUFFIXES,
-        IOCase.INSENSITIVE);
+    private static final SuffixFileFilter VIDEO_FILTER = Filetype.VIDEO.filter();
 
     private final PathConfiguration pathConfig;
 
@@ -61,8 +56,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     @Override
     public Optional<File> getFile(MovieEntity movie) {
         String location = pathConfig.getLocation(movie);
-        for (String suffix : VIDEO_SUFFIXES) {
-            File file = new File(location + Constants.FILE_EXTENSION_SEPARATOR + suffix);
+        for (String suffix : Filetype.VIDEO.getSuffixes()) {
+            File file = new File(location + suffix);
             if (file.isFile()) {
                 return Optional.of(file);
             }
@@ -113,9 +108,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
     public VideoStatus archive(MovieEntity movie) throws IOException {
         return archive(movie, this::getFile, 1, movie.getZhTitle(), (tempDir, videoFiles) -> {
             File srcFile = videoFiles.iterator().next();
-            String suffix = FilenameUtils.getExtension(srcFile.getName());
-            File destFile = new File(
-                pathConfig.getLocation(movie) + Constants.FILE_EXTENSION_SEPARATOR + suffix);
+            String location = pathConfig.getLocation(movie);
+            File destFile = new File(FileUtilExt.copyExtension(srcFile.getName(), location));
             FileUtils.moveFile(srcFile, destFile);
             FileUtils.deleteDirectory(tempDir);
             return VideoStatus.ARCHIVED;
@@ -162,9 +156,8 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
                 for (Map.Entry<String, File> entry : entries) {
                     File srcFile = entry.getValue();
                     log.info("Moving {} as {}.", srcFile, entry.getKey());
-                    String suffix = FilenameUtils.getExtension(srcFile.getName());
-                    File destFile = new File(
-                        entry.getKey() + Constants.FILE_EXTENSION_SEPARATOR + suffix);
+                    String destName = FileUtilExt.copyExtension(srcFile.getName(), entry.getKey());
+                    File destFile = new File(destName);
                     FileUtils.moveFile(srcFile, destFile);
                 }
                 FileUtils.deleteDirectory(tempDir);
@@ -187,12 +180,10 @@ public class VideoManagerImpl extends BaseServiceImpl implements VideoManager {
         if (!tempDir.isDirectory()) {
             return VideoStatus.TO_DOWNLOAD;
         }
-        if (!FileUtils.listFiles(tempDir, Thunder.tmpFileFilter(), TrueFileFilter.INSTANCE)
-            .isEmpty()) {
+        if (!Filetype.THUNDER.listFiles(tempDir, true).isEmpty()) {
             return VideoStatus.DOWNLOADING;
         }
-        Collection<File> videoFiles = FileUtils
-            .listFiles(tempDir, VIDEO_FILTER, TrueFileFilter.INSTANCE);
+        Collection<File> videoFiles = Filetype.VIDEO.listFiles(tempDir, true);
         if (videoFiles.size() < count) {
             return VideoStatus.LACKING;
         }

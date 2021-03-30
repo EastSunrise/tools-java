@@ -28,12 +28,10 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.base.support.WithoutNextDocument;
@@ -51,8 +49,9 @@ import wsg.tools.internet.download.impl.HttpLink;
  * @see <a href="https://www.bd2020.com/">BD Movies</a>
  * @since 2020/9/23
  */
+@ConcreteSite
 @Slf4j
-public final class BdMovieSite extends BaseSite implements Repository<Integer, BdMovieItem> {
+public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
 
     private static final int MIN_ID = 348;
     private static final Range<Integer> EXCEPTS = Range.between(30508, 30508);
@@ -62,23 +61,15 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
     }
 
     /**
-     * Returns the repository of all items from 1 to {@link #latest()}. <strong>Almost 10% of the
+     * Constructs the repository of all items from 1 to {@link #latest()}. <strong>Almost 10% of the
      * items are not found</strong>.
      */
+    @Override
+    @Nonnull
     public ListRepository<Integer, BdMovieItem> getRepository() throws OtherResponseException {
         IntStream stream = IntStream.rangeClosed(MIN_ID, latest())
             .filter(id -> !EXCEPTS.contains(id));
         return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
-    }
-
-    /**
-     * Returns the repository of the given type since very first one. <strong>May break
-     * off</strong>.
-     *
-     * @see BdMovieType
-     */
-    public LinkedRepository<Integer, BdMovieItem> getRepository(@Nonnull BdMovieType type) {
-        return Repositories.linked(this, type.first());
     }
 
     /**
@@ -100,9 +91,6 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
         return latest;
     }
 
-    /**
-     * Finds an item by the given id.
-     */
     @Nonnull
     @Override
     public BdMovieItem findById(Integer id) throws NotFoundException, OtherResponseException {
@@ -129,7 +117,7 @@ public final class BdMovieSite extends BaseSite implements Repository<Integer, B
             throw new NotFoundException("Not a movie page");
         }
         String realTypeText = urlMatcher.group("t");
-        BdMovieType realType = EnumUtilExt.valueOfText(realTypeText, BdMovieType.class, false);
+        BdMovieType realType = EnumUtilExt.valueOfText(BdMovieType.class, realTypeText, false);
         String release = metas.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         BdMovieItem item = new BdMovieItem(id, location, realType, updateTime);

@@ -8,10 +8,11 @@ import java.util.NoSuchElementException;
  * entire list.
  *
  * @param <T> type of the content the result contains
+ * @param <P> type of the request for the result
  * @author Kingen
  * @since 2021/3/8
  */
-public interface PageResult<T> {
+public interface PageResult<T, P extends PageReq> {
 
     /**
      * Returns the zero-based index of the current result. Is always non-negative.
@@ -69,7 +70,7 @@ public interface PageResult<T> {
      * @return the next request
      * @throws NoSuchElementException if the current result is already the last one.
      */
-    PageRequest nextPageRequest();
+    P nextPageRequest();
 
     /**
      * Returns the request to request the previous result. Clients should check {@link
@@ -78,5 +79,5 @@ public interface PageResult<T> {
      * @return the previous request
      * @throws NoSuchElementException if the current result is already the first one.
      */
-    PageRequest previousPageRequest();
+    P previousPageRequest();
 }

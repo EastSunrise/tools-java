@@ -27,11 +27,10 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
@@ -49,7 +48,8 @@ import wsg.tools.internet.movie.common.VideoConstants;
  * @since 2020/9/9
  */
 @Slf4j
-public final class XlcSite extends BaseSite implements Repository<Integer, XlcItem> {
+@ConcreteSite
+public final class XlcSite extends AbstractListResourceSite<XlcItem> {
 
     private static final int TITLE_SUFFIX_LENGTH = 14;
     private static final String NO_PIC = "nopic.jpg";
@@ -63,6 +63,8 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
      * Returns the repository of all items from 1 to {@link #latest()}. <strong>About 8% of the
      * items are not found.</strong>
      */
+    @Override
+    @Nonnull
     public ListRepository<Integer, XlcItem> getRepository() throws OtherResponseException {
         Stream<Integer> stream = IntStream.rangeClosed(1, latest()).boxed();
         return Repositories.list(this, stream.collect(Collectors.toList()));
@@ -103,7 +105,7 @@ public final class XlcSite extends BaseSite implements Repository<Integer, XlcIt
         String typeHref = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_PATH_REGEX, typeHref);
         int typeId = Integer.parseInt(matcher.group("id"));
-        XlcType type = EnumUtilExt.valueOfCode(typeId, XlcType.class);
+        XlcType type = EnumUtilExt.valueOfCode(XlcType.class, typeId);
         String state = ((TextNode) info.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 

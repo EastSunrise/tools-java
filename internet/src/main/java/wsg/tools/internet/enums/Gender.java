@@ -16,7 +16,11 @@ public enum Gender implements TitleSupplier {
     /**
      * Female
      */
-    FEMALE("女");
+    FEMALE("女"),
+    /**
+     * Fake female
+     */
+    FAKE_FEMALE("伪娘");
 
     private final String title;
 

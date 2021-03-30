@@ -18,9 +18,9 @@ public interface ContentHandler<T> {
     T handleContent(String content);
 
     /**
-     * Obtains suffix of the target type.
+     * Returns the extension of the target type.
      *
-     * @return the suffix
+     * @return the extension
      */
-    String suffix();
+    String extension();
 }

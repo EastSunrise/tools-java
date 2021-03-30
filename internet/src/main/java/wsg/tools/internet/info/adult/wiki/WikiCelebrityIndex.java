@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import lombok.Getter;
-import wsg.tools.common.lang.IntIdentifier;
+import wsg.tools.internet.base.IntIdentifier;
 
 /**
  * An index pointing to a {@link WikiCelebrity} in the {@link CelebrityWikiSite}.

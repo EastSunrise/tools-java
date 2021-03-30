@@ -20,12 +20,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -40,6 +38,9 @@ import org.xmlpull.v1.XmlPullParserException;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.io.FileUtilExt;
+import wsg.tools.common.io.Filetype;
+import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -56,10 +57,12 @@ import wsg.tools.internet.common.OtherResponseException;
 @PropertySource("classpath:config/minio.properties")
 public class MinioConfig implements InitializingBean {
 
-    private static final MinioBucket BUCKET_COVER = new MinioBucket("covers")
-        .setPolicyAll(PolicyType.READ_ONLY);
-    private static final MinioBucket BUCKET_ADULT = new MinioBucket("adult")
-        .setPolicyAll(PolicyType.READ_ONLY);
+    private static final MinioBucket[] BUCKETS = {
+        new MinioBucket("covers").setPolicyAll(PolicyType.READ_ONLY),
+        new MinioBucket("adult").setPolicyAll(PolicyType.READ_ONLY)
+    };
+    private static final MinioBucket BUCKET_COVER = BUCKETS[0];
+    private static final MinioBucket BUCKET_ADULT = BUCKETS[1];
     private static final String CONNECTION_REFUSED = "Connection refused: connect";
     private final File tmpdir;
     private final SiteManager manager;
@@ -80,26 +83,38 @@ public class MinioConfig implements InitializingBean {
     }
 
     /**
-     * Uploads a cover of the given url
+     * Uploads a cover of the source from the given url.
      *
      * @param url    url pointing to the cover, not null
      * @param source the source of the cover, not null
      * @throws NotFoundException      if not found
+     * @throws NotFiletypeException   if the target is not an image file
      * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
     public String uploadCover(URL url, Source source)
-        throws NotFoundException, OtherResponseException {
+        throws NotFoundException, OtherResponseException, NotFiletypeException {
         Objects.requireNonNull(url, "the url of the cover");
         Objects.requireNonNull(source, "the source of the cover");
+        if (!Filetype.IMAGE.test(url.getFile())) {
+            throw new NotFiletypeException(Filetype.IMAGE, url.getFile());
+        }
         File file = download(url);
         String folder = source.getDomain() + Constants.URL_PATH_SEPARATOR + source.getSubtype();
         return uploadLocal(file, BUCKET_COVER, folder, String.valueOf(source.getRid()));
     }
 
+    /**
+     * Uploads an image of an entry from the given url.
+     *
+     * @see #uploadCover(URL, Source)
+     */
     public String uploadEntryImage(URL url, String code)
-        throws NotFoundException, OtherResponseException {
+        throws NotFoundException, OtherResponseException, NotFiletypeException {
         Objects.requireNonNull(url, "the url of the image");
         Objects.requireNonNull(code, "the code of the entry");
+        if (!Filetype.IMAGE.test(url.getFile())) {
+            throw new NotFiletypeException(Filetype.IMAGE, url.getFile());
+        }
         File file = download(url);
         return uploadLocal(file, BUCKET_ADULT, code, UUID.randomUUID().toString());
     }
@@ -116,7 +131,7 @@ public class MinioConfig implements InitializingBean {
     /**
      * Uploads a local file to the given folder under the bucket with a specific filename.
      *
-     * @param file     the file to upload, must be not null
+     * @param file     the file to upload, must not be null
      * @param folder   the folder that the file is uploaded to, may null
      * @param basename specify a basename for the file to upload, using the basename of the source
      *                 file if null
@@ -131,15 +146,7 @@ public class MinioConfig implements InitializingBean {
             throw new IllegalArgumentException("the file to upload can't read");
         }
         Objects.requireNonNull(bucket, "the bucket to upload to");
-        String filename = file.getName();
-        if (basename != null) {
-            String extension = FilenameUtils.getExtension(filename);
-            if (!extension.isEmpty()) {
-                extension = FilenameUtils.EXTENSION_SEPARATOR + extension;
-            }
-            filename = basename + extension;
-        }
-        String target = filename;
+        String target = FileUtilExt.copyExtension(file.getName(), basename);
         if (folder != null) {
             target = folder + Constants.URL_PATH_SEPARATOR + target;
         }
@@ -152,7 +159,7 @@ public class MinioConfig implements InitializingBean {
         }
     }
 
-    private File download(URL url) throws NotFoundException, OtherResponseException {
+    private File download(@Nonnull URL url) throws NotFoundException, OtherResponseException {
         try {
             String file = StringUtils.stripEnd(url.getFile(), Constants.URL_PATH_SEPARATOR);
             String path = FilenameUtils.getPath(StringUtilsExt.toFilename(file));
@@ -172,11 +179,6 @@ public class MinioConfig implements InitializingBean {
             String message = e.getMessage();
             throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, message);
         } catch (IOException e) {
-            Matcher matcher = Lazy.RESPONSE_EXCEPTION_REGEX.matcher(e.getMessage());
-            if (matcher.lookingAt()) {
-                int code = Integer.parseInt(matcher.group("c"));
-                throw new OtherResponseException(code, e.getMessage());
-            }
             throw new AppException(e);
         }
     }
@@ -196,8 +198,7 @@ public class MinioConfig implements InitializingBean {
     public void afterPropertiesSet()
         throws InvalidBucketNameException, NoSuchAlgorithmException, InsufficientDataException, IOException, InvalidKeyException, NoResponseException, XmlPullParserException, ErrorResponseException, InternalException, io.minio.errors.RegionConflictException, io.minio.errors.InvalidObjectPrefixException {
         MinioClient client = client();
-        List<MinioBucket> buckets = List.of(BUCKET_COVER);
-        for (MinioBucket bucket : buckets) {
+        for (MinioBucket bucket : BUCKETS) {
             String name = bucket.getName();
             if (!client.bucketExists(name)) {
                 client.makeBucket(name);
@@ -206,11 +207,5 @@ public class MinioConfig implements InitializingBean {
                 client.setBucketPolicy(name, entry.getKey(), entry.getValue());
             }
         }
-    }
-
-    private static class Lazy {
-
-        private static final Pattern RESPONSE_EXCEPTION_REGEX = Pattern
-            .compile("Server returned HTTP response code: (?<c>[45]\\d{2})");
     }
 }

@@ -14,6 +14,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -35,6 +36,7 @@ import wsg.tools.internet.movie.common.jackson.CommaSeparatedNumberDeserializati
  * @see <a href="https://www.omdbapi.com/">OMDb</a>
  * @since 2020/6/18
  */
+@ConcreteSite
 public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle> {
 
     private static final int MAX_PAGE = 100;

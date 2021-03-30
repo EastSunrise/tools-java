@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +79,7 @@ public class FfmpegExecutor {
         task.execute();
         try {
             BufferedReader reader = new BufferedReader(
-                new InputStreamReader(task.getErrorStream()));
+                new InputStreamReader(task.getErrorStream(), StandardCharsets.UTF_8));
             return parseMultimediaInfo(target, reader).get(0);
         } finally {
             task.destroy();
@@ -124,7 +125,7 @@ public class FfmpegExecutor {
                 infos.add(info);
                 continue;
             }
-            log.warn("Unknown part: " + line);
+            log.warn("Unknown part: {}", line);
             index++;
         }
         return infos;
@@ -133,7 +134,7 @@ public class FfmpegExecutor {
     private int readVersion(List<String> lines, int index) {
         while (index < lines.size()) {
             String line = lines.get(index);
-            int current = StringUtils.indexOfAnyBut(line, ' ');
+            int current = StringUtils.indexOfAnyBut(line, " ");
             if (current == 0) {
                 return index;
             }
@@ -152,7 +153,7 @@ public class FfmpegExecutor {
         MetadataInfo currentObject = info;
         while (index < lines.size()) {
             String line = lines.get(index);
-            int current = StringUtils.indexOfAnyBut(line, ' ');
+            int current = StringUtils.indexOfAnyBut(line, " ");
             if (current == 0) {
                 return index;
             }
@@ -169,10 +170,10 @@ public class FfmpegExecutor {
                     Matcher matcher = RegexUtils.matchesOrElseThrow(DURATION_REGEX, line);
                     long h = Long.parseLong(matcher.group("h"));
                     long min = Long.parseLong(matcher.group("min"));
-                    long s = Long.parseLong(matcher.group("s"));
+                    long sec = Long.parseLong(matcher.group("s"));
                     long ms = Long.parseLong(matcher.group("ms")) * 10;
                     info.setDuration(
-                        Duration.ofHours(h).plusMinutes(min).plusSeconds(s).plusMillis(ms));
+                        Duration.ofHours(h).plusMinutes(min).plusSeconds(sec).plusMillis(ms));
                     info.setStart(Double.parseDouble(matcher.group("start")));
                     info.setBitrate(Integer.parseInt(matcher.group("br")));
                     index++;
@@ -244,10 +245,10 @@ public class FfmpegExecutor {
         }
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken().strip();
-            Matcher m = FRAME_SIZE_REGEX.matcher(token);
-            if (m.find()) {
-                videoStreamInfo.setFrameWidth(Integer.parseInt(m.group("w")));
-                videoStreamInfo.setFrameHeight(Integer.parseInt(m.group("h")));
+            Matcher matcher = FRAME_SIZE_REGEX.matcher(token);
+            if (matcher.find()) {
+                videoStreamInfo.setFrameWidth(Integer.parseInt(matcher.group("w")));
+                videoStreamInfo.setFrameHeight(Integer.parseInt(matcher.group("h")));
                 continue;
             }
             Matcher m2 = FRAME_RATE_REGEX.matcher(token);
@@ -271,9 +272,9 @@ public class FfmpegExecutor {
         }
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken().strip();
-            Matcher m = SAMPLING_RATE_REGEX.matcher(token);
-            if (m.find()) {
-                audioStreamInfo.setSamplingRate(Integer.parseInt(m.group("r")));
+            Matcher matcher = SAMPLING_RATE_REGEX.matcher(token);
+            if (matcher.find()) {
+                audioStreamInfo.setSamplingRate(Integer.parseInt(matcher.group("r")));
                 continue;
             }
             Matcher m2 = CHANNEL_REGEX.matcher(token);
@@ -304,7 +305,7 @@ public class FfmpegExecutor {
         throws ParseException {
         while (index < lines.size()) {
             String line = lines.get(index);
-            int current = StringUtils.indexOfAnyBut(line, ' ');
+            int current = StringUtils.indexOfAnyBut(line, " ");
             if (current != parent + 2) {
                 break;
             }

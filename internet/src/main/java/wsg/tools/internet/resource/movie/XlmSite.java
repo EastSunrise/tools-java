@@ -23,13 +23,10 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.SiteStatus;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.Repository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.base.support.WithoutNextDocument;
@@ -47,8 +44,8 @@ import wsg.tools.internet.download.impl.Thunder;
  * @see <a href="https://www.xleimi.com/">XLM</a>
  * @since 2020/12/2
  */
-@SiteStatus(status = SiteStatus.Status.INVALID)
-public final class XlmSite extends BaseSite implements Repository<Integer, XlmItem> {
+@ConcreteSite
+public final class XlmSite extends AbstractListResourceSite<XlmItem> {
 
     private static final Range<Integer> EXCEPTS = Range.between(31588, 32581);
     private static final String DOWNLOAD_ASP = "/download.asp";
@@ -61,20 +58,12 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
      * Returns the repository of all the items from 1 to {@link #latest()} <strong>except those in
      * {@link #EXCEPTS}</strong>.
      */
+    @Override
+    @Nonnull
     public ListRepository<Integer, XlmItem> getRepository() throws OtherResponseException {
         IntStream stream = IntStream.rangeClosed(1, latest())
             .filter(i -> !EXCEPTS.contains(i));
         return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
-    }
-
-    /**
-     * Returns the repository of the given type since very first one. <strong>May break
-     * off</strong>.
-     *
-     * @see XlmColumn
-     */
-    public LinkedRepository<Integer, XlmItem> getRepository(@Nonnull XlmColumn type) {
-        return Repositories.linked(this, type.first());
     }
 
     /**
@@ -104,11 +93,11 @@ public final class XlmSite extends BaseSite implements Repository<Integer, XlmIt
         String columnHref = last.attr(CssSelectors.ATTR_HREF);
         Matcher columnMatcher = RegexUtils.matchesOrElseThrow(Lazy.COLUMN_HREF_REGEX, columnHref);
         int code = Integer.parseInt(columnMatcher.group("c"));
-        XlmColumn type = EnumUtilExt.valueOfCode(code, XlmColumn.class);
+        XlmColumn type = EnumUtilExt.valueOfCode(XlmColumn.class, code);
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);
-        XlmItem item = new XlmItem(id, builder.toString(), releaseTime, type);
+        XlmItem item = new XlmItem(id, builder.toString(), type, releaseTime);
         item.setTitle(((TextNode) last.nextSibling()).text().strip());
         Element image = document.selectFirst(".bodytxt").selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {

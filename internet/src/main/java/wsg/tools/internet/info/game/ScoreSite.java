@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -23,16 +24,8 @@ import wsg.tools.internet.enums.DomesticCity;
  * @see <a href="https://www.scoregg.com/">SCORE</a>
  * @since 2021/3/12
  */
+@ConcreteSite
 public class ScoreSite extends BaseSite {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-        .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
-        .registerModule(new JavaTimeModule())
-        .registerModule(new SimpleModule()
-            .addDeserializer(DomesticCity.class, new TitleEnumDeserializer<>(DomesticCity.class))
-            .addDeserializer(ScoreStatus.class, CodeEnumDeserializer.intCodeEnum(ScoreStatus.class))
-            .addDeserializer(RoundType.class, CodeEnumDeserializer.intCodeEnum(RoundType.class))
-        );
 
     protected ScoreSite() {
         super("Score", new BasicHttpSession("famulei.com"));
@@ -41,7 +34,7 @@ public class ScoreSite extends BaseSite {
     /**
      * Finds paged result of tournaments by the given arguments.
      */
-    public TournamentPageResult findAllTournaments(@Nonnull TournamentPageRequest request)
+    public TournamentPageResult findAllTournaments(@Nonnull TournamentPageReq request)
         throws NotFoundException, OtherResponseException {
         String type = request.getStatus() == null ? "all" : request.getStatus().getText();
         RequestBuilder builder = create(METHOD_POST, null)
@@ -58,7 +51,8 @@ public class ScoreSite extends BaseSite {
         if (request.getYear() != null) {
             builder.addParameter("year", request.getYear().getValue());
         }
-        TournamentPageResponse response = getObject(builder, MAPPER, TournamentPageResponse.class,
+        TournamentPageResponse response = getObject(builder, Lazy.MAPPER,
+            TournamentPageResponse.class,
             res -> res.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES || !res.getData()
                 .getList().stream().allMatch(t -> t.getStatus() == ScoreStatus.FINISHED));
         if (response.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES) {
@@ -72,7 +66,7 @@ public class ScoreSite extends BaseSite {
     }
 
     /**
-     * Finds rounds of a tournament.
+     * Retrieves rounds of a tournament.
      */
     public List<TournamentRound> findRoundsByTournament(@Nonnull Tournament tournament)
         throws NotFoundException, OtherResponseException {
@@ -83,19 +77,33 @@ public class ScoreSite extends BaseSite {
         } else {
             strategy = SnapshotStrategy.always();
         }
-        return getObject(builder, MAPPER, new TypeReference<>() {
+        return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
         }, strategy);
     }
 
     /**
-     * Finds match records of a tournament round.
+     * Retrieves match records of a tournament round.
      *
      * @see TournamentRound#getRoundSon()
      */
     public List<MatchRecord> findMatchRecordsByRoundItem(@Nonnull RoundItem item)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder("img1", "/tr_round/%d.json", item.getId());
-        return getObject(builder, MAPPER, new TypeReference<>() {
+        return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
         }, records -> !records.stream().allMatch(r -> r.getStatus() == ScoreStatus.FINISHED));
+    }
+
+    private static class Lazy {
+
+        private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
+            .registerModule(new JavaTimeModule())
+            .registerModule(new SimpleModule()
+                .addDeserializer(DomesticCity.class,
+                    new TitleEnumDeserializer<>(DomesticCity.class))
+                .addDeserializer(ScoreStatus.class,
+                    CodeEnumDeserializer.intCodeEnum(ScoreStatus.class))
+                .addDeserializer(RoundType.class, CodeEnumDeserializer.intCodeEnum(RoundType.class))
+            );
     }
 }

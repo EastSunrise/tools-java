@@ -20,7 +20,6 @@ import wsg.tools.common.util.function.TitleSupplier;
 public final class EnumUtilExt {
 
     private static final Map<Class<?>, Map<?, String>> CODES = new HashMap<>(1);
-    private static final Map<Class<?>, Map<String, String>> NAMES = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TEXTS = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TEXTS_IGNORE_CASE = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TITLES = new HashMap<>(1);
@@ -30,28 +29,13 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Deserializes an enum from the given name, ignoring case.
-     */
-    public static <E extends Enum<E>> E valueOfIgnoreCase(@Nonnull String name, Class<E> clazz) {
-        Map<String, String> map = NAMES.get(clazz);
-        if (map == null) {
-            map = Arrays.stream(clazz.getEnumConstants())
-                .collect(Collectors.toMap(e -> e.name().toUpperCase(Locale.ROOT), Enum::name));
-            NAMES.put(clazz, map);
-        }
-        String realName = map.get(name.toUpperCase(Locale.ROOT));
-        if (realName != null) {
-            return Enum.valueOf(clazz, realName);
-        }
-        throw new IllegalArgumentException(
-            String.format("Unknown name '%s' for '%s'", name, clazz));
-    }
-
-    /**
      * Get Enum from the aka.
+     * <p>
+     * todo remove
      */
-    public static <A, E extends Enum<E> & AkaPredicate<A>> E deserializeAka(@Nonnull A other,
-        Class<E> clazz) {
+    @Nonnull
+    public static <A, E extends Enum<E> & AkaPredicate<A>>
+    E valueOfAka(@Nonnull Class<E> clazz, @Nonnull A other) {
         E[] enums = clazz.getEnumConstants();
         for (E e : enums) {
             if (e.alsoKnownAs(other)) {
@@ -65,8 +49,9 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the code
      */
-    public static <C, E extends Enum<E> & CodeSupplier<C>> E valueOfCode(@Nonnull C code,
-        Class<E> clazz) {
+    @Nonnull
+    public static <C, E extends Enum<E> & CodeSupplier<C>>
+    E valueOfCode(Class<E> clazz, @Nonnull C code) {
         Map<?, String> map = CODES.get(clazz);
         if (map == null) {
             map = Arrays.stream(clazz.getEnumConstants())
@@ -84,8 +69,9 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the text
      */
-    public static <E extends Enum<E> & TextSupplier> E valueOfText(@Nonnull String text,
-        Class<E> clazz, boolean ignoreCase) {
+    @Nonnull
+    public static <E extends Enum<E> & TextSupplier>
+    E valueOfText(Class<E> clazz, @Nonnull String text, boolean ignoreCase) {
         String name;
         if (ignoreCase) {
             Map<String, String> map = TEXTS_IGNORE_CASE.get(clazz);
@@ -116,8 +102,9 @@ public final class EnumUtilExt {
     /**
      * Get Enum from the title
      */
-    public static <E extends Enum<E> & TitleSupplier> E valueOfTitle(@Nonnull String title,
-        Class<E> clazz, boolean ignoreCase) {
+    @Nonnull
+    public static <E extends Enum<E> & TitleSupplier>
+    E valueOfTitle(Class<E> clazz, @Nonnull String title, boolean ignoreCase) {
         String name;
         if (ignoreCase) {
             Map<String, String> map = TITLES_IGNORE_CASE.get(clazz);

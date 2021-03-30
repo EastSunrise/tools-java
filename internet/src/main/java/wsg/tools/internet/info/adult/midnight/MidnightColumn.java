@@ -1,6 +1,5 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
 
 /**
@@ -9,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-public enum MidnightColumn implements IntCodeSupplier, TextSupplier {
+public enum MidnightColumn implements TextSupplier {
 
     /**
      * @see <a href="https://www.shenyequ.com/youyou/">Collections</a>
@@ -44,7 +43,6 @@ public enum MidnightColumn implements IntCodeSupplier, TextSupplier {
         this.text = text;
     }
 
-    @Override
     public Integer getCode() {
         return code;
     }

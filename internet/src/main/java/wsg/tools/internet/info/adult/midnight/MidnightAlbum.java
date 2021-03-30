@@ -4,23 +4,25 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import lombok.Getter;
 import wsg.tools.common.lang.AssertUtils;
 
 /**
- * An item with an album.
+ * An item with a list of images.
  *
  * @author Kingen
  * @since 2021/3/2
  */
-public class MidnightAlbum extends BaseMidnightEntry {
+public class MidnightAlbum extends BaseMidnightItem {
 
-    @Getter
     private final List<URL> images;
 
     MidnightAlbum(int id, String title, LocalDateTime release, List<URL> images) {
         super(id, title, release);
         AssertUtils.requireNotEmpty(images, "images of the album");
         this.images = Collections.unmodifiableList(images);
+    }
+
+    public List<URL> getImages() {
+        return images;
     }
 }

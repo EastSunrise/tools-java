@@ -85,13 +85,16 @@ public enum XlcType implements IntCodeSupplier {
     /**
      * @see <a href="https://www.xunleicang.in/vod-show-id-21.html">Mandarin</a>
      */
-    MANDARIN(21),
-    ;
+    MANDARIN(21);
 
     private final int id;
 
     XlcType(int id) {
         this.id = id;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override
