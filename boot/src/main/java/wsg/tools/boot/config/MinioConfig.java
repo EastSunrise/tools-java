@@ -47,6 +47,8 @@ import wsg.tools.internet.common.OtherResponseException;
 
 /**
  * Configurations for MinIO.
+ * <p>
+ * todo uploads images too slowly, handles concurrency and removes duplicate images.
  *
  * @author Kingen
  * @see <a href="https://docs.min.io/cn/minio-quickstart-guide.html">MinIO Quickstart Guide</a>

@@ -13,7 +13,7 @@ public interface AkaPredicate<T> {
      * Also known as, similar to {@link #equals(Object)}
      *
      * @param other aka
-     * @return if this is also known as {@code other}
+     * @return {@code true} if this object is also known as {@code other}
      */
     boolean alsoKnownAs(T other);
 }

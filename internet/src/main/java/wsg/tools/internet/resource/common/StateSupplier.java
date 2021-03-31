@@ -3,7 +3,9 @@ package wsg.tools.internet.resource.common;
 import wsg.tools.internet.base.EntityInterface;
 
 /**
- * Supply the state of the item.
+ * Supplies the state of a item.
+ * <p>
+ * todo update snapshots
  *
  * @author Kingen
  * @since 2021/2/10
@@ -12,7 +14,7 @@ import wsg.tools.internet.base.EntityInterface;
 public interface StateSupplier {
 
     /**
-     * Obtains the state.
+     * Returns the state.
      *
      * @return state
      */

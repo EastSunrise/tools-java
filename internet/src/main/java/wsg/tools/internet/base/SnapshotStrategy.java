@@ -1,7 +1,9 @@
 package wsg.tools.internet.base;
 
 /**
- * Strategy of updating snapshots.
+ * The strategy to update snapshots which are local caches of responses to speed up requests.
+ * <p>
+ * todo update snapshots regularly similarly to what a search engine does
  *
  * @author Kingen
  * @since 2021/2/4

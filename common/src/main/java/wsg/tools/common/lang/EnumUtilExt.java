@@ -12,9 +12,10 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TitleSupplier;
 
 /**
- * Utility for {@link Enum}
+ * Utility for Java enums.
  *
  * @author Kingen
+ * @see org.apache.commons.lang3.EnumUtils
  * @since 2020/6/17
  */
 public final class EnumUtilExt {
@@ -29,9 +30,9 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Get Enum from the aka.
-     * <p>
-     * todo remove
+     * Returns the enum constant of the specified enum type with the specified aka.
+     *
+     * @see AkaPredicate
      */
     @Nonnull
     public static <A, E extends Enum<E> & AkaPredicate<A>>
@@ -47,7 +48,9 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Get Enum from the code
+     * Returns the enum constant of the specified enum type with the specified code.
+     *
+     * @see CodeSupplier
      */
     @Nonnull
     public static <C, E extends Enum<E> & CodeSupplier<C>>
@@ -67,7 +70,9 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Get Enum from the text
+     * Returns the enum constant of the specified enum type with the specified text.
+     *
+     * @see TextSupplier
      */
     @Nonnull
     public static <E extends Enum<E> & TextSupplier>
@@ -100,7 +105,9 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Get Enum from the title
+     * Returns the enum constant of the specified enum type with the specified title.
+     *
+     * @see TitleSupplier
      */
     @Nonnull
     public static <E extends Enum<E> & TitleSupplier>

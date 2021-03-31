@@ -2,7 +2,6 @@ package wsg.tools.internet.base;
 
 import java.io.Closeable;
 import javax.annotation.Nullable;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
@@ -10,19 +9,10 @@ import org.apache.http.cookie.Cookie;
 import wsg.tools.internet.base.support.RequestBuilder;
 
 /**
- * A http session to execute requests under a domain.
+ * A http session to execute requests under a domain. It is similar to {@link HttpClient}, but
+ * limited under a specified domain.
  * <p>
- * This is similar to {@link HttpClient}, but limited under a specified domain.
- * <p>
- * {@link #getDomain()} appoints the target domain.
- * <p>
- * The core method is {@link #execute(RequestBuilder, ResponseHandler)} which executes the given
- * request, handles the response by the given handler and returns the response as an object of
- * target type: request → response → {@code <T>}.
- * <p>
- * Method {@link #getContent} is an extension of {@link #execute}. It executes the given request,
- * handles the response as a String, handles the String by the given {@code ContentHandler}, and
- * finally returns the Sting as an object of target type: request → response → String → {@code T}.
+ * todo concurrency of sessions under the same domain.
  *
  * @author Kingen
  * @since 2021/3/1
@@ -30,50 +20,52 @@ import wsg.tools.internet.base.support.RequestBuilder;
 public interface HttpSession extends Closeable {
 
     /**
-     * Obtains the domain of the session.
+     * Returns the domain of the session.
      *
      * @return the domain
      */
     String getDomain();
 
     /**
-     * Executes the request and handle the response by the given handler.
+     * The core method that executes the given request, processes the response and returns it as an
+     * object of target type.
      *
      * @param builder builder to construct a request
-     * @param handler handler to generate an object from the {@link HttpResponse}.
-     * @return entity from the response
-     * @throws HttpResponseException if an error occurs when receive the response
+     * @param handler handler to generate an object from the response
+     * @return object of the response
+     * @throws HttpResponseException if an error occurs when requesting
      */
     <T> T execute(RequestBuilder builder, ResponseHandler<T> handler) throws HttpResponseException;
 
     /**
-     * Obtains the content of the response of the request and returns it as an object of type {@code
-     * T} by the given handler.
+     * An extension of {@link #execute} which assumes that the content of the response is a {@code
+     * String}. It generated a string from the response and then converts the string to an object of
+     * target type.
      *
      * @param builder         builder to construct a request
-     * @param responseHandler handler to generate a response String from a {@link HttpResponse}.
-     * @param contentHandler  how to handle the content and return as an object of type {@code T}
+     * @param responseHandler handler to generate a string from the response
+     * @param contentHandler  how to convert the string of the content to an object of target type
      * @param strategy        the strategy of updating the snapshot
      * @return an object generated from the string response
-     * @throws HttpResponseException if an error occurs when receive the response
+     * @throws HttpResponseException if an error occurs when requesting
      */
     <T> T getContent(RequestBuilder builder, ResponseHandler<String> responseHandler,
-        ContentHandler<T> contentHandler,
-        SnapshotStrategy<T> strategy) throws HttpResponseException;
+        ContentHandler<T> contentHandler, SnapshotStrategy<T> strategy)
+        throws HttpResponseException;
 
     /**
      * Creates a builder to construct a request of the given method under the sub domain.
      *
-     * @param method    method of the request to construct
+     * @param method    method of the request to be constructed
      * @param subDomain the sub domain that the request will access to
      * @return a builder to construct a request
      */
     RequestBuilder create(String method, String subDomain);
 
     /**
-     * Obtains the cookie of the given name.
+     * Returns the cookie of the given name in this session.
      *
-     * @param name name of the cookie to query
+     * @param name name of the cookie to be queried
      * @return value of the cookie, may null
      */
     @Nullable
