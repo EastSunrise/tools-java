@@ -26,10 +26,10 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -66,7 +66,7 @@ public final class MidnightSite extends BaseSite {
             .addParameter("tempid", "11")
             .addParameter("orderby", req.getOrderBy().getText())
             .addParameter("myorder", 0);
-        Document document = getDocument(builder, SnapshotStrategy.always());
+        Document document = getDocument(builder, SnapshotStrategies.always());
         List<MidnightIndex> indices = new ArrayList<>();
         Elements lis = document.selectFirst("div[role=main]").select(CssSelectors.TAG_LI);
         for (Element li : lis) {
@@ -176,7 +176,7 @@ public final class MidnightSite extends BaseSite {
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/%d.html", column.getText(), id);
-        Document document = getDocument(builder, SnapshotStrategy.never());
+        Document document = getDocument(builder, SnapshotStrategies.never());
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
@@ -201,7 +201,7 @@ public final class MidnightSite extends BaseSite {
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
             RequestBuilder builder = builder0(URI.create(nextHref).getPath());
-            document = getDocument(builder, SnapshotStrategy.never());
+            document = getDocument(builder, SnapshotStrategies.never());
         }
         return contents;
     }

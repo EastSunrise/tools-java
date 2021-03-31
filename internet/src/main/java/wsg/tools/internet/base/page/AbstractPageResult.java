@@ -12,7 +12,7 @@ import java.util.Objects;
  * @author Kingen
  * @since 2021/3/8
  */
-abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T, P> {
+public abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T, P> {
 
     private final List<T> content = new ArrayList<>();
     private final P request;
@@ -23,7 +23,7 @@ abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T,
      * @param content the content of this page, must not be {@literal null}.
      * @param request the paging information, must not be {@literal null}.
      */
-    AbstractPageResult(List<T> content, P request) {
+    protected AbstractPageResult(List<T> content, P request) {
         Objects.requireNonNull(content, "Content must not be null!");
         Objects.requireNonNull(request, "PageRequest must not be null!");
         this.content.addAll(content);
@@ -51,11 +51,6 @@ abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T,
     }
 
     @Override
-    public boolean hasNext() {
-        return getCurrent() + 1 < getTotalPages();
-    }
-
-    @Override
     public boolean hasPrevious() {
         return getCurrent() > 0;
     }
@@ -77,5 +72,4 @@ abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T,
         }
         return (P) request.previous();
     }
-
 }

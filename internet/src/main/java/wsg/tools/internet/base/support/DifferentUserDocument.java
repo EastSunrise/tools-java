@@ -8,17 +8,18 @@ import wsg.tools.internet.base.Loggable;
 import wsg.tools.internet.base.SnapshotStrategy;
 
 /**
- * Update the snapshot when the user in the document is different from current user.
+ * An implementation of {@code SnapshotStrategy} to update the snapshot when the user in the
+ * document is different from current user.
  *
  * @author Kingen
  * @since 2021/3/2
  */
-public class DifferentUserDocument<T> implements SnapshotStrategy<Document> {
+class DifferentUserDocument<T> implements SnapshotStrategy<Document> {
 
     private final Loggable<T> loggable;
     private final Function<? super Document, T> getUser;
 
-    public DifferentUserDocument(@Nonnull Loggable<T> loggable,
+    DifferentUserDocument(@Nonnull Loggable<T> loggable,
         @Nonnull Function<? super Document, T> getUser) {
         this.loggable = loggable;
         this.getUser = getUser;

@@ -26,7 +26,7 @@ import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.WithoutNextDocument;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -61,7 +61,7 @@ public class LicencePlateSite extends BaseSite
     @Override
     public LicencePlateItem findById(String id) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(id);
-        SnapshotStrategy<Document> strategy = new WithoutNextDocument<>(this::getNext);
+        SnapshotStrategy<Document> strategy = SnapshotStrategies.withoutNext(this::getNext);
         Document document = getDocument(builder0("/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);

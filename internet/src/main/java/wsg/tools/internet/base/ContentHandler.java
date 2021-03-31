@@ -1,7 +1,7 @@
 package wsg.tools.internet.base;
 
 /**
- * Handle content of the response.
+ * Handles the content of the response.
  *
  * @param <T> type of target object
  * @author Kingen
@@ -18,7 +18,7 @@ public interface ContentHandler<T> {
     T handleContent(String content);
 
     /**
-     * Returns the extension of the target type.
+     * Returns the extension of the file that is treat as a cache of the response.
      *
      * @return the extension
      */

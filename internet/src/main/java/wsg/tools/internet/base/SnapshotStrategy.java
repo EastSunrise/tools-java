@@ -12,24 +12,6 @@ package wsg.tools.internet.base;
 public interface SnapshotStrategy<T> {
 
     /**
-     * Never updates the snapshots.
-     *
-     * @return the strategy
-     */
-    static <V> SnapshotStrategy<V> never() {
-        return v -> false;
-    }
-
-    /**
-     * Always updates the snapshots.
-     *
-     * @return the strategy
-     */
-    static <V> SnapshotStrategy<V> always() {
-        return v -> true;
-    }
-
-    /**
      * Predicate whether to update current snapshot based on the value.
      *
      * @param t value of current snapshot

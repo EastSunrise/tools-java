@@ -3,13 +3,13 @@ package wsg.tools.internet.base.page;
 import java.util.List;
 
 /**
- * Base implementation of {@link CountablePageResult}.
+ * An implementation of {@code PageResult} with the total amount of elements.
  *
  * @author Kingen
  * @since 2021/3/26
  */
-public class BasicCountablePageResult<T, P extends PageReq> extends AbstractPageResult<T, P>
-    implements CountablePageResult<T, P> {
+public class AmountCountablePageResult<T, P extends PageReq> extends AbstractPageResult<T, P>
+    implements PageCountable, AmountCountable {
 
     private final long total;
 
@@ -20,7 +20,7 @@ public class BasicCountablePageResult<T, P extends PageReq> extends AbstractPage
      *              the length of the content given, if it is going to be the content of the last
      *              page.
      */
-    public BasicCountablePageResult(List<T> content, P request, long total) {
+    public AmountCountablePageResult(List<T> content, P request, long total) {
         super(content, request);
         if (!content.isEmpty()) {
             int offset = request.getCurrent() * request.getPageSize();
@@ -36,13 +36,13 @@ public class BasicCountablePageResult<T, P extends PageReq> extends AbstractPage
         return (int) Math.ceil((double) total / (double) getPageSize());
     }
 
-    /**
-     * Returns the total amount of elements.
-     *
-     * @return the total amount of elements
-     */
     @Override
     public long getTotalElements() {
         return total;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return getCurrent() + 1 < getTotalPages();
     }
 }

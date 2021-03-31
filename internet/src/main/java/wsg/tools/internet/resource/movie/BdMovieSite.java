@@ -29,12 +29,11 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.WithoutNextDocument;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -78,7 +77,8 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0("/movies/index.htm"), SnapshotStrategy.always());
+        Document document = findDocument(builder0("/movies/index.htm"),
+            SnapshotStrategies.always());
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -96,8 +96,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     public BdMovieItem findById(Integer id) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/zx/%d.htm", id);
-        WithoutNextDocument<Integer> strategy = new WithoutNextDocument<>(this::getNext);
-        Document document = getDocument(builder, strategy);
+        Document document = getDocument(builder, SnapshotStrategies.withoutNext(this::getNext));
         Map<String, String> metas = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements properties = document.select("meta[property]");
         for (Element ele : properties) {

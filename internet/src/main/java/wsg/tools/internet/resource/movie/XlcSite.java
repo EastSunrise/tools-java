@@ -28,11 +28,11 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -75,7 +75,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
      */
     public int latest() throws OtherResponseException {
         RequestBuilder builder = builder0("/ajax-show-id-new.html");
-        Document document = findDocument(builder, SnapshotStrategy.always());
+        Document document = findDocument(builder, SnapshotStrategies.always());
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -91,7 +91,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     public XlcItem findById(Integer id) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
-        Document document = getDocument(builder, SnapshotStrategy.never());
+        Document document = getDocument(builder, SnapshotStrategies.never());
 
         Element pLeft = document.selectFirst(".pleft");
         Map<String, Node> info = new HashMap<>(8);

@@ -15,10 +15,10 @@ import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
@@ -139,7 +139,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     private <T> T getObject(RequestBuilder builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, MAPPER, clazz, SnapshotStrategy.never());
+        return getObject(builder, MAPPER, clazz, SnapshotStrategies.never());
     }
 
     private static class OmdbResponseHandler extends StringResponseHandler {

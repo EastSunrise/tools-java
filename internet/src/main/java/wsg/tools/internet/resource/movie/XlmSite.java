@@ -24,12 +24,11 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.WithoutNextDocument;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -70,7 +69,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
      * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0("/new.html"), SnapshotStrategy.always());
+        Document document = findDocument(builder0("/new.html"), SnapshotStrategies.always());
         Elements tits = document.select(".tit");
         int max = 1;
         for (Element tit : tits) {
@@ -86,8 +85,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     public XlmItem findById(Integer id) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(id);
         RequestBuilder builder = builder0("/dy/k%d.html", id);
-        WithoutNextDocument<Integer> strategy = new WithoutNextDocument<>(this::getNext);
-        Document document = getDocument(builder, strategy);
+        Document document = getDocument(builder, SnapshotStrategies.withoutNext(this::getNext));
 
         Element last = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).last();
         String columnHref = last.attr(CssSelectors.ATTR_HREF);

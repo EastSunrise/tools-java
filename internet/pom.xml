@@ -82,5 +82,11 @@
             <groupId>ws.schild</groupId>
             <artifactId>jave-core</artifactId>
         </dependency>
+        <dependency>
+            <artifactId>annotations</artifactId>
+            <groupId>org.jetbrains</groupId>
+            <scope>compile</scope>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
 </project>

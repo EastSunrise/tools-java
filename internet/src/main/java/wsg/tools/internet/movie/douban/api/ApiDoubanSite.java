@@ -11,6 +11,7 @@ import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.enums.DomesticCity;
@@ -81,7 +82,7 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public RankedResult apiMovieWeekly() throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class,
-            SnapshotStrategy.always());
+            SnapshotStrategies.always());
     }
 
     /**
@@ -89,7 +90,7 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public BoxResult apiMovieUsBox() throws NotFoundException, OtherResponseException {
         return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class,
-            SnapshotStrategy.always());
+            SnapshotStrategies.always());
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250()
@@ -127,7 +128,7 @@ public class ApiDoubanSite extends DoubanSite {
         while (true) {
             builder.addParameter("start", start);
             ChartResult chartResult = getObject(builder, ChartResult.class,
-                SnapshotStrategy.always());
+                SnapshotStrategies.always());
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -198,13 +199,13 @@ public class ApiDoubanSite extends DoubanSite {
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
-        return getObject(builder, clazz, SnapshotStrategy.never());
+        return getObject(builder, clazz, SnapshotStrategies.never());
     }
 
     private <T> T getObject(@Nonnull RequestBuilder builder, TypeReference<T> type)
         throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
-        return getObject(builder, MAPPER, type, SnapshotStrategy.never());
+        return getObject(builder, MAPPER, type, SnapshotStrategies.never());
     }
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy)

@@ -23,10 +23,10 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -58,12 +58,12 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
     @Override
     public ImdbTitle findById(String imdbId) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(imdbId);
-        Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategy.never());
+        Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategies.never());
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
         RequestBuilder builder = builder0("/index/video.editform/index.html")
             .addParameter("m_id", dataset.get("movie_id"))
             .addParameter("location", dataset.get("location"));
-        Document editForm = getDocument(builder, SnapshotStrategy.never());
+        Document editForm = getDocument(builder, SnapshotStrategies.never());
         Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -128,7 +128,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         throws NotFoundException, OtherResponseException {
         Document document = getDocument(
             builder0("/title/%s/episodelist", seriesId).addParameter("season", "1"),
-            SnapshotStrategy.never());
+            SnapshotStrategies.never());
         int seasonsCount =
             document.selectFirst("select#ep_season").select(CssSelectors.TAG_OPTION).size() - 1;
 
@@ -160,7 +160,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                 document = getDocument(builder0("/title/%s/episodelist", seriesId)
                         .addParameter("season", currentSeason)
                         .addParameter("page", page),
-                    SnapshotStrategy.never());
+                    SnapshotStrategies.never());
             }
             if (map.isEmpty()) {
                 result.add(new String[1]);
@@ -177,7 +177,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             document = getDocument(
                 builder0("/title/%s/episodelist", seriesId)
                     .addParameter("season", currentSeason),
-                SnapshotStrategy.never());
+                SnapshotStrategies.never());
         }
         return result;
     }

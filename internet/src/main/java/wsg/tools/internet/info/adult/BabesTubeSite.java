@@ -24,15 +24,15 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.page.BasicPageReq;
-import wsg.tools.internet.base.page.BasicPageResult;
+import wsg.tools.internet.base.page.CountablePageResult;
 import wsg.tools.internet.base.page.PageReq;
 import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -78,7 +78,7 @@ public class BabesTubeSite extends BaseSite
             .addParameter("function", "get_block")
             .addParameter("block_id", "list_models_models_list")
             .addParameter("sort_by", request.getOrderBy().getText());
-        Document document = getDocument(builder, SnapshotStrategy.always());
+        Document document = getDocument(builder, SnapshotStrategies.always());
         Elements children = document.selectFirst("#list_models_models_list_items").children();
         List<BabesModelIndex> indices = new ArrayList<>();
         for (Element child : children) {
@@ -189,7 +189,7 @@ public class BabesTubeSite extends BaseSite
             .addParameter("function", "get_block")
             .addParameter("block_id", "list_videos_common_videos_list")
             .addParameter("sort_by", "post_date");
-        Document document = getDocument(builder, SnapshotStrategy.always());
+        Document document = getDocument(builder, SnapshotStrategies.always());
         List<BabesVideoIndex> indices = new ArrayList<>();
         Element list = document.selectFirst("#list_videos_common_videos_list_items");
         for (Element child : list.children()) {
@@ -219,7 +219,7 @@ public class BabesTubeSite extends BaseSite
             index.setViews(Integer.parseInt(viewMatcher.group("v")));
             indices.add(index);
         }
-        return new BasicPageResult<>(indices, request, getTotalPages(document));
+        return new CountablePageResult<>(indices, request, getTotalPages(document));
     }
 
     private Pair<Integer, Integer> getCounts(Element head) {

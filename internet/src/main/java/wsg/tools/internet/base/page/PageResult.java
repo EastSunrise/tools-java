@@ -29,13 +29,6 @@ public interface PageResult<T, P extends PageReq> {
     int getPageSize();
 
     /**
-     * Returns the number of total pages.
-     *
-     * @return the number of total pages
-     */
-    int getTotalPages();
-
-    /**
      * Returns whether the result has content at all.
      *
      * @return whether the result has content at all

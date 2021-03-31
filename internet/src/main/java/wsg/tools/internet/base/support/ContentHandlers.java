@@ -1,6 +1,7 @@
 package wsg.tools.internet.base.support;
 
-import org.jsoup.Jsoup;
+import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import wsg.tools.internet.base.ContentHandler;
 
@@ -12,25 +13,12 @@ import wsg.tools.internet.base.ContentHandler;
  */
 public final class ContentHandlers {
 
-    /**
-     * Parse the content to a {@link Document}.
-     */
-    public static final ContentHandler<Document> DOCUMENT_CONTENT_HANDLER =
-        new DocumentContentHandler();
-
     private ContentHandlers() {
     }
 
-    private static class DocumentContentHandler implements ContentHandler<Document> {
-
-        @Override
-        public Document handleContent(String content) {
-            return Jsoup.parse(content);
-        }
-
-        @Override
-        public String extension() {
-            return "html";
-        }
+    @Nonnull
+    @Contract(value = " -> new", pure = true)
+    public static ContentHandler<Document> document() {
+        return new DocumentContentHandler();
     }
 }

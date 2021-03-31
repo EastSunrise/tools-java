@@ -1,17 +1,38 @@
 package wsg.tools.internet.base.page;
 
+import java.util.List;
+
 /**
- * A pageable result with countable total elements.
+ * An implementation of {@code PageResult} with the number of total pages.
  *
  * @author Kingen
  * @since 2021/3/26
  */
-public interface CountablePageResult<T, P extends PageReq> extends PageResult<T, P> {
+public class CountablePageResult<T, P extends PageReq> extends AbstractPageResult<T, P>
+    implements PageCountable {
+
+    private final int totalPages;
 
     /**
-     * Returns the total amount of elements.
+     * Constructs an instance of {@link PageResult}.
      *
-     * @return the total amount of elements
+     * @param totalPages the total amount of pages, must be positive
      */
-    long getTotalElements();
+    public CountablePageResult(List<T> content, P request, int totalPages) {
+        super(content, request);
+        if (totalPages < 1) {
+            throw new IllegalArgumentException("Total pages must not be less than one!");
+        }
+        this.totalPages = totalPages;
+    }
+
+    @Override
+    public int getTotalPages() {
+        return totalPages;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return getCurrent() + 1 < totalPages;
+    }
 }

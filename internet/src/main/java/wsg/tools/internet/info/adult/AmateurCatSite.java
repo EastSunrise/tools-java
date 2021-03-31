@@ -23,12 +23,13 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.WithoutNextDocument;
+import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -96,7 +97,7 @@ public final class AmateurCatSite extends BaseSite
     @Override
     public AmateurCatItem findById(String id) throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(id);
-        WithoutNextDocument<String> strategy = new WithoutNextDocument<>(this::getNext);
+        SnapshotStrategy<Document> strategy = SnapshotStrategies.withoutNext(this::getNext);
         Document document = getDocument(builder0("/%s", id), strategy);
         AmateurCatItem item = new AmateurCatItem(id);
 
