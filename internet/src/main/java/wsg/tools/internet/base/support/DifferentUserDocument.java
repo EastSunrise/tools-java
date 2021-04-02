@@ -14,7 +14,7 @@ import wsg.tools.internet.base.SnapshotStrategy;
  * @author Kingen
  * @since 2021/3/2
  */
-class DifferentUserDocument<T> implements SnapshotStrategy<Document> {
+public class DifferentUserDocument<T> implements SnapshotStrategy<Document> {
 
     private final Loggable<T> loggable;
     private final Function<? super Document, T> getUser;

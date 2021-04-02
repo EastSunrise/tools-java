@@ -1,9 +1,10 @@
 package wsg.tools.internet.base.data;
 
 import javax.annotation.Nonnull;
+import wsg.tools.internet.base.data.support.InvalidValueException;
 
 /**
- * Represents a function that converts an object to the target type.
+ * Represents a function that converts an object of unknown type to the target type.
  *
  * @param <R> target type that the value is converted to
  * @author Kingen

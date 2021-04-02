@@ -34,7 +34,6 @@ import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -89,7 +88,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     public GrapeNewsItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         String datetime = document.selectFirst(".updatetime").text();
         LocalDate releaseDate = LocalDate.parse(datetime.substring(5));
         GrapeNewsItem item = new GrapeNewsItem(id, builder.toString(), releaseDate);
@@ -145,7 +144,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
         RequestBuilder builder = builder0("/index.php").addParameter("s", arg);
-        Document document = getDocument(builder, SnapshotStrategies.always());
+        Document document = getDocument(builder, t -> true);
         String summary = ((TextNode) document.selectFirst(".ui-page-big").childNode(0)).text();
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.PAGE_SUM_REGEX, summary.strip());
         int total = Integer.parseInt(matcher.group("t"));
@@ -171,7 +170,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(index);
         RequestBuilder builder = builder0(index.getPath());
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);

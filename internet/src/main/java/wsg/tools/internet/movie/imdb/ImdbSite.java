@@ -29,7 +29,6 @@ import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -82,7 +81,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     @Nonnull
     @Override
     public ImdbTitle findById(@Nonnull String tt) throws NotFoundException, OtherResponseException {
-        Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategies.never());
+        Document document = getDocument(builder0("/title/%s", tt), t -> false);
         ImdbTitle title;
         try {
             String html = document.selectFirst("script[type=application/ld+json]").html();
@@ -164,7 +163,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             currentSeason++;
             RequestBuilder builder = builder0("/title/%s/episodes", seriesId)
                 .addParameter("season", currentSeason);
-            Document document = getDocument(builder, SnapshotStrategies.never());
+            Document document = getDocument(builder, t -> false);
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;

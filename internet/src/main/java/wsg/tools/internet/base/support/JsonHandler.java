@@ -15,17 +15,17 @@ import wsg.tools.internet.common.UnexpectedException;
  * @author Kingen
  * @since 2021/3/1
  */
-class JsonHandler<T> implements ContentHandler<T> {
+public class JsonHandler<T> implements ContentHandler<T> {
 
     private final ObjectMapper mapper;
     private final JavaType type;
 
-    JsonHandler(@Nonnull ObjectMapper mapper, Class<T> clazz) {
+    public JsonHandler(@Nonnull ObjectMapper mapper, Class<T> clazz) {
         this.mapper = mapper;
         this.type = mapper.constructType(clazz);
     }
 
-    JsonHandler(@Nonnull ObjectMapper mapper, TypeReference<T> reference) {
+    public JsonHandler(@Nonnull ObjectMapper mapper, TypeReference<T> reference) {
         this.mapper = mapper;
         this.type = mapper.getTypeFactory().constructType(reference);
     }

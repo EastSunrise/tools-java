@@ -31,7 +31,6 @@ import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -77,7 +76,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      */
     public int latest() throws OtherResponseException {
         Document document = findDocument(builder0("/movies/index.htm"),
-            SnapshotStrategies.always());
+            t -> true);
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -95,7 +94,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/zx/%d.htm", id);
-        Document document = getDocument(builder, SnapshotStrategies.withoutNext(this::getNext));
+        Document document = getDocument(builder, doc -> getNext(doc) == null);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);

@@ -13,27 +13,28 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
-import wsg.tools.internet.base.data.EntityValidator;
 import wsg.tools.internet.base.data.EntityValidatorContext;
 import wsg.tools.internet.base.data.Validator;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.common.UnexpectedException;
 
 /**
- * Basic implementation of {@code EntityValidator}.
+ * The class provides basic methods to validate entities of a complex type and properties contained
+ * in the type.
  *
+ * @param <T> type of entities to be validated
  * @author Kingen
  * @since 2021/3/31
  */
 @Slf4j
-public final class BasicEntityValidator<T> implements EntityValidator<T> {
+public final class EntityValidator<T> {
 
     private static final String GET_CLASS_METHOD = "getClass";
 
     private final Class<T> clazz;
     private final Map<String, PropertyValidator> validators;
 
-    private BasicEntityValidator(Class<T> clazz, Map<String, PropertyValidator> validators) {
+    private EntityValidator(Class<T> clazz, Map<String, PropertyValidator> validators) {
         this.clazz = clazz;
         this.validators = validators;
     }
@@ -45,7 +46,7 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
      */
     @Nonnull
     @Contract("_ -> new")
-    public static <T> BasicEntityValidator<T> create(Class<T> clazz) throws IntrospectionException {
+    public static <T> EntityValidator<T> create(Class<T> clazz) throws IntrospectionException {
         return create(clazz, new BasicEntityValidatorContext());
     }
 
@@ -56,7 +57,7 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
      */
     @Nonnull
     @Contract("_, _ -> new")
-    public static <T> BasicEntityValidator<T> create(Class<T> clazz, EntityValidatorContext context)
+    public static <T> EntityValidator<T> create(Class<T> clazz, EntityValidatorContext context)
         throws IntrospectionException {
         BeanInfo beanInfo = Introspector.getBeanInfo(clazz);
         PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
@@ -70,7 +71,7 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
                 }
                 String property = descriptor.getName();
                 Class<?> propertyType = descriptor.getPropertyType();
-                Validator validator = null;
+                Validator<?> validator = null;
                 try {
                     validator = context.getValidator(property, propertyType);
                 } catch (UnexpectedContentException e) {
@@ -80,15 +81,25 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
                 validators.put(property, new PropertyValidator(getter, validator));
             }
         }
-        return new BasicEntityValidator<>(clazz, validators);
+        return new EntityValidator<>(clazz, validators);
     }
 
-    @Override
+    /**
+     * Validates all available properties.
+     *
+     * @param entities entities to be validated
+     */
     public void validate(@Nonnull List<T> entities) {
         validate(entities, validators.keySet().toArray(new String[0]));
     }
 
-    @Override
+    /**
+     * Validates the specific properties.
+     *
+     * @param entities   entities to be validated
+     * @param properties properties to be validated
+     * @throws IllegalArgumentException if any given property is not contained in the type
+     */
     public void validate(@Nonnull List<T> entities, @Nonnull String[] properties) {
         String beanName = clazz.getSimpleName();
         log.info("Starting to validate {}...", beanName);
@@ -108,7 +119,7 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new UnexpectedException(e);
             }
-            Validator validator = pv.getValidator();
+            Validator<?> validator = pv.getValidator();
             String simpleName = validator.getClass().getSimpleName();
             log.info("Starting to validate {} of {} by {}...", property, beanName, simpleName);
             validator.validate(values);
@@ -118,9 +129,9 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
     private static final class PropertyValidator {
 
         private final Method readMethod;
-        private final Validator validator;
+        private final Validator<?> validator;
 
-        private PropertyValidator(Method readMethod, Validator validator) {
+        private PropertyValidator(Method readMethod, Validator<?> validator) {
             this.readMethod = readMethod;
             this.validator = validator;
         }
@@ -129,7 +140,7 @@ public final class BasicEntityValidator<T> implements EntityValidator<T> {
             return readMethod;
         }
 
-        public Validator getValidator() {
+        public Validator<?> getValidator() {
             return validator;
         }
     }

@@ -1,13 +1,13 @@
-package wsg.tools.internet.base.data.support;
+package wsg.tools.internet.base.data.support.util;
 
 import java.net.URL;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.internet.base.data.InvalidValueException;
+import wsg.tools.internet.base.data.Validator;
+import wsg.tools.internet.base.data.support.Descriptors;
+import wsg.tools.internet.base.data.support.InvalidValueException;
 
 /**
  * Validates whether the values are valid URLs.
@@ -16,7 +16,7 @@ import wsg.tools.internet.base.data.InvalidValueException;
  * @since 2021/3/31
  */
 @Slf4j
-public class URLValidator extends AbstractValidator<URL> {
+public class URLValidator extends Validator<URL> {
 
     @Nonnull
     @Override
@@ -36,7 +36,7 @@ public class URLValidator extends AbstractValidator<URL> {
      */
     @Override
     public void describe(@Nonnull List<URL> urls) {
-        Set<String> homes = urls.stream().map(url -> {
+        Descriptors.<URL, String>enumerate(url -> {
             StringBuilder builder = new StringBuilder()
                 .append(url.getProtocol()).append("://")
                 .append(url.getHost());
@@ -44,8 +44,6 @@ public class URLValidator extends AbstractValidator<URL> {
                 builder.append(":").append(url.getPort());
             }
             return builder.toString();
-        }).collect(Collectors.toSet());
-        log.info("Homes: {}", homes.size());
-        homes.forEach(log::info);
+        }).describe(urls);
     }
 }

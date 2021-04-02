@@ -40,7 +40,6 @@ import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
@@ -103,7 +102,7 @@ public class DoubanSite extends BaseSite
      */
     public void login(String username, String password) throws OtherResponseException {
         logout();
-        findDocument(builder0(null), SnapshotStrategies.always());
+        findDocument(builder0(null), t -> true);
         RequestBuilder builder = create(METHOD_POST, "accounts")
             .setPath("/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
@@ -111,7 +110,7 @@ public class DoubanSite extends BaseSite
             .addParameter("remember", true);
         LoginResult result = null;
         try {
-            result = getObject(builder, MAPPER, LoginResult.class, SnapshotStrategies.always());
+            result = getObject(builder, MAPPER, LoginResult.class, t -> true);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -134,11 +133,11 @@ public class DoubanSite extends BaseSite
         if (user() == null) {
             return;
         }
-        findDocument(builder0(null), SnapshotStrategies.always());
+        findDocument(builder0(null), t -> true);
         RequestBuilder builder = builder0("/accounts/logout")
             .addParameter("source", "main")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        findDocument(builder, SnapshotStrategies.always());
+        findDocument(builder, t -> true);
     }
 
     /**
@@ -152,7 +151,7 @@ public class DoubanSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         String subDomain = DoubanCatalog.MOVIE.name().toLowerCase(Locale.ROOT);
         RequestBuilder builder = builder(subDomain, "/subject/%d", id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -269,7 +268,7 @@ public class DoubanSite extends BaseSite
                 .addParameter("sort", "time")
                 .addParameter("start", start)
                 .addParameter("mode", "list");
-            Document document = getDocument(builder, SnapshotStrategies.always());
+            Document document = getDocument(builder, t -> true);
             boolean done = false;
             String listClass = ".list-view";
             for (Element li : document.selectFirst(listClass).select(CssSelectors.TAG_LI)) {
@@ -312,7 +311,7 @@ public class DoubanSite extends BaseSite
                 "/people/%d/%s", userId,
                 catalog.getCreator().getPlurality())
                 .addParameter("start", start);
-            Document document = getDocument(builder, SnapshotStrategies.always());
+            Document document = getDocument(builder, t -> true);
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
                 Element a = div.selectFirst(".title").selectFirst(CssSelectors.TAG_A);
@@ -351,7 +350,7 @@ public class DoubanSite extends BaseSite
             .addParameter("p_title", imdbId).addParameter("p_uid", imdbId)
             .addParameter("cat", String.valueOf(cat.getCode()))
             .addParameter("subject_submit", "下一步");
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
 
         Element fieldset = document.selectFirst("div#content")
             .selectFirst(CssSelectors.TAG_FIELDSET);
@@ -383,7 +382,7 @@ public class DoubanSite extends BaseSite
             Locale.ROOT))
             .addParameter("search_text", keyword)
             .addParameter("cat", catalog.getCode());
-        Document document = getDocument(builder, SnapshotStrategies.always());
+        Document document = getDocument(builder, t -> true);
         return document.select("div.item-root").stream().map(div -> {
             Element a = div.selectFirst("a.title-text");
             String url = a.attr(CssSelectors.ATTR_HREF);
@@ -406,7 +405,7 @@ public class DoubanSite extends BaseSite
         if (catalog != null) {
             builder.addParameter("cat", catalog.getCode());
         }
-        Document document = getDocument(builder, SnapshotStrategies.always());
+        Document document = getDocument(builder, t -> true);
         return document.selectFirst("div.search-result").select("div.result").stream().map(div -> {
             Element a = div.selectFirst(CssSelectors.TAG_H3).selectFirst(CssSelectors.TAG_A);
             Matcher matcher = RegexUtils

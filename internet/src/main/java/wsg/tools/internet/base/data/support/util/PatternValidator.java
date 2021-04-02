@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.data.support;
+package wsg.tools.internet.base.data.support.util;
 
 import java.util.List;
 import java.util.regex.MatchResult;
@@ -6,7 +6,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import wsg.tools.internet.base.data.InvalidValueException;
+import wsg.tools.internet.base.data.Validator;
+import wsg.tools.internet.base.data.support.InvalidValueException;
 
 /**
  * Validates whether the string values matches a pattern.
@@ -15,7 +16,7 @@ import wsg.tools.internet.base.data.InvalidValueException;
  * @since 2021/3/6
  */
 @Slf4j
-public class PatternValidator extends AbstractValidator<MatchResult> {
+public class PatternValidator extends Validator<MatchResult> {
 
     private final Pattern pattern;
     private final MatcherType type;
@@ -54,14 +55,13 @@ public class PatternValidator extends AbstractValidator<MatchResult> {
                 }
                 break;
             default:
-                throw new InvalidValueException("Unknown type of matcher.");
+                throw new InvalidValueException("Unknown type of matcher");
         }
-        throw new InvalidValueException("Mismatch text: " + text);
+        throw new InvalidValueException("Mismatch text");
     }
 
     @Override
-    protected void describe(@Nonnull List<MatchResult> results) {
-
+    public void describe(@Nonnull List<MatchResult> results) {
     }
 
     protected enum MatcherType {

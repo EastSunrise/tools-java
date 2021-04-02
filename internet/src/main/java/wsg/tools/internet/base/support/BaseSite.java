@@ -114,7 +114,7 @@ public class BaseSite implements HttpSession {
     protected Document findDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
         throws OtherResponseException {
         try {
-            return getContent(builder, defaultHandler, ContentHandlers.document(), strategy);
+            return getContent(builder, defaultHandler, new DocumentHandler(), strategy);
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 throw new UnexpectedException(e);
@@ -132,7 +132,7 @@ public class BaseSite implements HttpSession {
     public Document getDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
         throws NotFoundException, OtherResponseException {
         try {
-            return getContent(builder, defaultHandler, ContentHandlers.document(), strategy);
+            return getContent(builder, defaultHandler, new DocumentHandler(), strategy);
         } catch (HttpResponseException e) {
             throw handleException(e);
         }

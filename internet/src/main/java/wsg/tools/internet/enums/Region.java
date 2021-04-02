@@ -1,5 +1,6 @@
 package wsg.tools.internet.enums;
 
+import java.util.Locale;
 import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.CodeSupplier;
@@ -12,10 +13,12 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/6/26
  */
-public enum Region implements CodeSupplier<String>, TextSupplier, TitleSupplier,
-    AkaPredicate<String> {
+public enum Region
+    implements CodeSupplier<String>, TextSupplier, TitleSupplier, AkaPredicate<String> {
     /**
      * ISO regions.
+     *
+     * @see Locale#getISOCountries()
      */
     WW("World", "世界", "World-wide"),
     CN("China", "中国", "中国大陆", "大陆", "中华人民共和国"),
@@ -53,7 +56,17 @@ public enum Region implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     PT("Portugal", "葡萄牙"),
     TH("Thailand", "泰国"),
     TR("Turkey", "土耳其"),
-    VN("Vietnam", "越南");
+    VN("Vietnam", "越南"),
+    CZ("Czechia", "捷克"),
+    NO("Norway", "挪威"),
+    PL("Poland", "波兰"),
+
+    /**
+     * Other languages, with three-letter abbreviation as codes except those used in {@link
+     * Locale#getAvailableLocales()} and {@link Language}.
+     */
+    CZS("Czechoslovakia", "捷克斯洛伐克"),
+    ;
 
     private final String text;
     private final String title;

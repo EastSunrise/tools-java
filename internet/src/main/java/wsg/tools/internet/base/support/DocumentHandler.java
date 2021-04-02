@@ -11,7 +11,7 @@ import wsg.tools.internet.base.ContentHandler;
  * @author Kingen
  * @since 2021/3/31
  */
-class DocumentContentHandler implements ContentHandler<Document> {
+public class DocumentHandler implements ContentHandler<Document> {
 
     @Override
     public Document handleContent(String content) {

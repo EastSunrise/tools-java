@@ -32,7 +32,6 @@ import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -78,7 +77,7 @@ public class BabesTubeSite extends BaseSite
             .addParameter("function", "get_block")
             .addParameter("block_id", "list_models_models_list")
             .addParameter("sort_by", request.getOrderBy().getText());
-        Document document = getDocument(builder, SnapshotStrategies.always());
+        Document document = getDocument(builder, t -> true);
         Elements children = document.selectFirst("#list_models_models_list_items").children();
         List<BabesModelIndex> indices = new ArrayList<>();
         for (Element child : children) {
@@ -189,7 +188,7 @@ public class BabesTubeSite extends BaseSite
             .addParameter("function", "get_block")
             .addParameter("block_id", "list_videos_common_videos_list")
             .addParameter("sort_by", "post_date");
-        Document document = getDocument(builder, SnapshotStrategies.always());
+        Document document = getDocument(builder, t -> true);
         List<BabesVideoIndex> indices = new ArrayList<>();
         Element list = document.selectFirst("#list_videos_common_videos_list_items");
         for (Element child : list.children()) {

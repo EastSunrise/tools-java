@@ -3,6 +3,7 @@ package wsg.tools.internet.info.game;
 import java.time.Year;
 import javax.annotation.Nonnull;
 import lombok.Getter;
+import org.jetbrains.annotations.Contract;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.page.BasicPageReq;
 
@@ -44,6 +45,8 @@ public class TournamentPageReq extends BasicPageReq {
         this.game = game;
     }
 
+    @Nonnull
+    @Contract("_, _ -> new")
     public static TournamentPageReq lol(int current, int pageSize) {
         return new TournamentPageReq(current, pageSize, GameType.LOL);
     }

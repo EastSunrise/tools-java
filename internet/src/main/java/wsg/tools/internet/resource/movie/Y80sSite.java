@@ -29,7 +29,6 @@ import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -72,7 +71,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
      */
     public int latest() throws OtherResponseException {
         RequestBuilder builder = builder("m", "/movie/1-0-0-0-0-0-0");
-        Document document = findDocument(builder, SnapshotStrategies.always());
+        Document document = findDocument(builder, t -> true);
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
@@ -87,7 +86,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
     @Override
     public Y80sItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder("m", "/movie/%d", id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }

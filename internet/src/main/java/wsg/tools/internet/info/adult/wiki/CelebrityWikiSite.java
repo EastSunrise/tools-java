@@ -39,7 +39,6 @@ import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -92,7 +91,7 @@ public final class CelebrityWikiSite extends BaseSite {
         int current = request.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
         RequestBuilder builder = builder0("/%s/index%s.html", type.getText(), page);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
 
         Element box = document.selectFirst(".personbox");
         Elements lis = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_LI);
@@ -119,7 +118,7 @@ public final class CelebrityWikiSite extends BaseSite {
     public WikiCelebrity findCelebrity(int id, @Nonnull WikiCelebrityType type)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/m%d/info.html", type.getText(), id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -174,7 +173,7 @@ public final class CelebrityWikiSite extends BaseSite {
     public WikiAlbum findAlbum(int id, @Nonnull WikiAlbumType type)
         throws NotFoundException, OtherResponseException {
         Document document = getDocument(builder0("/tuku/%s/%d.html", type.getText(), id),
-            SnapshotStrategies.never());
+            t -> false);
         Element show = document.selectFirst("div.picshow");
         String title = show.selectFirst(CssSelectors.TAG_H1).text();
         String timeStr = ((TextNode) show.selectFirst(".info").childNode(0)).text();
@@ -214,7 +213,7 @@ public final class CelebrityWikiSite extends BaseSite {
     public WikiAdultEntry findAdultEntry(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/fanhao/%s.html", id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
@@ -362,7 +361,7 @@ public final class CelebrityWikiSite extends BaseSite {
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/%s/m%s/pic.html", type.getText(), id);
-        Document document = getDocument(builder, SnapshotStrategies.never());
+        Document document = getDocument(builder, t -> false);
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         if (lis.isEmpty()) {
             return null;

@@ -33,7 +33,6 @@ import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -79,7 +78,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
      * @see <a href="https://www.993vod.com/">Home</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0(""), SnapshotStrategies.always());
+        Document document = findDocument(builder0(""), t -> true);
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -95,7 +94,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     public MovieHeavenItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
-        Document doc = getDocument(builder, SnapshotStrategies.never());
+        Document doc = getDocument(builder, t -> false);
         if (TIP_TITLE.equals(doc.title())) {
             String message = doc.selectFirst("h4.infotitle1").text();
             throw new NotFoundException(message);

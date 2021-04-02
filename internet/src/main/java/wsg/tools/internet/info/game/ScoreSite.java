@@ -15,7 +15,6 @@ import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
-import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.enums.DomesticCity;
@@ -74,9 +73,9 @@ public class ScoreSite extends BaseSite {
         RequestBuilder builder = builder("img1", "/tr/%d.json", tournament.getId());
         SnapshotStrategy<List<TournamentRound>> strategy;
         if (tournament.getStatus() == ScoreStatus.FINISHED) {
-            strategy = SnapshotStrategies.never();
+            strategy = t -> false;
         } else {
-            strategy = SnapshotStrategies.always();
+            strategy = t -> true;
         }
         return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
         }, strategy);

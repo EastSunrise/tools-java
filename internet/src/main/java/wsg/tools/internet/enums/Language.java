@@ -88,7 +88,7 @@ public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplie
 
     /**
      * Other languages, with three-letter abbreviation as codes except those used in {@link
-     * Locale#getAvailableLocales()}
+     * Locale#getAvailableLocales()} and {@link Region}.
      */
     NON("None", "默片"),
     SID("Sindarin", "辛达林语"),

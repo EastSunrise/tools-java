@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Contract;
 import wsg.tools.internet.base.page.BasicPageReq;
 import wsg.tools.internet.base.page.PageReq;
 
@@ -24,6 +25,7 @@ public class WikiPageReq extends BasicPageReq {
     }
 
     @Nonnull
+    @Contract(" -> new")
     public static WikiPageReq first() {
         return new WikiPageReq(0);
     }

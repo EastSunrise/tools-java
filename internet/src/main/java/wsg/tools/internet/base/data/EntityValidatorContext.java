@@ -20,7 +20,7 @@ public interface EntityValidatorContext {
      * @throws UnexpectedContentException if the property is unexpected
      */
     @Nonnull
-    Validator getValidator(@Nonnull String property, @Nonnull Class<?> clazz);
+    Validator<?> getValidator(@Nonnull String property, @Nonnull Class<?> clazz);
 
     /**
      * Handles when no validator is found in this context.

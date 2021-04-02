@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.data;
+package wsg.tools.internet.base.data.support;
 
 /**
  * Exceptions thrown when a value is invalid.

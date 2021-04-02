@@ -1,11 +1,12 @@
-package wsg.tools.internet.base.data.support;
+package wsg.tools.internet.base.data.support.time;
 
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import javax.annotation.Nonnull;
-import lombok.extern.slf4j.Slf4j;
-import wsg.tools.internet.base.data.InvalidValueException;
+import wsg.tools.internet.base.data.Validator;
+import wsg.tools.internet.base.data.support.Descriptors;
+import wsg.tools.internet.base.data.support.InvalidValueException;
 
 /**
  * Validates whether the values are valid durations.
@@ -13,8 +14,7 @@ import wsg.tools.internet.base.data.InvalidValueException;
  * @author Kingen
  * @since 2021/3/31
  */
-@Slf4j
-public class DurationValidator extends AbstractValidator<Duration> {
+public class DurationValidator extends Validator<Duration> {
 
     @Nonnull
     @Override
@@ -29,16 +29,8 @@ public class DurationValidator extends AbstractValidator<Duration> {
         }
     }
 
-    /**
-     * Describes the range of durations.
-     */
     @Override
-    protected void describe(@Nonnull List<Duration> durations) {
-        if (!durations.isEmpty()) {
-            Duration max = durations.stream().max(Duration::compareTo).orElseThrow();
-            Duration min = durations.stream().min(Duration::compareTo).orElseThrow();
-            log.info("Min: {}", min);
-            log.info("Max: {}", max);
-        }
+    public void describe(List<Duration> values) {
+        Descriptors.<Duration>range().describe(values);
     }
 }
