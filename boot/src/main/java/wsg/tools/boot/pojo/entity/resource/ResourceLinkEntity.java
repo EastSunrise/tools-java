@@ -8,13 +8,12 @@ import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.common.enums.ResourceType;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.download.base.AbstractLink;
 
 /**
  * Entities of links of resources.
  *
  * @author Kingen
- * @see AbstractLink
+ * @see wsg.tools.internet.download.Link
  * @since 2020/10/30
  */
 @Getter

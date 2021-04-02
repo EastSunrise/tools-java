@@ -12,7 +12,7 @@ import javax.persistence.Converter;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.serializer.CodeSerializer;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 
 /**
  * Converters for container types like {@link List}.

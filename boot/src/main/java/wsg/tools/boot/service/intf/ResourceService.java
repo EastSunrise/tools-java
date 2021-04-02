@@ -8,7 +8,7 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
 
 /**
  * Interface of resource service.

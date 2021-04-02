@@ -9,10 +9,10 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * Movie entity.

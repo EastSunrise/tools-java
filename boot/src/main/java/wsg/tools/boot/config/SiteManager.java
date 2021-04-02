@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import wsg.tools.internet.common.SiteStatusException;
 import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.download.Downloader;
 import wsg.tools.internet.download.FileExistStrategy;
-import wsg.tools.internet.download.base.Downloader;
-import wsg.tools.internet.download.impl.BasicDownloader;
-import wsg.tools.internet.info.adult.LicencePlateSite;
+import wsg.tools.internet.download.support.BasicDownloader;
+import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.imdb.ImdbCnSite;
@@ -19,12 +19,12 @@ import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbRepository;
 import wsg.tools.internet.movie.imdb.ImdbSite;
 import wsg.tools.internet.movie.imdb.OmdbSite;
-import wsg.tools.internet.resource.movie.BdMovieSite;
-import wsg.tools.internet.resource.movie.GrapeSite;
-import wsg.tools.internet.resource.movie.MovieHeavenSite;
-import wsg.tools.internet.resource.movie.XlcSite;
-import wsg.tools.internet.resource.movie.XlmSite;
-import wsg.tools.internet.resource.movie.Y80sSite;
+import wsg.tools.internet.movie.resource.BdMovieSite;
+import wsg.tools.internet.movie.resource.GrapeSite;
+import wsg.tools.internet.movie.resource.MovieHeavenSite;
+import wsg.tools.internet.movie.resource.XlcSite;
+import wsg.tools.internet.movie.resource.XlmSite;
+import wsg.tools.internet.movie.resource.Y80sSite;
 
 /**
  * Management of all sites.

@@ -18,12 +18,13 @@ import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
+import wsg.tools.internet.info.adult.AbstractAdultEntry;
 
 /**
  * Entity of adult video.
  *
  * @author Kingen
- * @see wsg.tools.internet.info.adult.entry.AbstractAdultEntry
+ * @see AbstractAdultEntry
  * @since 2021/2/23
  */
 @Getter

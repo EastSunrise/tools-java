@@ -40,10 +40,10 @@ import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.info.adult.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.AmateurSupplier;
 import wsg.tools.internet.info.adult.common.Mosaic;
 import wsg.tools.internet.info.adult.common.SerialNumber;
-import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.entry.AmateurSupplier;
 
 /**
  * @author Kingen

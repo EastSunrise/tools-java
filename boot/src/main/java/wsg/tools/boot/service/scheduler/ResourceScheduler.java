@@ -13,13 +13,13 @@ import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedException;
-import wsg.tools.internet.info.adult.LicencePlateSite;
+import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
-import wsg.tools.internet.resource.movie.AbstractListResourceSite;
-import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.AbstractListResourceSite;
+import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
 
 /**
  * Scheduled tasks.

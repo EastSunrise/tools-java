@@ -3,14 +3,14 @@ package wsg.tools.boot.common.enums;
 import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.IntCodeSupplier;
 import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.internet.download.base.AbstractLink;
-import wsg.tools.internet.download.impl.BaiduDiskLink;
-import wsg.tools.internet.download.impl.Ed2kLink;
-import wsg.tools.internet.download.impl.HttpLink;
-import wsg.tools.internet.download.impl.MagnetLink;
-import wsg.tools.internet.download.impl.ThunderDiskLink;
-import wsg.tools.internet.download.impl.UcDiskLink;
-import wsg.tools.internet.download.impl.YyetsLink;
+import wsg.tools.internet.download.Link;
+import wsg.tools.internet.download.support.BaiduDiskLink;
+import wsg.tools.internet.download.support.Ed2kLink;
+import wsg.tools.internet.download.support.HttpLink;
+import wsg.tools.internet.download.support.MagnetLink;
+import wsg.tools.internet.download.support.ThunderDiskLink;
+import wsg.tools.internet.download.support.UcDiskLink;
+import wsg.tools.internet.download.support.YyetsLink;
 
 /**
  * Types of resources.
@@ -18,7 +18,7 @@ import wsg.tools.internet.download.impl.YyetsLink;
  * @author Kingen
  * @since 2020/11/3
  */
-public enum ResourceType implements IntCodeSupplier, AkaPredicate<Class<? extends AbstractLink>>,
+public enum ResourceType implements IntCodeSupplier, AkaPredicate<Class<? extends Link>>,
     TextSupplier {
 
     /**
@@ -52,17 +52,17 @@ public enum ResourceType implements IntCodeSupplier, AkaPredicate<Class<? extend
     ;
 
     private final int code;
-    private final Class<? extends AbstractLink> clazz;
+    private final Class<? extends Link> clazz;
     private final String text;
 
-    ResourceType(int code, Class<? extends AbstractLink> clazz, String text) {
+    ResourceType(int code, Class<? extends Link> clazz, String text) {
         this.code = code;
         this.clazz = clazz;
         this.text = text;
     }
 
     @Override
-    public boolean alsoKnownAs(Class<? extends AbstractLink> other) {
+    public boolean alsoKnownAs(Class<? extends Link> other) {
         return clazz.equals(other);
     }
 

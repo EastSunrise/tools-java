@@ -3,8 +3,8 @@ package wsg.tools.internet.info.adult.midnight;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.entry.AmateurSupplier;
+import wsg.tools.internet.info.adult.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.AmateurSupplier;
 
 /**
  * An item with an amateur adult entry.

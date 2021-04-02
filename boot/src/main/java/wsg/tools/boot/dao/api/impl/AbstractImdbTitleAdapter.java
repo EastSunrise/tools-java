@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import wsg.tools.boot.dao.api.intf.ImdbView;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.imdb.ImdbTitle;
 
 /**

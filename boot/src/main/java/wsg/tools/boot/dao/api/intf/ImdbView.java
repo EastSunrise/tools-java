@@ -3,9 +3,9 @@ package wsg.tools.boot.dao.api.intf;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * View of a subject from IMDb.

@@ -2,7 +2,7 @@ package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import wsg.tools.internet.info.adult.entry.FormalAdultEntry;
+import wsg.tools.internet.info.adult.FormalAdultEntry;
 
 /**
  * An item with a formal adult entry.

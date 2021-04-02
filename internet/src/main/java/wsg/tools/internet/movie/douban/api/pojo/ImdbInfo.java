@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
 import lombok.Getter;
-import wsg.tools.internet.enums.Language;
-import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**

@@ -10,14 +10,14 @@ import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.enums.DomesticCity;
+import wsg.tools.internet.common.enums.DomesticCity;
 
 /**
  * @author Kingen

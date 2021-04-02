@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.LocalDate;
 import lombok.Getter;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.imdb.ImdbCreativeWork;
 
 /**

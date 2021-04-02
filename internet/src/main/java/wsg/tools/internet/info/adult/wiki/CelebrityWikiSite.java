@@ -33,10 +33,10 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
@@ -44,14 +44,14 @@ import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.StringResponseHandler;
-import wsg.tools.internet.enums.BloodType;
-import wsg.tools.internet.enums.Constellation;
-import wsg.tools.internet.enums.Gender;
-import wsg.tools.internet.enums.Nation;
-import wsg.tools.internet.enums.Zodiac;
+import wsg.tools.internet.common.enums.BloodType;
+import wsg.tools.internet.common.enums.Constellation;
+import wsg.tools.internet.common.enums.Gender;
+import wsg.tools.internet.common.enums.Nation;
+import wsg.tools.internet.common.enums.Zodiac;
+import wsg.tools.internet.info.adult.AdultEntryBuilder;
+import wsg.tools.internet.info.adult.FormalAdultEntry;
 import wsg.tools.internet.info.adult.common.CupEnum;
-import wsg.tools.internet.info.adult.entry.AdultEntryBuilder;
-import wsg.tools.internet.info.adult.entry.FormalAdultEntry;
 
 /**
  * @author Kingen

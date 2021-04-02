@@ -13,10 +13,10 @@ import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
-import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
 
 /**
  * Items of resources.

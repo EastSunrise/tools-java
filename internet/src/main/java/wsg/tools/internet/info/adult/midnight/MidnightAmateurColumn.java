@@ -1,6 +1,6 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.internet.info.adult.entry.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.AmateurAdultEntry;
 
 /**
  * Part columns of {@link MidnightColumn} each of whose items has an {@link AmateurAdultEntry}.

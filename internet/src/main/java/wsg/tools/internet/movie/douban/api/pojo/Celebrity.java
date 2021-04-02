@@ -3,8 +3,8 @@ package wsg.tools.internet.movie.douban.api.pojo;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
-import wsg.tools.internet.enums.Constellation;
-import wsg.tools.internet.enums.Gender;
+import wsg.tools.internet.common.enums.Constellation;
+import wsg.tools.internet.common.enums.Gender;
 
 /**
  * A celebrity.

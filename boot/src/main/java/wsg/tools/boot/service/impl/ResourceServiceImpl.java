@@ -44,16 +44,16 @@ import wsg.tools.internet.base.repository.ListRepoIterator;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.download.base.AbstractLink;
-import wsg.tools.internet.download.base.FilenameSupplier;
-import wsg.tools.internet.download.base.LengthSupplier;
-import wsg.tools.internet.download.base.PasswordProvider;
-import wsg.tools.internet.download.impl.Thunder;
+import wsg.tools.internet.download.FilenameSupplier;
+import wsg.tools.internet.download.LengthSupplier;
+import wsg.tools.internet.download.Link;
+import wsg.tools.internet.download.PasswordProvider;
+import wsg.tools.internet.download.Thunder;
+import wsg.tools.internet.movie.common.StateSupplier;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.resource.common.StateSupplier;
-import wsg.tools.internet.resource.common.YearSupplier;
-import wsg.tools.internet.resource.movie.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
 
 /**
  * @author Kingen
@@ -137,15 +137,15 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             LocalDate date = ((UpdateDateSupplier) item).lastUpdate();
             itemEntity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
         }
-        List<AbstractLink> resources = item.getLinks();
+        List<Link> resources = item.getLinks();
         Integer count = template.execute(status -> insertResource(itemEntity, resources));
         return Objects.requireNonNull(count);
     }
 
-    private int insertResource(ResourceItemEntity itemEntity, List<AbstractLink> resources) {
+    private int insertResource(ResourceItemEntity itemEntity, List<Link> resources) {
         Long itemId = itemRepository.insert(itemEntity).getId();
         List<ResourceLinkEntity> links = new LinkedList<>();
-        for (AbstractLink resource : resources) {
+        for (Link resource : resources) {
             ResourceLinkEntity linkEntity = new ResourceLinkEntity();
             linkEntity.setItemId(itemId);
             linkEntity.setTitle(resource.getTitle());

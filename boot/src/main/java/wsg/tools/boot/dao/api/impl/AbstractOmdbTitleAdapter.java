@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import wsg.tools.boot.dao.api.intf.ImdbView;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.common.Runtime;
 import wsg.tools.internet.movie.imdb.OmdbTitle;
 

@@ -4,11 +4,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.Getter;
-import wsg.tools.internet.enums.BloodType;
-import wsg.tools.internet.enums.Constellation;
-import wsg.tools.internet.enums.Gender;
-import wsg.tools.internet.enums.Nation;
-import wsg.tools.internet.enums.Zodiac;
+import wsg.tools.internet.common.enums.BloodType;
+import wsg.tools.internet.common.enums.Constellation;
+import wsg.tools.internet.common.enums.Gender;
+import wsg.tools.internet.common.enums.Nation;
+import wsg.tools.internet.common.enums.Zodiac;
 import wsg.tools.internet.info.adult.common.CupEnum;
 
 /**

@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
-import wsg.tools.internet.enums.Language;
-import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.common.enums.Region;
 
 /**
  * A subject from douban

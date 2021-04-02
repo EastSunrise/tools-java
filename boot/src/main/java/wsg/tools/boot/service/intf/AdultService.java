@@ -11,7 +11,7 @@ import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.entry.AmateurSupplier;
+import wsg.tools.internet.info.adult.AmateurSupplier;
 
 /**
  * Interface of service for adult videos.

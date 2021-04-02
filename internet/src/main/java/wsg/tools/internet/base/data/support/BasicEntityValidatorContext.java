@@ -29,7 +29,7 @@ public class BasicEntityValidatorContext implements EntityValidatorContext {
     private final Map<String, Validator<?>> propertyValidators = new HashMap<>(0);
     private final Map<Class<?>, Validator<?>> typeValidators = new HashMap<>(0);
 
-    protected BasicEntityValidatorContext() {
+    public BasicEntityValidatorContext() {
     }
 
     /**

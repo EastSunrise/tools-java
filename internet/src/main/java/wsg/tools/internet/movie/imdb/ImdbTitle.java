@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 import wsg.tools.internet.movie.common.jackson.JoinedValue;
 import wsg.tools.internet.movie.imdb.pojo.base.BaseImdbObject;

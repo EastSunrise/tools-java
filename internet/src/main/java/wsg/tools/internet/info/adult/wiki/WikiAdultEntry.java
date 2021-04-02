@@ -2,7 +2,7 @@ package wsg.tools.internet.info.adult.wiki;
 
 import javax.annotation.Nonnull;
 import lombok.Getter;
-import wsg.tools.internet.info.adult.entry.FormalAdultEntry;
+import wsg.tools.internet.info.adult.FormalAdultEntry;
 
 /**
  * An adult entry of a celebrity.

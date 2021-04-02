@@ -29,7 +29,7 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.io.Filetype;
-import wsg.tools.internet.resource.common.YearSupplier;
+import wsg.tools.internet.movie.common.YearSupplier;
 
 /**
  * Management of local videos.

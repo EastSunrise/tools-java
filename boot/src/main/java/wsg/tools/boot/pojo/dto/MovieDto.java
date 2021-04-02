@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 /**

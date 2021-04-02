@@ -11,9 +11,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.Setter;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.internet.enums.Language;
+import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
-import wsg.tools.internet.resource.common.YearSupplier;
 
 /**
  * Entity of one season of TV series.

@@ -1,7 +1,7 @@
 package wsg.tools.internet.movie.common.enums;
 
 import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.internet.enums.Region;
+import wsg.tools.internet.common.enums.Region;
 
 /**
  * Ratings of movies on IMDb.
