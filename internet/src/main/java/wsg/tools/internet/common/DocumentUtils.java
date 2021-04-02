@@ -2,14 +2,19 @@ package wsg.tools.internet.common;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import wsg.tools.common.util.MapUtilsExt;
 
 /**
  * Utility for operations on a {@link org.jsoup.nodes.Document}.
@@ -27,6 +32,29 @@ public final class DocumentUtils {
     private static final Pattern YEARS_INTERVAL_REGEX = Pattern.compile("(?<y>\\d+)年前");
 
     private DocumentUtils() {
+    }
+
+    /**
+     * Gets metadata from the document.
+     *
+     * @return metadata in a map, including name-content mappings or property-content mappings of OG
+     */
+    @Nonnull
+    public static Map<String, String> getMetadata(@Nonnull Document document) {
+        Elements metas = document.select(CssSelectors.TAG_META);
+        Map<String, String> metadata = new HashMap<>(metas.size());
+        for (Element meta : metas) {
+            if (meta.hasAttr(CssSelectors.ATTR_NAME)) {
+                String name = meta.attr(CssSelectors.ATTR_NAME);
+                MapUtilsExt.putIfAbsent(metadata, name, meta.attr(CssSelectors.ATTR_CONTENT));
+                continue;
+            }
+            if (meta.hasAttr(CssSelectors.ATTR_PROPERTY)) {
+                String og = meta.attr(CssSelectors.ATTR_PROPERTY);
+                MapUtilsExt.putIfAbsent(metadata, og, meta.attr(CssSelectors.ATTR_CONTENT));
+            }
+        }
+        return metadata;
     }
 
     /**

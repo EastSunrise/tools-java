@@ -26,5 +26,5 @@ public interface ImdbRepository<T extends ImdbIdentifier>
      */
     @Nonnull
     @Override
-    T findById(String imdbId) throws NotFoundException, OtherResponseException;
+    T findById(@Nonnull String imdbId) throws NotFoundException, OtherResponseException;
 }

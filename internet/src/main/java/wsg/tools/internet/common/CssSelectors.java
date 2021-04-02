@@ -33,17 +33,14 @@ public final class CssSelectors {
     public static final String TAG_EM = "em";
     public static final String TAG_ARTICLE = "article";
     public static final String TAG_UL = "ul";
-
-    /**
-     * Common meta tags
-     */
-    public static final String META_KEYWORDS = "meta[name=keywords]";
+    public static final String TAG_META = "meta";
 
     /**
      * Common HTML attributes.
      */
     public static final String ATTR_HREF = "href";
     public static final String ATTR_NAME = "name";
+    public static final String ATTR_PROPERTY = "property";
     public static final String ATTR_SRC = "src";
     public static final String ATTR_DATETIME = "datetime";
     public static final String ATTR_CONTENT = "content";

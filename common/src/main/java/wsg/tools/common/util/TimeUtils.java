@@ -18,8 +18,8 @@ public final class TimeUtils {
     }
 
     /**
-     * Parses a text to a duration. The minimum is one minutes and the maximum is less than 100
-     * hours.
+     * Parses a text to a duration (accurate to a milliseconds). The minimum is one minutes and the
+     * maximum is less than 100 hours.
      * <p>
      * Examples:
      * <pre>
@@ -54,7 +54,7 @@ public final class TimeUtils {
     private static class Lazy {
 
         private static final Pattern DURATION_REGEX = Pattern
-            .compile("((?<h>\\d{1,2}):)?(?<m>\\d{1,2}):(?<s>\\d{2})(\\.?(?<mi>\\d))?");
+            .compile("((?<h>\\d{1,2}):)?(?<m>\\d{1,2}):(?<s>\\d{1,2})(\\.?(?<mi>\\d{1,3}))?");
     }
 
 }

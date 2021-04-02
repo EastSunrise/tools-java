@@ -200,11 +200,11 @@ public class BasicHttpSession implements HttpSession {
     @Override
     public RequestBuilder create(String method, String subDomain) {
         AssertUtils.requireNotBlank(method);
-        if (StringUtils.isBlank(subDomain)) {
-            subDomain = WWW;
+        String host = getDomain();
+        if (StringUtils.isNotBlank(subDomain)) {
+            host = subDomain + "." + host;
         }
-        URIBuilder builder = new URIBuilder().setScheme(scheme.toString())
-            .setHost(subDomain + "." + getDomain());
+        URIBuilder builder = new URIBuilder().setScheme(scheme.toString()).setHost(host);
         return new RequestBuilder(method, builder);
     }
 

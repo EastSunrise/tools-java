@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -95,8 +94,8 @@ public final class AmateurCatSite extends BaseSite
 
     @Nonnull
     @Override
-    public AmateurCatItem findById(String id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public AmateurCatItem findById(@Nonnull String id)
+        throws NotFoundException, OtherResponseException {
         SnapshotStrategy<Document> strategy = SnapshotStrategies.withoutNext(this::getNext);
         Document document = getDocument(builder0("/%s", id), strategy);
         AmateurCatItem item = new AmateurCatItem(id);

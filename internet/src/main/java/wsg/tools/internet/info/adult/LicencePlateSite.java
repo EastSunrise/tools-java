@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -59,8 +58,8 @@ public class LicencePlateSite extends BaseSite
 
     @Nonnull
     @Override
-    public LicencePlateItem findById(String id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public LicencePlateItem findById(@Nonnull String id)
+        throws NotFoundException, OtherResponseException {
         SnapshotStrategy<Document> strategy = SnapshotStrategies.withoutNext(this::getNext);
         Document document = getDocument(builder0("/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");

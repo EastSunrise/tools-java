@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Functions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,6 @@ import wsg.tools.boot.pojo.dto.MovieDto;
 import wsg.tools.boot.pojo.dto.SeasonDto;
 import wsg.tools.boot.pojo.dto.SeriesDto;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
-import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
@@ -131,19 +131,18 @@ public class SubjectController extends AbstractController {
 
     @GetMapping(path = "/movie/index")
     public String movies(Model model) {
-        List<MovieDto> movies = new ArrayList<>();
-        for (MovieEntity entity : subjectService.listMovies()) {
-            MovieDto movie = MovieDto.fromEntity(entity);
-            movie.setStatus(videoManager.getStatus(entity));
-            movies.add(movie);
-        }
-        movies.sort((o1, o2) -> {
-            int dif = o2.getStatus().getCode().compareTo(o1.getStatus().getCode());
-            if (dif != 0) {
-                return dif;
-            }
-            return o2.getGmtModified().compareTo(o1.getGmtModified());
-        });
+        List<MovieDto> movies = subjectService.listMovies().stream()
+            .map(entity -> {
+                MovieDto movie = MovieDto.fromEntity(entity);
+                movie.setStatus(videoManager.getStatus(entity));
+                return movie;
+            }).sorted((o1, o2) -> {
+                int dif = o2.getStatus().getCode().compareTo(o1.getStatus().getCode());
+                if (dif != 0) {
+                    return dif;
+                }
+                return o2.getGmtModified().compareTo(o1.getGmtModified());
+            }).collect(Collectors.toList());
         model.addAttribute("movies", movies);
         return "video/movie/index";
     }

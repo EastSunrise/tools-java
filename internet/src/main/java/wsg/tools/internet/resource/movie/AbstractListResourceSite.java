@@ -49,5 +49,6 @@ public abstract class AbstractListResourceSite<T> extends BaseSite
      */
     @Nonnull
     @Override
-    public abstract T findById(Integer id) throws NotFoundException, OtherResponseException;
+    public abstract T findById(@Nonnull Integer id)
+        throws NotFoundException, OtherResponseException;
 }

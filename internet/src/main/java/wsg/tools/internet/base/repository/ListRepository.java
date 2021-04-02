@@ -138,10 +138,20 @@ public interface ListRepository<ID, T>
     ListRepository<ID, T> subRepository(int fromInclusive, int toExclusive);
 
     /**
-     * Returns an unmodifiable {@link java.util.List} view of indices contained in this repository.
+     * Returns an unmodifiable list of indices contained in this repository.
      *
-     * @return an unmodifiable list view of indices
+     * @return an unmodifiable list of indices
      */
     @Nonnull
     List<ID> indices();
+
+    /**
+     * Retrieves the list of all entities contained in this repository.
+     *
+     * @return the list of all entities
+     * @throws NotFoundException      if amy entity is not found
+     * @throws OtherResponseException if an unexpected error occurs when requesting
+     */
+    @Nonnull
+    List<T> entities() throws NotFoundException, OtherResponseException;
 }

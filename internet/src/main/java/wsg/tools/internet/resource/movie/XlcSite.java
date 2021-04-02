@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -88,8 +87,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
 
     @Nonnull
     @Override
-    public XlcItem findById(Integer id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public XlcItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, SnapshotStrategies.never());
 

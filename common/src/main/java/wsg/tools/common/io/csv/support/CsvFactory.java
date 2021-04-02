@@ -52,9 +52,9 @@ public class CsvFactory {
             csvFormat = csvFormat.withHeader(setters.keySet().toArray(new String[0]))
                 .withFirstRecordAsHeader();
         }
-        CSVParser parse = CSVParser.parse(input, charset, csvFormat);
+        CSVParser parser = CSVParser.parse(input, charset, csvFormat);
         List<T> result = new ArrayList<>();
-        for (CSVRecord record : parse) {
+        for (CSVRecord record : parser) {
             T bean = constructor.get();
             for (Map.Entry<String, CsvSetter<T>> entry : setters.entrySet()) {
                 CsvSetter<T> setter = entry.getValue();

@@ -71,8 +71,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     @Nonnull
     @Override
-    public OmdbTitle findById(String imdbId) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(imdbId);
+    public OmdbTitle findById(@Nonnull String imdbId)
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/").addParameter("i", imdbId)
             .addParameter("plot", "full");
         OmdbTitle title = getObject(builder, OmdbTitle.class);

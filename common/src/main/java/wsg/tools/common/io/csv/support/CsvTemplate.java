@@ -46,8 +46,7 @@ public final class CsvTemplate<T> {
      */
     @Nonnull
     public static <T> CsvTemplate<T> create(Class<T> clazz, ObjectMapper mapper,
-        @Nonnull String... properties)
-        throws IntrospectionException {
+        @Nonnull String... properties) throws IntrospectionException {
         BeanInfo beanInfo = Introspector.getBeanInfo(clazz);
         Map<String, PropertyDescriptor> descriptors = new HashMap<>(properties.length);
         for (PropertyDescriptor propertyDescriptor : beanInfo.getPropertyDescriptors()) {
@@ -64,23 +63,27 @@ public final class CsvTemplate<T> {
                 throw new IllegalArgumentException(
                     String.format("%s doesn't contain a property of '%s'.", clazz, property));
             }
-            Method readMethod = descriptor.getReadMethod();
-            Method writeMethod = descriptor.getWriteMethod();
-            if (readMethod != null) {
+            Method getter = descriptor.getReadMethod();
+            Method setter = descriptor.getWriteMethod();
+            if (getter != null) {
+                // exclude getClass()
+                if ("getClass".equals(getter.getName()) && getter.getParameterCount() == 0) {
+                    continue;
+                }
                 template.putGetter(property, t -> {
                     try {
-                        return readMethod.invoke(t);
+                        return getter.invoke(t);
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new IllegalStateException(e);
                     }
                 });
             }
-            if (writeMethod != null) {
-                Type type = writeMethod.getGenericParameterTypes()[0];
+            if (setter != null) {
+                Type type = setter.getGenericParameterTypes()[0];
                 template.putSetter(property, (bean, value) -> {
                     JavaType javaType = factory.constructType(type);
                     try {
-                        writeMethod.invoke(bean, mapper.convertValue(value, javaType));
+                        setter.invoke(bean, mapper.convertValue(value, javaType));
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new IllegalStateException(e);
                     }
@@ -119,7 +122,7 @@ public final class CsvTemplate<T> {
         return this;
     }
 
-    public <V> CsvTemplate<T> putSetter(@Nonnull String header, @Nonnull CsvSetter<T> setter) {
+    public CsvTemplate<T> putSetter(@Nonnull String header, @Nonnull CsvSetter<T> setter) {
         setters.put(header, setter);
         return this;
     }

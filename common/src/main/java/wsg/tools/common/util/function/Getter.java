@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * A function to get a value from a bean.
+ * Represents a getter, a function to get the value of a property of a bean.
  *
  * @param <T> type of the bean from which the value is gotten
  * @param <V> type of the gotten value
@@ -12,9 +12,9 @@ package wsg.tools.common.util.function;
 public interface Getter<T, V> {
 
     /**
-     * Gets a value from the given bean.
+     * Gets the value of a property of the bean.
      *
-     * @param bean the bean from which a value is gotten
+     * @param bean the bean from which the value is gotten
      * @return gotten value
      */
     V get(T bean);

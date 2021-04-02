@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -26,7 +25,6 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
@@ -35,6 +33,7 @@ import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.base.support.SnapshotStrategies;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.InvalidResourceException;
@@ -93,36 +92,24 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
 
     @Nonnull
     @Override
-    public BdMovieItem findById(Integer id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public BdMovieItem findById(@Nonnull Integer id)
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/zx/%d.htm", id);
         Document document = getDocument(builder, SnapshotStrategies.withoutNext(this::getNext));
-        Map<String, String> metas = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-        Elements properties = document.select("meta[property]");
-        for (Element ele : properties) {
-            String key = ele.attr("property");
-            MapUtilsExt.putIfAbsent(metas, key, ele.attr(CssSelectors.ATTR_CONTENT));
-        }
-        Elements names = document.select("meta[name]");
-        for (Element ele : names) {
-            if (ele.hasAttr(CssSelectors.ATTR_CONTENT)) {
-                String key = ele.attr(CssSelectors.ATTR_NAME);
-                MapUtilsExt.putIfAbsent(metas, key, ele.attr(CssSelectors.ATTR_CONTENT));
-            }
-        }
-        String location = Objects.requireNonNull(metas.get("og:url"));
+        Map<String, String> metadata = DocumentUtils.getMetadata(document);
+        String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
         if (!urlMatcher.matches()) {
             throw new NotFoundException("Not a movie page");
         }
         String realTypeText = urlMatcher.group("t");
         BdMovieType realType = EnumUtilExt.valueOfText(BdMovieType.class, realTypeText, false);
-        String release = metas.get("og:video:release_date");
+        String release = metadata.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         BdMovieItem item = new BdMovieItem(id, location, realType, updateTime);
         item.setNext(getNext(document));
-        item.setTitle(metas.get("og:title"));
-        String cover = metas.get("og:image");
+        item.setTitle(metadata.get("og:title"));
+        String cover = metadata.get("og:image");
         if (!cover.isEmpty()) {
             if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
                 cover = builder0(cover).toString();

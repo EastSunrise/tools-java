@@ -1,7 +1,7 @@
 package wsg.tools.common.util.function;
 
 /**
- * Represents a supplier of an English text, usually used to display.
+ * Represents a supplier of a text, usually used to display.
  *
  * @author Kingen
  * @since 2020/6/19
@@ -10,9 +10,9 @@ package wsg.tools.common.util.function;
 public interface TextSupplier {
 
     /**
-     * Serialize to English text
+     * Returns a text.
      *
-     * @return text
+     * @return a text
      */
     String getText();
 }

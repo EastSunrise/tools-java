@@ -25,5 +25,5 @@ public interface RepoRetrievable<ID, T> {
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
     @Nonnull
-    T findById(ID id) throws NotFoundException, OtherResponseException;
+    T findById(@Nonnull ID id) throws NotFoundException, OtherResponseException;
 }

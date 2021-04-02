@@ -181,8 +181,7 @@ public final class MidnightSite extends BaseSite {
         LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
         T t = constructor.apply(title, release, getContents(document));
-        String keywords = document.selectFirst(CssSelectors.META_KEYWORDS)
-            .attr(CssSelectors.ATTR_CONTENT);
+        String keywords = DocumentUtils.getMetadata(document).get("keywords");
         if (StringUtils.isNotBlank(keywords)) {
             t.setKeywords(keywords.split(","));
         }

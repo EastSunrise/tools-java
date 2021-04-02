@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import org.apache.http.HttpEntity;
@@ -15,6 +16,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.base.ContentHandler;
@@ -127,7 +129,7 @@ public class BaseSite implements HttpSession {
      * @throws NotFoundException      if the target document is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    protected Document getDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
+    public Document getDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
         throws NotFoundException, OtherResponseException {
         try {
             return getContent(builder, defaultHandler, ContentHandlers.document(), strategy);
@@ -142,7 +144,7 @@ public class BaseSite implements HttpSession {
      * @throws NotFoundException      if the target object is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    protected <T> T getObject(RequestBuilder builder, ObjectMapper mapper, Class<T> clazz,
+    public <T> T getObject(RequestBuilder builder, ObjectMapper mapper, Class<T> clazz,
         SnapshotStrategy<T> strategy) throws NotFoundException, OtherResponseException {
         try {
             return getContent(builder, defaultHandler, new JsonHandler<>(mapper, clazz), strategy);
@@ -157,7 +159,7 @@ public class BaseSite implements HttpSession {
      * @throws NotFoundException      if the target object is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    protected <T> T getObject(RequestBuilder builder, ObjectMapper mapper, TypeReference<T> type,
+    public <T> T getObject(RequestBuilder builder, ObjectMapper mapper, TypeReference<T> type,
         SnapshotStrategy<T> strategy) throws NotFoundException, OtherResponseException {
         try {
             return getContent(builder, defaultHandler, new JsonHandler<>(mapper, type), strategy);
@@ -166,7 +168,9 @@ public class BaseSite implements HttpSession {
         }
     }
 
-    private OtherResponseException handleException(HttpResponseException e)
+    @Nonnull
+    @Contract("_ -> new")
+    private OtherResponseException handleException(@Nonnull HttpResponseException e)
         throws NotFoundException, OtherResponseException {
         if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
             throw new NotFoundException(e.getMessage());

@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -93,8 +92,8 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
 
     @Nonnull
     @Override
-    public MovieHeavenItem findById(Integer id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public MovieHeavenItem findById(@Nonnull Integer id)
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
         Document doc = getDocument(builder, SnapshotStrategies.never());
         if (TIP_TITLE.equals(doc.title())) {

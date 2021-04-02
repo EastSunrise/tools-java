@@ -8,6 +8,8 @@ package wsg.tools.internet.common;
  */
 public class UnexpectedContentException extends RuntimeException {
 
+    private static final long serialVersionUID = -4807529841430634898L;
+
     public UnexpectedContentException(String message) {
         super(message);
     }

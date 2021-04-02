@@ -60,8 +60,7 @@ class BasicLinkedRepository<ID, T> implements LinkedRepository<ID, T> {
 
     @Nonnull
     @Override
-    public T findById(ID id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public T findById(@Nonnull ID id) throws NotFoundException, OtherResponseException {
         return retrievable.findById(id);
     }
 }

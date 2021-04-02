@@ -1,5 +1,6 @@
 package wsg.tools.internet.base.repository.support;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -92,8 +93,18 @@ class BasicListRepository<ID, T> implements ListRepository<ID, T> {
 
     @Nonnull
     @Override
-    public T findById(ID id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public List<T> entities() throws NotFoundException, OtherResponseException {
+        List<T> entities = new ArrayList<>(size());
+        for (ID identifier : identifiers) {
+            T byId = findById(identifier);
+            entities.add(byId);
+        }
+        return entities;
+    }
+
+    @Nonnull
+    @Override
+    public T findById(@Nonnull ID id) throws NotFoundException, OtherResponseException {
         return retrievable.findById(id);
     }
 }

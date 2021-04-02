@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -82,8 +81,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
 
     @Nonnull
     @Override
-    public ImdbTitle findById(String tt) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(tt);
+    public ImdbTitle findById(@Nonnull String tt) throws NotFoundException, OtherResponseException {
         Document document = getDocument(builder0("/title/%s", tt), SnapshotStrategies.never());
         ImdbTitle title;
         try {

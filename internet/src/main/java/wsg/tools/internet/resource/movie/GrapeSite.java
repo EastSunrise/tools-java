@@ -86,7 +86,8 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
      */
     @Override
     @Nonnull
-    public GrapeNewsItem findById(Integer id) throws NotFoundException, OtherResponseException {
+    public GrapeNewsItem findById(@Nonnull Integer id)
+        throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/movie/%d.html", id);
         Document document = getDocument(builder, SnapshotStrategies.never());
         String datetime = document.selectFirst(".updatetime").text();

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -56,8 +55,8 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
 
     @Nonnull
     @Override
-    public ImdbTitle findById(String imdbId) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(imdbId);
+    public ImdbTitle findById(@Nonnull String imdbId)
+        throws NotFoundException, OtherResponseException {
         Document document = getDocument(builder0("/title/%s", imdbId), SnapshotStrategies.never());
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
         RequestBuilder builder = builder0("/index/video.editform/index.html")

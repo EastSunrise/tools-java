@@ -148,8 +148,8 @@ public class DoubanSite extends BaseSite
      */
     @Nonnull
     @Override
-    public BaseDoubanSubject findById(Long id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public BaseDoubanSubject findById(@Nonnull Long id)
+        throws NotFoundException, OtherResponseException {
         String subDomain = DoubanCatalog.MOVIE.name().toLowerCase(Locale.ROOT);
         RequestBuilder builder = builder(subDomain, "/subject/%d", id);
         Document document = getDocument(builder, SnapshotStrategies.never());

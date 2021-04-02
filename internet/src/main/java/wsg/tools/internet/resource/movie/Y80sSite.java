@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -86,8 +85,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
 
     @Nonnull
     @Override
-    public Y80sItem findById(Integer id) throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(id);
+    public Y80sItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder("m", "/movie/%d", id);
         Document document = getDocument(builder, SnapshotStrategies.never());
         if (document.childNodes().size() == 1) {
