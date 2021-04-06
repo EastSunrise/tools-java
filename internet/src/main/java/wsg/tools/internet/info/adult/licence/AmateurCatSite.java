@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,17 +22,15 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
+import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.info.adult.AdultEntryBuilder;
 import wsg.tools.internet.info.adult.AmateurAdultEntry;
@@ -52,7 +51,7 @@ public final class AmateurCatSite extends BaseSite
     private static final String FIRST_KEY = "収録時間";
 
     public AmateurCatSite() {
-        super("Amateur Cat", new BasicHttpSession(Scheme.HTTP, "surenmao.com"));
+        super("Amateur Cat", httpHost("surenmao.com"));
     }
 
     /**
@@ -60,7 +59,8 @@ public final class AmateurCatSite extends BaseSite
      *
      * @see LicencePlateSite
      */
-    static Map<String, String> extractInfo(Collection<String> lines) {
+    @Nonnull
+    static Map<String, String> extractInfo(@Nonnull Collection<String> lines) {
         Iterator<String[]> iterator = lines.stream()
             .map(s -> StringUtils.stripStart(s, "・"))
             .map(s -> s.split("：", 2))
@@ -86,6 +86,8 @@ public final class AmateurCatSite extends BaseSite
      *
      * @see <a href="http://www.surenmao.com/200gana-1829">Get Started</a>
      */
+    @Nonnull
+    @Contract(" -> new")
     public LinkedRepository<String, AmateurCatItem> getRepository() {
         return Repositories.linked(this, "200gana-1829");
     }
@@ -94,7 +96,7 @@ public final class AmateurCatSite extends BaseSite
     @Override
     public AmateurCatItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(builder0("/%s", id), doc -> getNext(doc) == null);
+        Document document = getDocument(httpGet("/%s", id), doc -> getNext(doc) == null);
         AmateurCatItem item = new AmateurCatItem(id);
 
         Element main = document.selectFirst("#main");

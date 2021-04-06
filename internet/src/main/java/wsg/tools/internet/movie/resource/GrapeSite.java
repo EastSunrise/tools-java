@@ -32,8 +32,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -56,7 +55,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     private static final String BT_ATTACH_PREFIX = "http://51btbtt.com/attach-download";
 
     public GrapeSite() {
-        super("Grape Vod", new BasicHttpSession("putaoys.com"), new GrapeResponseHandler());
+        super("Grape Vod", httpsHost("putaoys.com"), new GrapeResponseHandler());
     }
 
     /**
@@ -77,11 +76,11 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     @Nonnull
     public GrapeNewsItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/movie/%d.html", id);
+        RequestWrapper builder = httpGet("/movie/%d.html", id);
         Document document = getDocument(builder, t -> false);
         String datetime = document.selectFirst(".updatetime").text();
         LocalDate releaseDate = LocalDate.parse(datetime.substring(5));
-        GrapeNewsItem item = new GrapeNewsItem(id, builder.toString(), releaseDate);
+        GrapeNewsItem item = new GrapeNewsItem(id, builder.getUri().toString(), releaseDate);
 
         Element h1 = document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1);
         item.setTitle(h1.text().strip());
@@ -133,7 +132,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
-        RequestBuilder builder = builder0("/index.php").addParameter("s", arg);
+        RequestWrapper builder = httpGet("/index.php").addParameter("s", arg);
         Document document = getDocument(builder, t -> true);
         String summary = ((TextNode) document.selectFirst(".ui-page-big").childNode(0)).text();
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.PAGE_SUM_REGEX, summary.strip());
@@ -159,7 +158,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     public GrapeVodItem findVodItem(GrapeVodIndex index)
         throws NotFoundException, OtherResponseException {
         Objects.requireNonNull(index);
-        RequestBuilder builder = builder0(index.getPath());
+        RequestWrapper builder = httpGet(index.getPath());
         Document document = getDocument(builder, t -> false);
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
@@ -168,7 +167,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         GrapeVodType type = EnumUtilExt.valueOfText(GrapeVodType.class, typeText, false);
         String timeStr = document.selectFirst("#addtime").text().strip();
         LocalDateTime addTime = LocalDateTime.parse(timeStr, Constants.YYYY_MM_DD_HH_MM);
-        GrapeVodItem item = new GrapeVodItem(index.getPath(), builder.toString(), type, addTime);
+        GrapeVodItem item = new GrapeVodItem(index.getPath(), type, addTime);
 
         Element div = document.selectFirst(".detail-title");
         Element h1 = div.selectFirst(CssSelectors.TAG_H);

@@ -3,6 +3,7 @@ package wsg.tools.internet.base;
 /**
  * Indicates the site is loggable.
  *
+ * @param <T> type the users
  * @author Kingen
  * @since 2021/2/11
  */

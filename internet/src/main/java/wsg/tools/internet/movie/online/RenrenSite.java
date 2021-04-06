@@ -13,14 +13,12 @@ import org.jsoup.nodes.Element;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
@@ -33,7 +31,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     RepoPageable<RenrenPageReq, RenrenPageResult> {
 
     public RenrenSite() {
-        super("RR TV", new BasicHttpSession(Scheme.HTTP, "rr.tv"));
+        super("RR TV", httpHost("rr.tv"));
     }
 
     /**
@@ -43,7 +41,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Override
     public RenrenPageResult findPage(@Nonnull RenrenPageReq request)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder("content.json",
+        RequestWrapper builder = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
             Optional.ofNullable(request.getType()).map(Object::toString).orElse("all"),
             Optional.ofNullable(request.getArea()).map(Object::toString).orElse("all"),
@@ -59,7 +57,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Nonnull
     public RenrenSeries findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder("m", "/detail/%d", id);
+        RequestWrapper builder = create("m", METHOD_GET, "/detail/%d", id);
         Document document = getDocument(builder, doc -> {
             SeriesStatus status = getStatus(doc);
             return status != null && status != SeriesStatus.CONCLUDED;

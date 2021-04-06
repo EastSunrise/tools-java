@@ -17,16 +17,13 @@ public class GrapeVodItem extends BasicItem
     implements SubtypeSupplier, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
 
     private final String path;
-    private final String url;
     private final GrapeVodType type;
     private final LocalDateTime addTime;
     private String state;
     private Integer year;
 
-    GrapeVodItem(@Nonnull String path, @Nonnull String url, GrapeVodType type,
-        LocalDateTime addTime) {
+    GrapeVodItem(@Nonnull String path, GrapeVodType type, LocalDateTime addTime) {
         this.path = path;
-        this.url = url;
         this.type = type;
         this.addTime = addTime;
     }
@@ -42,10 +39,6 @@ public class GrapeVodItem extends BasicItem
 
     void setYear(Integer year) {
         this.year = year;
-    }
-
-    public String getUrl() {
-        return url;
     }
 
     @Override

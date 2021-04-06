@@ -29,8 +29,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -55,7 +54,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     private static final String SYSTEM_TIP = "迅雷仓-系统提示";
 
     public XlcSite() {
-        super("XLC", new BasicHttpSession("xunleicang.in"));
+        super("XLC", httpsHost("xunleicang.in"));
     }
 
     /**
@@ -73,7 +72,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        RequestBuilder builder = builder0("/ajax-show-id-new.html");
+        RequestWrapper builder = httpGet("/ajax-show-id-new.html");
         Document document = findDocument(builder, t -> true);
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
@@ -88,7 +87,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     @Nonnull
     @Override
     public XlcItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
+        RequestWrapper builder = httpGet("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, t -> false);
         String title = document.title();
         if (SYSTEM_TIP.equals(title)) {
@@ -109,7 +108,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         int typeId = Integer.parseInt(matcher.group("id"));
         XlcType type = EnumUtilExt.valueOfCode(XlcType.class, typeId);
         String state = ((TextNode) info.get("状态：")).text();
-        XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
+        XlcItem item = new XlcItem(id, builder.getUri().toString(), updateDate, type, state);
 
         item.setTitle(title.substring(0, title.length() - TITLE_SUFFIX_LENGTH));
         String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);

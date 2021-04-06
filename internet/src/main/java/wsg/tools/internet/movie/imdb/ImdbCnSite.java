@@ -21,10 +21,9 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -49,16 +48,16 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
     private static final String INTERNAL_SERVER_ERROR = "500";
 
     public ImdbCnSite() {
-        super("IMDb CN", new BasicHttpSession("imdb.cn"), new ImdbCnResponseHandler());
+        super("IMDb CN", httpsHost("imdb.cn"), new ImdbCnResponseHandler());
     }
 
     @Nonnull
     @Override
     public ImdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(builder0("/title/%s", imdbId), t -> false);
+        Document document = getDocument(httpGet("/title/%s", imdbId), t -> false);
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        RequestBuilder builder = builder0("/index/video.editform/index.html")
+        RequestWrapper builder = httpGet("/index/video.editform/index.html")
             .addParameter("m_id", dataset.get("movie_id"))
             .addParameter("location", dataset.get("location"));
         Document editForm = getDocument(builder, t -> false);
@@ -124,9 +123,9 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
 
     private List<String[]> getEpisodes(String seriesId)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(
-            builder0("/title/%s/episodelist", seriesId).addParameter("season", "1"),
-            t -> false);
+        RequestWrapper wrapper = httpGet("/title/%s/episodelist", seriesId)
+            .addParameter("season", 1);
+        Document document = getDocument(wrapper, t -> false);
         int seasonsCount =
             document.selectFirst("select#ep_season").select(CssSelectors.TAG_OPTION).size() - 1;
 
@@ -155,7 +154,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                     break;
                 }
                 page++;
-                document = getDocument(builder0("/title/%s/episodelist", seriesId)
+                document = getDocument(httpGet("/title/%s/episodelist", seriesId)
                         .addParameter("season", currentSeason)
                         .addParameter("page", page),
                     t -> false);
@@ -172,10 +171,8 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             if (currentSeason > seasonsCount) {
                 break;
             }
-            document = getDocument(
-                builder0("/title/%s/episodelist", seriesId)
-                    .addParameter("season", currentSeason),
-                t -> false);
+            document = getDocument(httpGet("/title/%s/episodelist", seriesId)
+                .addParameter("season", currentSeason), t -> false);
         }
         return result;
     }

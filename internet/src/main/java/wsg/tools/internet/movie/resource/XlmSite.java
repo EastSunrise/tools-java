@@ -25,12 +25,10 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
@@ -49,7 +47,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     private static final String DOWNLOAD_ASP = "/download.asp";
 
     public XlmSite() {
-        super("Xlm", new BasicHttpSession("xleimi.com"), new StringResponseHandler(Constants.GBK));
+        super("Xlm", httpsHost("xleimi.com"), new StringResponseHandler(Constants.GBK));
     }
 
     /**
@@ -68,7 +66,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
      * @see <a href="https://www.xleimi.com/">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = SiteUtils.home(this);
+        Document document = findDocument(httpGet(""), t -> true);
         Elements as = document.selectFirst(".newdy").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -82,7 +80,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     @Nonnull
     @Override
     public XlmItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/dy/k%d.html", id);
+        RequestWrapper builder = httpGet("/dy/k%d.html", id);
         Document document = getDocument(builder, doc -> getNext(doc) == null);
 
         Element last = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).last();
@@ -93,7 +91,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);
-        XlmItem item = new XlmItem(id, builder.toString(), type, releaseTime);
+        XlmItem item = new XlmItem(id, builder.getUri().toString(), type, releaseTime);
         item.setTitle(((TextNode) last.nextSibling()).text().strip());
         Element image = document.selectFirst(".bodytxt").selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {

@@ -1,11 +1,11 @@
 package wsg.tools.internet.movie.resource;
 
 import javax.annotation.Nonnull;
+import org.apache.http.HttpHost;
 import org.apache.http.client.ResponseHandler;
-import wsg.tools.internet.base.BaseSite;
-import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
+import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
@@ -20,13 +20,13 @@ import wsg.tools.internet.common.OtherResponseException;
 public abstract class AbstractListResourceSite<T> extends BaseSite
     implements RepoRetrievable<Integer, T> {
 
-    AbstractListResourceSite(String name, HttpSession session) {
-        super(name, session);
+    protected AbstractListResourceSite(String name, HttpHost host) {
+        super(name, host);
     }
 
-    AbstractListResourceSite(String name, HttpSession session,
+    protected AbstractListResourceSite(String name, HttpHost host,
         ResponseHandler<String> defaultHandler) {
-        super(name, session, defaultHandler);
+        super(name, host, defaultHandler);
     }
 
     /**

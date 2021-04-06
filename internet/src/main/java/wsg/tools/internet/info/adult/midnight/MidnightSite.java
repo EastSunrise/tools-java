@@ -27,10 +27,9 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -50,7 +49,7 @@ public final class MidnightSite extends BaseSite {
     private static final String NAV_NAVIGATION = "nav.navigation";
 
     public MidnightSite() {
-        super("Midnight", new BasicHttpSession("shenyequ.com"));
+        super("Midnight", httpsHost("www.shenyequ.com"));
     }
 
     /**
@@ -60,7 +59,7 @@ public final class MidnightSite extends BaseSite {
     @Contract("_, _ -> new")
     public MidnightPageResult findPage(@Nonnull MidnightColumn column,
         @Nonnull MidnightPageReq req) throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder(WWW, "/e/action/ListInfo.php")
+        RequestWrapper wrapper = httpGet("/e/action/ListInfo.php")
             .addParameter("page", req.getCurrent())
             .addParameter("classid", column.getCode())
             .addParameter("starttime", req.getStart())
@@ -69,7 +68,7 @@ public final class MidnightSite extends BaseSite {
             .addParameter("tempid", "11")
             .addParameter("orderby", req.getOrderBy().getText())
             .addParameter("myorder", 0);
-        Document document = getDocument(builder, t -> true);
+        Document document = getDocument(wrapper, t -> true);
         List<MidnightIndex> indices = new ArrayList<>();
         Elements lis = document.selectFirst("div[role=main]").select(CssSelectors.TAG_LI);
         for (Element li : lis) {
@@ -178,8 +177,8 @@ public final class MidnightSite extends BaseSite {
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder(WWW, "/%s/%d.html", column.getText(), id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/%s/%d.html", column.getText(), id);
+        Document document = getDocument(wrapper, t -> false);
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
@@ -203,8 +202,8 @@ public final class MidnightSite extends BaseSite {
                 break;
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
-            RequestBuilder builder = builder(WWW, URI.create(nextHref).getPath());
-            document = getDocument(builder, t -> false);
+            RequestWrapper wrapper = httpGet(URI.create(nextHref).getPath());
+            document = getDocument(wrapper, t -> false);
         }
         return contents;
     }
@@ -245,7 +244,7 @@ public final class MidnightSite extends BaseSite {
                     for (Element img : elements) {
                         String href = img.attr(CssSelectors.ATTR_SRC);
                         if (href.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                            href = builder(WWW, href).toString();
+                            href = getHost().toURI() + href;
                         }
                         images.add(NetUtils.createURL(href));
                     }

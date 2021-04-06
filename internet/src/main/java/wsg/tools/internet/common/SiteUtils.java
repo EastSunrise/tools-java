@@ -9,18 +9,14 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.methods.HttpGet;
-import org.jsoup.nodes.Document;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.HttpSession;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.page.PageReq;
 import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.RepoPageable;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
 
 /**
  * Utility for operations on sites.
@@ -41,14 +37,6 @@ public final class SiteUtils {
         .compile("[a-z0-9][a-z0-9-]*[a-z0-9](\\.[a-z0-9][a-z0-9-]*[a-z0-9])+");
 
     private SiteUtils() {
-    }
-
-    /**
-     * Returns the document of home page of the site.
-     */
-    public static Document home(@Nonnull BaseSite site) throws OtherResponseException {
-        RequestBuilder builder = site.create(HttpGet.METHOD_NAME, "");
-        return site.findDocument(builder, t -> true);
     }
 
     /**
@@ -133,7 +121,7 @@ public final class SiteUtils {
      *
      * @throws SiteStatusException if the status is abnormal
      */
-    public static void validateStatus(@Nonnull Class<? extends HttpSession> clazz) {
+    public static void validateStatus(@Nonnull Class<? extends BaseSite> clazz) {
         ConcreteSite annotation = clazz.getAnnotation(ConcreteSite.class);
         if (annotation != null) {
             SiteStatus status = annotation.status();

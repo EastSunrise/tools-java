@@ -34,6 +34,11 @@ public class BabesVideo extends BabesVideoIndex {
         this.uploadTime = uploadTime;
     }
 
+    @Override
+    public URL getPreview() {
+        return null;
+    }
+
     public int getLikes() {
         return likes;
     }

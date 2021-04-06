@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -31,8 +32,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -60,11 +60,13 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     private static final String EXTRA_COVER_HEAD = "https://img22.qayqa.com:6868http";
 
     public MovieHeavenSite() {
-        super("Movie Heaven", new BasicHttpSession("993dy.com"), new MovieHeaverResponseHandler());
+        super("Movie Heaven", httpsHost("993dy.com"), new MovieHeaverResponseHandler());
     }
 
+    @Nonnull
     @Override
-    public String getDomain() {
+    @Contract(pure = true)
+    public String getHostname() {
         return "993vod.com";
     }
 
@@ -83,7 +85,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
      * @see <a href="https://www.993vod.com/">Home</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0(""), t -> true);
+        Document document = findDocument(httpGet(""), t -> true);
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -98,7 +100,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     @Override
     public MovieHeavenItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/vod-detail-id-%d.html", id);
+        RequestWrapper builder = httpGet("/vod-detail-id-%d.html", id);
         Document doc = getDocument(builder, t -> false);
         if (TIP_TITLE.equals(doc.title())) {
             String message = doc.selectFirst("h4.infotitle1").text();
@@ -120,7 +122,8 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
             src = src.substring(EXTRA_COVER_HEAD.length() - 4);
         }
         URL cover = NetUtils.createURL(src);
-        MovieHeavenItem item = new MovieHeavenItem(id, builder.toString(), type, addDate, cover);
+        String uri = builder.getUri().toString();
+        MovieHeavenItem item = new MovieHeavenItem(id, uri, type, addDate, cover);
 
         item.setTitle(children.last().text());
         String text = ((TextNode) info.get("上映年代：").nextSibling()).text();

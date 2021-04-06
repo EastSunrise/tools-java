@@ -73,9 +73,9 @@ public class ResourceScheduler extends BaseServiceImpl {
     @Scheduled(cron = "0 0 11 * * ?")
     public void importLicencePlate() {
         LicencePlateSite site = manager.licencePlateSite();
-        String domain = site.getDomain();
+        String hostname = site.getHostname();
         try {
-            adultService.importLinkedRepository(domain, DEFAULT_SUBTYPE, site.getRepository());
+            adultService.importLinkedRepository(hostname, DEFAULT_SUBTYPE, site.getRepository());
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
         }
@@ -84,14 +84,14 @@ public class ResourceScheduler extends BaseServiceImpl {
     @Scheduled(cron = "0 0 18 * * ?")
     public void importMidnight() {
         MidnightSite site = manager.midnightSite();
-        String domain = site.getDomain();
         for (MidnightAmateurColumn type : MidnightAmateurColumn.values()) {
             MidnightColumn column = type.getColumn();
             int subtype = column.getCode();
             MidnightPageReq first = MidnightPageReq.first();
             try {
-                adultService.importLatestByPage(domain, subtype, req -> site.findPage(column, req),
-                    first, index -> site.findAmateurEntry(type, index.getId()));
+                adultService.importLatestByPage(site.getHostname(), subtype,
+                    req -> site.findPage(column, req), first,
+                    index -> site.findAmateurEntry(type, index.getId()));
             } catch (OtherResponseException e) {
                 log.error(e.getMessage());
             }
@@ -102,7 +102,7 @@ public class ResourceScheduler extends BaseServiceImpl {
     void importIntRange(@Nonnull S site) {
         try {
             ListRepository<Integer, T> repository = site.getRepository();
-            resourceService.importIntListRepository(repository, site.getDomain());
+            resourceService.importIntListRepository(repository, site.getHostname());
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
         } catch (UnexpectedException e) {

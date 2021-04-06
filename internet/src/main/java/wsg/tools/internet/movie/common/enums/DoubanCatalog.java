@@ -1,7 +1,10 @@
 package wsg.tools.internet.movie.common.enums;
 
+import java.util.Locale;
+import javax.annotation.Nonnull;
 import lombok.Getter;
 import wsg.tools.common.util.function.IntCodeSupplier;
+import wsg.tools.internet.base.PathSupplier;
 
 /**
  * Topics on {@link wsg.tools.internet.movie.douban.DoubanSite}.
@@ -9,7 +12,7 @@ import wsg.tools.common.util.function.IntCodeSupplier;
  * @author Kingen
  * @since 2020/6/29
  */
-public enum DoubanCatalog implements IntCodeSupplier {
+public enum DoubanCatalog implements IntCodeSupplier, PathSupplier {
     /**
      * movie/book/music
      */
@@ -29,5 +32,11 @@ public enum DoubanCatalog implements IntCodeSupplier {
     @Override
     public Integer getCode() {
         return code;
+    }
+
+    @Nonnull
+    @Override
+    public String getAsPath() {
+        return name().toLowerCase(Locale.ROOT);
     }
 }

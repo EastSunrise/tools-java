@@ -14,10 +14,9 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
@@ -61,7 +60,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     private final String apikey;
 
     public OmdbSite(String apikey) {
-        super("OMDb", new BasicHttpSession("omdbapi.com"), new OmdbResponseHandler());
+        super("OMDb", httpsHost("omdbapi.com"), new OmdbResponseHandler());
         this.apikey = Objects.requireNonNull(apikey);
     }
 
@@ -72,7 +71,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     @Override
     public OmdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/").addParameter("i", imdbId)
+        RequestWrapper builder = httpGet("/").addParameter("i", imdbId)
             .addParameter("plot", "full");
         OmdbTitle title = getObject(builder, OmdbTitle.class);
         title.setImdbId(imdbId);
@@ -86,7 +85,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbSeason season(String seriesId, int season)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/").addParameter("i", seriesId)
+        RequestWrapper builder = httpGet("/").addParameter("i", seriesId)
             .addParameter("season", season);
         return getObject(builder, OmdbSeason.class);
     }
@@ -98,10 +97,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbEpisode episode(String seriesId, int season, int episode)
         throws NotFoundException, OtherResponseException {
-        return getObject(
-            builder0("/").addParameter("i", seriesId)
-                .addParameter("season", season)
-                .addParameter("episode", episode), OmdbEpisode.class);
+        return getObject(httpGet("/").addParameter("i", seriesId)
+            .addParameter("season", season)
+            .addParameter("episode", episode), OmdbEpisode.class);
     }
 
     /**
@@ -120,7 +118,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbTitle search(String s, SearchType type, Integer year, int page)
         throws OtherResponseException, NotFoundException {
-        RequestBuilder builder = builder0("/").addParameter("s", s);
+        RequestWrapper builder = httpGet("/").addParameter("s", s);
         if (type != null) {
             builder.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
         }
@@ -135,7 +133,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         return getObject(builder, OmdbTitle.class);
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
+    private <T> T getObject(RequestWrapper builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
         builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, clazz, t -> false);

@@ -28,12 +28,10 @@ import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.Scheme;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -54,7 +52,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
     private static final Range<Integer> EXCEPTS = Range.between(1501, 3008);
 
     public Y80sSite() {
-        super("80s", new BasicHttpSession(Scheme.HTTP, "y80s.org"));
+        super("80s", httpHost("m.y80s.org"));
     }
 
     /**
@@ -73,7 +71,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     public int latest() throws OtherResponseException {
-        RequestBuilder builder = builder("m", "/movie/1-0-0-0-0-0-0");
+        RequestWrapper builder = httpGet("/movie/1-0-0-0-0-0-0");
         Document document = findDocument(builder, t -> true);
         Elements list = document.select(".list_mov");
         int max = 1;
@@ -88,7 +86,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
     @Nonnull
     @Override
     public Y80sItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder("m", "/movie/%d", id);
+        RequestWrapper builder = httpGet("/movie/%d", id);
         Document document = getDocument(builder, t -> false);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
@@ -102,7 +100,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
         Y80sType realType = EnumUtilExt.valueOfText(Y80sType.class, typeStr, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Y80sItem item = new Y80sItem(id, builder.toString(), realType, updateDate);
+        Y80sItem item = new Y80sItem(id, builder.getUri().toString(), realType, updateDate);
 
         item.setTitle(lis.last().text().strip());
         String src = document.selectFirst(".img-responsive").attr(CssSelectors.ATTR_SRC);

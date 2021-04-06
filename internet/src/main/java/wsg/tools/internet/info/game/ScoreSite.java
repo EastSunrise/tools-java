@@ -10,11 +10,10 @@ import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.DomesticCity;
@@ -28,7 +27,7 @@ import wsg.tools.internet.common.enums.DomesticCity;
 public class ScoreSite extends BaseSite {
 
     protected ScoreSite() {
-        super("Score", new BasicHttpSession("famulei.com"));
+        super("Score", httpsHost("famulei.com"));
     }
 
     /**
@@ -37,10 +36,9 @@ public class ScoreSite extends BaseSite {
     public TournamentPageResult findAllTournaments(@Nonnull TournamentPageReq request)
         throws NotFoundException, OtherResponseException {
         String type = request.getStatus() == null ? "all" : request.getStatus().getText();
-        RequestBuilder builder = create(METHOD_POST, null)
-            .setPath("/services/api_url.php")
+        RequestWrapper builder = httpPost("/services/api_url.php")
             .addParameter("api_path", "/services/match/web_tournament_group_list.php")
-            .addParameter("method", METHOD_GET)
+            .addParameter("method", "get")
             .addParameter("platform", "web")
             .addParameter("api_version", "9.9.9")
             .addParameter("language_id", 1)
@@ -70,7 +68,7 @@ public class ScoreSite extends BaseSite {
      */
     public List<TournamentRound> findRoundsByTournament(@Nonnull Tournament tournament)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder("img1", "/tr/%d.json", tournament.getId());
+        RequestWrapper builder = create("img1", METHOD_GET, "/tr/%d.json", tournament.getId());
         SnapshotStrategy<List<TournamentRound>> strategy;
         if (tournament.getStatus() == ScoreStatus.FINISHED) {
             strategy = t -> false;
@@ -88,7 +86,7 @@ public class ScoreSite extends BaseSite {
      */
     public List<MatchRecord> findMatchRecordsByRoundItem(@Nonnull RoundItem item)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder("img1", "/tr_round/%d.json", item.getId());
+        RequestWrapper builder = create("img1", METHOD_GET, "/tr_round/%d.json", item.getId());
         return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
         }, records -> !records.stream().allMatch(r -> r.getStatus() == ScoreStatus.FINISHED));
     }

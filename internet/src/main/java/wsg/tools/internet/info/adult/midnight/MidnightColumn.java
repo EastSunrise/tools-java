@@ -43,7 +43,7 @@ public enum MidnightColumn implements TextSupplier {
         this.text = text;
     }
 
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 

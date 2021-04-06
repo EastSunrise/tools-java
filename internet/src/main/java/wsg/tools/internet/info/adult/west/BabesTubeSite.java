@@ -23,12 +23,11 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -57,7 +56,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     private static final Pattern SEPARATOR = Pattern.compile(", ");
 
     public BabesTubeSite() {
-        super("Babes Tube", new BasicHttpSession("babestube.com"));
+        super("Babes Tube", httpsHost("babestube.com"));
     }
 
     /**
@@ -79,7 +78,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     @Override
     public BabesVideo findById(@Nonnull String videoPath)
         throws OtherResponseException, NotFoundException {
-        RequestBuilder builder = builder0("/videos/%s/", videoPath);
+        RequestWrapper builder = httpGet("/videos/%s/", videoPath);
         Document document = getDocument(builder, t -> false);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String url = metadata.get("og:url");
@@ -184,7 +183,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      */
     public BabesModel findModel(@Nonnull String namePath)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/models/%s/", namePath);
+        RequestWrapper builder = httpGet("/models/%s/", namePath);
         Document document = getDocument(builder, t -> true);
         Element main = document.selectFirst(".main");
         String src = main.selectFirst(".model").selectFirst(".thumb").attr(CssSelectors.ATTR_SRC);
@@ -300,7 +299,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
         if (page > 0) {
             path += (page + 1) + "/";
         }
-        RequestBuilder builder = builder0(path)
+        RequestWrapper builder = httpGet(path)
             .addParameter("mode", "async")
             .addParameter("function", "get_block")
             .addParameter("block_id", blockId)

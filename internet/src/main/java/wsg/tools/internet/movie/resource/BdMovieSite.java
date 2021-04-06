@@ -31,8 +31,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -56,7 +55,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     private static final Range<Integer> EXCEPTS = Range.between(30508, 30508);
 
     public BdMovieSite() {
-        super("BD-Movie", new BasicHttpSession("bd2020.com"));
+        super("BD-Movie", httpsHost("bd2020.com"));
     }
 
     /**
@@ -77,7 +76,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0("/movies/index.htm"),
+        Document document = findDocument(httpGet("/movies/index.htm"),
             t -> true);
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
@@ -95,7 +94,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     @Override
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/zx/%d.htm", id);
+        RequestWrapper builder = httpGet("/zx/%d.htm", id);
         Document document = getDocument(builder, t -> false);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
@@ -113,7 +112,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         String cover = metadata.get("og:image");
         if (!cover.isEmpty()) {
             if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                cover = builder0(cover).toString();
+                cover = getHost().toURI() + cover;
             }
             item.setCover(NetUtils.createURL(cover));
         }

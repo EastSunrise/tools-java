@@ -24,11 +24,10 @@ import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.support.BasicHttpSession;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -75,13 +74,13 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
             .registerModule(new JavaTimeModule());
 
     public ImdbSite() {
-        super("IMDb", new BasicHttpSession("imdb.com"));
+        super("IMDb", httpsHost("imdb.com"));
     }
 
     @Nonnull
     @Override
     public ImdbTitle findById(@Nonnull String tt) throws NotFoundException, OtherResponseException {
-        Document document = getDocument(builder0("/title/%s", tt), t -> false);
+        Document document = getDocument(httpGet("/title/%s", tt), t -> false);
         ImdbTitle title;
         try {
             String html = document.selectFirst("script[type=application/ld+json]").html();
@@ -161,7 +160,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            RequestBuilder builder = builder0("/title/%s/episodes", seriesId)
+            RequestWrapper builder = httpGet("/title/%s/episodes", seriesId)
                 .addParameter("season", currentSeason);
             Document document = getDocument(builder, t -> false);
             String title = document.title();

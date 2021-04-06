@@ -10,7 +10,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.support.RequestBuilder;
+import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.DomesticCity;
@@ -116,7 +116,7 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder)
+    private Pair<String, List<SimpleSubject>> getApiChart(RequestWrapper builder)
         throws NotFoundException, OtherResponseException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
@@ -179,7 +179,7 @@ public class ApiDoubanSite extends DoubanSite {
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
-            RequestBuilder builder = apiBuilder(path, ownerId)
+            RequestWrapper builder = apiBuilder(path, ownerId)
                 .addParameter("start", start)
                 .addParameter("count", MAX_COUNT_ONCE);
             ContentResult<O, C> contentResult = getObject(builder, type);
@@ -193,24 +193,22 @@ public class ApiDoubanSite extends DoubanSite {
         return Pair.of(owner, content);
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
+    private <T> T getObject(RequestWrapper builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
         return getObject(builder, clazz, t -> false);
     }
 
-    private <T> T getObject(@Nonnull RequestBuilder builder, TypeReference<T> type)
+    private <T> T getObject(@Nonnull RequestWrapper builder, TypeReference<T> type)
         throws NotFoundException, OtherResponseException {
-        builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, type, t -> false);
     }
 
-    private <T> T getObject(RequestBuilder builder, Class<T> clazz, SnapshotStrategy<T> strategy)
+    private <T> T getObject(RequestWrapper builder, Class<T> clazz, SnapshotStrategy<T> strategy)
         throws NotFoundException, OtherResponseException {
-        builder.setToken("apikey", apikey);
         return getObject(builder, MAPPER, clazz, strategy);
     }
 
-    private RequestBuilder apiBuilder(String path, Object... pathArgs) {
-        return builder("api", path, pathArgs);
+    private RequestWrapper apiBuilder(String path, Object... pathArgs) {
+        return create("api", METHOD_GET, path, pathArgs).setToken("apikey", apikey);
     }
 }
