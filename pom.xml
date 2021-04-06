@@ -174,7 +174,7 @@
     <properties>
         <common.version>0.0.1-SNAPSHOT</common.version>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <commons-beanutils.version>1.9.3</commons-beanutils.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <commons-csv.version>1.8</commons-csv.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-text.version>1.8</commons-text.version>
