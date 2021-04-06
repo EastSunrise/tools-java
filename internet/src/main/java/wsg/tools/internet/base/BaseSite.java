@@ -7,23 +7,21 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.internet.base.support.DocumentHandler;
 import wsg.tools.internet.base.support.JsonHandler;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.common.UnexpectedException;
 
 /**
@@ -39,15 +37,7 @@ public class BaseSite implements HttpSession {
 
     protected static final String METHOD_GET = HttpGet.METHOD_NAME;
     protected static final String METHOD_POST = HttpPost.METHOD_NAME;
-
-    protected static final ResponseHandler<String> DEFAULT_RESPONSE_HANDLER =
-        new BasicResponseHandler() {
-            @Override
-            public String handleEntity(HttpEntity entity) throws IOException {
-                return EntityUtils.toString(entity, Constants.UTF_8);
-            }
-        };
-
+    protected static final String WWW = "www";
     @Getter
     private final String name;
 
@@ -56,10 +46,11 @@ public class BaseSite implements HttpSession {
     private final ResponseHandler<String> defaultHandler;
 
     protected BaseSite(String name, HttpSession session) {
-        this(name, session, DEFAULT_RESPONSE_HANDLER);
+        this(name, session, new StringResponseHandler());
     }
 
     protected BaseSite(String name, HttpSession session, ResponseHandler<String> defaultHandler) {
+        SiteUtils.validateStatus(getClass());
         this.name = name;
         this.session = Objects.requireNonNull(session, "session");
         this.defaultHandler = Objects.requireNonNull(defaultHandler, "defaultHandler");
@@ -111,7 +102,7 @@ public class BaseSite implements HttpSession {
      *
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    protected Document findDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
+    public Document findDocument(RequestBuilder builder, SnapshotStrategy<Document> strategy)
         throws OtherResponseException {
         try {
             return getContent(builder, defaultHandler, new DocumentHandler(), strategy);

@@ -65,11 +65,6 @@ public class ResourceScheduler extends BaseServiceImpl {
         importIntRange(manager.xlmSite());
     }
 
-    @Scheduled(cron = "0 0 5 * * ?")
-    public void importY80s() {
-        importIntRange(manager.y80sSite());
-    }
-
     @Scheduled(cron = "0 0 0 1 1 ?")
     public void importGrapeNews() {
         importIntRange(manager.grapeSite());

@@ -7,9 +7,10 @@ import wsg.tools.internet.common.enums.Color;
 import wsg.tools.internet.info.adult.common.Measurements;
 
 /**
- * A model in the {@link BabesTubeSite}.
+ * A model in the site.
  *
  * @author Kingen
+ * @see BabesTubeSite#findModel(String)
  * @since 2021/3/15
  */
 public class BabesModel extends BabesModelIndex {
@@ -24,8 +25,8 @@ public class BabesModel extends BabesModelIndex {
     private String website;
     private List<BabesVideoIndex> videoIndices;
 
-    BabesModel(String id, String name, URL cover, int videos, int photos) {
-        super(id, name, cover, videos, photos);
+    BabesModel(String namePath, String name, URL cover, int videos, int photos) {
+        super(namePath, name, cover, videos, photos);
     }
 
     public Integer getHeight() {

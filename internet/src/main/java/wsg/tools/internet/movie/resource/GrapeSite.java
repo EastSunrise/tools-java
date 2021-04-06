@@ -37,6 +37,7 @@ import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.support.Ed2kLink;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -55,18 +56,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     private static final String BT_ATTACH_PREFIX = "http://51btbtt.com/attach-download";
 
     public GrapeSite() {
-        super("Grape Vod", new BasicHttpSession("putaoys.com"), GrapeSite::handleResponse);
-    }
-
-    private static String handleResponse(HttpResponse response) throws IOException {
-        try {
-            return DEFAULT_RESPONSE_HANDLER.handleResponse(response);
-        } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
-            }
-            throw e;
-        }
+        super("Grape Vod", new BasicHttpSession("putaoys.com"), new GrapeResponseHandler());
     }
 
     /**
@@ -209,6 +199,21 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private static class GrapeResponseHandler extends StringResponseHandler {
+
+        @Override
+        public String handleResponse(HttpResponse response) throws IOException {
+            try {
+                return super.handleResponse(response);
+            } catch (HttpResponseException e) {
+                if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
+                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
+                }
+                throw e;
+            }
+        }
     }
 
     private static class Lazy {

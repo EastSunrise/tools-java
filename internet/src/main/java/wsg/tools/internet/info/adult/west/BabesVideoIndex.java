@@ -2,33 +2,40 @@ package wsg.tools.internet.info.adult.west;
 
 import java.net.URL;
 import java.time.Duration;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.IntIdentifier;
+import wsg.tools.internet.base.PathSupplier;
 import wsg.tools.internet.info.adult.common.VideoQuality;
 
 /**
  * An index pointing to a video on {@link BabesTubeSite}.
  *
  * @author Kingen
+ * @see BabesTubeSite#findPage(BabesPageReq)
+ * @see BabesTubeSite#findPageByCategory(String, BabesPageReq)
+ * @see BabesPageResult
  * @since 2021/3/16
  */
-public class BabesVideoIndex implements IntIdentifier {
+public class BabesVideoIndex implements IntIdentifier, PathSupplier {
 
     private final int id;
-    private final String path;
+    private final String titlePath;
     private final String title;
-    private URL cover;
+    private final URL cover;
+    private final Duration duration;
+    private final double rating;
+    private final int views;
     private URL preview;
     private VideoQuality quality;
-    private Duration duration;
-    private String author;
-    private double rating;
-    private int views;
 
-    public BabesVideoIndex(int id, String path, String title) {
+    BabesVideoIndex(int id, String titlePath, String title, URL cover, Duration duration,
+        double rating, int views) {
         this.id = id;
-        this.path = AssertUtils.requireNotBlank(path, "path of a video");
-        this.title = AssertUtils.requireNotBlank(title, "title of a video");
+        this.titlePath = titlePath;
+        this.title = title;
+        this.cover = cover;
+        this.duration = duration;
+        this.rating = rating;
+        this.views = views;
     }
 
     @Override
@@ -36,8 +43,9 @@ public class BabesVideoIndex implements IntIdentifier {
         return id;
     }
 
-    public String getPath() {
-        return path;
+    @Override
+    public String getAsPath() {
+        return id + "/" + titlePath;
     }
 
     public String getTitle() {
@@ -46,10 +54,6 @@ public class BabesVideoIndex implements IntIdentifier {
 
     public URL getCover() {
         return cover;
-    }
-
-    void setCover(URL cover) {
-        this.cover = cover;
     }
 
     public URL getPreview() {
@@ -72,31 +76,11 @@ public class BabesVideoIndex implements IntIdentifier {
         return duration;
     }
 
-    void setDuration(Duration duration) {
-        this.duration = duration;
-    }
-
-    public String getAuthor() {
-        return author;
-    }
-
-    void setAuthor(String author) {
-        this.author = author;
-    }
-
     public double getRating() {
         return rating;
     }
 
-    void setRating(double rating) {
-        this.rating = rating;
-    }
-
     public int getViews() {
         return views;
-    }
-
-    void setViews(int views) {
-        this.views = views;
     }
 }

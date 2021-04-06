@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -46,8 +48,8 @@ import wsg.tools.internet.download.support.UnknownResourceException;
  * @see <a href="https://www.bd2020.com/">BD Movies</a>
  * @since 2020/9/23
  */
-@ConcreteSite
 @Slf4j
+@ConcreteSite
 public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
 
     private static final int MIN_ID = 348;
@@ -94,7 +96,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/zx/%d.htm", id);
-        Document document = getDocument(builder, doc -> getNext(doc) == null);
+        Document document = getDocument(builder, t -> false);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
@@ -157,7 +159,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         return item;
     }
 
-    private String getVarUrls(Document document) {
+    private String getVarUrls(@Nonnull Document document) {
         for (Element script : document.body().select(CssSelectors.TAG_SCRIPT)) {
             String html = script.html().strip();
             if (html.startsWith("var urls")) {
@@ -167,7 +169,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         throw new NoSuchElementException("Can't get var urls");
     }
 
-    private Integer getNext(Document document) {
+    private @Nullable Integer getNext(@Nonnull Document document) {
         Element div = document.selectFirst(".dfg-neighbour");
         if (div == null) {
             return null;
@@ -202,6 +204,8 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         }
     }
 
+    @Nonnull
+    @Contract("_ -> new")
     private String decode(String urls) {
         urls = new StringBuilder(urls).reverse().toString();
         urls = new String(Base64.getDecoder().decode(urls), Constants.UTF_8);

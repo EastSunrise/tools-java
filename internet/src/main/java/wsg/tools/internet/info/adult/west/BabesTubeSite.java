@@ -1,9 +1,9 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.net.URL;
-import java.text.NumberFormat;
-import java.text.ParseException;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -25,18 +25,15 @@ import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.BaseSite;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.page.BasicPageReq;
-import wsg.tools.internet.base.page.CountablePageResult;
-import wsg.tools.internet.base.page.PageReq;
-import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BasicHttpSession;
 import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
+import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Color;
 import wsg.tools.internet.info.adult.common.CupEnum;
 import wsg.tools.internet.info.adult.common.Measurements;
@@ -48,8 +45,8 @@ import wsg.tools.internet.info.adult.common.VideoQuality;
  * @since 2021/3/15
  */
 @ConcreteSite
-public class BabesTubeSite extends BaseSite
-    implements RepoPageable<BabesPageReq, BabesModelPageResult> {
+public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq, BabesPageResult>,
+    RepoRetrievable<String, BabesVideo> {
 
     private static final String NULL = "N/A";
     private static final String NOT_KNOWN = "Not known";
@@ -57,62 +54,149 @@ public class BabesTubeSite extends BaseSite
     private static final double CENTIMETERS_PER_FOOT = 30.48;
     private static final double CENTIMETERS_PER_INCH = 2.54;
     private static final double KILOGRAMS_PER_POUND = 0.4535924;
+    private static final Pattern SEPARATOR = Pattern.compile(", ");
 
     public BabesTubeSite() {
         super("Babes Tube", new BasicHttpSession("babestube.com"));
     }
 
     /**
-     * Retrieves paged indices of models.
-     *
-     * @see <a href="https://www.babestube.com/models/">Models</a>
+     * Retrieves paged indices of videos. May contain duplicate indices.
      */
-    @Override
     @Nonnull
-    public BabesModelPageResult findPage(@Nonnull BabesPageReq request)
+    @Override
+    public BabesPageResult findPage(@Nonnull BabesPageReq req)
         throws NotFoundException, OtherResponseException {
-        String page = request.getCurrent() == 0 ? "" : (request.getCurrent() + 1) + "/";
-        RequestBuilder builder = builder0("/models/%s", page)
-            .addParameter("mode", "async")
-            .addParameter("function", "get_block")
-            .addParameter("block_id", "list_models_models_list")
-            .addParameter("sort_by", request.getOrderBy().getText());
-        Document document = getDocument(builder, t -> true);
-        Elements children = document.selectFirst("#list_models_models_list_items").children();
-        List<BabesModelIndex> indices = new ArrayList<>();
-        for (Element child : children) {
-            String modelHref = child.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-            String id = RegexUtils.matchesOrElseThrow(Lazy.MODEL_HREF_REGEX, modelHref).group("id");
-            String name = child.selectFirst(".author").text();
-            String cover = child.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
-            Elements cols = child.selectFirst(".count").children();
-            Matcher vMatcher = RegexUtils.matchesOrElseThrow(Lazy.COUNT_REGEX, cols.first().text());
-            int videos = Integer.parseInt(vMatcher.group("c"));
-            Matcher iMatcher = RegexUtils.matchesOrElseThrow(Lazy.COUNT_REGEX, cols.last().text());
-            int photos = Integer.parseInt(iMatcher.group("c"));
-            indices.add(new BabesModelIndex(id, name, NetUtils.createURL(cover), videos, photos));
-        }
-        return new BabesModelPageResult(indices, request, getTotalPages(document));
+        return getVideoPage(req, "/top-rated/");
     }
 
     /**
-     * Retrieves the details of a model by the given index with indices of her videos if specified.
+     * Retrieves a video by its path.
      *
-     * @param withVideos whether to retrieve the indices of the model's videos at the same time
+     * @see BabesVideoIndex#getAsPath()
      */
-    public BabesModel findModel(@Nonnull BabesModelIndex index, boolean withVideos)
+    @Nonnull
+    @Override
+    public BabesVideo findById(@Nonnull String videoPath)
+        throws OtherResponseException, NotFoundException {
+        RequestBuilder builder = builder0("/videos/%s/", videoPath);
+        Document document = getDocument(builder, t -> false);
+        Map<String, String> metadata = DocumentUtils.getMetadata(document);
+        String url = metadata.get("og:url");
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VIDEO_HREF_REGEX, url);
+        int id = Integer.parseInt(matcher.group("id"));
+        String titlePath = matcher.group("p");
+        String title = metadata.get("og:title");
+        String description = metadata.get("description");
+        URL cover = NetUtils.createURL(metadata.get("og:image"));
+        Duration duration = Duration.ofSeconds(Integer.parseInt(metadata.get("video:duration")));
+        LocalDateTime uploadTime = LocalDateTime.parse(metadata.get("ya:ovs:upload_date"));
+        int views = Integer.parseInt(metadata.get("ya:ovs:views_total"));
+        int comments = Integer.parseInt(metadata.get("ya:ovs:comments"));
+        double rating = Double.parseDouble(metadata.get("ya:ovs:rating"));
+
+        Element viewlist = document.selectFirst(".viewlist");
+        int likes = Integer.parseInt(viewlist.selectFirst(".rate-like").text());
+        int dislikes = Integer.parseInt(viewlist.selectFirst(".rate-dislike").text());
+        Element member = viewlist.selectFirst(".info").selectFirst(CssSelectors.TAG_A);
+        String memberHref = member.attr(CssSelectors.ATTR_HREF);
+        Matcher memberMatcher = RegexUtils.matchesOrElseThrow(Lazy.MEMBER_HREF_REGEX, memberHref);
+        int authorId = Integer.parseInt(memberMatcher.group("id"));
+        BabesMember author = new BabesMember(authorId, member.text());
+        BabesVideo video = new BabesVideo(id, titlePath, title, cover, duration, rating, views,
+            likes, dislikes, comments, description, author, uploadTime);
+        Elements scripts = viewlist.selectFirst(".player-holder").select(CssSelectors.TAG_SCRIPT);
+        if (!scripts.isEmpty()) {
+            String script = scripts.last().html();
+            Matcher srcMatcher = RegexUtils.findOrElseThrow(Lazy.VIDEO_URL_REGEX, script);
+            video.setSource(NetUtils.createURL(srcMatcher.group("u")));
+        }
+        String tags = metadata.get("video:tag");
+        if (tags != null) {
+            video.setTags(SEPARATOR.split(tags));
+        }
+        String quality = metadata.get("ya:ovs:quality");
+        if (quality != null) {
+            video.setQuality(VideoQuality.valueOf(quality));
+        }
+        return video;
+    }
+
+    /**
+     * Retrieves all categories.
+     */
+    public List<BabesCategory> findAllCategories()
         throws NotFoundException, OtherResponseException {
-        String id = index.getId();
-        RequestBuilder builder = builder0("/models/%s/", id);
-        Document document = getDocument(builder,
-            doc -> getCounts(doc.selectFirst(".head")).getLeft() != index.getVideos());
+        Block block = getBlock("list_categories_categories_list", "title", 0, "/categories/");
+        List<BabesCategory> categories = new ArrayList<>(block.items.size());
+        for (Element item : block.items) {
+            Element th = item.selectFirst(".th");
+            String href = th.attr(CssSelectors.ATTR_HREF);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CATEGORY_HREF_REGEX, href);
+            String titlePath = matcher.group("p");
+            String title = th.attr(CssSelectors.ATTR_TITLE);
+            String cover = th.selectFirst(".lazyload").dataset().get(CssSelectors.ATTR_SRC);
+            String countText = th.selectFirst(".count").text();
+            int count = Integer.parseInt(countText.substring(0, countText.length() - 7));
+            categories.add(new BabesCategory(titlePath, title, NetUtils.createURL(cover), count));
+        }
+        return categories;
+    }
+
+    /**
+     * Retrieves paged indices of videos under the given category.
+     *
+     * @see BabesCategory#getAsPath()
+     */
+    public BabesPageResult findPageByCategory(String categoryPath, BabesPageReq req)
+        throws NotFoundException, OtherResponseException {
+        return getVideoPage(req, String.format("/categories/%s/", categoryPath));
+    }
+
+    /**
+     * Retrieves paged indices of models.
+     */
+    @Nonnull
+    public BabesModelPageResult findModelPage(@Nonnull BabesModelPageReq req)
+        throws NotFoundException, OtherResponseException {
+        Block block = getBlock("list_models_models_list", req.getSortBy(), req.getCurrent(),
+            "/models/");
+        List<BabesModelIndex> indices = new ArrayList<>(block.items.size());
+        for (Element child : block.items) {
+            String modelHref = child.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
+            String p = RegexUtils.matchesOrElseThrow(Lazy.MODEL_HREF_REGEX, modelHref).group("p");
+            String name = child.selectFirst(".author").text();
+            String cover = child.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
+            Elements cols = child.selectFirst(".count").children();
+            String videosText = cols.first().text();
+            int videos = Integer.parseInt(videosText.substring(0, videosText.length() - 7));
+            String photosText = cols.last().text();
+            int photos = Integer.parseInt(photosText.substring(0, photosText.length() - 7));
+            indices.add(new BabesModelIndex(p, name, NetUtils.createURL(cover), videos, photos));
+        }
+        return new BabesModelPageResult(indices, req, block.totalPages);
+    }
+
+    /**
+     * Retrieves the details of a model by the given name as path.
+     *
+     * @see BabesModelIndex#getAsPath()
+     */
+    public BabesModel findModel(@Nonnull String namePath)
+        throws NotFoundException, OtherResponseException {
+        RequestBuilder builder = builder0("/models/%s/", namePath);
+        Document document = getDocument(builder, t -> true);
         Element main = document.selectFirst(".main");
         String src = main.selectFirst(".model").selectFirst(".thumb").attr(CssSelectors.ATTR_SRC);
         URL cover = NetUtils.createURL(src);
         Element head = main.selectFirst(".head");
         String name = head.selectFirst(CssSelectors.TAG_H1).text();
-        Pair<Integer, Integer> counts = getCounts(head);
-        BabesModel model = new BabesModel(id, name, cover, counts.getLeft(), counts.getRight());
+        Elements cols = head.selectFirst(".information_row").select(".col");
+        Map<String, String> counts = cols.stream().map(col -> col.children().first())
+            .collect(Collectors.toMap(Element::text, e -> ((TextNode) e.nextSibling()).text()));
+        int videos = Integer.parseInt(counts.get("videos:").strip());
+        int photos = Integer.parseInt(counts.get("photos:").strip());
+        BabesModel model = new BabesModel(namePath, name, cover, videos, photos);
         Elements options = head.selectFirst(".list").select(CssSelectors.TAG_LI);
         Map<String, String> info = new HashMap<>(8);
         for (Element option : options) {
@@ -166,87 +250,91 @@ public class BabesTubeSite extends BaseSite
             MapUtilsExt.getValue(info, s -> LocalDate.parse(s, Lazy.FORMATTER), "Birth date"));
         model.setBirthplace(MapUtilsExt.getString(info, "Birth place"));
         model.setWebsite(MapUtilsExt.getString(info, "Official website"));
-        if (withVideos) {
-            PageReq firstReq = new BasicPageReq(0, 0);
-            List<BabesVideoIndex> indices = SiteUtils
-                .collectPage(req -> findVideoPage(index, req), firstReq);
-            model.setVideoIndices(indices);
-        }
+        BabesPageReq first = BabesPageReq.first();
+        String path = String.format("/models/%s/", namePath);
+        model.setVideoIndices(SiteUtils.collectPage(req -> getVideoPage(req, path), first));
         return model;
     }
 
-    /**
-     * Retrieves paged result of indices of videos by the given model and pagination information.
-     * <p>
-     * Note that {@link PageReq#getPageSize()} is ignored.
-     */
-    public PageResult<BabesVideoIndex, PageReq> findVideoPage(@Nonnull BabesModelIndex modelIndex,
-        @Nonnull PageReq request) throws NotFoundException, OtherResponseException {
-        String page = request.getCurrent() == 0 ? "" : (request.getCurrent() + 1) + "/";
-        RequestBuilder builder = builder0("/models/%s/%s", modelIndex.getId(), page)
-            .addParameter("mode", "async")
-            .addParameter("function", "get_block")
-            .addParameter("block_id", "list_videos_common_videos_list")
-            .addParameter("sort_by", "post_date");
-        Document document = getDocument(builder, t -> true);
-        List<BabesVideoIndex> indices = new ArrayList<>();
-        Element list = document.selectFirst("#list_videos_common_videos_list_items");
-        for (Element child : list.children()) {
-            String href = child.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
+    @Nonnull
+    @Contract("_, _ -> new")
+    private BabesPageResult getVideoPage(@Nonnull BabesPageReq req, String path)
+        throws NotFoundException, OtherResponseException {
+        String blockId = "list_videos_common_videos_list";
+        Block block = getBlock(blockId, req.getSortBy(), req.getCurrent(), path);
+        List<BabesVideoIndex> indices = new ArrayList<>(block.items.size());
+        for (Element item : block.items) {
+            Element a = item.selectFirst(".th");
+            String href = a.attr(CssSelectors.ATTR_HREF);
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VIDEO_HREF_REGEX, href);
             int id = Integer.parseInt(matcher.group("id"));
-            String path = matcher.group("p");
-            String title = child.selectFirst(".title").text();
-            BabesVideoIndex index = new BabesVideoIndex(id, path, title);
-            Element img = child.selectFirst(".lazyload");
-            index.setCover(NetUtils.createURL(img.attr(CssSelectors.ATTR_SRC)));
-            index.setPreview(NetUtils.createURL(img.dataset().get("preview")));
-            Element quality = child.selectFirst(".quality");
+            String titlePath = matcher.group("p");
+            String title = a.attr(CssSelectors.ATTR_TITLE);
+            Map<String, String> dataset = item.selectFirst(".lazyload").dataset();
+            URL cover = NetUtils.createURL(dataset.get("src"));
+            Duration duration = TimeUtils.parseDuration(item.selectFirst(".time").text());
+            String rate = item.selectFirst(".rate").text();
+            double rating = Integer.parseInt(rate.substring(0, rate.length() - 1)) / 100.0D;
+            Elements info = item.select(".count");
+            String viewsText = info.first().text().replace(" ", "");
+            int views = Integer.parseInt(viewsText.substring(0, viewsText.length() - 5));
+            BabesVideoIndex index = new BabesVideoIndex(id, titlePath, title, cover, duration,
+                rating, views);
+            String preview = dataset.get("preview");
+            if (preview != null) {
+                index.setPreview(NetUtils.createURL(preview));
+            }
+            Element quality = item.selectFirst(".quality");
             if (quality != null) {
-                index.setQuality(Enum.valueOf(VideoQuality.class, quality.text()));
+                index.setQuality(VideoQuality.valueOf(quality.text()));
             }
-            index.setDuration(TimeUtils.parseDuration(child.selectFirst(".time").text()));
-            index.setAuthor(child.selectFirst(".name").text());
-            String rate = child.selectFirst(".rate").text();
-            try {
-                index.setRating(NumberFormat.getPercentInstance().parse(rate).doubleValue());
-            } catch (ParseException e) {
-                throw new UnexpectedException(e);
-            }
-            String views = child.selectFirst(".count").text().replace(" ", "");
-            Matcher viewMatcher = RegexUtils.matchesOrElseThrow(Lazy.VIEWS_REGEX, views);
-            index.setViews(Integer.parseInt(viewMatcher.group("v")));
             indices.add(index);
         }
-        return new CountablePageResult<>(indices, request, getTotalPages(document));
+        return new BabesPageResult(indices, req, block.totalPages);
     }
 
-    private Pair<Integer, Integer> getCounts(Element head) {
-        Elements cols = head.selectFirst(".information_row").select(".col");
-        Map<String, String> counts = cols.stream().map(col -> col.children().first())
-            .collect(Collectors.toMap(Element::text, e -> ((TextNode) e.nextSibling()).text()));
-        int videos = Integer.parseInt(counts.get("videos:").strip());
-        int photos = Integer.parseInt(counts.get("photos:").strip());
-        return Pair.of(videos, photos);
-    }
-
-    private int getTotalPages(Document document) {
+    @Nonnull
+    @Contract("_, _, _, _ -> new")
+    private Block getBlock(String blockId, Object sortBy, int page, String path)
+        throws NotFoundException, OtherResponseException {
+        if (page > 0) {
+            path += (page + 1) + "/";
+        }
+        RequestBuilder builder = builder0(path)
+            .addParameter("mode", "async")
+            .addParameter("function", "get_block")
+            .addParameter("block_id", blockId)
+            .addParameter("sort_by", sortBy);
+        Document document = getDocument(builder, t -> true);
+        Elements items = document.selectFirst("#" + blockId + "_items").children();
+        int totalPages = 1;
         Element pagination = document.selectFirst(".pagination");
-        if (pagination == null) {
-            return 1;
+        if (pagination != null) {
+            Element last = pagination.children().last();
+            String active = "active";
+            if (!last.hasClass(active)) {
+                last = last.previousElementSibling();
+            }
+            totalPages = Integer.parseInt(last.text());
         }
-        Element last = pagination.children().last();
-        if (!last.hasClass("active")) {
-            last = last.previousElementSibling();
+        return new Block(items, totalPages);
+    }
+
+    private static final class Block {
+
+        private final Elements items;
+        private final int totalPages;
+
+        private Block(Elements items, int totalPages) {
+            this.items = items;
+            this.totalPages = totalPages;
         }
-        return Integer.parseInt(last.text());
     }
 
     private static class Lazy {
 
         private static final Pattern MODEL_HREF_REGEX = Pattern
-            .compile(HOME + "/models/(?<id>[a-z\\d-]+)/");
-        private static final Pattern COUNT_REGEX = Pattern.compile("(?<c>\\d+) (videos|photos)");
+            .compile(HOME + "/models/(?<p>[a-z\\d-]+)/");
         private static final Pattern HEIGHT_REGEX = Pattern.compile("(?<h>\\d{3}) cm");
         private static final Pattern EN_HEIGHT_REGEX = Pattern
             .compile("(?<f>\\d)'(?<i>\\d{1,2})\"");
@@ -257,8 +345,13 @@ public class BabesTubeSite extends BaseSite
                 + "(([-/])((?<w>\\d{2})|\\?\\?)\\6?((?<h>\\d{1,2})|\\?\\?)( i)?)?");
         private static final Pattern VIDEO_HREF_REGEX = Pattern
             .compile(HOME + "/videos/(?<id>\\d+)/(?<p>[a-z\\d-]+)/");
-        private static final Pattern VIEWS_REGEX = Pattern.compile("(?<v>\\d+)views");
         private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("d MMMM yyyy").localizedBy(Locale.US);
+        private static final Pattern MEMBER_HREF_REGEX = Pattern
+            .compile(HOME + "/members/(?<id>\\d+)/");
+        private static final Pattern CATEGORY_HREF_REGEX = Pattern
+            .compile(HOME + "/categories/(?<p>[A-Za-z-]+)/");
+        private static final Pattern VIDEO_URL_REGEX = Pattern
+            .compile("video_url: '(?<u>[\\w:/.]+)'");
     }
 }

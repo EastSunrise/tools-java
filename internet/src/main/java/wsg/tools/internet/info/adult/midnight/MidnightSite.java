@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -54,9 +56,11 @@ public final class MidnightSite extends BaseSite {
     /**
      * Retrieves the paged result of indices under the given column.
      */
+    @Nonnull
+    @Contract("_, _ -> new")
     public MidnightPageResult findPage(@Nonnull MidnightColumn column,
         @Nonnull MidnightPageReq req) throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/e/action/ListInfo.php")
+        RequestBuilder builder = builder(WWW, "/e/action/ListInfo.php")
             .addParameter("page", req.getCurrent())
             .addParameter("classid", column.getCode())
             .addParameter("starttime", req.getStart())
@@ -174,7 +178,7 @@ public final class MidnightSite extends BaseSite {
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = builder0("/%s/%d.html", column.getText(), id);
+        RequestBuilder builder = builder(WWW, "/%s/%d.html", column.getText(), id);
         Document document = getDocument(builder, t -> false);
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
@@ -187,7 +191,8 @@ public final class MidnightSite extends BaseSite {
         return t;
     }
 
-    private List<Element> getContents(Document document)
+    @Nonnull
+    private List<Element> getContents(@Nonnull Document document)
         throws NotFoundException, OtherResponseException {
         List<Element> contents = new ArrayList<>();
         while (true) {
@@ -198,7 +203,7 @@ public final class MidnightSite extends BaseSite {
                 break;
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
-            RequestBuilder builder = builder0(URI.create(nextHref).getPath());
+            RequestBuilder builder = builder(WWW, URI.create(nextHref).getPath());
             document = getDocument(builder, t -> false);
         }
         return contents;
@@ -207,7 +212,8 @@ public final class MidnightSite extends BaseSite {
     /**
      * Obtains a map of information from the contents.
      */
-    private Map<String, String> getInfo(List<Element> contents) {
+    @Nonnull
+    private Map<String, String> getInfo(@Nonnull List<Element> contents) {
         List<String> texts = new ArrayList<>();
         Element nav = contents.get(0).selectFirst(NAV_NAVIGATION);
         Node current = nav.previousElementSibling().previousSibling();
@@ -228,7 +234,7 @@ public final class MidnightSite extends BaseSite {
         return info;
     }
 
-    private List<URL> getImages(List<Element> contents) {
+    private @Nullable List<URL> getImages(@Nonnull List<Element> contents) {
         List<URL> images = new ArrayList<>();
         for (Element content : contents) {
             Element nav = content.selectFirst(NAV_NAVIGATION);
@@ -239,7 +245,7 @@ public final class MidnightSite extends BaseSite {
                     for (Element img : elements) {
                         String href = img.attr(CssSelectors.ATTR_SRC);
                         if (href.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                            href = builder0(href).toString();
+                            href = builder(WWW, href).toString();
                         }
                         images.add(NetUtils.createURL(href));
                     }

@@ -60,7 +60,12 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     private static final String EXTRA_COVER_HEAD = "https://img22.qayqa.com:6868http";
 
     public MovieHeavenSite() {
-        super("Movie Heaven", new BasicHttpSession("993vod.com"), new MovieHeaverResponseHandler());
+        super("Movie Heaven", new BasicHttpSession("993dy.com"), new MovieHeaverResponseHandler());
+    }
+
+    @Override
+    public String getDomain() {
+        return "993vod.com";
     }
 
     /**

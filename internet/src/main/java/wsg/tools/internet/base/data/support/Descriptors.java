@@ -3,6 +3,7 @@ package wsg.tools.internet.base.data.support;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,15 @@ public final class Descriptors {
         };
     }
 
+    /**
+     * Returns a descriptor to test whether each element of the values matches the predicate.
+     */
+    @Nonnull
+    @Contract(pure = true)
+    public static <T, K> Descriptor<T> test(Predicate<T> predicate, Function<T, K> identifier) {
+        return values -> values.stream().filter(predicate).map(identifier)
+            .forEach(id -> log.info("{}", id));
+    }
 
     /**
      * Calculates the distribution of the given list of integer identifiers.

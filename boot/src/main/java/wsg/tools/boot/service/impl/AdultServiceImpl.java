@@ -105,9 +105,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     void importLatestByPage(String domain, int subtype,
         @Nonnull RepoPageable<P, PageResult<I, P>> pageable, P firstReq,
         RepoRetrievable<I, T> retrievable) throws OtherResponseException {
-        List<T> entities = new ArrayList<>();
         LocalDateTime deadline = videoRepository.findLatestUpdate(domain, subtype).orElse(START);
         P req = firstReq;
+        List<T> entities = new ArrayList<>();
         while (true) {
             PageResult<I, P> result = null;
             try {
@@ -137,14 +137,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         if (entities.isEmpty()) {
             return;
         }
-        LocalDateTime latest = entities.get(0).lastUpdate();
         int success = 0, total = 0;
         for (int i = entities.size() - 1; i >= 0; i--) {
             T t = entities.get(i);
-            // the latest update entries will be imported next in case of importing duplicate entries
-            if (t.lastUpdate().compareTo(latest) >= 0) {
-                break;
-            }
             Source source = Source.record(domain, subtype, t.getId());
             success += insertEntry(t, source);
             total++;

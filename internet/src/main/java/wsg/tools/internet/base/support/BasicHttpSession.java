@@ -82,7 +82,6 @@ public class BasicHttpSession implements HttpSession {
 
     public BasicHttpSession(Scheme scheme, String domain, double permitsPerSecond,
         double postPermitsPerSecond) {
-        SiteUtils.validateStatus(getClass());
         this.scheme = scheme;
         Pair<String, String> pair = SiteUtils.splitDomain(domain);
         this.mainDomain = pair.getLeft();

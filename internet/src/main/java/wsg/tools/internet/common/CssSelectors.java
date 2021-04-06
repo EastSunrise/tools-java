@@ -47,6 +47,7 @@ public final class CssSelectors {
     public static final String ATTR_TITLE = "title";
     public static final String ATTR_ALT = "alt";
     public static final String ATTR_REL = "rel";
+    public static final String ATTR_TYPE = "type";
 
     private CssSelectors() {
     }

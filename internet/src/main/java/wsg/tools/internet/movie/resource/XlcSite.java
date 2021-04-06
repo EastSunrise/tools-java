@@ -52,6 +52,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     private static final int TITLE_SUFFIX_LENGTH = 14;
     private static final String NO_PIC = "nopic.jpg";
     private static final String NO_PHOTO = "nophoto_xunleicang.in.png";
+    private static final String SYSTEM_TIP = "迅雷仓-系统提示";
 
     public XlcSite() {
         super("XLC", new BasicHttpSession("xunleicang.in"));
@@ -89,6 +90,10 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     public XlcItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
         RequestBuilder builder = builder0("/vod-read-id-%d.html", id);
         Document document = getDocument(builder, t -> false);
+        String title = document.title();
+        if (SYSTEM_TIP.equals(title)) {
+            throw new NotFoundException(document.body().text().strip());
+        }
 
         Element pLeft = document.selectFirst(".pleft");
         Map<String, Node> info = new HashMap<>(8);
@@ -106,8 +111,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         String state = ((TextNode) info.get("状态：")).text();
         XlcItem item = new XlcItem(id, builder.toString(), updateDate, type, state);
 
-        String tit = document.title();
-        item.setTitle(tit.substring(0, tit.length() - TITLE_SUFFIX_LENGTH));
+        item.setTitle(title.substring(0, title.length() - TITLE_SUFFIX_LENGTH));
         String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
         if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
             item.setCover(NetUtils.createURL(cover));
@@ -129,10 +133,10 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
             if (StringUtils.isBlank(href) || Thunder.EMPTY_LINK.equals(href)) {
                 continue;
             }
-            String title = a.text().strip();
+            String linkTitle = a.text().strip();
             try {
-                resources.add(
-                    LinkFactory.create(title, href, () -> LinkFactory.getPassword(title, href)));
+                resources.add(LinkFactory
+                    .create(linkTitle, href, () -> LinkFactory.getPassword(linkTitle, href)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }

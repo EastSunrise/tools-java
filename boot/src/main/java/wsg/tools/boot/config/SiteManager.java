@@ -24,7 +24,6 @@ import wsg.tools.internet.movie.resource.GrapeSite;
 import wsg.tools.internet.movie.resource.MovieHeavenSite;
 import wsg.tools.internet.movie.resource.XlcSite;
 import wsg.tools.internet.movie.resource.XlmSite;
-import wsg.tools.internet.movie.resource.Y80sSite;
 
 /**
  * Management of all sites.
@@ -43,7 +42,6 @@ public class SiteManager implements DisposableBean {
     private MovieHeavenSite movieHeavenSite;
     private XlcSite xlcSite;
     private XlmSite xlmSite;
-    private Y80sSite y80sSite;
     private GrapeSite grapeSite;
     private Downloader downloader;
     private LicencePlateSite licencePlateSite;
@@ -106,13 +104,6 @@ public class SiteManager implements DisposableBean {
         return xlmSite;
     }
 
-    public Y80sSite y80sSite() {
-        if (y80sSite == null) {
-            y80sSite = new Y80sSite();
-        }
-        return y80sSite;
-    }
-
     public GrapeSite grapeSite() {
         if (grapeSite == null) {
             grapeSite = new GrapeSite();
@@ -146,7 +137,7 @@ public class SiteManager implements DisposableBean {
         if (imdbRepository != null && imdbRepository instanceof Closeable) {
             ((Closeable) imdbRepository).close();
         }
-        close(doubanSite, bdMovieSite, movieHeavenSite, xlcSite, xlmSite, y80sSite, grapeSite,
+        close(doubanSite, bdMovieSite, movieHeavenSite, xlcSite, xlmSite, grapeSite,
             licencePlateSite, midnightSite);
     }
 

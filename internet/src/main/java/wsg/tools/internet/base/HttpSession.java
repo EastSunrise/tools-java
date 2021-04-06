@@ -2,10 +2,13 @@ package wsg.tools.internet.base;
 
 import java.io.Closeable;
 import javax.annotation.Nullable;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.protocol.HttpContext;
 import wsg.tools.internet.base.support.RequestBuilder;
 
 /**
@@ -13,6 +16,9 @@ import wsg.tools.internet.base.support.RequestBuilder;
  * limited under a specified domain.
  * <p>
  * todo concurrency of sessions under the same domain.
+ * <p>
+ * todo implement with {@link HttpClient#execute(HttpHost, HttpRequest, ResponseHandler,
+ * HttpContext)}
  *
  * @author Kingen
  * @since 2021/3/1

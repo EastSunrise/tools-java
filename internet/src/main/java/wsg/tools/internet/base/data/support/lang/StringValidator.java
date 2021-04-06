@@ -3,9 +3,7 @@ package wsg.tools.internet.base.data.support.lang;
 import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import wsg.tools.internet.base.data.Validator;
-import wsg.tools.internet.base.data.support.Descriptors;
 import wsg.tools.internet.base.data.support.InvalidValueException;
 
 /**
@@ -27,10 +25,13 @@ public class StringValidator extends Validator<String> {
     }
 
     /**
-     * Counts not-blank texts.
+     * Counts blank texts.
      */
     @Override
     public void describe(@Nonnull List<String> texts) {
-        Descriptors.<String, Boolean>enumerate(StringUtils::isNotBlank).describe(texts);
+        if (!texts.isEmpty()) {
+            long count = texts.stream().filter(String::isBlank).count();
+            log.info("Count of blank texts: {}", count);
+        }
     }
 }

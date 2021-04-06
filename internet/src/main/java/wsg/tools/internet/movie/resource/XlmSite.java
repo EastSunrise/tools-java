@@ -30,6 +30,7 @@ import wsg.tools.internet.base.support.RequestBuilder;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
@@ -64,14 +65,14 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     }
 
     /**
-     * @see <a href="https://www.xleimi.com/new.html">Last Update</a>
+     * @see <a href="https://www.xleimi.com/">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(builder0("/new.html"), t -> true);
-        Elements tits = document.select(".tit");
+        Document document = SiteUtils.home(this);
+        Elements as = document.selectFirst(".newdy").select(CssSelectors.TAG_A);
         int max = 1;
-        for (Element tit : tits) {
-            String href = tit.attr(CssSelectors.ATTR_HREF);
+        for (Element a : as) {
+            String href = a.attr(CssSelectors.ATTR_HREF);
             String id = RegexUtils.matchesOrElseThrow(Lazy.ITEM_HREF_REGEX, href).group("id");
             max = Math.max(max, Integer.parseInt(id));
         }

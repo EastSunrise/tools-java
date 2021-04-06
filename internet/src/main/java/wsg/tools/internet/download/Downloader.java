@@ -3,6 +3,7 @@ package wsg.tools.internet.download;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import wsg.tools.internet.common.OtherResponseException;
 
 /**
  * Downloads a resource.
@@ -19,6 +20,7 @@ public interface Downloader {
      * @param url the url which points to the file to download
      * @return downloaded file
      * @throws IllegalArgumentException if can't construct a filename by the given url
+     * @throws OtherResponseException   if an unexpected exception occurs when requesting
      * @throws IOException              if an IO error occurs during downloading
      */
     File download(File dir, URL url) throws IOException;
@@ -32,6 +34,7 @@ public interface Downloader {
      * @param basename assign the basename of the file to download
      * @return downloaded file
      * @throws IllegalArgumentException if can't construct a filename by the given arguments
+     * @throws OtherResponseException   if an unexpected exception occurs when requesting
      * @throws IOException              if an IO error occurs during downloading
      */
     File download(File dir, URL url, String basename) throws IOException;

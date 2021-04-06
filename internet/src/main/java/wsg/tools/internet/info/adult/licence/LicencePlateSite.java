@@ -60,7 +60,7 @@ public class LicencePlateSite extends BaseSite
     public LicencePlateItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
         SnapshotStrategy<Document> strategy = doc -> getNext(doc) == null;
-        Document document = getDocument(builder0("/%s", id.toLowerCase(Locale.ROOT)), strategy);
+        Document document = getDocument(builder(WWW, "/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);

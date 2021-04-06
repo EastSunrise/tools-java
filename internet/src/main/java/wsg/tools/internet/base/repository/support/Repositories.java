@@ -40,16 +40,16 @@ public final class Repositories {
      *
      * @param retrievable the core function of the repository to retrieve an entity by an
      *                    identifier, must not be null
-     * @param next        the function to get next identifier by current entity, must not be null
+     * @param getNext     the function to get next identifier by current entity, must not be null
      * @param first       the first identifier in the repository, may be null if the repository is
      *                    empty
      */
     @Nonnull
-    public static <ID, T extends NextSupplier<ID>> LinkedRepository<ID, T>
-    linked(RepoRetrievable<ID, T> retrievable, Function<T, ID> next, ID first) {
+    public static <ID, T> LinkedRepository<ID, T>
+    linked(RepoRetrievable<ID, T> retrievable, ID first, Function<T, ID> getNext) {
         Objects.requireNonNull(retrievable);
-        Objects.requireNonNull(next);
-        return new BasicLinkedRepository<>(retrievable, first, next);
+        Objects.requireNonNull(getNext);
+        return new BasicLinkedRepository<>(retrievable, first, getNext);
     }
 
     /**

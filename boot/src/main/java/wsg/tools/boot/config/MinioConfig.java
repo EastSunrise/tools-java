@@ -165,7 +165,11 @@ public class MinioConfig implements InitializingBean {
         try {
             String file = StringUtils.stripEnd(url.getFile(), Constants.URL_PATH_SEPARATOR);
             String path = FilenameUtils.getPath(StringUtilsExt.toFilename(file));
-            return manager.downloader().download(new File(tmpdir, path), url);
+            File dir = tmpdir;
+            if (path != null) {
+                dir = new File(dir, path);
+            }
+            return manager.downloader().download(dir, url);
         } catch (ConnectException e) {
             if (CONNECTION_REFUSED.equals(e.getMessage())) {
                 throw new OtherResponseException(HttpStatus.SC_FORBIDDEN, CONNECTION_REFUSED);
@@ -180,6 +184,8 @@ public class MinioConfig implements InitializingBean {
         } catch (SSLException | SocketException e) {
             String message = e.getMessage();
             throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, message);
+        } catch (OtherResponseException e) {
+            throw e;
         } catch (IOException e) {
             throw new AppException(e);
         }

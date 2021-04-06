@@ -22,6 +22,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.internet.base.PathSupplier;
 
 /**
  * Builder for {@link HttpRequest}.
@@ -78,7 +79,12 @@ public class RequestBuilder {
      * Adds a parameter to the request. Do nothing if the value is {@literal null}.
      */
     public RequestBuilder addParameter(String name, Object value) {
-        if (value != null) {
+        if (value == null) {
+            return this;
+        }
+        if (value instanceof PathSupplier) {
+            addParameter(new BasicNameValuePair(name, ((PathSupplier) value).getAsPath()));
+        } else {
             addParameter(new BasicNameValuePair(name, value.toString()));
         }
         return this;

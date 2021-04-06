@@ -25,6 +25,7 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BasicHttpSession;
@@ -39,12 +40,14 @@ import wsg.tools.internet.download.support.InvalidResourceException;
 import wsg.tools.internet.download.support.LinkFactory;
 
 /**
+ * This site has be closed by the administrator.
+ *
  * @author Kingen
  * @see <a href="http://m.y80s.org">80s</a>
  * @since 2020/9/9
  */
 @Slf4j
-@ConcreteSite
+@ConcreteSite(status = SiteStatus.INVALID)
 public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
 
     private static final int MIN_ID = 32;
