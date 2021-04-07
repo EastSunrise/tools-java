@@ -47,6 +47,8 @@ import wsg.tools.internet.common.UnexpectedException;
 
 /**
  * A basic implementation of a site, providing a default context to execute requests.
+ * <p>
+ * todo rebuild the connection after a long interval.
  *
  * @author Kingen
  * @since 2021/2/28
