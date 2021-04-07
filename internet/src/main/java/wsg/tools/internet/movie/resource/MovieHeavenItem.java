@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 
@@ -20,7 +21,7 @@ public class MovieHeavenItem extends BaseIdentifiedItem
     private final MovieHeavenType type;
     private final LocalDate addDate;
     private final URL cover;
-    private String state;
+    private ResourceState state;
     private Integer year;
 
     MovieHeavenItem(int id, @Nonnull String url, MovieHeavenType type, LocalDate addDate,
@@ -41,11 +42,11 @@ public class MovieHeavenItem extends BaseIdentifiedItem
     }
 
     @Override
-    public String getState() {
+    public ResourceState getState() {
         return state;
     }
 
-    void setState(String state) {
+    void setState(ResourceState state) {
         this.state = state;
     }
 

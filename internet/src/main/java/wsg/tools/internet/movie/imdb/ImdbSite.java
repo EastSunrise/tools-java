@@ -160,9 +160,9 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            RequestWrapper builder = httpGet("/title/%s/episodes", seriesId)
+            RequestWrapper wrapper = httpGet("/title/%s/episodes", seriesId)
                 .addParameter("season", currentSeason);
-            Document document = getDocument(builder, t -> false);
+            Document document = getDocument(wrapper, t -> false);
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;

@@ -41,14 +41,14 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Override
     public RenrenPageResult findPage(@Nonnull RenrenPageReq request)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = create("content.json", METHOD_GET,
+        RequestWrapper wrapper = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
             Optional.ofNullable(request.getType()).map(Object::toString).orElse("all"),
             Optional.ofNullable(request.getArea()).map(Object::toString).orElse("all"),
             Optional.ofNullable(request.getGenre()).map(Object::toString).orElse("all"),
             Optional.ofNullable(request.getStatus()).map(Object::toString).orElse("all"),
             request.getSort(), request.getCurrent() + 1);
-        RenrenResponse response = getObject(builder, Lazy.MAPPER, RenrenResponse.class, t -> true);
+        RenrenResponse response = getObject(wrapper, Lazy.MAPPER, RenrenResponse.class, t -> true);
         RenrenResponse.Result result = response.getResult();
         return new RenrenPageResult(result.getContent(), request, result.isEnd());
     }
@@ -57,8 +57,8 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Nonnull
     public RenrenSeries findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = create("m", METHOD_GET, "/detail/%d", id);
-        Document document = getDocument(builder, doc -> {
+        RequestWrapper wrapper = create("m", METHOD_GET, "/detail/%d", id);
+        Document document = getDocument(wrapper, doc -> {
             SeriesStatus status = getStatus(doc);
             return status != null && status != SeriesStatus.CONCLUDED;
         });

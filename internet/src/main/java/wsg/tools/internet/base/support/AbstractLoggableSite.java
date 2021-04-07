@@ -15,7 +15,9 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.CloseableHttpClient;
 import wsg.tools.internet.base.Loggable;
 import wsg.tools.internet.common.UnexpectedException;
 
@@ -30,8 +32,27 @@ import wsg.tools.internet.common.UnexpectedException;
 public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggable<U> {
 
     protected AbstractLoggableSite(String name, HttpHost host) {
-        super(name, host);
-        File file = cookieFile();
+        this(name, host, defaultResponseHandler());
+    }
+
+    protected AbstractLoggableSite(String name, HttpHost host,
+        ResponseHandler<String> defaultHandler) {
+        this(name, host, defaultClient(), defaultHandler,
+            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
+    }
+
+    protected AbstractLoggableSite(String name, HttpHost host, CloseableHttpClient client,
+        ResponseHandler<String> defaultHandler, double permitsPerSecond,
+        double postPermitsPerSecond) {
+        super(name, host, client, loadContext(name, host), defaultHandler, permitsPerSecond,
+            postPermitsPerSecond);
+    }
+
+    @Nonnull
+    protected static HttpClientContext loadContext(String name, @Nonnull HttpHost host) {
+        HttpClientContext context = defaultContext();
+        String filepath = name + "#" + host.toURI() + ".cookie";
+        File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
         if (file.canRead()) {
             try (ObjectInputStream stream = new ObjectInputStream(
                 FileUtils.openInputStream(file))) {
@@ -42,16 +63,18 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
                 throw new UnexpectedException(e);
             }
         }
+        return context;
     }
 
     @Override
     public <T> T execute(@Nonnull HttpHost target, @Nonnull HttpUriRequest request,
-        @Nonnull ResponseHandler<T> handler) throws HttpResponseException {
+        @Nonnull ResponseHandler<? extends T> handler) throws HttpResponseException {
         T entity = super.execute(target, request, handler);
-        try (ObjectOutputStream stream = new ObjectOutputStream(
-            FileUtils.openOutputStream(cookieFile()))) {
+        String filepath = httpGet("").filepath() + ".cookie";
+        File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
+        try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(file))) {
             log.info("Synchronize cookies of {}.", getHost());
-            stream.writeObject(context.getCookieStore());
+            stream.writeObject(getContext().getCookieStore());
         } catch (IOException e) {
             log.error(e.getMessage());
         }
@@ -66,7 +89,7 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
      */
     @Nullable
     protected Cookie getCookie(String name) {
-        CookieStore cookieStore = context.getCookieStore();
+        CookieStore cookieStore = getContext().getCookieStore();
         if (cookieStore == null) {
             return null;
         }
@@ -76,10 +99,5 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
             }
         }
         return null;
-    }
-
-    private File cookieFile() {
-        String filepath = httpGet("").filepath() + ".cookie";
-        return new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
     }
 }

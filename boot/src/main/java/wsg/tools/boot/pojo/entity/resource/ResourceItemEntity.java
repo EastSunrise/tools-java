@@ -13,6 +13,7 @@ import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
+import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
@@ -56,8 +57,8 @@ public class ResourceItemEntity extends IdentityEntity
 
     private Integer year;
 
-    @Column(length = 63)
-    private String state;
+    @Column(length = 15)
+    private ResourceState state;
 
     private Long dbId;
 

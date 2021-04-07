@@ -36,7 +36,7 @@ public class ScoreSite extends BaseSite {
     public TournamentPageResult findAllTournaments(@Nonnull TournamentPageReq request)
         throws NotFoundException, OtherResponseException {
         String type = request.getStatus() == null ? "all" : request.getStatus().getText();
-        RequestWrapper builder = httpPost("/services/api_url.php")
+        RequestWrapper wrapper = httpPost("/services/api_url.php")
             .addParameter("api_path", "/services/match/web_tournament_group_list.php")
             .addParameter("method", "get")
             .addParameter("platform", "web")
@@ -47,9 +47,9 @@ public class ScoreSite extends BaseSite {
             .addParameter("page", request.getCurrent() + 1)
             .addParameter("limit", request.getPageSize());
         if (request.getYear() != null) {
-            builder.addParameter("year", request.getYear().getValue());
+            wrapper.addParameter("year", request.getYear().getValue());
         }
-        TournamentPageResponse response = getObject(builder, Lazy.MAPPER,
+        TournamentPageResponse response = getObject(wrapper, Lazy.MAPPER,
             TournamentPageResponse.class,
             res -> res.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES || !res.getData()
                 .getList().stream().allMatch(t -> t.getStatus() == ScoreStatus.FINISHED));
@@ -68,14 +68,14 @@ public class ScoreSite extends BaseSite {
      */
     public List<TournamentRound> findRoundsByTournament(@Nonnull Tournament tournament)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = create("img1", METHOD_GET, "/tr/%d.json", tournament.getId());
+        RequestWrapper wrapper = create("img1", METHOD_GET, "/tr/%d.json", tournament.getId());
         SnapshotStrategy<List<TournamentRound>> strategy;
         if (tournament.getStatus() == ScoreStatus.FINISHED) {
             strategy = t -> false;
         } else {
             strategy = t -> true;
         }
-        return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
+        return getObject(wrapper, Lazy.MAPPER, new TypeReference<>() {
         }, strategy);
     }
 
@@ -86,8 +86,8 @@ public class ScoreSite extends BaseSite {
      */
     public List<MatchRecord> findMatchRecordsByRoundItem(@Nonnull RoundItem item)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = create("img1", METHOD_GET, "/tr_round/%d.json", item.getId());
-        return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
+        RequestWrapper wrapper = create("img1", METHOD_GET, "/tr_round/%d.json", item.getId());
+        return getObject(wrapper, Lazy.MAPPER, new TypeReference<>() {
         }, records -> !records.stream().allMatch(r -> r.getStatus() == ScoreStatus.FINISHED));
     }
 

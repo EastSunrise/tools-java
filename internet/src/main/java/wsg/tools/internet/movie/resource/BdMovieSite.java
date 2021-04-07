@@ -31,7 +31,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -76,8 +75,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet("/movies/index.htm"),
-            t -> true);
+        Document document = findDocument(httpGet("/movies/index.htm"), t -> true);
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -94,8 +92,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     @Override
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/zx/%d.htm", id);
-        Document document = getDocument(builder, t -> false);
+        Document document = getDocument(httpGet("/zx/%d.htm", id), t -> false);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);

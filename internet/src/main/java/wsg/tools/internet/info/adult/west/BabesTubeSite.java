@@ -66,7 +66,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     @Override
     public BabesPageResult findPage(@Nonnull BabesPageReq req)
         throws NotFoundException, OtherResponseException {
-        return getVideoPage(req, "/top-rated/");
+        return getVideoPage(req, "/" + req.getSortBy().getAsPath() + "/");
     }
 
     /**
@@ -78,8 +78,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     @Override
     public BabesVideo findById(@Nonnull String videoPath)
         throws OtherResponseException, NotFoundException {
-        RequestWrapper builder = httpGet("/videos/%s/", videoPath);
-        Document document = getDocument(builder, t -> false);
+        Document document = getDocument(httpGet("/videos/%s/", videoPath), t -> false);
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String url = metadata.get("og:url");
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VIDEO_HREF_REGEX, url);
@@ -126,7 +125,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      */
     public List<BabesCategory> findAllCategories()
         throws NotFoundException, OtherResponseException {
-        Block block = getBlock("list_categories_categories_list", "title", 0, "/categories/");
+        Block block = getBlock("list_categories_categories_list", "/categories/", 0, "title");
         List<BabesCategory> categories = new ArrayList<>(block.items.size());
         for (Element item : block.items) {
             Element th = item.selectFirst(".th");
@@ -158,8 +157,9 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     @Nonnull
     public BabesModelPageResult findModelPage(@Nonnull BabesModelPageReq req)
         throws NotFoundException, OtherResponseException {
-        Block block = getBlock("list_models_models_list", req.getSortBy(), req.getCurrent(),
-            "/models/");
+        Block block = getBlock("list_models_models_list", "/models/", req.getCurrent(),
+            req.getSortBy().getAsPath()
+        );
         List<BabesModelIndex> indices = new ArrayList<>(block.items.size());
         for (Element child : block.items) {
             String modelHref = child.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
@@ -183,8 +183,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      */
     public BabesModel findModel(@Nonnull String namePath)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/models/%s/", namePath);
-        Document document = getDocument(builder, t -> true);
+        Document document = getDocument(httpGet("/models/%s/", namePath), t -> true);
         Element main = document.selectFirst(".main");
         String src = main.selectFirst(".model").selectFirst(".thumb").attr(CssSelectors.ATTR_SRC);
         URL cover = NetUtils.createURL(src);
@@ -260,7 +259,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     private BabesPageResult getVideoPage(@Nonnull BabesPageReq req, String path)
         throws NotFoundException, OtherResponseException {
         String blockId = "list_videos_common_videos_list";
-        Block block = getBlock(blockId, req.getSortBy(), req.getCurrent(), path);
+        Block block = getBlock(blockId, path, req.getCurrent(), req.getSortBy().getArgument());
         List<BabesVideoIndex> indices = new ArrayList<>(block.items.size());
         for (Element item : block.items) {
             Element a = item.selectFirst(".th");
@@ -294,17 +293,17 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
 
     @Nonnull
     @Contract("_, _, _, _ -> new")
-    private Block getBlock(String blockId, Object sortBy, int page, String path)
+    private Block getBlock(String blockId, String path, int page, Object sortBy)
         throws NotFoundException, OtherResponseException {
         if (page > 0) {
             path += (page + 1) + "/";
         }
-        RequestWrapper builder = httpGet(path)
+        RequestWrapper wrapper = httpGet(path)
             .addParameter("mode", "async")
             .addParameter("function", "get_block")
             .addParameter("block_id", blockId)
             .addParameter("sort_by", sortBy);
-        Document document = getDocument(builder, t -> true);
+        Document document = getDocument(wrapper, t -> true);
         Elements items = document.selectFirst("#" + blockId + "_items").children();
         int totalPages = 1;
         Element pagination = document.selectFirst(".pagination");

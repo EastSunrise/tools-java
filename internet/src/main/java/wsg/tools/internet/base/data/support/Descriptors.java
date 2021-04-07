@@ -1,5 +1,6 @@
 package wsg.tools.internet.base.data.support;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -48,9 +49,10 @@ public final class Descriptors {
             Map<K, List<T>> map = values.stream().collect(Collectors.groupingBy(classifier));
             if (!map.isEmpty()) {
                 log.info("Enumerating {} distinct keys...", map.size());
-                for (Map.Entry<K, List<T>> entry : map.entrySet()) {
-                    log.info("Key: {}, count: {}", entry.getKey(), entry.getValue().size());
-                }
+                map.entrySet().stream()
+                    .sorted(Comparator.comparing(entry -> entry.getValue().size()))
+                    .forEach(entry -> log
+                        .info("Key: {}, count: {}", entry.getKey(), entry.getValue().size()));
             }
         };
     }

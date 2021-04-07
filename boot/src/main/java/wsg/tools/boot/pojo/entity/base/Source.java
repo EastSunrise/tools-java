@@ -5,6 +5,7 @@ import javax.annotation.Nonnull;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import lombok.Getter;
+import org.jetbrains.annotations.Contract;
 import wsg.tools.internet.base.repository.Repository;
 
 /**
@@ -26,7 +27,7 @@ public class Source implements Serializable {
     /**
      * The domain of the {@link Repository}
      */
-    @Column(nullable = false, length = 15)
+    @Column(nullable = false, length = 31)
     private String domain;
 
     /**
@@ -47,13 +48,15 @@ public class Source implements Serializable {
         this.rid = rid;
     }
 
-    public Source() {
+    protected Source() {
     }
 
     /**
      * Returns an instance of {@link Source} representing the default subtype of the given
      * repository, usually the whole repository which only has one subtype.
      */
+    @Nonnull
+    @Contract(value = "_ -> new", pure = true)
     public static Source repo(@Nonnull String domain) {
         return new Source(domain, null, null);
     }
@@ -61,6 +64,8 @@ public class Source implements Serializable {
     /**
      * Returns an instance of {@link Source} representing a subtype of the given repository.
      */
+    @Nonnull
+    @Contract(value = "_, _ -> new", pure = true)
     public static Source subtype(@Nonnull String domain, int subtype) {
         return new Source(domain, subtype, null);
     }
@@ -69,6 +74,8 @@ public class Source implements Serializable {
      * Returns an instance of {@link Source} representing a record of the given subtype of the given
      * repository.
      */
+    @Nonnull
+    @Contract(value = "_, _, _ -> new", pure = true)
     public static Source record(@Nonnull String domain, int subtype, long rid) {
         return new Source(domain, subtype, rid);
     }

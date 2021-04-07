@@ -71,9 +71,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     @Override
     public OmdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/").addParameter("i", imdbId)
+        RequestWrapper wrapper = httpGet("/").addParameter("i", imdbId)
             .addParameter("plot", "full");
-        OmdbTitle title = getObject(builder, OmdbTitle.class);
+        OmdbTitle title = getObject(wrapper, OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
     }
@@ -85,9 +85,9 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbSeason season(String seriesId, int season)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/").addParameter("i", seriesId)
+        RequestWrapper wrapper = httpGet("/").addParameter("i", seriesId)
             .addParameter("season", season);
-        return getObject(builder, OmdbSeason.class);
+        return getObject(wrapper, OmdbSeason.class);
     }
 
     /**
@@ -118,19 +118,19 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbTitle search(String s, SearchType type, Integer year, int page)
         throws OtherResponseException, NotFoundException {
-        RequestWrapper builder = httpGet("/").addParameter("s", s);
+        RequestWrapper wrapper = httpGet("/").addParameter("s", s);
         if (type != null) {
-            builder.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
+            wrapper.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
         }
         if (year != null) {
-            builder.addParameter("y", year);
+            wrapper.addParameter("y", year);
         }
         if (page < 1 || page > MAX_PAGE) {
             throw new IllegalArgumentException("Illegal page " + page + ", required: 1-100");
         } else {
-            builder.addParameter("page", page);
+            wrapper.addParameter("page", page);
         }
-        return getObject(builder, OmdbTitle.class);
+        return getObject(wrapper, OmdbTitle.class);
     }
 
     private <T> T getObject(RequestWrapper builder, Class<T> clazz)

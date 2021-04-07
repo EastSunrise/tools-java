@@ -64,36 +64,33 @@ public class BaseSite implements Closeable {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
             + "Chrome/80.0.3987.132 Safari/537.36");
 
-    final HttpClientContext context;
     private final String name;
     private final HttpHost host;
     private final Map<String, RateLimiter> limiters;
     private final CloseableHttpClient client;
+    private final HttpClientContext context;
     private final ResponseHandler<String> defaultHandler;
 
     protected BaseSite(String name, HttpHost host) {
-        this(name, host, new StringResponseHandler());
+        this(name, host, defaultResponseHandler());
     }
 
     protected BaseSite(String name, HttpHost host, ResponseHandler<String> defaultHandler) {
-        this(name, host, DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND, defaultHandler);
+        this(name, host, defaultClient(), defaultContext(), defaultHandler,
+            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
     }
 
-    protected BaseSite(String name, HttpHost host, double permitsPerSecond,
-        double postPermitsPerSecond, ResponseHandler<String> defaultHandler) {
+    protected BaseSite(String name, HttpHost host, CloseableHttpClient client,
+        HttpClientContext context, ResponseHandler<String> defaultHandler, double permitsPerSecond,
+        double postPermitsPerSecond) {
         SiteUtils.validateStatus(getClass());
         this.name = name;
         this.host = Objects.requireNonNull(host);
         this.limiters = new HashMap<>(2);
         limiters.put(HttpGet.METHOD_NAME, RateLimiter.create(permitsPerSecond));
         limiters.put(HttpPost.METHOD_NAME, RateLimiter.create(postPermitsPerSecond));
-        this.client = HttpClientBuilder.create()
-            .setDefaultHeaders(List.of(USER_AGENT))
-            .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
-        this.context = HttpClientContext.create();
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(DEFAULT_TIME_OUT)
-            .setSocketTimeout(DEFAULT_TIME_OUT).build();
-        context.setRequestConfig(requestConfig);
+        this.client = client;
+        this.context = context;
         this.defaultHandler = Objects.requireNonNull(defaultHandler, "defaultHandler");
     }
 
@@ -107,6 +104,34 @@ public class BaseSite implements Closeable {
     @Contract("_ -> new")
     protected static HttpHost httpsHost(String hostname) {
         return new HttpHost(hostname, -1, "https");
+    }
+
+    protected static CloseableHttpClient defaultClient() {
+        return HttpClientBuilder.create().setDefaultHeaders(List.of(USER_AGENT))
+            .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
+    }
+
+    @Nonnull
+    protected static HttpClientContext defaultContext() {
+        HttpClientContext context = HttpClientContext.create();
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(DEFAULT_TIME_OUT)
+            .setSocketTimeout(DEFAULT_TIME_OUT).build();
+        context.setRequestConfig(requestConfig);
+        return context;
+    }
+
+    @Nonnull
+    @Contract(" -> new")
+    protected static ResponseHandler<String> defaultResponseHandler() {
+        return new StringResponseHandler();
+    }
+
+    protected CloseableHttpClient getClient() {
+        return client;
+    }
+
+    protected HttpClientContext getContext() {
+        return context;
     }
 
     /**
@@ -180,7 +205,8 @@ public class BaseSite implements Closeable {
      * @see HttpClient#execute(HttpHost, HttpRequest, ResponseHandler, HttpContext)
      */
     public <T> T execute(@Nonnull HttpHost target, @Nonnull HttpUriRequest request,
-        @Nonnull ResponseHandler<T> handler, HttpContext context) throws HttpResponseException {
+        @Nonnull ResponseHandler<? extends T> handler, HttpContext context)
+        throws HttpResponseException {
         URI uri = URI.create(target.toURI()).resolve(request.getURI());
         log.info("{} from {}", request.getMethod(), uri);
         limiters.get(request.getMethod()).acquire();
@@ -199,7 +225,7 @@ public class BaseSite implements Closeable {
      * @see #execute(HttpHost, HttpUriRequest, ResponseHandler, HttpContext)
      */
     public <T> T execute(@Nonnull HttpHost target, @Nonnull HttpUriRequest request,
-        @Nonnull ResponseHandler<T> handler) throws HttpResponseException {
+        @Nonnull ResponseHandler<? extends T> handler) throws HttpResponseException {
         return execute(target, request, handler, context);
     }
 
@@ -216,8 +242,9 @@ public class BaseSite implements Closeable {
      * @throws HttpResponseException if an error occurs when requesting
      */
     public <T> T getContent(@Nonnull RequestWrapper wrapper,
-        ResponseHandler<String> responseHandler, @Nonnull ContentHandler<T> contentHandler,
-        SnapshotStrategy<T> strategy) throws HttpResponseException {
+        ResponseHandler<String> responseHandler,
+        @Nonnull ContentHandler<? extends T> contentHandler, SnapshotStrategy<T> strategy)
+        throws HttpResponseException {
         String filepath = wrapper.filepath();
         filepath += Constants.EXTENSION_SEPARATOR + contentHandler.extension();
         File file = new File(TMPDIR + filepath);
@@ -308,7 +335,7 @@ public class BaseSite implements Closeable {
      * @throws OtherResponseException if an unexpected error occurs when requesting
      * @see #getObject(RequestWrapper, ObjectMapper, TypeReference, SnapshotStrategy)
      */
-    public <T> T getObject(RequestWrapper wrapper, ObjectMapper mapper, Class<T> clazz,
+    public <T> T getObject(RequestWrapper wrapper, ObjectMapper mapper, Class<? extends T> clazz,
         SnapshotStrategy<T> strategy) throws NotFoundException, OtherResponseException {
         try {
             return getContent(wrapper, defaultHandler, new JsonHandler<>(mapper, clazz), strategy);
@@ -325,8 +352,9 @@ public class BaseSite implements Closeable {
      * @throws OtherResponseException if an unexpected error occurs when requesting
      * @see #getObject(RequestWrapper, ObjectMapper, Class, SnapshotStrategy)
      */
-    public <T> T getObject(RequestWrapper wrapper, ObjectMapper mapper, TypeReference<T> type,
-        SnapshotStrategy<T> strategy) throws NotFoundException, OtherResponseException {
+    public <T> T getObject(RequestWrapper wrapper, ObjectMapper mapper,
+        TypeReference<? extends T> type, SnapshotStrategy<T> strategy)
+        throws NotFoundException, OtherResponseException {
         try {
             return getContent(wrapper, defaultHandler, new JsonHandler<>(mapper, type), strategy);
         } catch (HttpResponseException e) {

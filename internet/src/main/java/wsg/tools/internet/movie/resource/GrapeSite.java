@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,11 +75,11 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     @Nonnull
     public GrapeNewsItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/movie/%d.html", id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/movie/%d.html", id);
+        Document document = getDocument(wrapper, t -> false);
         String datetime = document.selectFirst(".updatetime").text();
         LocalDate releaseDate = LocalDate.parse(datetime.substring(5));
-        GrapeNewsItem item = new GrapeNewsItem(id, builder.getUri().toString(), releaseDate);
+        GrapeNewsItem item = new GrapeNewsItem(id, wrapper.getUri().toString(), releaseDate);
 
         Element h1 = document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1);
         item.setTitle(h1.text().strip());
@@ -132,8 +131,8 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
-        RequestWrapper builder = httpGet("/index.php").addParameter("s", arg);
-        Document document = getDocument(builder, t -> true);
+        RequestWrapper wrapper = httpGet("/index.php").addParameter("s", arg);
+        Document document = getDocument(wrapper, t -> true);
         String summary = ((TextNode) document.selectFirst(".ui-page-big").childNode(0)).text();
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.PAGE_SUM_REGEX, summary.strip());
         int total = Integer.parseInt(matcher.group("t"));
@@ -155,11 +154,9 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
      * Retrieves a vod item by the given index.
      */
     @Nonnull
-    public GrapeVodItem findVodItem(GrapeVodIndex index)
+    public GrapeVodItem findVodItem(@Nonnull GrapeVodIndex index)
         throws NotFoundException, OtherResponseException {
-        Objects.requireNonNull(index);
-        RequestWrapper builder = httpGet(index.getPath());
-        Document document = getDocument(builder, t -> false);
+        Document document = getDocument(httpGet(index.getPath()), t -> false);
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);

@@ -80,8 +80,8 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     @Nonnull
     @Override
     public XlmItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/dy/k%d.html", id);
-        Document document = getDocument(builder, doc -> getNext(doc) == null);
+        RequestWrapper wrapper = httpGet("/dy/k%d.html", id);
+        Document document = getDocument(wrapper, doc -> getNext(doc) == null);
 
         Element last = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).last();
         String columnHref = last.attr(CssSelectors.ATTR_HREF);
@@ -91,7 +91,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);
-        XlmItem item = new XlmItem(id, builder.getUri().toString(), type, releaseTime);
+        XlmItem item = new XlmItem(id, wrapper.getUri().toString(), type, releaseTime);
         item.setTitle(((TextNode) last.nextSibling()).text().strip());
         Element image = document.selectFirst(".bodytxt").selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {

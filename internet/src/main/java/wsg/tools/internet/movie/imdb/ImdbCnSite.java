@@ -57,10 +57,10 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         throws NotFoundException, OtherResponseException {
         Document document = getDocument(httpGet("/title/%s", imdbId), t -> false);
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        RequestWrapper builder = httpGet("/index/video.editform/index.html")
+        RequestWrapper wrapper = httpGet("/index/video.editform/index.html")
             .addParameter("m_id", dataset.get("movie_id"))
             .addParameter("location", dataset.get("location"));
-        Document editForm = getDocument(builder, t -> false);
+        Document editForm = getDocument(wrapper, t -> false);
         Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {

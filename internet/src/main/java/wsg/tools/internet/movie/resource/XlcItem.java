@@ -4,8 +4,8 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 
@@ -20,15 +20,15 @@ public class XlcItem extends BaseIdentifiedItem
 
     private final XlcType type;
     private final LocalDate updateDate;
-    private final String state;
+    private final ResourceState state;
     private URL cover;
     private Integer year;
 
-    XlcItem(int id, @Nonnull String url, LocalDate updateDate, XlcType type, String state) {
+    XlcItem(int id, @Nonnull String url, LocalDate updateDate, XlcType type, ResourceState state) {
         super(id, url);
         this.type = Objects.requireNonNull(type);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
-        this.state = AssertUtils.requireNotBlank(state, "the state of an item");
+        this.state = state;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class XlcItem extends BaseIdentifiedItem
     }
 
     @Override
-    public String getState() {
+    public ResourceState getState() {
         return state;
     }
 

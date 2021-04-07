@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.AkaPredicate;
@@ -21,12 +22,32 @@ import wsg.tools.common.util.function.TitleSupplier;
 public final class EnumUtilExt {
 
     private static final Map<Class<?>, Map<?, String>> CODES = new HashMap<>(1);
+    private static final Map<Class<?>, Map<?, String>> KEYS = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TEXTS = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TEXTS_IGNORE_CASE = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TITLES = new HashMap<>(1);
     private static final Map<Class<?>, Map<String, String>> TITLES_IGNORE_CASE = new HashMap<>(1);
 
     private EnumUtilExt() {
+    }
+
+    /**
+     * Returns the enum constant of the specified enum type with the specified key.
+     */
+    @Nonnull
+    public static <K, E extends Enum<E>>
+    E valueOfKey(@Nonnull Class<E> clazz, @Nonnull K key, Function<E, K> keyMapper) {
+        Map<?, String> map = KEYS.get(clazz);
+        if (map == null) {
+            map = Arrays.stream(clazz.getEnumConstants())
+                .collect(Collectors.toMap(keyMapper, Enum::name));
+            KEYS.put(clazz, map);
+        }
+        String name = map.get(key);
+        if (name != null) {
+            return Enum.valueOf(clazz, name);
+        }
+        throw new IllegalArgumentException(String.format("Unknown key '%s' for '%s'", key, clazz));
     }
 
     /**
@@ -48,8 +69,10 @@ public final class EnumUtilExt {
     }
 
     /**
-     * Returns the enum constant of the specified enum type with the specified code.
+     * Returns the enum constant of the specified enum type with the specified code. This method is
+     * a special case of {@link #valueOfKey(Class, Object, Function)}.
      *
+     * @see #valueOfKey(Class, Object, Function)
      * @see CodeSupplier
      */
     @Nonnull

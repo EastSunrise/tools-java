@@ -71,8 +71,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     public int latest() throws OtherResponseException {
-        RequestWrapper builder = httpGet("/movie/1-0-0-0-0-0-0");
-        Document document = findDocument(builder, t -> true);
+        Document document = findDocument(httpGet("/movie/1-0-0-0-0-0-0"), t -> true);
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {

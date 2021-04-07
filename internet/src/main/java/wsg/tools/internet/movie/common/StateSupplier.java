@@ -4,8 +4,6 @@ import wsg.tools.internet.base.EntityInterface;
 
 /**
  * Supplies the state of a item.
- * <p>
- * todo update snapshots
  *
  * @author Kingen
  * @since 2021/2/10
@@ -18,5 +16,5 @@ public interface StateSupplier {
      *
      * @return state
      */
-    String getState();
+    ResourceState getState();
 }

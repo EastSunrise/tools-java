@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -33,10 +34,12 @@ import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.support.InvalidResourceException;
 import wsg.tools.internet.download.support.LinkFactory;
+import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.VideoConstants;
 
 /**
@@ -72,8 +75,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        RequestWrapper builder = httpGet("/ajax-show-id-new.html");
-        Document document = findDocument(builder, t -> true);
+        Document document = findDocument(httpGet("/ajax-show-id-new.html"), t -> true);
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -87,8 +89,9 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     @Nonnull
     @Override
     public XlcItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/vod-read-id-%d.html", id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/vod-read-id-%d.html", id);
+        Document document = getDocument(wrapper,
+            doc -> getTypeAndState(doc).getRight() != ResourceState.FINISHED);
         String title = document.title();
         if (SYSTEM_TIP.equals(title)) {
             throw new NotFoundException(document.body().text().strip());
@@ -102,19 +105,17 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         }
         String dateStr = ((TextNode) info.get("更新时间：")).text();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
-        String typeHref = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_PATH_REGEX, typeHref);
-        int typeId = Integer.parseInt(matcher.group("id"));
-        XlcType type = EnumUtilExt.valueOfCode(XlcType.class, typeId);
-        String state = ((TextNode) info.get("状态：")).text();
-        XlcItem item = new XlcItem(id, builder.getUri().toString(), updateDate, type, state);
+        Pair<XlcType, ResourceState> pair = getTypeAndState(document);
+        XlcType type = pair.getLeft();
+        ResourceState state = pair.getRight();
+        XlcItem item = new XlcItem(id, wrapper.getUri().toString(), updateDate, type, state);
 
         item.setTitle(title.substring(0, title.length() - TITLE_SUFFIX_LENGTH));
         String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
         if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
             item.setCover(NetUtils.createURL(cover));
         }
+        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
         Element font = header.selectFirst(CssSelectors.TAG_FONT);
         if (font != null) {
             int year = Integer.parseInt(StringUtils.strip(font.text(), "()"));
@@ -143,6 +144,34 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private Pair<XlcType, ResourceState> getTypeAndState(Document document) {
+        Element pLeft = document.selectFirst(".pleft");
+        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
+        String href = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_PATH_REGEX, href);
+        int typeId = Integer.parseInt(matcher.group("id"));
+        XlcType type = EnumUtilExt.valueOfCode(XlcType.class, typeId);
+        if (type.isMovie()) {
+            return Pair.of(type, ResourceState.FINISHED);
+        }
+        Element cont = pLeft.selectFirst(".moviecont");
+        for (Element strong : cont.select(CssSelectors.TAG_STRONG)) {
+            if ("状态：".equals(strong.text())) {
+                String text = ((TextNode) strong.nextSibling()).text();
+                ResourceState state;
+                if (text.contains("全")) {
+                    state = ResourceState.FINISHED;
+                } else if (text.contains("至")) {
+                    state = ResourceState.UPDATING;
+                } else {
+                    state = ResourceState.UNKNOWN;
+                }
+                return Pair.of(type, state);
+            }
+        }
+        throw new UnexpectedContentException("Can't find state");
     }
 
     private static class Lazy {

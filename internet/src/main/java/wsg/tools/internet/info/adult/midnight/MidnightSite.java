@@ -202,8 +202,7 @@ public final class MidnightSite extends BaseSite {
                 break;
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
-            RequestWrapper wrapper = httpGet(URI.create(nextHref).getPath());
-            document = getDocument(wrapper, t -> false);
+            document = getDocument(httpGet(URI.create(nextHref).getPath()), t -> false);
         }
         return contents;
     }

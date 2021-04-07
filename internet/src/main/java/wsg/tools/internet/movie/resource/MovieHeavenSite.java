@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -37,10 +38,12 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.StringResponseHandler;
+import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.support.InvalidResourceException;
 import wsg.tools.internet.download.support.LinkFactory;
+import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.VideoConstants;
 
 /**
@@ -100,31 +103,30 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     @Override
     public MovieHeavenItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/vod-detail-id-%d.html", id);
-        Document doc = getDocument(builder, t -> false);
-        if (TIP_TITLE.equals(doc.title())) {
-            String message = doc.selectFirst("h4.infotitle1").text();
+        RequestWrapper wrapper = httpGet("/vod-detail-id-%d.html", id);
+        Document document = getDocument(wrapper,
+            doc -> getTypeAndState(doc).getRight() != ResourceState.FINISHED);
+        if (TIP_TITLE.equals(document.title())) {
+            String message = document.selectFirst("h4.infotitle1").text();
             throw new NotFoundException(message);
         }
-        Map<String, Element> info = doc.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
+        Map<String, Element> info = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
             .stream().collect(Collectors.toMap(Element::text, e -> e));
 
-        Elements children = doc.selectFirst(".location").children();
-        String typeHref = children.get(1).attr(CssSelectors.ATTR_HREF);
-        Matcher typeMatcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref);
-        int typeId = Integer.parseInt(typeMatcher.group("id"));
-        MovieHeavenType type = EnumUtilExt.valueOfCode(MovieHeavenType.class, typeId);
         String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
         LocalDate addDate = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
-        Element image = doc.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
+        Element image = document.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
         String src = image.attr(CssSelectors.ATTR_SRC);
         if (src.startsWith(EXTRA_COVER_HEAD)) {
             src = src.substring(EXTRA_COVER_HEAD.length() - 4);
         }
         URL cover = NetUtils.createURL(src);
-        String uri = builder.getUri().toString();
-        MovieHeavenItem item = new MovieHeavenItem(id, uri, type, addDate, cover);
+        String uri = wrapper.getUri().toString();
+        Pair<MovieHeavenType, ResourceState> pair = getTypeAndState(document);
+        MovieHeavenItem item = new MovieHeavenItem(id, uri, pair.getLeft(), addDate, cover);
 
+        item.setState(pair.getRight());
+        Elements children = document.selectFirst(".location").children();
         item.setTitle(children.last().text());
         String text = ((TextNode) info.get("上映年代：").nextSibling()).text();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
@@ -133,15 +135,11 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
                 item.setYear(year);
             }
         }
-        Node node = info.get("状态：").nextSibling();
-        if (node != null) {
-            item.setState(((TextNode) node).text().strip());
-        }
 
         List<Link> resources = new ArrayList<>();
         List<InvalidResourceException> exceptions = new ArrayList<>();
         final String downUl = "ul.downurl";
-        for (Element ul : doc.select(downUl)) {
+        for (Element ul : document.select(downUl)) {
             Element script = ul.selectFirst(CssSelectors.TAG_SCRIPT);
             String varUrls = script.html().strip().split("\n")[0].strip();
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_URL_REGEX, varUrls);
@@ -168,6 +166,36 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         item.setLinks(resources);
         item.setExceptions(exceptions);
         return item;
+    }
+
+    private Pair<MovieHeavenType, ResourceState> getTypeAndState(Document document) {
+        Elements children = document.selectFirst(".location").children();
+        String href = children.get(1).attr(CssSelectors.ATTR_HREF);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, href);
+        int typeId = Integer.parseInt(matcher.group("id"));
+        MovieHeavenType type = EnumUtilExt.valueOfCode(MovieHeavenType.class, typeId);
+        if (type.isMovie()) {
+            return Pair.of(type, ResourceState.FINISHED);
+        }
+        Elements spans = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN);
+        for (Element span : spans) {
+            if ("状态：".equals(span.text())) {
+                Node node = span.nextSibling();
+                if (node == null) {
+                    return Pair.of(type, null);
+                }
+                String text = ((TextNode) node).text().strip();
+                if (text.contains("全") || text.contains("完结") ||
+                    text.contains("HD") || text.contains("BD") || text.contains("DVD")) {
+                    return Pair.of(type, ResourceState.FINISHED);
+                }
+                if (text.contains("至") || text.contains("第") || text.contains("更新")) {
+                    return Pair.of(type, ResourceState.UPDATING);
+                }
+                return Pair.of(type, ResourceState.UNKNOWN);
+            }
+        }
+        throw new UnexpectedContentException("Can't find state");
     }
 
     private static class Lazy {

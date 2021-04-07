@@ -64,51 +64,51 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public Subject apiMovieSubject(long subjectId)
         throws NotFoundException, OtherResponseException {
-        return getObject(apiBuilder("/v2/movie/subject/%d", subjectId), Subject.class);
+        return getObject(apiWrapper("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
     public ImdbInfo apiMovieImdb(String imdbId) throws NotFoundException, OtherResponseException {
-        return getObject(apiBuilder("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
+        return getObject(apiWrapper("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
     public Celebrity apiMovieCelebrity(long celebrityId)
         throws NotFoundException, OtherResponseException {
-        return getObject(apiBuilder("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
+        return getObject(apiWrapper("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws NotFoundException, OtherResponseException {
-        return getObject(apiBuilder("/v2/movie/weekly"), RankedResult.class, t -> true);
+        return getObject(apiWrapper("/v2/movie/weekly"), RankedResult.class, t -> true);
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws NotFoundException, OtherResponseException {
-        return getObject(apiBuilder("/v2/movie/us_box"), BoxResult.class, t -> true);
+        return getObject(apiWrapper("/v2/movie/us_box"), BoxResult.class, t -> true);
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiBuilder("/v2/movie/top250"));
+        return getApiChart(apiWrapper("/v2/movie/top250"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieNewMovies()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiBuilder("/v2/movie/new_movies"));
+        return getApiChart(apiWrapper("/v2/movie/new_movies"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(DomesticCity city)
         throws NotFoundException, OtherResponseException {
         return getApiChart(
-            apiBuilder("/v2/movie/in_theaters").addParameter("city", city.getText()));
+            apiWrapper("/v2/movie/in_theaters").addParameter("city", city.getText()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiBuilder("/v2/movie/coming_soon"));
+        return getApiChart(apiWrapper("/v2/movie/coming_soon"));
     }
 
     /**
@@ -179,7 +179,7 @@ public class ApiDoubanSite extends DoubanSite {
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
-            RequestWrapper builder = apiBuilder(path, ownerId)
+            RequestWrapper builder = apiWrapper(path, ownerId)
                 .addParameter("start", start)
                 .addParameter("count", MAX_COUNT_ONCE);
             ContentResult<O, C> contentResult = getObject(builder, type);
@@ -208,7 +208,7 @@ public class ApiDoubanSite extends DoubanSite {
         return getObject(builder, MAPPER, clazz, strategy);
     }
 
-    private RequestWrapper apiBuilder(String path, Object... pathArgs) {
+    private RequestWrapper apiWrapper(String path, Object... pathArgs) {
         return create("api", METHOD_GET, path, pathArgs).setToken("apikey", apikey);
     }
 }

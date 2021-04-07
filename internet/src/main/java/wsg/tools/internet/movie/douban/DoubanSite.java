@@ -99,13 +99,13 @@ public class DoubanSite extends AbstractLoggableSite<Long>
      */
     public void login(String username, String password) throws OtherResponseException {
         logout();
-        RequestWrapper builder = create("accounts", METHOD_POST, "/j/mobile/login/basic")
+        RequestWrapper wrapper = create("accounts", METHOD_POST, "/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
             .addParameter("password", password)
             .addParameter("remember", true);
         LoginResult result = null;
         try {
-            result = getObject(builder, MAPPER, LoginResult.class, t -> true);
+            result = getObject(wrapper, MAPPER, LoginResult.class, t -> true);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -129,10 +129,10 @@ public class DoubanSite extends AbstractLoggableSite<Long>
             return;
         }
         findDocument(httpGet(""), t -> true);
-        RequestWrapper builder = httpGet("/accounts/logout")
+        RequestWrapper wrapper = httpGet("/accounts/logout")
             .addParameter("source", "main")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        findDocument(builder, t -> true);
+        findDocument(wrapper, t -> true);
     }
 
     /**
@@ -145,8 +145,8 @@ public class DoubanSite extends AbstractLoggableSite<Long>
     public BaseDoubanSubject findById(@Nonnull Long id)
         throws NotFoundException, OtherResponseException {
         String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestWrapper builder = create(substation, METHOD_GET, "/subject/%d", id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = create(substation, METHOD_GET, "/subject/%d", id);
+        Document document = getDocument(wrapper, t -> false);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -258,12 +258,12 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
-            RequestWrapper builder = create(catalog.getAsPath(), METHOD_GET,
+            RequestWrapper wrapper = create(catalog.getAsPath(), METHOD_GET,
                 "/people/%d/%s", userId, mark.getAsPath())
                 .addParameter("sort", "time")
                 .addParameter("start", start)
                 .addParameter("mode", "list");
-            Document document = getDocument(builder, t -> true);
+            Document document = getDocument(wrapper, t -> true);
             boolean done = false;
             String listClass = ".list-view";
             for (Element li : document.selectFirst(listClass).select(CssSelectors.TAG_LI)) {
@@ -302,10 +302,10 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
-            RequestWrapper builder = create(catalog.getAsPath(), METHOD_GET,
+            RequestWrapper wrapper = create(catalog.getAsPath(), METHOD_GET,
                 "/people/%d/%s", userId, catalog.getCreator().getPlurality())
                 .addParameter("start", start);
-            Document document = getDocument(builder, t -> true);
+            Document document = getDocument(wrapper, t -> true);
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
                 Element a = div.selectFirst(".title").selectFirst(CssSelectors.TAG_A);
@@ -337,14 +337,14 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         }
         AssertUtils.requireNotBlank(imdbId);
         String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestWrapper builder = create(substation, METHOD_POST, "/new_subject")
+        RequestWrapper wrapper = create(substation, METHOD_POST, "/new_subject")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue())
             .addParameter("type", "0")
             .addParameter("p_title", imdbId)
             .addParameter("p_uid", imdbId)
             .addParameter("cat", DoubanCatalog.MOVIE.getCode())
             .addParameter("subject_submit", "下一步");
-        Document document = getDocument(builder, t -> false);
+        Document document = getDocument(wrapper, t -> false);
 
         Element fieldset = document.selectFirst("div#content")
             .selectFirst(CssSelectors.TAG_FIELDSET);
@@ -372,10 +372,10 @@ public class DoubanSite extends AbstractLoggableSite<Long>
     public List<SearchItem> searchSubject(@Nonnull DoubanCatalog catalog, String keyword)
         throws NotFoundException, OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
-        RequestWrapper builder = create("search", "/%s/subject_search", catalog.getAsPath())
+        RequestWrapper wrapper = create("search", "/%s/subject_search", catalog.getAsPath())
             .addParameter("search_text", keyword)
             .addParameter("cat", catalog.getCode());
-        Document document = getDocument(builder, t -> true);
+        Document document = getDocument(wrapper, t -> true);
         return document.select("div.item-root").stream().map(div -> {
             Element a = div.selectFirst("a.title-text");
             String url = a.attr(CssSelectors.ATTR_HREF);
@@ -394,11 +394,11 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        RequestWrapper builder = httpGet("/search").addParameter("q", keyword);
+        RequestWrapper wrapper = httpGet("/search").addParameter("q", keyword);
         if (catalog != null) {
-            builder.addParameter("cat", catalog.getCode());
+            wrapper.addParameter("cat", catalog.getCode());
         }
-        Document document = getDocument(builder, t -> true);
+        Document document = getDocument(wrapper, t -> true);
         return document.selectFirst("div.search-result").select("div.result").stream().map(div -> {
             Element a = div.selectFirst(CssSelectors.TAG_H3).selectFirst(CssSelectors.TAG_A);
             Matcher matcher = RegexUtils

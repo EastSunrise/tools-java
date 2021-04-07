@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.SubtypeSupplier;
 import wsg.tools.internet.base.UpdateDatetimeSupplier;
-import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 
 /**
@@ -14,7 +13,7 @@ import wsg.tools.internet.movie.common.YearSupplier;
  * @since 2021/2/3
  */
 public class GrapeVodItem extends BasicItem
-    implements SubtypeSupplier, YearSupplier, UpdateDatetimeSupplier, StateSupplier {
+    implements SubtypeSupplier, YearSupplier, UpdateDatetimeSupplier {
 
     private final String path;
     private final GrapeVodType type;
@@ -41,7 +40,6 @@ public class GrapeVodItem extends BasicItem
         this.year = year;
     }
 
-    @Override
     public String getState() {
         return state;
     }

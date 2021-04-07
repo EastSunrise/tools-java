@@ -62,9 +62,9 @@ public enum MovieHeavenType implements IntCodeSupplier {
      */
     WAR_MOVIE(15),
     /**
-     * @see <a href="https://www.993vod.com/vod-type-id-16-pg-1.html">Other Movies</a>
+     * @see <a href="https://www.993vod.com/vod-type-id-16-pg-1.html">Unknown-Type</a>
      */
-    OTHER_MOVIE(16),
+    UNKNOWN_TYPE(16),
     /**
      * @see <a href="https://www.993vod.com/vod-type-id-17-pg-1.html">Mainland Series</a>
      */
@@ -104,5 +104,9 @@ public enum MovieHeavenType implements IntCodeSupplier {
     @Override
     public Integer getCode() {
         return id;
+    }
+
+    public boolean isMovie() {
+        return (5 <= id && id <= 15) || id == 22;
     }
 }

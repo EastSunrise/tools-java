@@ -87,8 +87,8 @@ public final class CelebrityWikiSite extends BaseSite {
         throws NotFoundException, OtherResponseException {
         int current = request.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
-        RequestWrapper builder = httpGet("/%s/index%s.html", type.getText(), page);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/%s/index%s.html", type.getText(), page);
+        Document document = getDocument(wrapper, t -> false);
 
         Element box = document.selectFirst(".personbox");
         Elements lis = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_LI);
@@ -114,8 +114,8 @@ public final class CelebrityWikiSite extends BaseSite {
 
     public WikiCelebrity findCelebrity(int id, @Nonnull WikiCelebrityType type)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/%s/m%d/info.html", type.getText(), id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/%s/m%d/info.html", type.getText(), id);
+        Document document = getDocument(wrapper, t -> false);
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -209,8 +209,7 @@ public final class CelebrityWikiSite extends BaseSite {
     @Nonnull
     public WikiAdultEntry findAdultEntry(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/fanhao/%s.html", id);
-        Document document = getDocument(builder, t -> false);
+        Document document = getDocument(httpGet("/fanhao/%s.html", id), t -> false);
         WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
@@ -357,8 +356,8 @@ public final class CelebrityWikiSite extends BaseSite {
 
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/%s/m%s/pic.html", type.getText(), id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/%s/m%s/pic.html", type.getText(), id);
+        Document document = getDocument(wrapper, t -> false);
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         if (lis.isEmpty()) {
             return null;

@@ -101,4 +101,8 @@ public enum XlcType implements IntCodeSupplier {
     public Integer getCode() {
         return id;
     }
+
+    public boolean isMovie() {
+        return id == 5 || id == 6 || (8 <= id && id <= 14) || 20 <= id;
+    }
 }
