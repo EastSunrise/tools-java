@@ -1,42 +1,51 @@
 package wsg.tools.internet.info.adult.licence;
 
+import java.net.URL;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import javax.annotation.Nonnull;
-import wsg.tools.internet.base.Identifier;
-import wsg.tools.internet.base.NextSupplier;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.AmateurSupplier;
+import wsg.tools.internet.base.view.Identifier;
+import wsg.tools.internet.base.view.NextSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
+import wsg.tools.internet.info.adult.view.Describable;
 
 /**
  * An item on the {@link AmateurCatSite}.
  *
  * @author Kingen
+ * @see AmateurCatSite#findById(String)
  * @since 2021/2/28
  */
-public class AmateurCatItem
-    implements Identifier<String>, UpdateDatetimeSupplier, AmateurSupplier, NextSupplier<String> {
+public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, Describable,
+    UpdateDatetimeSupplier, NextSupplier<String> {
 
     private final String id;
-    private String author;
-    private LocalDateTime published;
-    private LocalDateTime updated;
-    private AmateurAdultEntry entry;
-    private String next;
+    private final String serialNum;
+    private final URL cover;
+    private final String description;
+    private final String author;
+    private final LocalDateTime updated;
+    private final LocalDateTime published;
+    private final String next;
 
-    AmateurCatItem(String id) {
+    private String performer;
+    private Duration duration;
+    private LocalDate release;
+    private String producer;
+    private String distributor;
+    private String series;
+    private String[] tags;
+
+    AmateurCatItem(String id, String serialNum, URL cover, String description,
+        String author, LocalDateTime updated, LocalDateTime published, String next) {
         this.id = id;
-    }
-
-    void setUpdated(LocalDateTime updated) {
+        this.serialNum = serialNum;
+        this.cover = cover;
+        this.description = description;
+        this.author = author;
         this.updated = updated;
-    }
-
-    void setEntry(AmateurAdultEntry entry) {
-        this.entry = entry;
-    }
-
-    void setNext(String next) {
+        this.published = published;
         this.next = next;
     }
 
@@ -45,24 +54,31 @@ public class AmateurCatItem
         return id;
     }
 
-    public String getAuthor() {
-        return author;
+    @Override
+    public String getSerialNum() {
+        return serialNum;
     }
 
-    void setAuthor(String author) {
-        this.author = author;
+    @Override
+    public URL getCover() {
+        return cover;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public String getAuthor() {
+        return author;
     }
 
     public LocalDateTime getPublished() {
         return published;
     }
 
-    void setPublished(LocalDateTime published) {
-        this.published = published;
-    }
-
     @Override
-    public LocalDateTime lastUpdate() {
+    public LocalDateTime getUpdate() {
         return updated;
     }
 
@@ -71,9 +87,70 @@ public class AmateurCatItem
         return next;
     }
 
-    @Nonnull
     @Override
-    public AmateurAdultEntry getAmateurEntry() {
-        return entry;
+    public String getPerformer() {
+        return performer;
+    }
+
+    void setPerformer(String performer) {
+        this.performer = performer;
+    }
+
+    @Override
+    public Boolean getMosaic() {
+        return true;
+    }
+
+    @Override
+    public Duration getDuration() {
+        return duration;
+    }
+
+    void setDuration(Duration duration) {
+        this.duration = duration;
+    }
+
+    @Override
+    public LocalDate getRelease() {
+        return release;
+    }
+
+    void setRelease(LocalDate release) {
+        this.release = release;
+    }
+
+    @Override
+    public String getProducer() {
+        return producer;
+    }
+
+    void setProducer(String producer) {
+        this.producer = producer;
+    }
+
+    @Override
+    public String getDistributor() {
+        return distributor;
+    }
+
+    void setDistributor(String distributor) {
+        this.distributor = distributor;
+    }
+
+    @Override
+    public String getSeries() {
+        return series;
+    }
+
+    void setSeries(String series) {
+        this.series = series;
+    }
+
+    public String[] getTags() {
+        return tags;
+    }
+
+    void setTags(String[] tags) {
+        this.tags = tags;
     }
 }

@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.download.FilenameSupplier;
+import wsg.tools.internet.download.view.FilenameSupplier;
 
 /**
  * A link of http/https/ftp, except {@link BaiduDiskLink}, {@link UcDiskLink} or {@link

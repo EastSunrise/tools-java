@@ -10,18 +10,19 @@ import wsg.tools.common.lang.AssertUtils;
  * A collection of adult entries.
  *
  * @author Kingen
+ * @see MidnightSite#findCollection(int)
  * @since 2021/2/22
  */
 public class MidnightCollection extends BaseMidnightItem {
 
     /**
-     * Pairs of code-cover of adult entries, one of the two elements may be null.
+     * Pairs of serialNumber-cover of adult entries, one of the two elements may be null.
      */
     private final List<Pair<String, URL>> works;
 
-    MidnightCollection(int id, String title, LocalDateTime release,
+    MidnightCollection(int id, String title, LocalDateTime addTime,
         List<Pair<String, URL>> works) {
-        super(id, title, release);
+        super(id, title, addTime);
         AssertUtils.requireNotEmpty(works, "works of the collection");
         this.works = works;
     }

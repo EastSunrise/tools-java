@@ -2,10 +2,9 @@ package wsg.tools.internet.movie.resource;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import lombok.Getter;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.support.InvalidResourceException;
+import wsg.tools.internet.movie.resource.view.LinkSupplier;
 
 /**
  * A basic item with a title and links of resources.
@@ -13,19 +12,22 @@ import wsg.tools.internet.download.support.InvalidResourceException;
  * @author Kingen
  * @since 2020/9/10
  */
-@Getter
-class BasicItem {
+class BasicItem implements LinkSupplier {
 
-    private String title;
     private List<Link> links;
     private List<InvalidResourceException> exceptions;
 
-    void setTitle(String title) {
-        this.title = Objects.requireNonNull(title, "the title of an item");
+    @Override
+    public List<Link> getLinks() {
+        return links;
     }
 
     void setLinks(List<Link> links) {
         this.links = Collections.unmodifiableList(links);
+    }
+
+    public List<InvalidResourceException> getExceptions() {
+        return exceptions;
     }
 
     void setExceptions(List<InvalidResourceException> exceptions) {

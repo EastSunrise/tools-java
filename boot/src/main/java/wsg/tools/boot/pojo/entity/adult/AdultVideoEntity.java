@@ -18,13 +18,11 @@ import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.BaseEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
-import wsg.tools.internet.info.adult.AbstractAdultEntry;
 
 /**
  * Entity of adult video.
  *
  * @author Kingen
- * @see AbstractAdultEntry
  * @since 2021/2/23
  */
 @Getter
@@ -42,14 +40,15 @@ public class AdultVideoEntity extends BaseEntity {
     @Column(length = 15)
     private String title;
 
+    @Column(length = 127)
+    @MinioStored(type = Filetype.IMAGE)
+    private String cover;
+
     private Boolean mosaic;
 
     private Duration duration;
 
     private LocalDate releaseDate;
-
-    @Column(length = 15)
-    private String director;
 
     @Column(length = 31)
     private String producer;

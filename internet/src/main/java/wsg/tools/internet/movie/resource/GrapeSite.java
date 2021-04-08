@@ -1,6 +1,7 @@
 package wsg.tools.internet.movie.resource;
 
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -79,10 +80,11 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         Document document = getDocument(wrapper, t -> false);
         String datetime = document.selectFirst(".updatetime").text();
         LocalDate releaseDate = LocalDate.parse(datetime.substring(5));
-        GrapeNewsItem item = new GrapeNewsItem(id, wrapper.getUri().toString(), releaseDate);
-
         Element h1 = document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1);
-        item.setTitle(h1.text().strip());
+        URL source = NetUtils.toURL(wrapper.getUri());
+        String title = h1.text().strip();
+        GrapeNewsItem item = new GrapeNewsItem(source, id, title, releaseDate);
+
         Element info = document.selectFirst(".text");
         Element image = info.selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {
@@ -143,20 +145,23 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
             String path = a.attr(CssSelectors.ATTR_HREF);
             String title = a.text();
             Node node = li.selectFirst(".long").nextSibling();
-            LocalDate updateTime = LocalDate.parse(((TextNode) node).text().strip());
-            String state = li.selectFirst(".mod_version").text();
-            indices.add(new GrapeVodIndex(path, title, updateTime, state));
+            LocalDate date = LocalDate.parse(((TextNode) node).text().strip());
+            GrapeVodItem vodItem = new GrapeVodItem(path, title, type, date.atStartOfDay());
+            vodItem.setState(li.selectFirst(".mod_version").text());
+            indices.add(vodItem);
         }
         return new GrapeVodPageResult(indices, pageRequest, total);
     }
 
     /**
      * Retrieves a vod item by the given index.
+     *
+     * @see GrapeVodIndex#getAsPath()
      */
     @Nonnull
-    public GrapeVodItem findVodItem(@Nonnull GrapeVodIndex index)
+    public GrapeVodItem findVodItem(@Nonnull String path)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet(index.getPath()), t -> false);
+        Document document = getDocument(httpGet(path), t -> false);
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
@@ -164,11 +169,10 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         GrapeVodType type = EnumUtilExt.valueOfText(GrapeVodType.class, typeText, false);
         String timeStr = document.selectFirst("#addtime").text().strip();
         LocalDateTime addTime = LocalDateTime.parse(timeStr, Constants.YYYY_MM_DD_HH_MM);
-        GrapeVodItem item = new GrapeVodItem(index.getPath(), type, addTime);
-
         Element div = document.selectFirst(".detail-title");
         Element h1 = div.selectFirst(CssSelectors.TAG_H);
-        item.setTitle(h1.text().strip());
+        GrapeVodItem item = new GrapeVodItem(path, h1.text().strip(), type, addTime);
+
         Element span = h1.nextElementSibling();
         if (span.is(CssSelectors.TAG_SPAN)) {
             int year = Integer.parseInt(StringUtils.strip(span.text(), "()"));

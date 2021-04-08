@@ -1,7 +1,9 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.net.URL;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A category on the site.
@@ -10,7 +12,7 @@ import wsg.tools.internet.base.PathSupplier;
  * @see BabesTubeSite#findAllCategories()
  * @since 2021/4/3
  */
-public class BabesCategory implements PathSupplier {
+public class BabesCategory implements PathSupplier, TitleSupplier, CoverSupplier {
 
     private final String titlePath;
     private final String title;
@@ -29,10 +31,12 @@ public class BabesCategory implements PathSupplier {
         return titlePath;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public URL getCover() {
         return cover;
     }

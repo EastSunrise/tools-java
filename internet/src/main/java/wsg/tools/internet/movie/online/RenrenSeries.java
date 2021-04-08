@@ -1,7 +1,10 @@
 package wsg.tools.internet.movie.online;
 
 import java.util.List;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.enums.Region;
+import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
@@ -10,7 +13,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @author Kingen
  * @since 2021/4/2
  */
-public class RenrenSeries {
+public class RenrenSeries implements IntIdentifier, TitleSupplier, YearSupplier {
 
     private final int id;
     private final String title;
@@ -35,10 +38,12 @@ public class RenrenSeries {
         this.episodes = episodes;
     }
 
+    @Override
     public int getId() {
         return id;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
@@ -51,7 +56,8 @@ public class RenrenSeries {
         return score;
     }
 
-    public int getYear() {
+    @Override
+    public Integer getYear() {
         return year;
     }
 

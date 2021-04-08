@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.west;
 
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.PathSupplier;
 import wsg.tools.internet.base.page.BasicPageReq;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A request with pagination information for models on the site.

@@ -1,33 +1,65 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
-import lombok.Getter;
+import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
  * A celebrity with simple information.
  *
  * @author Kingen
+ * @see WikiAdultEntry#getCelebrity()
+ * @see WikiCelebrity
  * @since 2021/2/26
  */
-@Getter
-public class WikiSimpleCelebrity extends WikiCelebrityIndex {
+public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, Tagged {
 
-    private final WikiCelebrityType type;
+    private final int id;
+    private final String name;
+    private WikiCelebrityType type;
     private URL cover;
-    private List<String> tags;
+    private String[] tags;
+
+    WikiSimpleCelebrity(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 
     WikiSimpleCelebrity(int id, String name, WikiCelebrityType type) {
-        super(id, name);
+        this.id = id;
+        this.name = name;
         this.type = type;
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public WikiCelebrityType getType() {
+        return type;
+    }
+
+    @Override
+    public URL getCover() {
+        return cover;
     }
 
     void setCover(URL cover) {
         this.cover = cover;
     }
 
-    void setTags(List<String> tags) {
-        this.tags = Collections.unmodifiableList(tags);
+    @Override
+    public String[] getTags() {
+        return tags;
+    }
+
+    void setTags(String[] tags) {
+        this.tags = tags;
     }
 }

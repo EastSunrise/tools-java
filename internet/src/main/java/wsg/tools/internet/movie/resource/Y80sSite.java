@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -85,8 +86,8 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
     @Nonnull
     @Override
     public Y80sItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper builder = httpGet("/movie/%d", id);
-        Document document = getDocument(builder, t -> false);
+        RequestWrapper wrapper = httpGet("/movie/%d", id);
+        Document document = getDocument(wrapper, t -> false);
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }
@@ -99,9 +100,9 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
         Y80sType realType = EnumUtilExt.valueOfText(Y80sType.class, typeStr, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        Y80sItem item = new Y80sItem(id, builder.getUri().toString(), realType, updateDate);
+        URL source = NetUtils.toURL(wrapper.getUri());
+        Y80sItem item = new Y80sItem(realType, source, id, lis.last().text().strip(), updateDate);
 
-        item.setTitle(lis.last().text().strip());
         String src = document.selectFirst(".img-responsive").attr(CssSelectors.ATTR_SRC);
         item.setCover(NetUtils.createURL(Constants.HTTP_SCHEME + src));
         Node first = document.selectFirst(".movie-h1").selectFirst("small").childNode(0);

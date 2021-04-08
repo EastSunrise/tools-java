@@ -2,8 +2,8 @@ package wsg.tools.internet.info.adult.west;
 
 import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Contract;
-import wsg.tools.internet.base.PathSupplier;
 import wsg.tools.internet.base.page.BasicPageReq;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A request with pagination information for videos on the site.

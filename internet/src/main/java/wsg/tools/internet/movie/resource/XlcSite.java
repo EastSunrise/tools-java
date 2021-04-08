@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
@@ -108,9 +109,10 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         Pair<XlcType, ResourceState> pair = getTypeAndState(document);
         XlcType type = pair.getLeft();
         ResourceState state = pair.getRight();
-        XlcItem item = new XlcItem(id, wrapper.getUri().toString(), updateDate, type, state);
+        URL source = NetUtils.toURL(wrapper.getUri());
+        title = title.substring(0, title.length() - TITLE_SUFFIX_LENGTH);
+        XlcItem item = new XlcItem(type, source, id, title, updateDate, state);
 
-        item.setTitle(title.substring(0, title.length() - TITLE_SUFFIX_LENGTH));
         String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
         if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
             item.setCover(NetUtils.createURL(cover));

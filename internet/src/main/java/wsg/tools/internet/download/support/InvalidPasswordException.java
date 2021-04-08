@@ -1,6 +1,6 @@
 package wsg.tools.internet.download.support;
 
-import wsg.tools.internet.download.PasswordProvider;
+import wsg.tools.internet.download.view.PasswordProvider;
 
 /**
  * Exception thrown when a given password is invalid.

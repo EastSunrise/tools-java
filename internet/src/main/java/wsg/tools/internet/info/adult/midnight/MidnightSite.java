@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -34,9 +33,7 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.AdultEntryBuilder;
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.FormalAdultEntry;
+import wsg.tools.internet.info.adult.common.AdultEntryParser;
 
 /**
  * @author Kingen
@@ -79,7 +76,7 @@ public final class MidnightSite extends BaseSite {
             String title = a.attr(CssSelectors.ATTR_TITLE);
             String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
             LocalDateTime release = DocumentUtils.parseInterval(time);
-            indices.add(new MidnightIndex(id, title, release));
+            indices.add(new BaseMidnightItem(id, title, release));
         }
         Element nav = document.selectFirst(NAV_NAVIGATION);
         int total = Integer.parseInt(nav.selectFirst("a[title=总数]").selectFirst("b").text());
@@ -88,11 +85,13 @@ public final class MidnightSite extends BaseSite {
 
     /**
      * Retrieves an item with a collection of adult entries.
+     *
+     * @see MidnightIndex#getId()
      */
     @Nonnull
     public MidnightCollection findCollection(int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(MidnightColumn.COLLECTION, id, (title, release, contents) -> {
+        return getItem(MidnightColumn.COLLECTION, id, (title, addTime, contents) -> {
             List<Pair<String, URL>> works = new ArrayList<>();
             for (Element content : contents) {
                 Element nav = content.selectFirst(NAV_NAVIGATION);
@@ -113,56 +112,65 @@ public final class MidnightSite extends BaseSite {
                     current = current.previousElementSibling();
                 }
             }
-            return new MidnightCollection(id, title, release, works);
+            return new MidnightCollection(id, title, addTime, works);
         });
     }
 
     /**
      * Retrieves an item with images.
+     *
+     * @see MidnightIndex#getId()
      */
     @Nonnull
     public MidnightAlbum findAlbum(int id) throws NotFoundException, OtherResponseException {
         return getItem(MidnightColumn.ALBUM, id,
-            (title, release, contents) -> new MidnightAlbum(id, title, release,
+            (title, addTime, contents) -> new MidnightAlbum(id, title, addTime,
                 getImages(contents)));
     }
 
     /**
      * Retrieves an item with an amateur adult entry.
+     *
+     * @see MidnightIndex#getId()
      */
     public MidnightAmateurEntry findAmateurEntry(@Nonnull MidnightAmateurColumn type, int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(type.getColumn(), id, (title, release, contents) -> {
+        return getItem(type.getColumn(), id, (title, addTime, contents) -> {
             List<URL> images = getImages(contents);
-            Map<String, String> info = getInfo(contents);
-            String code = AdultEntryBuilder.getCode(info);
-            if (code == null) {
-                code = title;
-            }
-            AmateurAdultEntry entry = AdultEntryBuilder.builder(code, info)
-                .duration().producer().release().series().distributor()
-                .images(images).ignore("商品発売日").amateur();
-            return new MidnightAmateurEntry(id, title, release, entry);
+            MidnightAmateurEntry entry = new MidnightAmateurEntry(id, title, addTime, images);
+            AdultEntryParser parser = AdultEntryParser.create(getInfo(contents));
+            entry.setSerialNum(parser.getSerialNum());
+            entry.setPerformer(parser.getPerformer());
+            entry.setDuration(parser.getDuration());
+            entry.setRelease(parser.getRelease());
+            entry.setProducer(parser.getProducer());
+            entry.setDistributor(parser.getDistributor());
+            entry.setSeries(parser.getSeries());
+            parser.check("商品発売日");
+            return entry;
         });
     }
 
     /**
      * Retrieves an item with a formal adult entry.
+     *
+     * @see MidnightIndex#getId()
      */
     @Nonnull
-    public MidnightFormalAdultEntry findFormalEntry(int id)
+    public MidnightFormalEntry findFormalEntry(int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(MidnightColumn.ENTRY, id, (title, release, contents) -> {
-            List<URL> images = Objects.requireNonNull(getImages(contents));
-            Map<String, String> info = getInfo(contents);
-            String code = AdultEntryBuilder.getCode(info);
-            if (code == null) {
-                code = title;
-            }
-            FormalAdultEntry entry = AdultEntryBuilder.builder(code, info)
-                .duration().release().producer().distributor().series()
-                .images(images).ignoreAllRemaining().formal(", ");
-            return new MidnightFormalAdultEntry(id, title, release, entry);
+        return getItem(MidnightColumn.ENTRY, id, (title, addTime, contents) -> {
+            List<URL> images = getImages(contents);
+            MidnightFormalEntry entry = new MidnightFormalEntry(id, title, addTime, images);
+            AdultEntryParser parser = AdultEntryParser.create(getInfo(contents));
+            entry.setSerialNum(parser.getSerialNum());
+            entry.setActresses(parser.getActresses(", "));
+            entry.setDuration(parser.getDuration());
+            entry.setRelease(parser.getRelease());
+            entry.setProducer(parser.getProducer());
+            entry.setDistributor(parser.getDistributor());
+            entry.setSeries(parser.getSeries());
+            return entry;
         });
     }
 
@@ -180,9 +188,9 @@ public final class MidnightSite extends BaseSite {
         RequestWrapper wrapper = httpGet("/%s/%d.html", column.getText(), id);
         Document document = getDocument(wrapper, t -> false);
         String datetime = document.selectFirst("time.data-time").text();
-        LocalDateTime release = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
+        LocalDateTime addTime = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
-        T t = constructor.apply(title, release, getContents(document));
+        T t = constructor.apply(title, addTime, getContents(document));
         String keywords = DocumentUtils.getMetadata(document).get("keywords");
         if (StringUtils.isNotBlank(keywords)) {
             t.setKeywords(keywords.split(","));

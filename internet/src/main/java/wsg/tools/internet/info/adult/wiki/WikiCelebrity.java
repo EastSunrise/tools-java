@@ -8,6 +8,7 @@ import java.util.Set;
  * A celebrity with basic information, works, and albums.
  *
  * @author Kingen
+ * @see CelebrityWikiSite#findCelebrity(int, WikiCelebrityType)
  * @since 2021/2/24
  */
 public class WikiCelebrity extends WikiSimpleCelebrity {

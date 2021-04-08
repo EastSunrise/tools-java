@@ -1,6 +1,5 @@
 package wsg.tools.boot.service.impl;
 
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,22 +38,22 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.internet.base.UpdateDateSupplier;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
 import wsg.tools.internet.base.repository.ListRepoIterator;
 import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.view.UpdateDateSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.download.FilenameSupplier;
-import wsg.tools.internet.download.LengthSupplier;
 import wsg.tools.internet.download.Link;
-import wsg.tools.internet.download.PasswordProvider;
 import wsg.tools.internet.download.Thunder;
+import wsg.tools.internet.download.view.FilenameSupplier;
+import wsg.tools.internet.download.view.LengthSupplier;
+import wsg.tools.internet.download.view.PasswordProvider;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.view.IdentifierItem;
 
 /**
  * @author Kingen
@@ -79,9 +79,9 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <T extends BaseIdentifiedItem>
-    void importIntListRepository(@Nonnull ListRepository<Integer, T> repository, String domain)
-        throws OtherResponseException {
+    public <E extends Enum<E>, T extends IdentifierItem<E>>
+    void importIntListRepository(@Nonnull ListRepository<Integer, T> repository,
+        String domain, Function<E, Integer> subtypeFunc) throws OtherResponseException {
         Optional<Long> optional = itemRepository.findMaxRid(domain);
         int startIndex = optional.map(Long::intValue).map(repository::indexOf)
             .map(index -> index + 1).orElse(0);
@@ -90,7 +90,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         while (iterator.hasNext()) {
             try {
                 T item = iterator.next();
-                Source source = Source.record(domain, item.getSubtype(), item.getId());
+                int subtype = subtypeFunc.apply(item.getSubtype());
+                Source source = Source.record(domain, subtype, item.getId());
                 if (insertItem(item, source) >= 0) {
                     success++;
                 }
@@ -106,18 +107,14 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     /**
      * @return the count of inserted links, or -1 if the item exists.
      */
-    private <T extends BaseIdentifiedItem>
-    int insertItem(T item, Source source) {
+    private int insertItem(IdentifierItem<?> item, Source source) {
         ResourceItemEntity itemEntity = new ResourceItemEntity();
         itemEntity.setSource(source);
         itemEntity.setTitle(item.getTitle());
         itemEntity.setIdentified(false);
-        URL cover = item.getCover();
-        if (cover != null) {
-            try {
-                itemEntity.setCover(config.uploadCover(cover, source));
-            } catch (NotFoundException | NotFiletypeException | OtherResponseException ignored) {
-            }
+        try {
+            itemEntity.setCover(config.uploadCover(item, source));
+        } catch (NotFoundException | NotFiletypeException | OtherResponseException ignored) {
         }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());
@@ -132,17 +129,17 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
         }
         if (item instanceof UpdateDatetimeSupplier) {
-            itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
+            itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).getUpdate());
         } else if (item instanceof UpdateDateSupplier) {
-            LocalDate date = ((UpdateDateSupplier) item).lastUpdate();
+            LocalDate date = ((UpdateDateSupplier) item).getUpdate();
             itemEntity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
         }
-        List<Link> resources = item.getLinks();
+        List<? extends Link> resources = item.getLinks();
         Integer count = template.execute(status -> insertResource(itemEntity, resources));
         return Objects.requireNonNull(count);
     }
 
-    private int insertResource(ResourceItemEntity itemEntity, List<Link> resources) {
+    private int insertResource(ResourceItemEntity itemEntity, List<? extends Link> resources) {
         Long itemId = itemRepository.insert(itemEntity).getId();
         List<ResourceLinkEntity> links = new LinkedList<>();
         for (Link resource : resources) {

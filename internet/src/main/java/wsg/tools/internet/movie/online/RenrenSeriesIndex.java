@@ -13,7 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 import wsg.tools.internet.movie.common.jackson.JoinedValue;
 
@@ -23,7 +26,7 @@ import wsg.tools.internet.movie.common.jackson.JoinedValue;
  * @author Kingen
  * @since 2021/3/22
  */
-public class RenrenSeriesIndex {
+public class RenrenSeriesIndex implements IntIdentifier, TitleSupplier, CoverSupplier {
 
     @JsonProperty("id")
     private int id;
@@ -43,14 +46,17 @@ public class RenrenSeriesIndex {
     RenrenSeriesIndex() {
     }
 
+    @Override
     public int getId() {
         return id;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public URL getCover() {
         return cover;
     }

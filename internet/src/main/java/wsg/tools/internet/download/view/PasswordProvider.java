@@ -1,4 +1,4 @@
-package wsg.tools.internet.download;
+package wsg.tools.internet.download.view;
 
 /**
  * Provides a password for the link if necessary.

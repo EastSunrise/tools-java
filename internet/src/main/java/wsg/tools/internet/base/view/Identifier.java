@@ -1,4 +1,6 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.base.view;
+
+import wsg.tools.internet.base.EntityInterface;
 
 /**
  * Indicates that the entity has an identifier.

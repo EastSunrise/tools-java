@@ -8,11 +8,10 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/4/1
  */
-public class IntValidator extends NumberValidator<Integer> {
+public class IntValidator extends AbstractNumberValidator<Integer> {
 
-    @Override
-    protected Integer value(@Nonnull Number number) {
-        return number.intValue();
+    public IntValidator() {
+        super(Integer.class);
     }
 
     @Override

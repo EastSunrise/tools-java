@@ -1,37 +1,16 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-import wsg.tools.internet.base.IntIdentifier;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 
 /**
  * An index pointing to a {@link BaseMidnightItem} in the {@link MidnightSite}.
  *
  * @author Kingen
+ * @see MidnightSite#findPage(MidnightColumn, MidnightPageReq)
  * @since 2021/3/8
  */
-public class MidnightIndex implements IntIdentifier {
+public interface MidnightIndex extends IntIdentifier, TitleSupplier, UpdateDatetimeSupplier {
 
-    private final int id;
-    private final String title;
-    private final LocalDateTime release;
-
-    MidnightIndex(int id, String title, LocalDateTime release) {
-        this.id = id;
-        this.title = Objects.requireNonNull(title);
-        this.release = Objects.requireNonNull(release);
-    }
-
-    @Override
-    public int getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public LocalDateTime getRelease() {
-        return release;
-    }
 }

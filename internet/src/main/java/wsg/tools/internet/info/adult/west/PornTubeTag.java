@@ -1,7 +1,8 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.util.Objects;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A tag on the site.
@@ -11,7 +12,7 @@ import wsg.tools.internet.base.PathSupplier;
  * @see PornTubeSite#findAllByTag(PornTubeTag)
  * @since 2021/4/4
  */
-public class PornTubeTag implements PathSupplier {
+public class PornTubeTag implements PathSupplier, TitleSupplier {
 
     private final String titlePath;
     private final String title;
@@ -26,6 +27,7 @@ public class PornTubeTag implements PathSupplier {
         return titlePath;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }

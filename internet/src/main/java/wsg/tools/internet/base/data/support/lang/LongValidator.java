@@ -8,11 +8,10 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/4/2
  */
-public class LongValidator extends NumberValidator<Long> {
+public class LongValidator extends AbstractNumberValidator<Long> {
 
-    @Override
-    protected Long value(@Nonnull Number number) {
-        return number.longValue();
+    public LongValidator() {
+        super(Long.class);
     }
 
     @Override

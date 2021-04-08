@@ -2,18 +2,25 @@ package wsg.tools.internet.base.data.support;
 
 import java.net.URL;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Contract;
 import wsg.tools.internet.base.data.EntityValidatorContext;
 import wsg.tools.internet.base.data.Validator;
+import wsg.tools.internet.base.data.support.lang.BooleanValidator;
 import wsg.tools.internet.base.data.support.lang.DoubleValidator;
 import wsg.tools.internet.base.data.support.lang.FloatValidator;
 import wsg.tools.internet.base.data.support.lang.IntValidator;
 import wsg.tools.internet.base.data.support.lang.LongValidator;
 import wsg.tools.internet.base.data.support.lang.StringValidator;
 import wsg.tools.internet.base.data.support.time.DurationValidator;
+import wsg.tools.internet.base.data.support.time.LocalDateTimeValidator;
+import wsg.tools.internet.base.data.support.time.LocalDateValidator;
+import wsg.tools.internet.base.data.support.time.LocalTimeValidator;
 import wsg.tools.internet.base.data.support.util.TypeValidator;
 import wsg.tools.internet.base.data.support.util.URLValidator;
 import wsg.tools.internet.common.UnexpectedContentException;
@@ -96,6 +103,8 @@ public class BasicEntityValidatorContext implements EntityValidatorContext {
 
         static {
             DEFAULT_VALIDATORS.put(String.class, new StringValidator());
+            DEFAULT_VALIDATORS.put(boolean.class, new BooleanValidator());
+            DEFAULT_VALIDATORS.put(Boolean.class, new BooleanValidator());
             DEFAULT_VALIDATORS.put(int.class, new IntValidator());
             DEFAULT_VALIDATORS.put(Integer.class, new IntValidator());
             DEFAULT_VALIDATORS.put(long.class, new LongValidator());
@@ -105,6 +114,9 @@ public class BasicEntityValidatorContext implements EntityValidatorContext {
             DEFAULT_VALIDATORS.put(double.class, new DoubleValidator());
             DEFAULT_VALIDATORS.put(Double.class, new DoubleValidator());
             DEFAULT_VALIDATORS.put(Duration.class, new DurationValidator());
+            DEFAULT_VALIDATORS.put(LocalTime.class, new LocalTimeValidator());
+            DEFAULT_VALIDATORS.put(LocalDate.class, new LocalDateValidator());
+            DEFAULT_VALIDATORS.put(LocalDateTime.class, new LocalDateTimeValidator());
             DEFAULT_VALIDATORS.put(URL.class, new URLValidator());
         }
     }

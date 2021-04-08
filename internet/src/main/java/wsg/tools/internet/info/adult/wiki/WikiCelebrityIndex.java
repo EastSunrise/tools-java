@@ -1,22 +1,20 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import lombok.Getter;
-import wsg.tools.internet.base.IntIdentifier;
+import wsg.tools.internet.base.view.IntIdentifier;
 
 /**
  * An index pointing to a {@link WikiCelebrity} in the {@link CelebrityWikiSite}.
  *
  * @author Kingen
+ * @see CelebrityWikiSite#findPage(WikiCelebrityType, WikiPageReq)
  * @since 2021/3/11
  */
-@Getter
-public class WikiCelebrityIndex implements IntIdentifier {
+public interface WikiCelebrityIndex extends IntIdentifier {
 
-    private final int id;
-    private final String name;
-
-    WikiCelebrityIndex(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
+    /**
+     * Returns the name of the celebrity.
+     *
+     * @return the name
+     */
+    String getName();
 }

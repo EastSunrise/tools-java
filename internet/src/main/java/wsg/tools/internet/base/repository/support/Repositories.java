@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.NextSupplier;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
+import wsg.tools.internet.base.view.NextSupplier;
 
 /**
  * Common repositories.

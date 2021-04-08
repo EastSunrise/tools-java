@@ -1,5 +1,6 @@
 package wsg.tools.boot.service.scheduler;
 
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,12 @@ import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.movie.resource.AbstractListResourceSite;
-import wsg.tools.internet.movie.resource.BaseIdentifiedItem;
+import wsg.tools.internet.movie.resource.BdMovieType;
+import wsg.tools.internet.movie.resource.GrapeVodType;
+import wsg.tools.internet.movie.resource.MovieHeavenType;
+import wsg.tools.internet.movie.resource.XlcType;
+import wsg.tools.internet.movie.resource.XlmColumn;
+import wsg.tools.internet.movie.resource.view.IdentifierItem;
 
 /**
  * Scheduled tasks.
@@ -47,27 +53,27 @@ public class ResourceScheduler extends BaseServiceImpl {
 
     @Scheduled(cron = "0 0 13 * * ?")
     public void importBdMovie() {
-        importIntRange(manager.bdMovieSite());
+        importIntRange(manager.bdMovieSite(), BdMovieType::ordinal);
     }
 
     @Scheduled(cron = "0 0 5 * * ?")
     public void importMovieHeaven() {
-        importIntRange(manager.movieHeavenSite());
+        importIntRange(manager.movieHeavenSite(), MovieHeavenType::getId);
     }
 
     @Scheduled(cron = "0 0 5 * * ?")
     public void importXlc() {
-        importIntRange(manager.xlcSite());
+        importIntRange(manager.xlcSite(), XlcType::getId);
     }
 
     @Scheduled(cron = "0 0 1 * * ?")
     public void importXlm() {
-        importIntRange(manager.xlmSite());
+        importIntRange(manager.xlmSite(), XlmColumn::getCode);
     }
 
     @Scheduled(cron = "0 0 0 1 1 ?")
     public void importGrapeNews() {
-        importIntRange(manager.grapeSite());
+        importIntRange(manager.grapeSite(), GrapeVodType::getId);
     }
 
     @Scheduled(cron = "0 0 11 * * ?")
@@ -82,6 +88,7 @@ public class ResourceScheduler extends BaseServiceImpl {
     }
 
     @Scheduled(cron = "0 0 18 * * ?")
+    @Scheduled(fixedDelay = 3600000)
     public void importMidnight() {
         MidnightSite site = manager.midnightSite();
         for (MidnightAmateurColumn type : MidnightAmateurColumn.values()) {
@@ -98,11 +105,11 @@ public class ResourceScheduler extends BaseServiceImpl {
         }
     }
 
-    private <T extends BaseIdentifiedItem, S extends AbstractListResourceSite<T>>
-    void importIntRange(@Nonnull S site) {
+    private <E extends Enum<E>, T extends IdentifierItem<E>, S extends AbstractListResourceSite<T>>
+    void importIntRange(@Nonnull S site, Function<E, Integer> subtypeFunc) {
         try {
             ListRepository<Integer, T> repository = site.getRepository();
-            resourceService.importIntListRepository(repository, site.getHostname());
+            resourceService.importIntListRepository(repository, site.getHostname(), subtypeFunc);
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
         } catch (UnexpectedException e) {

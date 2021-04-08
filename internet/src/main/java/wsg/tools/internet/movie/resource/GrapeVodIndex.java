@@ -1,36 +1,22 @@
 package wsg.tools.internet.movie.resource;
 
-import java.time.LocalDate;
-import lombok.Getter;
-import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 
 /**
  * An index pointing to a {@link GrapeVodItem} in the {@link GrapeSite}.
  *
  * @author Kingen
+ * @see GrapeSite#findPage(GrapeVodType, GrapeVodPageReq)
  * @since 2021/3/9
  */
-@Getter
-public class GrapeVodIndex implements UpdateDateSupplier {
+public interface GrapeVodIndex extends PathSupplier, TitleSupplier, UpdateDatetimeSupplier {
 
-    private final String path;
-    private final String title;
-    private final LocalDate updateTime;
-    private final String state;
-
-    GrapeVodIndex(String path, String title, LocalDate updateTime, String state) {
-        this.path = path;
-        this.title = title;
-        this.updateTime = updateTime;
-        this.state = state;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    @Override
-    public LocalDate lastUpdate() {
-        return updateTime;
-    }
+    /**
+     * Returns the state of the item.
+     *
+     * @return the state
+     */
+    String getState();
 }

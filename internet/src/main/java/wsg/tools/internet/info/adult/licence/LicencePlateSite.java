@@ -1,22 +1,18 @@
 package wsg.tools.internet.info.adult.licence;
 
-import java.net.URL;
 import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SnapshotStrategy;
@@ -28,9 +24,7 @@ import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.AdultEntryBuilder;
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.BasicAdultEntryBuilder;
+import wsg.tools.internet.info.adult.common.AdultEntryParser;
 
 /**
  * @author Kingen
@@ -54,6 +48,12 @@ public class LicencePlateSite extends BaseSite
         return Repositories.linked(this, "259luxu-959");
     }
 
+    /**
+     * Retrieve an item by the specified identifier.
+     *
+     * @see LicencePlateItem#getId()
+     * @see LicencePlateItem#nextId()
+     */
     @Nonnull
     @Override
     public LicencePlateItem findById(@Nonnull String id)
@@ -63,10 +63,8 @@ public class LicencePlateSite extends BaseSite
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);
-        String code = article.selectFirst(".entry-title").text();
+        String serialNum = article.selectFirst(".entry-title").text();
         Element content = article.selectFirst(".single-content");
-        List<URL> images = content.select(CssSelectors.TAG_IMG).eachAttr(CssSelectors.ATTR_SRC)
-            .stream().map(NetUtils::createURL).collect(Collectors.toList());
 
         Deque<String> lines = new LinkedList<>();
         Iterator<Element> iterator = content.children().stream().filter(Element::hasText)
@@ -75,23 +73,30 @@ public class LicencePlateSite extends BaseSite
         while (iterator.hasNext()) {
             lines.addAll(DocumentUtils.collectTexts(iterator.next()));
         }
-        String description = lines.removeFirst();
+        String desc = lines.removeFirst();
         if (!lines.isEmpty()) {
-            description += lines.removeLast();
+            desc += lines.removeLast();
+        }
+        String nextId = getNext(document);
+        LicencePlateItem item = new LicencePlateItem(id, serialNum, desc, update, nextId);
+        Element img = content.selectFirst(CssSelectors.TAG_IMG);
+        if (img != null) {
+            item.setCover(NetUtils.createURL(img.attr(CssSelectors.ATTR_SRC)));
         }
         if (lines.isEmpty()) {
-            AmateurAdultEntry entry = BasicAdultEntryBuilder.builder(code)
-                .description(description).images(images).amateur();
-            return new LicencePlateItem(id, update, entry, getNext(document));
+            return item;
         }
         Map<String, String> info = AmateurCatSite.extractInfo(lines);
-        String intro = MapUtilsExt.getString(info, "简介", "剧情简介");
-        AmateurAdultEntry entry = AdultEntryBuilder.builder(code, info)
-            .duration().release().producer().distributor().series().tags(Constants.WHITESPACE)
-            .validateCode().description(description).images(images)
-            .ignore("商品発売日", "対応デバイス", "評価").amateur();
-        LicencePlateItem item = new LicencePlateItem(id, update, entry, getNext(document));
-        item.setIntro(intro);
+        AdultEntryParser parser = AdultEntryParser.create(info);
+        parser.verifySerialNumber(item);
+        item.setPerformer(parser.getPerformer());
+        item.setDuration(parser.getDuration());
+        item.setRelease(parser.getRelease());
+        item.setProducer(parser.getProducer());
+        item.setDistributor(parser.getDistributor());
+        item.setSeries(parser.getSeries());
+        item.setTags(parser.getTags(Constants.WHITESPACE));
+        parser.check("商品発売日", "対応デバイス", "評価", "简介", "剧情简介");
         return item;
     }
 

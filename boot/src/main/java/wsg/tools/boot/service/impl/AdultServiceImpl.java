@@ -1,10 +1,10 @@
 package wsg.tools.boot.service.impl;
 
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +13,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,21 +28,23 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.io.NotFiletypeException;
-import wsg.tools.internet.base.IntIdentifier;
-import wsg.tools.internet.base.UpdateDateSupplier;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.page.PageReq;
 import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.LinkedRepoIterator;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
+import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.base.view.UpdateDateSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.AmateurSupplier;
-import wsg.tools.internet.info.adult.common.Mosaic;
 import wsg.tools.internet.info.adult.common.SerialNumber;
+import wsg.tools.internet.info.adult.view.AlbumSupplier;
+import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
+import wsg.tools.internet.info.adult.view.Tagged;
+import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * @author Kingen
@@ -69,7 +70,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public <T extends AmateurSupplier>
+    public <T extends AmateurJaAdultEntry>
     void importLinkedRepository(String domain, int subtype, LinkedRepository<String, T> repository)
         throws OtherResponseException {
         Optional<IdView<String>> optional = videoRepository.getFirstOrderUpdateTime(domain);
@@ -93,7 +94,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             } catch (NotFoundException e) {
                 throw new AppException(e);
             }
-            success += insertEntry(item, source);
+            success += insertAmateurEntry(item, source);
             total++;
         }
         log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
@@ -101,7 +102,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public <I, T extends IntIdentifier & AmateurSupplier & UpdateDatetimeSupplier, P extends PageReq>
+    public <I, T extends IntIdentifier & AmateurJaAdultEntry & UpdateDatetimeSupplier, P extends PageReq>
     void importLatestByPage(String domain, int subtype,
         @Nonnull RepoPageable<P, PageResult<I, P>> pageable, P firstReq,
         RepoRetrievable<I, T> retrievable) throws OtherResponseException {
@@ -123,7 +124,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 } catch (NotFoundException e) {
                     throw new AppException(e);
                 }
-                if (t.lastUpdate().compareTo(deadline) <= 0) {
+                if (t.getUpdate().compareTo(deadline) <= 0) {
                     dead = true;
                     break;
                 }
@@ -141,7 +142,10 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         for (int i = entities.size() - 1; i >= 0; i--) {
             T t = entities.get(i);
             Source source = Source.record(domain, subtype, t.getId());
-            success += insertEntry(t, source);
+            String serialNum = t.getSerialNum();
+            if (serialNum != null) {
+                success += insertAmateurEntry(t, source);
+            }
             total++;
         }
         log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
@@ -154,58 +158,23 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     /**
-     * Saves an entry in the item.
-     * <p>
-     * todo concrete type
+     * Saves an amateur entry.
      *
      * @return 0 if failed or 1 if succeeded
      */
-    private <T extends AmateurSupplier> int insertEntry(@Nonnull T item, Source source) {
-        AmateurAdultEntry entry = item.getAmateurEntry();
-        String code = entry.getCode();
+    private int insertAmateurEntry(@Nonnull AmateurJaAdultEntry entry, Source source) {
+        String serialNum = entry.getSerialNum();
         try {
-            code = SerialNumber.format(entry.getCode());
+            serialNum = SerialNumber.format(serialNum);
         } catch (IllegalArgumentException e) {
-            failureRepository.insert(new Failure(source, "The code is invalid: " + code));
+            String message = "The serial number is invalid: " + serialNum;
+            failureRepository.insert(new Failure(source, message));
             return 0;
         }
-        AdultVideoEntity entity = new AdultVideoEntity();
-        entity.setId(code);
-        entity.setTitle(entry.getTitle());
-        Mosaic mosaic = entry.getMosaic();
-        if (mosaic != null) {
-            entity.setMosaic(mosaic.isCovered());
-        }
-        entity.setDuration(entry.getDuration());
-        entity.setReleaseDate(entry.getRelease());
-        entity.setDirector(entry.getDirector());
-        entity.setProducer(entry.getProducer());
-        entity.setDistributor(entry.getDistributor());
-        entity.setSeries(entry.getSeries());
-        entity.setTags(entry.getTags());
+        AdultVideoEntity entity = copyEntry(entry, source.getDomain(), source.getSubtype());
         entity.setSource(source);
-        if (item instanceof UpdateDatetimeSupplier) {
-            entity.setUpdateTime(((UpdateDatetimeSupplier) item).lastUpdate());
-        } else if (item instanceof UpdateDateSupplier) {
-            LocalDate date = ((UpdateDateSupplier) item).lastUpdate();
-            entity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
-        }
-        List<URL> images = entry.getImages();
-        if (CollectionUtils.isNotEmpty(images)) {
-            List<String> uploads = new ArrayList<>();
-            for (URL image : images) {
-                String upload = null;
-                try {
-                    upload = config.uploadEntryImage(image, code);
-                } catch (NotFoundException | NotFiletypeException ignored) {
-                } catch (OtherResponseException e) {
-                    throw new AppException(e);
-                }
-                uploads.add(upload);
-            }
-            entity.setImages(uploads);
-        }
-        Optional<AdultVideoEntity> optional = videoRepository.findById(code);
+
+        Optional<AdultVideoEntity> optional = videoRepository.findById(serialNum);
         if (optional.isEmpty()) {
             videoRepository.insert(entity);
             return 1;
@@ -213,7 +182,8 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
         AdultVideoEntity exists = optional.get();
         if (merge(exists, entity)) {
-            failureRepository.insert(new Failure(source, "The target code exists: " + code));
+            String message = "The target serial number exists: " + serialNum;
+            failureRepository.insert(new Failure(source, message));
             return 0;
         }
         if (exists.getImages() != null) {
@@ -223,7 +193,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 entity.getImages().addAll(exists.getImages());
             }
         }
-        Set<String> tags = new HashSet<>(videoRepository.findTagsById(code));
+        Set<String> tags = new HashSet<>(videoRepository.findTagsById(serialNum));
         if (entity.getTags() != null) {
             tags.addAll(entity.getTags());
         }
@@ -232,12 +202,54 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         return 1;
     }
 
+    private AdultVideoEntity copyEntry(AmateurJaAdultEntry entry, String domain, int subtype) {
+        AdultVideoEntity entity = new AdultVideoEntity();
+        String serialNum = entry.getSerialNum();
+        entity.setId(serialNum);
+        if (entry instanceof TitledAdultEntry) {
+            entity.setTitle(((TitleSupplier) entry).getTitle());
+        }
+        try {
+            entity.setCover(config.uploadCover(entry, domain, subtype, serialNum));
+        } catch (NotFoundException | NotFiletypeException ignored) {
+        } catch (OtherResponseException e) {
+            throw new AppException(e);
+        }
+        entity.setMosaic(entry.getMosaic());
+        entity.setDuration(entry.getDuration());
+        entity.setReleaseDate(entry.getRelease());
+        entity.setProducer(entry.getProducer());
+        entity.setDistributor(entry.getDistributor());
+        entity.setSeries(entry.getSeries());
+        if (entry instanceof Tagged) {
+            String[] tags = ((Tagged) entry).getTags();
+            if (tags != null) {
+                entity.setTags(Arrays.asList(tags));
+            }
+        }
+        if (entry instanceof UpdateDatetimeSupplier) {
+            entity.setUpdateTime(((UpdateDatetimeSupplier) entry).getUpdate());
+        } else if (entry instanceof UpdateDateSupplier) {
+            LocalDate date = ((UpdateDateSupplier) entry).getUpdate();
+            entity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
+        }
+        if (entry instanceof AlbumSupplier) {
+            try {
+                AlbumSupplier supplier = (AlbumSupplier) entry;
+                entity.setImages(config.uploadAlbum(supplier, domain, subtype, serialNum));
+            } catch (NotFoundException | NotFiletypeException ignored) {
+            } catch (OtherResponseException e) {
+                throw new AppException(e);
+            }
+        }
+        return entity;
+    }
+
     private boolean merge(AdultVideoEntity old, AdultVideoEntity add) {
         return merge(old, add, AdultVideoEntity::getTitle, AdultVideoEntity::setTitle)
             || merge(old, add, AdultVideoEntity::getMosaic, AdultVideoEntity::setMosaic)
             || merge(old, add, AdultVideoEntity::getDuration, AdultVideoEntity::setDuration)
             || merge(old, add, AdultVideoEntity::getReleaseDate, AdultVideoEntity::setReleaseDate)
-            || merge(old, add, AdultVideoEntity::getDirector, AdultVideoEntity::setDirector)
             || merge(old, add, AdultVideoEntity::getProducer, AdultVideoEntity::setProducer)
             || merge(old, add, AdultVideoEntity::getDistributor, AdultVideoEntity::setDistributor)
             || merge(old, add, AdultVideoEntity::getSeries, AdultVideoEntity::setSeries);

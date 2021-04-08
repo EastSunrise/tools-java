@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.view.SourceSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.info.adult.view.Describable;
+import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
  * A video on the site.
@@ -17,7 +20,8 @@ import wsg.tools.internet.base.UpdateDatetimeSupplier;
  * @see PornTubeSite#findById(Integer)
  * @since 2021/3/17
  */
-public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetimeSupplier {
+public class PornTubeVideo extends PornTubeSimpleVideo
+    implements SourceSupplier, Describable, UpdateDatetimeSupplier, Tagged {
 
     private final URL video;
     private final String description;
@@ -39,10 +43,12 @@ public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetime
         return video;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public URL getSource() {
         return source;
     }
@@ -55,8 +61,9 @@ public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetime
         this.categories = categories;
     }
 
-    public List<PornTubeTag> getTags() {
-        return tags;
+    @Override
+    public String[] getTags() {
+        return tags.stream().map(PornTubeTag::getTitle).toArray(String[]::new);
     }
 
     void setTags(List<PornTubeTag> tags) {
@@ -64,7 +71,7 @@ public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetime
     }
 
     @Override
-    public LocalDateTime lastUpdate() {
+    public LocalDateTime getUpdate() {
         return postTime;
     }
 }

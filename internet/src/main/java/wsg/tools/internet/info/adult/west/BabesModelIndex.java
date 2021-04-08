@@ -1,8 +1,7 @@
 package wsg.tools.internet.info.adult.west;
 
-import java.net.URL;
-import wsg.tools.internet.base.PathSupplier;
-import wsg.tools.internet.movie.common.CoverSupplier;
+import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * An index pointing to a model in the site.
@@ -12,44 +11,26 @@ import wsg.tools.internet.movie.common.CoverSupplier;
  * @see BabesModelPageResult
  * @since 2021/3/15
  */
-public class BabesModelIndex implements CoverSupplier, PathSupplier {
+public interface BabesModelIndex extends PathSupplier, CoverSupplier {
 
     /**
-     * Name as path
+     * Returns the name of the model.
+     *
+     * @return the name
      */
-    private final String namePath;
-    private final String name;
-    private final URL cover;
-    private final int videos;
-    private final int photos;
+    String getName();
 
-    BabesModelIndex(String namePath, String name, URL cover, int videos, int photos) {
-        this.namePath = namePath;
-        this.name = name;
-        this.cover = cover;
-        this.videos = videos;
-        this.photos = photos;
-    }
+    /**
+     * Returns the count of videos cast by the model.
+     *
+     * @return the count of videos
+     */
+    int getVideos();
 
-    @Override
-    public String getAsPath() {
-        return namePath;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public URL getCover() {
-        return cover;
-    }
-
-    public int getVideos() {
-        return videos;
-    }
-
-    public int getPhotos() {
-        return photos;
-    }
+    /**
+     * Returns the count of photos of the model.
+     *
+     * @return the count of photos
+     */
+    int getPhotos();
 }

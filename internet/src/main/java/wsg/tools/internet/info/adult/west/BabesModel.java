@@ -13,7 +13,13 @@ import wsg.tools.internet.info.adult.common.Measurements;
  * @see BabesTubeSite#findModel(String)
  * @since 2021/3/15
  */
-public class BabesModel extends BabesModelIndex {
+public class BabesModel implements BabesModelIndex {
+
+    private final String namePath;
+    private final String name;
+    private final URL cover;
+    private final int videos;
+    private final int photos;
 
     private Integer height;
     private Integer weight;
@@ -26,7 +32,36 @@ public class BabesModel extends BabesModelIndex {
     private List<BabesVideoIndex> videoIndices;
 
     BabesModel(String namePath, String name, URL cover, int videos, int photos) {
-        super(namePath, name, cover, videos, photos);
+        this.namePath = namePath;
+        this.name = name;
+        this.cover = cover;
+        this.videos = videos;
+        this.photos = photos;
+    }
+
+    @Override
+    public String getAsPath() {
+        return namePath;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public URL getCover() {
+        return cover;
+    }
+
+    @Override
+    public int getVideos() {
+        return videos;
+    }
+
+    @Override
+    public int getPhotos() {
+        return photos;
     }
 
     public Integer getHeight() {

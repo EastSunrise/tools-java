@@ -1,9 +1,6 @@
 package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDateTime;
-import lombok.Getter;
-import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
 
 /**
  * A base item in the {@link MidnightSite}.
@@ -11,22 +8,39 @@ import wsg.tools.internet.base.UpdateDatetimeSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-@Getter
-public abstract class BaseMidnightItem extends MidnightIndex
-    implements TitleSupplier, UpdateDatetimeSupplier {
+class BaseMidnightItem implements MidnightIndex {
 
+    private final int id;
+    private final String title;
+    private final LocalDateTime addTime;
     private String[] keywords;
 
-    BaseMidnightItem(int id, String title, LocalDateTime release) {
-        super(id, title, release);
-    }
-
-    void setKeywords(String[] keywords) {
-        this.keywords = keywords.clone();
+    BaseMidnightItem(int id, String title, LocalDateTime addTime) {
+        this.id = id;
+        this.title = title;
+        this.addTime = addTime;
     }
 
     @Override
-    public LocalDateTime lastUpdate() {
-        return getRelease();
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
+    }
+
+    @Override
+    public LocalDateTime getUpdate() {
+        return addTime;
+    }
+
+    public String[] getKeywords() {
+        return keywords;
+    }
+
+    void setKeywords(String[] keywords) {
+        this.keywords = keywords;
     }
 }

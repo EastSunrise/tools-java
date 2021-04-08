@@ -4,7 +4,6 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,9 +31,7 @@ import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedContentException;
-import wsg.tools.internet.info.adult.AdultEntryBuilder;
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
-import wsg.tools.internet.info.adult.BasicAdultEntryBuilder;
+import wsg.tools.internet.info.adult.common.AdultEntryParser;
 
 /**
  * The site is suspected as a partial copy of {@link LicencePlateSite}.
@@ -51,7 +48,7 @@ public final class AmateurCatSite extends BaseSite
     private static final String FIRST_KEY = "収録時間";
 
     public AmateurCatSite() {
-        super("Amateur Cat", httpHost("surenmao.com"));
+        super("Amateur Cat", httpHost("www.surenmao.com"));
     }
 
     /**
@@ -92,46 +89,52 @@ public final class AmateurCatSite extends BaseSite
         return Repositories.linked(this, "200gana-1829");
     }
 
+    /**
+     * Retrieves an item by the specified identifier.
+     *
+     * @see AmateurCatItem#getId()
+     * @see AmateurCatItem#nextId()
+     */
     @Nonnull
     @Override
     public AmateurCatItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
         Document document = getDocument(httpGet("/%s", id), doc -> getNext(doc) == null);
-        AmateurCatItem item = new AmateurCatItem(id);
 
         Element main = document.selectFirst("#main");
-        item.setAuthor(main.selectFirst("span.author").text());
-        String published = main.selectFirst("time.published").attr(CssSelectors.ATTR_DATETIME);
-        item.setPublished(LocalDateTime.parse(published, FORMATTER));
-        String updated = main.selectFirst("time.updated").attr(CssSelectors.ATTR_DATETIME);
-        item.setUpdated(LocalDateTime.parse(updated, FORMATTER));
-        item.setNext(getNext(document));
-
-        String code = main.selectFirst("h1.entry-title").text();
+        String serialNum = main.selectFirst("h1.entry-title").text();
         String src = main.selectFirst("img.size-full").attr(CssSelectors.ATTR_SRC);
         URL cover = NetUtils.createURL(src);
+        String author = main.selectFirst("span.author").text();
+        String updatedStr = main.selectFirst("time.updated").attr(CssSelectors.ATTR_DATETIME);
+        LocalDateTime updated = LocalDateTime.parse(updatedStr, FORMATTER);
+        String publishedStr = main.selectFirst("time.published").attr(CssSelectors.ATTR_DATETIME);
+        LocalDateTime published = LocalDateTime.parse(publishedStr, FORMATTER);
+        String next = getNext(document);
+
         Element content = main.selectFirst("div.entry-content");
-        Pair<String, List<String>> pair = getLinesAndDesc(content);
-        BasicAdultEntryBuilder builder;
-        List<String> lines = pair.getRight();
-        if (lines == null) {
-            builder = BasicAdultEntryBuilder.builder(code);
-        } else {
-            Map<String, String> info = extractInfo(lines);
-            builder = AdultEntryBuilder.builder(code, info)
-                .duration().release().producer().distributor().series()
-                .validateCode().tags(Constants.WHITESPACE);
+        Pair<String, List<String>> pair = getDescAndLines(content);
+        AmateurCatItem item = new AmateurCatItem(id, serialNum, cover, pair.getLeft(), author,
+            updated, published, next);
+        if (pair.getRight() != null) {
+            AdultEntryParser parser = AdultEntryParser.create(extractInfo(pair.getRight()));
+            parser.verifySerialNumber(item);
+            item.setPerformer(parser.getPerformer());
+            item.setDuration(parser.getDuration());
+            item.setRelease(parser.getRelease());
+            item.setProducer(parser.getProducer());
+            item.setDistributor(parser.getDistributor());
+            item.setSeries(parser.getSeries());
+            item.setTags(parser.getTags(Constants.WHITESPACE));
+            parser.check("商品発売日");
         }
-        AmateurAdultEntry entry = builder.description(pair.getLeft())
-            .images(Collections.singletonList(cover)).amateur();
-        item.setEntry(entry);
         return item;
     }
 
     /**
      * @return description and lines of information, may null but at least one is not null
      */
-    private Pair<String, List<String>> getLinesAndDesc(Element content) {
+    private Pair<String, List<String>> getDescAndLines(Element content) {
         Elements children = content.children();
         Map<String, List<Element>> map = children.stream()
             .collect(Collectors.groupingBy(Element::tagName));

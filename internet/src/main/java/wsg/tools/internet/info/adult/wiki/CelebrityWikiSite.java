@@ -34,8 +34,6 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.repository.LinkedRepository;
-import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
@@ -47,8 +45,7 @@ import wsg.tools.internet.common.enums.Constellation;
 import wsg.tools.internet.common.enums.Gender;
 import wsg.tools.internet.common.enums.Nation;
 import wsg.tools.internet.common.enums.Zodiac;
-import wsg.tools.internet.info.adult.AdultEntryBuilder;
-import wsg.tools.internet.info.adult.FormalAdultEntry;
+import wsg.tools.internet.info.adult.common.AdultEntryParser;
 import wsg.tools.internet.info.adult.common.CupEnum;
 
 /**
@@ -70,16 +67,6 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     /**
-     * Returns the linked repository of albums of the given type.
-     *
-     * @see WikiAlbumType
-     */
-    @Nonnull
-    public LinkedRepository<Integer, WikiAlbum> getAlbumRepository(@Nonnull WikiAlbumType type) {
-        return Repositories.linked(id -> findAlbum(id, type), type.first());
-    }
-
-    /**
      * Retrieves the paged result of the indices under the given type.
      */
     @Nonnull
@@ -98,7 +85,7 @@ public final class CelebrityWikiSite extends BaseSite {
                 String href = a.attr(CssSelectors.ATTR_HREF);
                 Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, href);
                 int id = Integer.parseInt(matcher.group("id"));
-                return new WikiCelebrityIndex(id, a.text());
+                return new WikiSimpleCelebrity(id, a.text());
             }).collect(Collectors.toList());
 
         int total;
@@ -112,6 +99,11 @@ public final class CelebrityWikiSite extends BaseSite {
         return new WikiPageResult(indices, request, total);
     }
 
+    /**
+     * Retrieves the celebrity of the specified identifier.
+     *
+     * @see WikiCelebrityIndex#getId()
+     */
     public WikiCelebrity findCelebrity(int id, @Nonnull WikiCelebrityType type)
         throws NotFoundException, OtherResponseException {
         RequestWrapper wrapper = httpGet("/%s/m%d/info.html", type.getText(), id);
@@ -165,6 +157,8 @@ public final class CelebrityWikiSite extends BaseSite {
 
     /**
      * Retrieves an album of the given identifier.
+     *
+     * @see WikiAlbumIndex#getId()
      */
     @Nonnull
     public WikiAlbum findAlbum(int id, @Nonnull WikiAlbumType type)
@@ -192,7 +186,7 @@ public final class CelebrityWikiSite extends BaseSite {
         }
         Element tags = text.selectFirst("div.ptags");
         if (tags != null) {
-            album.setTags(tags.select(CssSelectors.TAG_A).eachText());
+            album.setTags(tags.select(CssSelectors.TAG_A).eachText().toArray(new String[0]));
         }
         Element next = show.selectFirst("div.next");
         String href = next.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
@@ -205,6 +199,8 @@ public final class CelebrityWikiSite extends BaseSite {
 
     /**
      * Retrieves an adult entry of the given identifier.
+     *
+     * @see WikiCelebrity#getWorks()
      */
     @Nonnull
     public WikiAdultEntry findAdultEntry(@Nonnull String id)
@@ -215,22 +211,31 @@ public final class CelebrityWikiSite extends BaseSite {
         if (div.childNodeSize() == 1) {
             throw new NotFoundException(div.text());
         }
-        String code = id.toUpperCase(Locale.ROOT);
-        String src = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
-        URL cover = NetUtils.createURL(src);
 
-        Map<String, String> info = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-        for (Element em : div.select(CssSelectors.TAG_EM)) {
+        Elements ems = div.select(CssSelectors.TAG_EM);
+        Map<String, String> info = new HashMap<>(ems.size());
+        for (Element em : ems) {
             String key = em.text().replace(" ", "");
             String value = ((TextNode) em.nextSibling()).text().substring(1);
             MapUtilsExt.putIfAbsent(info, key, value);
         }
-        FormalAdultEntry entry = AdultEntryBuilder.builder(code, info)
-            .validateCode().title().release().duration()
-            .director().mosaic().producer().distributor()
-            .series().tags(SEPARATOR).images(List.of(cover))
-            .formal(SEPARATOR);
-        return new WikiAdultEntry(entry, celebrity);
+        String src = div.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
+        URL cover = NetUtils.createURL(src);
+        AdultEntryParser parser = AdultEntryParser.create(info);
+        String serialNum = parser.getSerialNum();
+        String title = parser.getTitle();
+        List<String> actresses = parser.getActresses(SEPARATOR);
+        WikiAdultEntry entry = new WikiAdultEntry(celebrity, serialNum, title, cover, actresses);
+        entry.setMosaic(parser.getMosaic());
+        entry.setDuration(parser.getDuration());
+        entry.setRelease(parser.getRelease());
+        entry.setDirector(parser.getDirector());
+        entry.setProducer(parser.getProducer());
+        entry.setDistributor(parser.getDistributor());
+        entry.setSeries(parser.getSeries());
+        entry.setTags(parser.getTags(SEPARATOR));
+        parser.check();
+        return entry;
     }
 
     /**
@@ -258,7 +263,7 @@ public final class CelebrityWikiSite extends BaseSite {
         }
         Elements tags = block01.selectFirst("div.txt03").select(CssSelectors.TAG_A);
         if (!tags.isEmpty()) {
-            t.setTags(tags.stream().map(Element::text).collect(Collectors.toList()));
+            t.setTags(tags.stream().map(Element::text).toArray(String[]::new));
         }
         return t;
     }
@@ -371,7 +376,7 @@ public final class CelebrityWikiSite extends BaseSite {
             String typeStr = matcher.group("t");
             WikiAlbumType albumType = EnumUtilExt.valueOfText(WikiAlbumType.class, typeStr, false);
             String title = a.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_ALT);
-            albums.add(new WikiAlbumIndex(albumId, albumType, title));
+            albums.add(new WikiAlbum(albumId, albumType, title));
         }
         return albums;
     }

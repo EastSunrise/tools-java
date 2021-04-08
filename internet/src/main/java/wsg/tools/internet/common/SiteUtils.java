@@ -79,6 +79,7 @@ public final class SiteUtils {
      * @throws NotFoundException      if any page is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
+    @Nonnull
     public static <I, P extends PageReq>
     List<I> collectPage(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq)
         throws NotFoundException, OtherResponseException {

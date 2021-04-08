@@ -3,17 +3,17 @@ package wsg.tools.internet.info.adult.west;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A star on the site.
  *
  * @author Kingen
- * @see PornTubeSite#findAllStars()
  * @see PornTubeSite#findStarByName(String)
  * @since 2021/3/17
  */
-public class PornTubeStar implements PathSupplier {
+public class PornTubeStar implements PathSupplier, CoverSupplier {
 
     private final String name;
     private final URL cover;
@@ -29,6 +29,7 @@ public class PornTubeStar implements PathSupplier {
         return name;
     }
 
+    @Override
     public URL getCover() {
         return cover;
     }

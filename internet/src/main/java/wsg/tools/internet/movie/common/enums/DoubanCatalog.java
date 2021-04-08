@@ -4,7 +4,7 @@ import java.util.Locale;
 import javax.annotation.Nonnull;
 import lombok.Getter;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * Topics on {@link wsg.tools.internet.movie.douban.DoubanSite}.

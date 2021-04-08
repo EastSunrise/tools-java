@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -87,12 +88,13 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         String columnHref = last.attr(CssSelectors.ATTR_HREF);
         Matcher columnMatcher = RegexUtils.matchesOrElseThrow(Lazy.COLUMN_HREF_REGEX, columnHref);
         int code = Integer.parseInt(columnMatcher.group("c"));
-        XlmColumn type = EnumUtilExt.valueOfCode(XlmColumn.class, code);
+        XlmColumn column = EnumUtilExt.valueOfCode(XlmColumn.class, code);
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);
-        XlmItem item = new XlmItem(id, wrapper.getUri().toString(), type, releaseTime);
-        item.setTitle(((TextNode) last.nextSibling()).text().strip());
+        URL source = NetUtils.toURL(wrapper.getUri());
+        String title = ((TextNode) last.nextSibling()).text().strip();
+        XlmItem item = new XlmItem(column, source, id, title, releaseTime);
         Element image = document.selectFirst(".bodytxt").selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {
             item.setCover(NetUtils.createURL(image.attr(CssSelectors.ATTR_SRC)));
@@ -111,10 +113,10 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
                 .startsWith(DOWNLOAD_ASP)) {
                 continue;
             }
-            String title = a.text().strip();
+            String t = a.text().strip();
             try {
                 resources.add(LinkFactory
-                    .create(title, href, Constants.GBK, () -> LinkFactory.getPassword(title)));
+                    .create(t, href, Constants.GBK, () -> LinkFactory.getPassword(t)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }

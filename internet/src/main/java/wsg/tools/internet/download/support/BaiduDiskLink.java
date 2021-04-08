@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
-import wsg.tools.internet.download.PasswordProvider;
+import wsg.tools.internet.download.view.PasswordProvider;
 
 /**
  * A link of baidu disk.

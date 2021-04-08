@@ -8,11 +8,10 @@ import javax.annotation.Nonnull;
  * @author Kingen
  * @since 2021/4/2
  */
-public class FloatValidator extends NumberValidator<Float> {
+public class FloatValidator extends AbstractNumberValidator<Float> {
 
-    @Override
-    protected Float value(@Nonnull Number number) {
-        return number.floatValue();
+    public FloatValidator() {
+        super(Float.class);
     }
 
     @Override

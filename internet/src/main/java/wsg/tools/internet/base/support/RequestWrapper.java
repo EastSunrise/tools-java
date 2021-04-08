@@ -14,7 +14,7 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * A wrapper of a request builder, the target host and a token if required.
@@ -75,6 +75,9 @@ public class RequestWrapper {
      * Adds a parameter to the request.
      */
     public RequestWrapper addParameter(String name, Object value) {
+        if (value == null) {
+            return this;
+        }
         if (value instanceof PathSupplier) {
             addParameter(new BasicNameValuePair(name, ((PathSupplier) value).getAsPath()));
         } else {

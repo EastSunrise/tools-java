@@ -2,7 +2,7 @@ package wsg.tools.internet.base.data.support.lang;
 
 import java.util.List;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.data.Validator;
+import wsg.tools.internet.base.data.support.AbstractParsableValidator;
 import wsg.tools.internet.base.data.support.Descriptors;
 import wsg.tools.internet.base.data.support.InvalidValueException;
 
@@ -13,27 +13,21 @@ import wsg.tools.internet.base.data.support.InvalidValueException;
  * @author Kingen
  * @since 2021/4/3
  */
-public abstract class NumberValidator<N extends Number & Comparable<N>> extends Validator<N> {
+abstract class AbstractNumberValidator<N extends Number & Comparable<N>>
+    extends AbstractParsableValidator<N> {
+
+    protected AbstractNumberValidator(Class<N> clazz) {
+        super(clazz);
+    }
 
     @Override
-    public N convert(@Nonnull Object value) throws InvalidValueException {
-        if (value instanceof Number) {
-            return value(((Number) value));
-        }
+    protected N parseText(@Nonnull String text) throws InvalidValueException {
         try {
-            return parseValue(value.toString());
+            return parseValue(text);
         } catch (NumberFormatException e) {
             throw new InvalidValueException(e.getMessage());
         }
     }
-
-    /**
-     * Returns the specified value of the number.
-     *
-     * @param number number to be convert
-     * @return the specified value
-     */
-    protected abstract N value(@Nonnull Number number);
 
     /**
      * Parses the specified string as a number.

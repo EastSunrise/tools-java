@@ -114,20 +114,19 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
             .stream().collect(Collectors.toMap(Element::text, e -> e));
 
         String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
-        LocalDate addDate = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate date = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
         Element image = document.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
         String src = image.attr(CssSelectors.ATTR_SRC);
         if (src.startsWith(EXTRA_COVER_HEAD)) {
             src = src.substring(EXTRA_COVER_HEAD.length() - 4);
         }
         URL cover = NetUtils.createURL(src);
-        String uri = wrapper.getUri().toString();
+        URL source = NetUtils.toURL(wrapper.getUri());
         Pair<MovieHeavenType, ResourceState> pair = getTypeAndState(document);
-        MovieHeavenItem item = new MovieHeavenItem(id, uri, pair.getLeft(), addDate, cover);
+        String title = document.selectFirst(".location").children().last().text();
+        MovieHeavenItem item = new MovieHeavenItem(pair.getLeft(), source, id, title, date, cover);
 
         item.setState(pair.getRight());
-        Elements children = document.selectFirst(".location").children();
-        item.setTitle(children.last().text());
         String text = ((TextNode) info.get("上映年代：").nextSibling()).text();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
             int year = Integer.parseInt(text);

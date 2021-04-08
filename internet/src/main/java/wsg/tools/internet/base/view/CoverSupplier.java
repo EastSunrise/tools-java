@@ -1,4 +1,4 @@
-package wsg.tools.internet.movie.common;
+package wsg.tools.internet.base.view;
 
 import java.net.URL;
 import wsg.tools.internet.base.EntityInterface;

@@ -3,8 +3,7 @@ package wsg.tools.internet.movie.resource;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.base.view.UpdateDateSupplier;
 import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
@@ -15,19 +14,17 @@ import wsg.tools.internet.movie.common.YearSupplier;
  * @author Kingen
  * @since 2021/1/10
  */
-public class MovieHeavenItem extends BaseIdentifiedItem
+public class MovieHeavenItem extends BaseIdentifiedItem<MovieHeavenType>
     implements YearSupplier, UpdateDateSupplier, StateSupplier {
 
-    private final MovieHeavenType type;
     private final LocalDate addDate;
     private final URL cover;
     private ResourceState state;
     private Integer year;
 
-    MovieHeavenItem(int id, @Nonnull String url, MovieHeavenType type, LocalDate addDate,
+    MovieHeavenItem(MovieHeavenType subtype, URL source, int id, String title, LocalDate addDate,
         URL cover) {
-        super(id, url);
-        this.type = Objects.requireNonNull(type);
+        super(subtype, source, id, title);
         this.addDate = Objects.requireNonNull(addDate, "the added date of an item");
         this.cover = Objects.requireNonNull(cover, "the cover of an item");
     }
@@ -51,17 +48,12 @@ public class MovieHeavenItem extends BaseIdentifiedItem
     }
 
     @Override
-    public LocalDate lastUpdate() {
+    public LocalDate getUpdate() {
         return addDate;
     }
 
     @Override
     public URL getCover() {
         return cover;
-    }
-
-    @Override
-    public int getSubtype() {
-        return type.getId();
     }
 }

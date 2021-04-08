@@ -197,7 +197,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
             String href = a.attr(CssSelectors.ATTR_HREF);
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VIDEO_HREF_REGEX, href);
             int id = Integer.parseInt(matcher.group("id"));
-            return new PornTubeVideoIndex(id, thumb, a.text());
+            return new PornTubeSimpleVideo(id, thumb, a.text());
         }).collect(Collectors.toList());
         return new PornTubeStar(name, NetUtils.createURL(cover), videos);
     }

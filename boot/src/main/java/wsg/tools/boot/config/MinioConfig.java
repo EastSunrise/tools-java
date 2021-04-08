@@ -20,9 +20,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
@@ -42,13 +43,13 @@ import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.internet.base.view.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.info.adult.view.AlbumSupplier;
 
 /**
  * Configurations for MinIO.
- * <p>
- * todo uploads images too slowly, handles concurrency and removes duplicate images.
  *
  * @author Kingen
  * @see <a href="https://docs.min.io/cn/minio-quickstart-guide.html">MinIO Quickstart Guide</a>
@@ -61,10 +62,10 @@ public class MinioConfig implements InitializingBean {
 
     private static final MinioBucket[] BUCKETS = {
         new MinioBucket("covers").setPolicyAll(PolicyType.READ_ONLY),
-        new MinioBucket("adult").setPolicyAll(PolicyType.READ_ONLY)
+        new MinioBucket("album").setPolicyAll(PolicyType.READ_ONLY)
     };
     private static final MinioBucket BUCKET_COVER = BUCKETS[0];
-    private static final MinioBucket BUCKET_ADULT = BUCKETS[1];
+    private static final MinioBucket BUCKET_ALBUM = BUCKETS[1];
     private static final String CONNECTION_REFUSED = "Connection refused: connect";
     private final File tmpdir;
     private final SiteManager manager;
@@ -85,49 +86,68 @@ public class MinioConfig implements InitializingBean {
     }
 
     /**
-     * Uploads a cover of the source from the given url.
+     * Uploads the cover to the server with the given source as the path in the bucket.
      *
-     * @param url    url pointing to the cover, not null
-     * @param source the source of the cover, not null
+     * @see #uploadCover(CoverSupplier, String, int, String)
+     */
+    public String uploadCover(CoverSupplier supplier, Source source)
+        throws NotFoundException, OtherResponseException, NotFiletypeException {
+        String id = String.valueOf(source.getRid());
+        return uploadCover(supplier, source.getDomain(), source.getSubtype(), id);
+    }
+
+    /**
+     * Uploads the cover to the server with the given arguments as the path in the bucket.
+     *
+     * @param supplier the supplier of the url pointing to the cover
+     * @return the url of the cover stored in the server
      * @throws NotFoundException      if not found
      * @throws NotFiletypeException   if the target is not an image file
      * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
-    public String uploadCover(URL url, Source source)
-        throws NotFoundException, OtherResponseException, NotFiletypeException {
-        Objects.requireNonNull(url, "the url of the cover");
-        Objects.requireNonNull(source, "the source of the cover");
-        if (!Filetype.IMAGE.test(url.getFile())) {
-            throw new NotFiletypeException(Filetype.IMAGE, url.getFile());
+    public String uploadCover(CoverSupplier supplier, String domain, int subtype, String id)
+        throws NotFiletypeException, NotFoundException, OtherResponseException {
+        Objects.requireNonNull(supplier, "the supplier of the cover");
+        Objects.requireNonNull(domain, "the domain of the cover");
+        Objects.requireNonNull(id, "the id of the cover");
+        URL cover = supplier.getCover();
+        if (cover == null) {
+            return null;
         }
-        File file = download(url);
-        String folder = source.getDomain() + Constants.URL_PATH_SEPARATOR + source.getSubtype();
-        return uploadLocal(file, BUCKET_COVER, folder, String.valueOf(source.getRid()));
+        if (!Filetype.IMAGE.test(cover.getFile())) {
+            throw new NotFiletypeException(Filetype.IMAGE, cover.getFile());
+        }
+        File file = download(cover);
+        String folder = domain + Constants.URL_PATH_SEPARATOR + subtype;
+        return uploadLocal(file, BUCKET_COVER, folder, id);
     }
 
     /**
-     * Uploads an image of an entry from the given url.
+     * Uploads an album of images to the server with the given arguments as the path in the bucket.
      *
-     * @see #uploadCover(URL, Source)
+     * @param supplier the supplier of the album of images
+     * @return list of urls of the images stored in the server
+     * @throws NotFoundException      if any image is not found
+     * @throws NotFiletypeException   if any url is not an image file
+     * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
-    public String uploadEntryImage(URL url, String code)
+    public List<String> uploadAlbum(AlbumSupplier supplier, String domain, int subtype, String id)
         throws NotFoundException, OtherResponseException, NotFiletypeException {
-        Objects.requireNonNull(url, "the url of the image");
-        Objects.requireNonNull(code, "the code of the entry");
-        if (!Filetype.IMAGE.test(url.getFile())) {
-            throw new NotFiletypeException(Filetype.IMAGE, url.getFile());
+        Objects.requireNonNull(supplier, "the supplier of the cover");
+        Objects.requireNonNull(domain, "the domain of the cover");
+        Objects.requireNonNull(id, "the id of the cover");
+        List<URL> album = supplier.getAlbum();
+        List<String> result = new ArrayList<>(album.size());
+        String folder = String.join("/", domain, String.valueOf(subtype), id);
+        for (int i = 0, albumSize = album.size(); i < albumSize; i++) {
+            URL image = album.get(i);
+            if (!Filetype.IMAGE.test(image.getFile())) {
+                throw new NotFiletypeException(Filetype.IMAGE, image.getFile());
+            }
+            File file = download(image);
+            result.add(uploadLocal(file, BUCKET_ALBUM, folder, String.valueOf(i)));
         }
-        File file = download(url);
-        return uploadLocal(file, BUCKET_ADULT, code, UUID.randomUUID().toString());
-    }
-
-    /**
-     * Uploads a local file to the given folder under the bucket.
-     *
-     * @see #uploadLocal(File, MinioBucket, String, String)
-     */
-    public String uploadLocal(File file, MinioBucket bucket, String folder) {
-        return uploadLocal(file, bucket, folder, null);
+        return result;
     }
 
     /**
@@ -154,7 +174,7 @@ public class MinioConfig implements InitializingBean {
         }
         try {
             client().putObject(bucket.getName(), target, file.getPath());
-            log.info("Uploaded {} to {}/{}", file, bucket, target);
+            log.info("Uploaded {} to {}/{}", file, bucket.getName(), target);
             return client().getObjectUrl(bucket.getName(), target);
         } catch (InvalidBucketNameException | XmlPullParserException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | NoResponseException | ErrorResponseException | InternalException | InvalidArgumentException e) {
             throw new AppException(e);

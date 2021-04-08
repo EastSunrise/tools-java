@@ -5,8 +5,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.internet.download.FilenameSupplier;
-import wsg.tools.internet.download.LengthSupplier;
+import wsg.tools.internet.download.view.FilenameSupplier;
+import wsg.tools.internet.download.view.LengthSupplier;
 
 /**
  * An ed2k link.

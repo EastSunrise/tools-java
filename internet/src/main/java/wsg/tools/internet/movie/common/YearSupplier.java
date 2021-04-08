@@ -3,7 +3,7 @@ package wsg.tools.internet.movie.common;
 import wsg.tools.internet.base.EntityInterface;
 
 /**
- * Supplies the year of the item.
+ * Represents a supplier of the year of the entity.
  *
  * @author Kingen
  * @since 2020/11/23
@@ -12,9 +12,9 @@ import wsg.tools.internet.base.EntityInterface;
 public interface YearSupplier {
 
     /**
-     * Obtains year.
+     * Returns the year of the entity.
      *
-     * @return year
+     * @return the year
      */
     Integer getYear();
 }

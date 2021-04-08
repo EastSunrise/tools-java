@@ -1,6 +1,6 @@
 package wsg.tools.internet.info.adult.west;
 
-import wsg.tools.internet.base.IntIdentifier;
+import wsg.tools.internet.base.view.IntIdentifier;
 
 /**
  * A member on the site.

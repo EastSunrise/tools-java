@@ -28,7 +28,7 @@ public final class Descriptors {
      */
     @Nonnull
     @Contract(pure = true)
-    public static <T extends Comparable<T>> Descriptor<T> range() {
+    public static <T extends Comparable<? super T>> Descriptor<T> range() {
         return values -> {
             if (!values.isEmpty()) {
                 log.info("Min of the values: {}", values.stream().min(T::compareTo).orElseThrow());

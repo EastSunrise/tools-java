@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -103,9 +104,10 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         BdMovieType realType = EnumUtilExt.valueOfText(BdMovieType.class, realTypeText, false);
         String release = metadata.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
-        BdMovieItem item = new BdMovieItem(id, location, realType, updateTime);
+        URL source = NetUtils.createURL(location);
+        String title = metadata.get("og:title");
+        BdMovieItem item = new BdMovieItem(realType, source, id, title, updateTime);
         item.setNext(getNext(document));
-        item.setTitle(metadata.get("og:title"));
         String cover = metadata.get("og:image");
         if (!cover.isEmpty()) {
             if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {

@@ -4,7 +4,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.UpdateDateSupplier;
+import wsg.tools.internet.base.view.UpdateDateSupplier;
 
 /**
  * News items of Grape site, resources of which are all downloadable.All of the items belong to
@@ -13,13 +13,13 @@ import wsg.tools.internet.base.UpdateDateSupplier;
  * @author Kingen
  * @since 2021/2/4
  */
-public class GrapeNewsItem extends BaseIdentifiedItem implements UpdateDateSupplier {
+public class GrapeNewsItem extends BaseIdentifiedItem<GrapeVodType> implements UpdateDateSupplier {
 
     private final LocalDate releaseDate;
     private URL cover;
 
-    GrapeNewsItem(int id, @Nonnull String url, LocalDate releaseDate) {
-        super(id, url);
+    GrapeNewsItem(@Nonnull URL source, int id, String title, LocalDate releaseDate) {
+        super(GrapeVodType.BT_MOVIE, source, id, title);
         this.releaseDate = Objects.requireNonNull(releaseDate, "the release date of an item");
     }
 
@@ -33,12 +33,7 @@ public class GrapeNewsItem extends BaseIdentifiedItem implements UpdateDateSuppl
     }
 
     @Override
-    public LocalDate lastUpdate() {
+    public LocalDate getUpdate() {
         return releaseDate;
-    }
-
-    @Override
-    public int getSubtype() {
-        return GrapeVodType.BT_MOVIE.getId();
     }
 }

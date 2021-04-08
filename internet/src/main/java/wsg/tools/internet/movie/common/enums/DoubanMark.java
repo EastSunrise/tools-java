@@ -3,7 +3,7 @@ package wsg.tools.internet.movie.common.enums;
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.PathSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * Enum of marking type on {@link wsg.tools.internet.movie.douban.DoubanSite}.

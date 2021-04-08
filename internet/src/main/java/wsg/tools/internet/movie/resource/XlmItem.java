@@ -3,9 +3,8 @@ package wsg.tools.internet.movie.resource;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import wsg.tools.internet.base.NextSupplier;
-import wsg.tools.internet.base.UpdateDatetimeSupplier;
+import wsg.tools.internet.base.view.NextSupplier;
+import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 
 /**
  * Items of {@link XlmSite}.
@@ -13,22 +12,20 @@ import wsg.tools.internet.base.UpdateDatetimeSupplier;
  * @author Kingen
  * @since 2021/1/9
  */
-public class XlmItem extends BaseIdentifiedItem
+public class XlmItem extends BaseIdentifiedItem<XlmColumn>
     implements UpdateDatetimeSupplier, NextSupplier<Integer> {
 
     private final LocalDateTime releaseTime;
-    private final XlmColumn column;
     private URL cover;
     private Integer next;
 
-    XlmItem(int id, @Nonnull String url, XlmColumn column, LocalDateTime releaseTime) {
-        super(id, url);
-        this.column = Objects.requireNonNull(column);
+    XlmItem(XlmColumn subtype, URL source, int id, String title, LocalDateTime releaseTime) {
+        super(subtype, source, id, title);
         this.releaseTime = Objects.requireNonNull(releaseTime, "the release time of an item");
     }
 
     @Override
-    public LocalDateTime lastUpdate() {
+    public LocalDateTime getUpdate() {
         return releaseTime;
     }
 
@@ -48,10 +45,5 @@ public class XlmItem extends BaseIdentifiedItem
 
     void setCover(URL cover) {
         this.cover = Objects.requireNonNull(cover, "the cover of an item");
-    }
-
-    @Override
-    public int getSubtype() {
-        return column.getCode();
     }
 }

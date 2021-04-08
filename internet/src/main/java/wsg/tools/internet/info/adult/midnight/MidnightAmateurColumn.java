@@ -1,9 +1,9 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.internet.info.adult.AmateurAdultEntry;
+import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 
 /**
- * Part columns of {@link MidnightColumn} each of whose items has an {@link AmateurAdultEntry}.
+ * Part columns of {@link MidnightColumn} each of whose items is an {@link AmateurJaAdultEntry}.
  *
  * @author Kingen
  * @since 2021/3/2

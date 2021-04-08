@@ -1,4 +1,4 @@
-package wsg.tools.internet.base;
+package wsg.tools.internet.base.view;
 
 /**
  * Represents a supplier of a path used to build a url.

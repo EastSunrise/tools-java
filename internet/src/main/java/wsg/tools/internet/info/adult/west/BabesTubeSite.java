@@ -171,7 +171,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             int videos = Integer.parseInt(videosText.substring(0, videosText.length() - 7));
             String photosText = cols.last().text();
             int photos = Integer.parseInt(photosText.substring(0, photosText.length() - 7));
-            indices.add(new BabesModelIndex(p, name, NetUtils.createURL(cover), videos, photos));
+            indices.add(new BabesModel(p, name, NetUtils.createURL(cover), videos, photos));
         }
         return new BabesModelPageResult(indices, req, block.totalPages);
     }
@@ -276,7 +276,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             Elements info = item.select(".count");
             String viewsText = info.first().text().replace(" ", "");
             int views = Integer.parseInt(viewsText.substring(0, viewsText.length() - 5));
-            BabesVideoIndex index = new BabesVideoIndex(id, titlePath, title, cover, duration,
+            BabesVideo index = new BabesVideo(id, titlePath, title, cover, duration,
                 rating, views);
             String preview = dataset.get("preview");
             if (preview != null) {

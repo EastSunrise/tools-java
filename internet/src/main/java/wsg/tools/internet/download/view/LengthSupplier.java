@@ -1,4 +1,4 @@
-package wsg.tools.internet.download;
+package wsg.tools.internet.download.view;
 
 /**
  * If the length of a link is available.

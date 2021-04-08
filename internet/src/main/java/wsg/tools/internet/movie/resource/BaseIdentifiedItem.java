@@ -1,25 +1,39 @@
 package wsg.tools.internet.movie.resource;
 
-import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.IntIdentifier;
-import wsg.tools.internet.base.SubtypeSupplier;
-import wsg.tools.internet.movie.common.CoverSupplier;
+import java.net.URL;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.base.view.SourceSupplier;
+import wsg.tools.internet.movie.resource.view.IdentifierItem;
 
 /**
- * An item with an integer identifier and a cover that also can be classified to a subtype.
+ * A basic implementation of {@link IdentifierItem}.
  *
  * @author Kingen
  * @since 2021/1/10
  */
-public abstract class BaseIdentifiedItem extends BasicItem
-    implements IntIdentifier, SubtypeSupplier, CoverSupplier {
+abstract class BaseIdentifiedItem<E extends Enum<E>> extends BasicItem
+    implements SourceSupplier, IdentifierItem<E> {
 
+    private final E subtype;
+    private final URL source;
     private final int id;
-    private final String url;
+    private final String title;
 
-    BaseIdentifiedItem(int id, String url) {
+    BaseIdentifiedItem(@Nonnull E subtype, @Nonnull URL source, int id, @Nonnull String title) {
+        this.subtype = subtype;
+        this.source = source;
         this.id = id;
-        this.url = AssertUtils.requireNotBlank(url, "the url of an item");
+        this.title = title;
+    }
+
+    @Override
+    public E getSubtype() {
+        return subtype;
+    }
+
+    @Override
+    public URL getSource() {
+        return source;
     }
 
     @Override
@@ -27,7 +41,8 @@ public abstract class BaseIdentifiedItem extends BasicItem
         return id;
     }
 
-    public String getUrl() {
-        return url;
+    @Override
+    public String getTitle() {
+        return title;
     }
 }
