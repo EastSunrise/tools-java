@@ -19,6 +19,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.CloseableHttpClient;
 import wsg.tools.internet.base.Loggable;
+import wsg.tools.internet.base.WrappedResponseHandler;
 import wsg.tools.internet.common.UnexpectedException;
 
 /**
@@ -36,13 +37,13 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
     }
 
     protected AbstractLoggableSite(String name, HttpHost host,
-        ResponseHandler<String> defaultHandler) {
+        WrappedResponseHandler<String> defaultHandler) {
         this(name, host, defaultClient(), defaultHandler,
             DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
     }
 
     protected AbstractLoggableSite(String name, HttpHost host, CloseableHttpClient client,
-        ResponseHandler<String> defaultHandler, double permitsPerSecond,
+        WrappedResponseHandler<String> defaultHandler, double permitsPerSecond,
         double postPermitsPerSecond) {
         super(name, host, client, loadContext(name, host), defaultHandler, permitsPerSecond,
             postPermitsPerSecond);

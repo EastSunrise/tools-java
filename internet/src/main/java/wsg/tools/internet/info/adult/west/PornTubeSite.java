@@ -1,11 +1,11 @@
 package wsg.tools.internet.info.adult.west;
 
-import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -13,33 +13,29 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.CacheResponseWrapper;
+import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.DocumentHandler;
 import wsg.tools.internet.base.support.RequestWrapper;
-import wsg.tools.internet.common.AbstractHeaderResponseHandler;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.UnexpectedException;
+import wsg.tools.internet.common.SiteUtils;
 
 /**
  * @author Kingen
@@ -51,8 +47,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
     private static final String HOME = "https://porn-tube-club.com";
     private static final String HOME_TITLE_PREFIX = "Only HD Porn Video Tube";
     private static final String CATEGORIES_TITLE_PREFIX = "All HD Porn Video Categories";
-    private static final long TIMESTAMP = 1617310800;
-    private static long timestamp = TIMESTAMP;
+    private static long timestamp = 1617310800;
 
     public PornTubeSite() {
         super("Porn Tube Club", httpsHost("porn-tube-club.com"));
@@ -97,7 +92,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
     public List<PornTubeSimpleVideo> findAllByTag(@Nonnull PornTubeTag tag)
         throws NotFoundException, OtherResponseException {
         String path = tag.getAsPath().replace(" ", "+");
-        Document document = getDocument(httpGet("/t%d/%s/", TIMESTAMP, path), t -> true);
+        Document document = getDocument(httpGet("/t%d/%s/", timestamp, path), t -> true);
         return getVideos(document.selectFirst(".wpb_wrapper"));
     }
 
@@ -107,12 +102,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
      * @see #findPageByCategory(int, PornTubePageReq)
      */
     public List<PornTubeCategory> findAllCategories() throws OtherResponseException {
-        Document document = null;
-        try {
-            document = getDocument(httpGet("/c%d/", TIMESTAMP), t -> true);
-        } catch (NotFoundException e) {
-            throw new UnexpectedException(e);
-        }
+        Document document = findDocument(httpGet("/porn-categories/"), t -> true);
         Element wrapper = document.selectFirst(".video-block-container-wrapper");
         return wrapper.select(".more_title").stream().map(h4 -> {
             String title = ((TextNode) h4.childNode(0)).text();
@@ -230,18 +220,14 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
     @Nonnull
     public PornTubeVideo findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/v%d/%d", TIMESTAMP, id);
-        Pair<Map<String, List<Header>>, Document> pair = null;
+        RequestWrapper wrapper = httpGet("/v1617310800/%d", id);
+        CacheResponseWrapper<Document> responseWrapper = null;
         try {
-            pair = execute(wrapper.getHttpHost(), wrapper.build(),
-                new PornTubeResponseHandler());
+            responseWrapper = getResponseWrapper(wrapper, new DocumentHandler(), t -> false);
         } catch (HttpResponseException e) {
-            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                throw new NotFoundException(e.getMessage());
-            }
-            throw new OtherResponseException(e);
+            throw SiteUtils.handleException(e);
         }
-        Document document = pair.getRight();
+        Document document = responseWrapper.getContent();
         if (document.title().startsWith(HOME_TITLE_PREFIX)) {
             throw new NotFoundException("Not found video");
         }
@@ -256,7 +242,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         int views = Integer.parseInt(content.selectFirst(".views").text());
         int likes = Integer.parseInt(content.selectFirst(".open_video_likes_count").text());
         String postDate = content.selectFirst(".post_date").text();
-        LocalDateTime postTime = getUpdateTime(pair.getLeft(), postDate);
+        LocalDateTime postTime = getUpdateTime(responseWrapper.getHeaders(), postDate);
         PornTubeVideo video = new PornTubeVideo(id, thumb, title, duration, views, likes,
             ogVideo, description, NetUtils.createURL(source), postTime);
         Elements divs = content.select(".video_category");
@@ -275,8 +261,10 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         return video;
     }
 
-    private LocalDateTime getUpdateTime(Map<String, List<Header>> headers, String text) {
-        String date = headers.get("Date").get(0).getElements()[1].getName();
+    private LocalDateTime getUpdateTime(Header[] headers, String text) {
+        Map<String, List<Header>> map = Arrays.stream(headers)
+            .collect(Collectors.groupingBy(Header::getName));
+        String date = map.get("Date").get(0).getElements()[1].getName();
         LocalDateTime now = LocalDateTime.parse(date, Lazy.FORMATTER);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.AGO_REGEX, text);
         return now.minusYears(Integer.parseInt(matcher.group("y")))
@@ -289,15 +277,39 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
 
     private Document redirect(int categoryId, int page)
         throws OtherResponseException, NotFoundException {
-        RequestWrapper wrapper = httpGet("/c%d/c/%d/p/%d/", timestamp, categoryId, page);
-        Document document = getDocument(wrapper, t -> true);
-        String title = document.title();
-        if (!title.startsWith(CATEGORIES_TITLE_PREFIX)) {
-            return document;
+        while (true) {
+            RequestWrapper wrapper = httpGet("/c%d/c/%d/p/%d/", timestamp, categoryId, page);
+            Document document = getDocument(wrapper, t -> true);
+            String title = document.title();
+            if (!title.startsWith(CATEGORIES_TITLE_PREFIX)) {
+                return document;
+            }
         }
-        timestamp = Long.parseLong(title.substring(52));
-        wrapper = httpGet("/c%d/c/%d/p/%d/", timestamp, categoryId, page);
-        return getDocument(wrapper, t -> true);
+    }
+
+    /**
+     * Updates the {@link #timestamp} when getting a document.
+     */
+    @Override
+    public Document getDocument(RequestWrapper wrapper, SnapshotStrategy<Document> strategy)
+        throws NotFoundException, OtherResponseException {
+        CacheResponseWrapper<Document> responseWrapper = null;
+        try {
+            responseWrapper = getResponseWrapper(wrapper,
+                new DocumentHandler(), strategy);
+        } catch (HttpResponseException e) {
+            throw SiteUtils.handleException(e);
+        }
+        Document document = responseWrapper.getContent();
+        if (!responseWrapper.isSnapshot()) {
+            String title = document.title();
+            int length = title.length();
+            try {
+                timestamp = Long.parseLong(title.substring(length - 10));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return document;
     }
 
     private static class Lazy {
@@ -313,13 +325,5 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         private static final Pattern AGO_REGEX = Pattern
             .compile("(?<y>\\d) years, (?<M>\\d+) months, (?<d>\\d+) days, "
                 + "(?<h>\\d+) hours, (?<m>\\d+) minutes, (?<s>\\d+) seconds ago");
-    }
-
-    private static class PornTubeResponseHandler extends AbstractHeaderResponseHandler<Document> {
-
-        @Override
-        public Document handleEntity(HttpEntity entity) throws IOException {
-            return Jsoup.parse(EntityUtils.toString(entity, Constants.UTF_8));
-        }
     }
 }

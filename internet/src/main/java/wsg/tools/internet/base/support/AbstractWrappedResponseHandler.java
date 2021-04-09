@@ -1,34 +1,27 @@
-package wsg.tools.internet.common;
+package wsg.tools.internet.base.support;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.util.EntityUtils;
+import wsg.tools.internet.base.ResponseWrapper;
+import wsg.tools.internet.base.WrappedResponseHandler;
 
 /**
- * A generic {@link ResponseHandler} that returns the response entity and headers for successful
- * (2xx) responses, or throws an exception if the response code was &gt;= 300.
+ * This class provides skeletal implementation of {@link WrappedResponseHandler}.
  *
  * @author Kingen
  * @see org.apache.http.impl.client.AbstractResponseHandler
- * @since 2021/4/7
+ * @since 2021/4/9
  */
-public abstract class AbstractHeaderResponseHandler<T>
-    implements ResponseHandler<Pair<Map<String, List<Header>>, T>> {
+public abstract class AbstractWrappedResponseHandler<T> implements WrappedResponseHandler<T> {
 
     @Override
-    public Pair<Map<String, List<Header>>, T> handleResponse(@Nonnull HttpResponse response)
-        throws IOException {
+    public ResponseWrapper<T> handleResponse(@Nonnull HttpResponse response) throws IOException {
         StatusLine statusLine = response.getStatusLine();
         HttpEntity entity = response.getEntity();
         if (statusLine.getStatusCode() >= 300) {
@@ -36,12 +29,11 @@ public abstract class AbstractHeaderResponseHandler<T>
             throw new HttpResponseException(statusLine.getStatusCode(),
                 statusLine.getReasonPhrase());
         }
-        Map<String, List<Header>> headers = Arrays.stream(response.getAllHeaders())
-            .collect(Collectors.groupingBy(Header::getName));
+        Header[] headers = response.getAllHeaders();
         if (entity == null) {
-            return Pair.of(headers, null);
+            return new BasicResponseWrapper<>(headers, null);
         }
-        return Pair.of(headers, handleEntity(entity));
+        return new BasicResponseWrapper<>(headers, handleEntity(entity));
     }
 
     /**

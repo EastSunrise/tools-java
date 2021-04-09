@@ -4,25 +4,26 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.util.EntityUtils;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.internet.base.support.AbstractWrappedResponseHandler;
 
 /**
- * An extension of {@link org.apache.http.client.ResponseHandler}.
+ * An implementation of {@link wsg.tools.internet.base.WrappedResponseHandler} that returns the
+ * content of the response as a string.
  *
  * @author Kingen
  * @since 2021/3/11
  */
-public class StringResponseHandler extends AbstractResponseHandler<String> {
+public class WrappedStringResponseHandler extends AbstractWrappedResponseHandler<String> {
 
     private final Charset charset;
 
-    public StringResponseHandler() {
+    public WrappedStringResponseHandler() {
         this.charset = Constants.UTF_8;
     }
 
-    public StringResponseHandler(Charset charset) {
+    public WrappedStringResponseHandler(Charset charset) {
         this.charset = charset;
     }
 

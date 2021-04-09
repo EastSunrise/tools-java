@@ -19,8 +19,8 @@ import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.common.UnexpectedException;
+import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.enums.ImdbRating;
@@ -139,7 +139,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
         return getObject(builder, MAPPER, clazz, t -> false);
     }
 
-    private static class OmdbResponseHandler extends StringResponseHandler {
+    private static class OmdbResponseHandler extends WrappedStringResponseHandler {
 
         @Override
         protected String handleContent(String content) throws HttpResponseException {

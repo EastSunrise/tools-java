@@ -37,8 +37,8 @@ import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.StringResponseHandler;
 import wsg.tools.internet.common.UnexpectedContentException;
+import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -214,7 +214,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         }
     }
 
-    private static class MovieHeaverResponseHandler extends StringResponseHandler {
+    private static class MovieHeaverResponseHandler extends WrappedStringResponseHandler {
 
         private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
 

@@ -193,6 +193,11 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 entity.getImages().addAll(exists.getImages());
             }
         }
+        if (entity.getCover() == null) {
+            entity.setCover(exists.getCover());
+        } else if (exists.getCover() != null) {
+            entity.getImages().add(exists.getCover());
+        }
         Set<String> tags = new HashSet<>(videoRepository.findTagsById(serialNum));
         if (entity.getTags() != null) {
             tags.addAll(entity.getTags());

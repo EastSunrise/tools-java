@@ -9,6 +9,9 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
+import org.jetbrains.annotations.Contract;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
@@ -37,6 +40,22 @@ public final class SiteUtils {
         .compile("[a-z0-9][a-z0-9-]*[a-z0-9](\\.[a-z0-9][a-z0-9-]*[a-z0-9])+");
 
     private SiteUtils() {
+    }
+
+    /**
+     * Splits a {@link HttpResponseException}.
+     *
+     * @return other exception
+     * @throws NotFoundException if the status code is 404
+     */
+    @Nonnull
+    @Contract("_ -> new")
+    public static OtherResponseException handleException(@Nonnull HttpResponseException e)
+        throws NotFoundException {
+        if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+            throw new NotFoundException(e.getMessage());
+        }
+        return new OtherResponseException(e);
     }
 
     /**

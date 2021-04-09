@@ -88,7 +88,6 @@ public class ResourceScheduler extends BaseServiceImpl {
     }
 
     @Scheduled(cron = "0 0 18 * * ?")
-    @Scheduled(fixedDelay = 3600000)
     public void importMidnight() {
         MidnightSite site = manager.midnightSite();
         for (MidnightAmateurColumn type : MidnightAmateurColumn.values()) {

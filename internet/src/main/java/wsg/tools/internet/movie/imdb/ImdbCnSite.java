@@ -27,7 +27,7 @@ import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.StringResponseHandler;
+import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
 
@@ -177,7 +177,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
         return result;
     }
 
-    private static final class ImdbCnResponseHandler extends StringResponseHandler {
+    private static final class ImdbCnResponseHandler extends WrappedStringResponseHandler {
 
         @Override
         protected String handleContent(String content) throws HttpResponseException {

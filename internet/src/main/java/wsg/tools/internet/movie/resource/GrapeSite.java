@@ -30,13 +30,14 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.ResponseWrapper;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.StringResponseHandler;
+import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.support.Ed2kLink;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -201,10 +202,11 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         return item;
     }
 
-    private static class GrapeResponseHandler extends StringResponseHandler {
+    private static class GrapeResponseHandler extends WrappedStringResponseHandler {
 
         @Override
-        public String handleResponse(HttpResponse response) throws IOException {
+        public ResponseWrapper<String> handleResponse(@Nonnull HttpResponse response)
+            throws IOException {
             try {
                 return super.handleResponse(response);
             } catch (HttpResponseException e) {

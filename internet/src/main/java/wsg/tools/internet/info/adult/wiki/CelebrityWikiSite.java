@@ -39,7 +39,7 @@ import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.StringResponseHandler;
+import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.common.enums.BloodType;
 import wsg.tools.internet.common.enums.Constellation;
 import wsg.tools.internet.common.enums.Gender;
@@ -407,7 +407,7 @@ public final class CelebrityWikiSite extends BaseSite {
         }
     }
 
-    private static class WikiResponseHandler extends StringResponseHandler {
+    private static class WikiResponseHandler extends WrappedStringResponseHandler {
 
         @Override
         protected String handleContent(String content) throws HttpResponseException {
