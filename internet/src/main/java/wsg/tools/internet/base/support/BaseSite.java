@@ -76,6 +76,7 @@ public class BaseSite implements Closeable {
     private final CloseableHttpClient client;
     private final HttpClientContext context;
     private final WrappedResponseHandler<String> defaultHandler;
+    private final long snapshotLifeCycle;
 
     protected BaseSite(String name, HttpHost host) {
         this(name, host, defaultResponseHandler());
@@ -83,12 +84,12 @@ public class BaseSite implements Closeable {
 
     protected BaseSite(String name, HttpHost host, WrappedResponseHandler<String> defaultHandler) {
         this(name, host, defaultClient(), defaultContext(), defaultHandler,
-            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
+            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND, -1);
     }
 
     protected BaseSite(String name, HttpHost host, CloseableHttpClient client,
         HttpClientContext context, WrappedResponseHandler<String> defaultHandler,
-        double permitsPerSecond, double postPermitsPerSecond) {
+        double permitsPerSecond, double postPermitsPerSecond, long snapshotLifeCycle) {
         SiteUtils.validateStatus(getClass());
         this.name = name;
         this.host = Objects.requireNonNull(host);
@@ -98,6 +99,7 @@ public class BaseSite implements Closeable {
         this.client = client;
         this.context = context;
         this.defaultHandler = Objects.requireNonNull(defaultHandler, "defaultHandler");
+        this.snapshotLifeCycle = snapshotLifeCycle;
     }
 
     @Nonnull
@@ -253,8 +255,16 @@ public class BaseSite implements Closeable {
         File cf = new File(TMPDIR + filepath + "." + contentHandler.extension());
         File hf = new File(TMPDIR + filepath + ".header");
 
+        // if the snapshot files do not exist.
         if (!cf.canRead() || !hf.canRead()) {
             return updateSnapshot(wrapper, cf, hf, contentHandler);
+        }
+        // if the snapshot has expired
+        if (snapshotLifeCycle > 0) {
+            long expire = cf.lastModified() + snapshotLifeCycle;
+            if (System.currentTimeMillis() > expire) {
+                return updateSnapshot(wrapper, cf, hf, contentHandler);
+            }
         }
         ResponseWrapper<String> rw = readSnapshot(cf, hf);
         T t = contentHandler.handleContent(rw.getContent());
