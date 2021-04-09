@@ -39,14 +39,14 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
     protected AbstractLoggableSite(String name, HttpHost host,
         WrappedResponseHandler<String> defaultHandler) {
         this(name, host, defaultClient(), defaultHandler,
-            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND);
+            DEFAULT_PERMITS_PER_SECOND, DEFAULT_PERMITS_PER_SECOND, -1);
     }
 
     protected AbstractLoggableSite(String name, HttpHost host, CloseableHttpClient client,
         WrappedResponseHandler<String> defaultHandler, double permitsPerSecond,
-        double postPermitsPerSecond) {
+        double postPermitsPerSecond, long snapshotLifeCycle) {
         super(name, host, client, loadContext(name, host), defaultHandler, permitsPerSecond,
-            postPermitsPerSecond);
+            postPermitsPerSecond, snapshotLifeCycle);
     }
 
     @Nonnull
