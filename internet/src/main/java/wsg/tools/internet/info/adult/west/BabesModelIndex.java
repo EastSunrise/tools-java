@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.west;
 
-import wsg.tools.internet.base.view.CoverSupplier;
 import wsg.tools.internet.base.view.PathSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 
 /**
  * An index pointing to a model in the site.

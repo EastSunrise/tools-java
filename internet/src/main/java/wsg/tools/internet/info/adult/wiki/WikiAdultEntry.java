@@ -55,7 +55,7 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Tag
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

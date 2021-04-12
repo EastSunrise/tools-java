@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import wsg.tools.internet.base.view.Identifier;
 import wsg.tools.internet.base.view.NextSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Describable;
 
@@ -60,7 +60,7 @@ public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, 
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 
@@ -83,7 +83,7 @@ public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, 
     }
 
     @Override
-    public String nextId() {
+    public String getNextId() {
         return next;
     }
 

@@ -3,11 +3,8 @@ package wsg.tools.internet.info.adult.west;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import wsg.tools.internet.base.view.SourceSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.common.VideoQuality;
-import wsg.tools.internet.info.adult.view.Describable;
-import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
  * A video with details on the site.
@@ -16,8 +13,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see BabesTubeSite#findById(String)
  * @since 2021/4/3
  */
-public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeSupplier,
-    SourceSupplier, Tagged {
+public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDatetimeSupplier {
 
     private final int id;
     private final String titlePath;
@@ -34,7 +30,7 @@ public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeS
     private String description;
     private BabesMember author;
     private LocalDateTime uploadTime;
-    private URL source;
+    private URL video;
     private String[] tags;
 
     BabesVideo(int id, String titlePath, String title, URL cover, Duration duration,
@@ -58,7 +54,6 @@ public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeS
         this.duration = duration;
         this.rating = rating;
         this.views = views;
-
         this.likes = likes;
         this.dislikes = dislikes;
         this.comments = comments;
@@ -83,7 +78,7 @@ public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeS
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 
@@ -103,7 +98,7 @@ public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeS
     }
 
     @Override
-    public URL getPreview() {
+    public URL getPreviewURL() {
         return preview;
     }
 
@@ -147,12 +142,12 @@ public class BabesVideo implements BabesVideoIndex, Describable, UpdateDatetimeS
     }
 
     @Override
-    public URL getSource() {
-        return source;
+    public URL getVideoURL() {
+        return video;
     }
 
-    void setSource(URL source) {
-        this.source = source;
+    void setVideo(URL video) {
+        this.video = video;
     }
 
     @Override

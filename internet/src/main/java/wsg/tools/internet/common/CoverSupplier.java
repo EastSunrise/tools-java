@@ -1,10 +1,10 @@
-package wsg.tools.internet.base.view;
+package wsg.tools.internet.common;
 
 import java.net.URL;
 import wsg.tools.internet.base.EntityInterface;
 
 /**
- * Supplies the cover of an item.
+ * Represents a supplier of the url of the cover.
  *
  * @author Kingen
  * @since 2021/3/19
@@ -13,9 +13,9 @@ import wsg.tools.internet.base.EntityInterface;
 public interface CoverSupplier {
 
     /**
-     * Returns the cover of an item.
+     * Returns the url of the cover.
      *
-     * @return the cover
+     * @return the url
      */
-    URL getCover();
+    URL getCoverURL();
 }

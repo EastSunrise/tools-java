@@ -47,7 +47,7 @@ public class MidnightAmateurEntry extends MidnightAlbum implements AmateurJaAdul
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return null;
     }
 

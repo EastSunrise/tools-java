@@ -27,6 +27,7 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
@@ -41,7 +42,8 @@ import wsg.tools.internet.info.adult.common.AdultEntryParser;
  * @since 2021/2/22
  */
 @ConcreteSite
-public final class MidnightSite extends BaseSite {
+public final class MidnightSite extends BaseSite
+    implements RepoPageable<MidnightPageReq, MidnightPageResult> {
 
     private static final String NAV_NAVIGATION = "nav.navigation";
 
@@ -53,12 +55,13 @@ public final class MidnightSite extends BaseSite {
      * Retrieves the paged result of indices under the given column.
      */
     @Nonnull
-    @Contract("_, _ -> new")
-    public MidnightPageResult findPage(@Nonnull MidnightColumn column,
-        @Nonnull MidnightPageReq req) throws NotFoundException, OtherResponseException {
+    @Override
+    @Contract("_ -> new")
+    public MidnightPageResult findPage(@Nonnull MidnightPageReq req)
+        throws NotFoundException, OtherResponseException {
         RequestWrapper wrapper = httpGet("/e/action/ListInfo.php")
             .addParameter("page", req.getCurrent())
-            .addParameter("classid", column.getCode())
+            .addParameter("classid", req.getColumn().getId())
             .addParameter("starttime", req.getStart())
             .addParameter("endtime", req.getEnd())
             .addParameter("line", req.getPageSize())

@@ -1,9 +1,13 @@
 package wsg.tools.common.lang;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +21,34 @@ import org.apache.commons.lang3.StringUtils;
 public final class AssertUtils {
 
     private AssertUtils() {
+    }
+
+    public static <E extends Comparable<? super E>>
+    boolean isMonotonous(@Nonnull Iterator<E> iterator) {
+        return isMonotonous(iterator, Comparator.comparing(Function.identity()));
+    }
+
+    /**
+     * Tests whether the given iterator is monotonous by the specified comparator.
+     *
+     * @param iterator the iterator to be tested
+     * @return {@code false} if any element is <i>largest</i> (by the specified comparator) than the
+     * next one, otherwise {@code true}
+     */
+    public static <E> boolean isMonotonous(@Nonnull Iterator<E> iterator,
+        @Nonnull Comparator<? super E> comparator) {
+        if (!iterator.hasNext()) {
+            return true;
+        }
+        E previous = iterator.next();
+        while (iterator.hasNext()) {
+            E current = iterator.next();
+            if (comparator.compare(previous, current) > 0) {
+                return false;
+            }
+            previous = current;
+        }
+        return true;
     }
 
     /**
@@ -124,13 +156,5 @@ public final class AssertUtils {
             return arg;
         }
         return requireNotBlank(defaultStr, "defaultStr");
-    }
-
-    /**
-     * Returns a {@link RuntimeException}.
-     */
-    public static RuntimeException runtimeException(Throwable e) {
-        Objects.requireNonNull(e, "Can't construct a RuntimeException from a null exception.");
-        return new RuntimeException(e.getMessage(), e);
     }
 }

@@ -4,7 +4,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.view.UpdateDateSupplier;
+import wsg.tools.internet.common.UpdateDateSupplier;
 
 /**
  * News items of Grape site, resources of which are all downloadable.All of the items belong to
@@ -24,7 +24,7 @@ public class GrapeNewsItem extends BaseIdentifiedItem<GrapeVodType> implements U
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

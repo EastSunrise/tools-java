@@ -47,7 +47,7 @@ public class MidnightFormalEntry extends MidnightAlbum implements FormalJaAdultE
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return null;
     }
 

@@ -32,7 +32,7 @@ public final class Repositories {
     public static <ID, T extends NextSupplier<ID>> LinkedRepository<ID, T>
     linked(RepoRetrievable<ID, T> retrievable, ID first) {
         Objects.requireNonNull(retrievable);
-        return new BasicLinkedRepository<>(retrievable, first, NextSupplier::nextId);
+        return new BasicLinkedRepository<>(retrievable, first, NextSupplier::getNextId);
     }
 
     /**

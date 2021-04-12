@@ -1,9 +1,9 @@
 package wsg.tools.internet.movie.resource.view;
 
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.view.CoverSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.base.view.SubtypeSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 
 /**
  * An item with an integer identifier, a title, a cover and links, that also can be classified to a

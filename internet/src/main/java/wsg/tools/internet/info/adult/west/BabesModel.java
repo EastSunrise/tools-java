@@ -50,7 +50,7 @@ public class BabesModel implements BabesModelIndex {
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

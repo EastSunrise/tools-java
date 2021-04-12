@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -262,17 +261,30 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
     }
 
     private LocalDateTime getUpdateTime(Header[] headers, String text) {
-        Map<String, List<Header>> map = Arrays.stream(headers)
-            .collect(Collectors.groupingBy(Header::getName));
-        String date = map.get("Date").get(0).getElements()[1].getName();
-        LocalDateTime now = LocalDateTime.parse(date, Lazy.FORMATTER);
+        String date = SiteUtils.findHeader(headers, "Date").getElements()[1].getName();
+        LocalDateTime time = LocalDateTime.parse(date, Lazy.FORMATTER);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.AGO_REGEX, text);
-        return now.minusYears(Integer.parseInt(matcher.group("y")))
-            .minusMonths(Integer.parseInt(matcher.group("M")))
-            .minusDays(Integer.parseInt(matcher.group("d")))
-            .minusHours(Integer.parseInt(matcher.group("h")))
-            .minusMinutes(Integer.parseInt(matcher.group("m")))
-            .minusSeconds(Integer.parseInt(matcher.group("s")));
+        String year = matcher.group("y");
+        if (year != null) {
+            time = time.minusYears(Integer.parseInt(year));
+        }
+        String month = matcher.group("M");
+        if (month != null) {
+            time = time.minusMonths(Integer.parseInt(month));
+        }
+        String day = matcher.group("d");
+        if (day != null) {
+            time = time.minusDays(Integer.parseInt(day));
+        }
+        String hour = matcher.group("h");
+        if (hour != null) {
+            time = time.minusHours(Integer.parseInt(hour));
+        }
+        String minutes = matcher.group("m");
+        if (minutes != null) {
+            time = time.minusMinutes(Integer.parseInt(minutes));
+        }
+        return time.minusSeconds(Integer.parseInt(matcher.group("s")));
     }
 
     private Document redirect(int categoryId, int page)
@@ -323,7 +335,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         private static final DateTimeFormatter FORMATTER = DateTimeFormatter
             .ofPattern("dd MMM yyyy HH:mm:ss z").localizedBy(Locale.US);
         private static final Pattern AGO_REGEX = Pattern
-            .compile("(?<y>\\d) years, (?<M>\\d+) months, (?<d>\\d+) days, "
-                + "(?<h>\\d+) hours, (?<m>\\d+) minutes, (?<s>\\d+) seconds ago");
+            .compile("(?:(?<y>\\d) years, )?(?:(?<M>\\d+) months, )?(?:(?<d>\\d+) days, )?"
+                + "(?:(?<h>\\d+) hours, )?(?:(?<m>\\d+) minutes, )?(?<s>\\d+) seconds ago");
     }
 }

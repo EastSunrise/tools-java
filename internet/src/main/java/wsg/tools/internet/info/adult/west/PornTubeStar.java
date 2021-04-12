@@ -3,8 +3,8 @@ package wsg.tools.internet.info.adult.west;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
-import wsg.tools.internet.base.view.CoverSupplier;
 import wsg.tools.internet.base.view.PathSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 
 /**
  * A star on the site.
@@ -30,7 +30,7 @@ public class PornTubeStar implements PathSupplier, CoverSupplier {
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.west;
 
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.view.CoverSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.CoverSupplier;
 
 /**
  * An index pointing to a video on the site.

@@ -10,17 +10,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.jetbrains.annotations.Contract;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,6 +35,10 @@ import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.repository.ListRepository;
+import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.repository.RepoRetrievable;
+import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
@@ -54,7 +59,9 @@ import wsg.tools.internet.info.adult.common.CupEnum;
  * @since 2021/2/24
  */
 @ConcreteSite
-public final class CelebrityWikiSite extends BaseSite {
+public final class CelebrityWikiSite extends BaseSite
+    implements RepoRetrievable<WikiCelebrityIndex, WikiCelebrity>,
+    RepoPageable<WikiPageReq, WikiPageResult> {
 
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
@@ -67,26 +74,43 @@ public final class CelebrityWikiSite extends BaseSite {
     }
 
     /**
-     * Retrieves the paged result of the indices under the given type.
+     * Returns the repository of all celebrities.
      */
     @Nonnull
-    public WikiPageResult findPage(@Nonnull WikiCelebrityType type, @Nonnull WikiPageReq request)
+    @Contract(" -> new")
+    public ListRepository<WikiCelebrityIndex, WikiCelebrity> getRepository()
+        throws OtherResponseException {
+        return Repositories.list(this, findAllCelebrityIndices());
+    }
+
+    /**
+     * Retrieves all indices of celebrities.
+     */
+    @Nonnull
+    public List<WikiCelebrityIndex> findAllCelebrityIndices() throws OtherResponseException {
+        Document document = findDocument(httpGet("/comp/sitemap"), t -> true);
+        return document.select(".ulist").last().select(CssSelectors.TAG_A)
+            .stream().map(this::getIndex).collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves the paged result of the indices under the given subtype.
+     */
+    @Override
+    @Nonnull
+    public WikiPageResult findPage(@Nonnull WikiPageReq req)
         throws NotFoundException, OtherResponseException {
-        int current = request.getCurrent();
+        int current = req.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
-        RequestWrapper wrapper = httpGet("/%s/index%s.html", type.getText(), page);
+        String text = Optional.ofNullable(req.getSubtype()).map(WikiCelebrityType::getText)
+            .orElse("mingren");
+        RequestWrapper wrapper = httpGet("/%s/index%s.html", text, page);
         Document document = getDocument(wrapper, t -> false);
 
         Element box = document.selectFirst(".personbox");
-        Elements lis = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_LI);
-        List<WikiCelebrityIndex> indices = lis.stream()
-            .map(li -> li.selectFirst(CssSelectors.TAG_A))
-            .map(a -> {
-                String href = a.attr(CssSelectors.ATTR_HREF);
-                Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, href);
-                int id = Integer.parseInt(matcher.group("id"));
-                return new WikiSimpleCelebrity(id, a.text());
-            }).collect(Collectors.toList());
+        Elements as = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_A);
+        List<WikiCelebrityIndex> indices = as.stream()
+            .map(this::getIndex).collect(Collectors.toList());
 
         int total;
         Element a1 = box.selectFirst(".pagePg").selectFirst(".a1");
@@ -96,17 +120,22 @@ public final class CelebrityWikiSite extends BaseSite {
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TOTAL_REGEX, a1.text());
             total = Integer.parseInt(matcher.group("t"));
         }
-        return new WikiPageResult(indices, request, total);
+        return new WikiPageResult(indices, req, total);
     }
 
     /**
      * Retrieves the celebrity of the specified identifier.
      *
-     * @see WikiCelebrityIndex#getId()
+     * @see #findAllCelebrityIndices()
+     * @see #findPage(WikiPageReq)
      */
-    public WikiCelebrity findCelebrity(int id, @Nonnull WikiCelebrityType type)
+    @Nonnull
+    @Override
+    public WikiCelebrity findById(@Nonnull WikiCelebrityIndex index)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/%s/m%d/info.html", type.getText(), id);
+        int id = index.getId();
+        WikiCelebrityType subtype = index.getSubtype();
+        RequestWrapper wrapper = httpGet("/%s/m%d/info.html", subtype.getText(), id);
         Document document = getDocument(wrapper, t -> false);
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
@@ -148,7 +177,7 @@ public final class CelebrityWikiSite extends BaseSite {
                 celebrity.setWorks(getWorks(prompt.nextElementSibling()));
             }
         }
-        Set<WikiAlbumIndex> albums = getSimpleAlbums(type, id);
+        Set<WikiAlbumIndex> albums = getSimpleAlbums(subtype, id);
         if (CollectionUtils.isNotEmpty(albums)) {
             celebrity.setAlbums(albums);
         }
@@ -161,8 +190,10 @@ public final class CelebrityWikiSite extends BaseSite {
      * @see WikiAlbumIndex#getId()
      */
     @Nonnull
-    public WikiAlbum findAlbum(int id, @Nonnull WikiAlbumType type)
+    public WikiAlbum findAlbum(@Nonnull WikiAlbumIndex index)
         throws NotFoundException, OtherResponseException {
+        int id = index.getId();
+        WikiAlbumType type = index.getSubtype();
         RequestWrapper wrapper = httpGet("/tuku/%s/%d.html", type.getText(), id);
         Document document = getDocument(wrapper, t -> false);
         Element show = document.selectFirst("div.picshow");
@@ -173,15 +204,16 @@ public final class CelebrityWikiSite extends BaseSite {
             .stream().map(img -> img.attr(CssSelectors.ATTR_REL)).map(NetUtils::createURL)
             .collect(Collectors.toList());
         WikiAlbum album = new WikiAlbum(id, type, title, updateTime, images);
-        Element text = show.selectFirst("div.text");
-        List<String> hrefs = text.select(">a").eachAttr(CssSelectors.ATTR_HREF).stream()
-            .filter(s -> !HOME_PAGE.equals(s)).collect(Collectors.toList());
-        if (!hrefs.isEmpty()) {
-            List<Integer> related = new ArrayList<>();
-            for (String s : hrefs) {
-                Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, s);
-                related.add(Integer.parseInt(matcher.group("id")));
+        Element text = show.selectFirst(".text");
+        List<WikiCelebrityIndex> related = new ArrayList<>();
+        for (Element a : text.select(">a")) {
+            String href = a.attr(CssSelectors.ATTR_HREF);
+            if (href.isEmpty() || HOME_PAGE.equals(href)) {
+                continue;
             }
+            related.add(getIndex(a));
+        }
+        if (!related.isEmpty()) {
             album.setRelatedCelebrities(related);
         }
         Element tags = text.selectFirst("div.ptags");
@@ -234,28 +266,22 @@ public final class CelebrityWikiSite extends BaseSite {
         entry.setDistributor(parser.getDistributor());
         entry.setSeries(parser.getSeries());
         entry.setTags(parser.getTags(SEPARATOR));
-        parser.check();
+        parser.check("整理");
         return entry;
     }
 
     /**
      * Initializes basic properties of a celebrity.
      */
-    @Nullable
-    private <T extends WikiSimpleCelebrity> T initCelebrity(@Nonnull Document document,
+    private <T extends WikiSimpleCelebrity> T initCelebrity(Document document,
         TriFunction<Integer, String, WikiCelebrityType, T> constructor) {
-        Element current = document.selectFirst("a.current");
+        Element current = document.selectFirst(".current");
         if (current == null) {
             return null;
         }
-
-        String href = current.attr(CssSelectors.ATTR_HREF);
-        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, href);
-        int id = Integer.parseInt(matcher.group("id"));
+        WikiCelebrityIndex index = getIndex(current);
         String name = document.selectFirst(".mx_name").text();
-        String typeStr = matcher.group("t");
-        WikiCelebrityType type = EnumUtilExt.valueOfText(WikiCelebrityType.class, typeStr, false);
-        T t = constructor.apply(id, name, type);
+        T t = constructor.apply(index.getId(), name, index.getSubtype());
         Element block01 = document.selectFirst("div.cm_block01");
         String image = block01.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_SRC);
         if (!image.endsWith(NO_PERSON_IMG)) {
@@ -266,6 +292,15 @@ public final class CelebrityWikiSite extends BaseSite {
             t.setTags(tags.stream().map(Element::text).toArray(String[]::new));
         }
         return t;
+    }
+
+    private WikiCelebrityIndex getIndex(Element a) {
+        String href = a.attr(CssSelectors.ATTR_HREF);
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, href);
+        String t = matcher.group("t");
+        WikiCelebrityType type = EnumUtilExt.valueOfText(WikiCelebrityType.class, t, false);
+        int id = Integer.parseInt(matcher.group("id"));
+        return new WikiSimpleCelebrity(id, a.text(), type);
     }
 
     @Nonnull
@@ -339,22 +374,24 @@ public final class CelebrityWikiSite extends BaseSite {
         }
     }
 
-    private List<String> getWorks(Element icon) {
-        List<String> works = new ArrayList<>();
+    private Set<String> getWorks(Element icon) {
+        Set<String> works = new HashSet<>();
         Element tbody = icon.selectFirst("tbody");
         if (tbody != null) {
             Elements trs = tbody.select(CssSelectors.TAG_TR);
             for (Element tr : trs) {
-                String code = tr.selectFirst("td").text().strip();
-                if (code.isBlank()) {
+                String serialNum = tr.selectFirst("td").text().strip();
+                if (serialNum.isBlank()) {
                     continue;
                 }
-                works.add(code);
+                works.add(serialNum.toUpperCase(Locale.ROOT));
             }
         }
         Elements labels = icon.select("label.born");
         if (!labels.isEmpty()) {
-            works.addAll(labels.eachText());
+            for (String text : labels.eachText()) {
+                works.add(text.toUpperCase(Locale.ROOT));
+            }
         }
         return works.isEmpty() ? null : works;
     }

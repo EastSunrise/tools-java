@@ -4,7 +4,6 @@ import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import wsg.tools.internet.base.repository.Repository;
@@ -18,13 +17,7 @@ import wsg.tools.internet.base.repository.Repository;
 @Getter
 @Setter
 @Entity
-@Table(
-    name = "failure",
-    uniqueConstraints = @UniqueConstraint(
-        name = "unique_failure_source",
-        columnNames = {"domain", "rid"}
-    )
-)
+@Table(name = "failure")
 public class Failure extends IdentityEntity {
 
     private static final long serialVersionUID = 6395141771348858128L;

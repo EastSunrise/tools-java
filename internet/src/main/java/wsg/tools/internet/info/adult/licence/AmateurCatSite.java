@@ -93,7 +93,7 @@ public final class AmateurCatSite extends BaseSite
      * Retrieves an item by the specified identifier.
      *
      * @see AmateurCatItem#getId()
-     * @see AmateurCatItem#nextId()
+     * @see AmateurCatItem#getNextId()
      */
     @Nonnull
     @Override

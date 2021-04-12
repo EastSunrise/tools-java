@@ -3,7 +3,7 @@ package wsg.tools.internet.movie.resource;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
-import wsg.tools.internet.base.view.UpdateDateSupplier;
+import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 
@@ -50,7 +50,7 @@ public class Y80sItem extends BaseIdentifiedItem<Y80sType>
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

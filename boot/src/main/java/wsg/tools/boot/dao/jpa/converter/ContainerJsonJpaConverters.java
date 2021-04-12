@@ -25,6 +25,15 @@ import wsg.tools.internet.common.enums.Language;
 public class ContainerJsonJpaConverters {
 
     @Converter(autoApply = true)
+    public static class StringArrayJsonConverter extends AbstractContainerJsonConverter<String[]> {
+
+        StringArrayJsonConverter() {
+            super(new TypeReference<>() {
+            });
+        }
+    }
+
+    @Converter(autoApply = true)
     public static class StringListJsonConverter extends
         AbstractContainerJsonConverter<List<String>> {
 
@@ -64,6 +73,7 @@ public class ContainerJsonJpaConverters {
                 .addSerializer(CodeSerializer.getInstance(Language.class))
                 .addDeserializer(Language.class,
                     new CodeEnumDeserializer<>(String.class, Language.class)));
+
         private final TypeReference<C> type;
 
         AbstractContainerJsonConverter(TypeReference<C> type) {

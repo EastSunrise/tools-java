@@ -4,7 +4,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import wsg.tools.internet.base.view.NextSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
@@ -56,7 +56,7 @@ public class BdMovieItem extends BaseIdentifiedItem<BdMovieType>
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 
@@ -65,7 +65,7 @@ public class BdMovieItem extends BaseIdentifiedItem<BdMovieType>
     }
 
     @Override
-    public Integer nextId() {
+    public Integer getNextId() {
         return next;
     }
 }

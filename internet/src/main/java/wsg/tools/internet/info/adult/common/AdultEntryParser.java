@@ -85,7 +85,7 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         throw new UnsupportedOperationException("Can't extract the cover");
     }
 
@@ -144,7 +144,7 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
      * @see Tagged#getTags()
      */
     public String[] getTags(String separatorChars) {
-        return MapUtilsExt.getValue(info, s -> StringUtils.split(s, separatorChars), "ジャンル");
+        return MapUtilsExt.getValue(info, s -> StringUtils.split(s, separatorChars), "ジャンル", "类别");
     }
 
     /**

@@ -15,5 +15,5 @@ public interface PreviewSupplier {
      *
      * @return the preview
      */
-    URL getPreview();
+    URL getPreviewURL();
 }

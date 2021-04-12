@@ -3,7 +3,7 @@ package wsg.tools.internet.movie.resource;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
-import wsg.tools.internet.base.view.UpdateDateSupplier;
+import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
@@ -49,7 +49,7 @@ public class XlcItem extends BaseIdentifiedItem<XlcType>
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

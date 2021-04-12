@@ -35,16 +35,16 @@ public enum MidnightColumn implements TextSupplier {
      */
     PRESTIGE(33, "prestige");
 
-    private final int code;
+    private final int id;
     private final String text;
 
-    MidnightColumn(int code, String text) {
-        this.code = code;
+    MidnightColumn(int id, String text) {
+        this.id = id;
         this.text = text;
     }
 
-    public int getCode() {
-        return code;
+    public int getId() {
+        return id;
     }
 
     @Override

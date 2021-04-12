@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.net.URL;
-import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
@@ -16,14 +16,9 @@ public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, T
 
     private final int id;
     private final String name;
-    private WikiCelebrityType type;
+    private final WikiCelebrityType type;
     private URL cover;
     private String[] tags;
-
-    WikiSimpleCelebrity(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
 
     WikiSimpleCelebrity(int id, String name, WikiCelebrityType type) {
         this.id = id;
@@ -41,12 +36,13 @@ public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, T
         return name;
     }
 
-    public WikiCelebrityType getType() {
+    @Override
+    public WikiCelebrityType getSubtype() {
         return type;
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

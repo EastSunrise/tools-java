@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.view;
 
 import java.time.Duration;
-import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 
 /**
  * Indicates that the entity is an entry of an adult vide with basic information.

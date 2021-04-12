@@ -2,6 +2,7 @@ package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDate;
 import javax.annotation.Nonnull;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.base.page.BasicPageReq;
 import wsg.tools.internet.base.page.PageReq;
@@ -18,17 +19,21 @@ public class MidnightPageReq extends BasicPageReq {
     private static final int MIN_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 80;
 
+    private final MidnightColumn column;
     private final LocalDate start;
     private final LocalDate end;
     private final OrderBy orderBy;
 
-    public MidnightPageReq(int current, int pageSize, @Nonnull OrderBy orderBy) {
-        this(current, pageSize, null, null, orderBy);
+    public MidnightPageReq(int current, int pageSize, @Nonnull MidnightColumn column,
+        @Nonnull OrderBy orderBy) {
+        this(current, pageSize, column, null, null, orderBy);
     }
 
-    public MidnightPageReq(int current, int pageSize, LocalDate start, LocalDate end,
-        @Nonnull OrderBy orderBy) {
+    public MidnightPageReq(int current, int pageSize, @Nonnull MidnightColumn column,
+        LocalDate start, LocalDate end, @Nonnull OrderBy orderBy) {
         super(current, pageSize);
+        AssertUtils.requireRange(pageSize, MIN_PAGE_SIZE, MAX_PAGE_SIZE + 1);
+        this.column = column;
         this.start = start;
         this.end = end;
         this.orderBy = orderBy;
@@ -39,8 +44,8 @@ public class MidnightPageReq extends BasicPageReq {
      * #MAX_PAGE_SIZE}, order by {@link OrderBy#UPDATE}.
      */
     @Nonnull
-    public static MidnightPageReq first() {
-        return new MidnightPageReq(0, MAX_PAGE_SIZE, OrderBy.UPDATE);
+    public static MidnightPageReq first(MidnightColumn column) {
+        return new MidnightPageReq(0, MAX_PAGE_SIZE, column, OrderBy.UPDATE);
     }
 
     /**
@@ -56,14 +61,19 @@ public class MidnightPageReq extends BasicPageReq {
     @Override
     public MidnightPageReq next() {
         BasicPageReq next = super.next();
-        return new MidnightPageReq(next.getCurrent(), next.getPageSize(), start, end, orderBy);
+        return new MidnightPageReq(next.getCurrent(), next.getPageSize(), column, start, end,
+            orderBy);
     }
 
     @Override
     public MidnightPageReq previous() {
         BasicPageReq previous = super.previous();
-        return new MidnightPageReq(previous.getCurrent(), previous.getPageSize(), start, end,
-            orderBy);
+        return new MidnightPageReq(previous.getCurrent(), previous.getPageSize(), column, start,
+            end, orderBy);
+    }
+
+    public MidnightColumn getColumn() {
+        return column;
     }
 
     public LocalDate getStart() {

@@ -1,15 +1,11 @@
 package wsg.tools.boot.service.impl;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,10 +34,7 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.internet.base.repository.ListRepoIterator;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.view.UpdateDateSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.Link;
@@ -82,16 +75,15 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     public <E extends Enum<E>, T extends IdentifierItem<E>>
     void importIntListRepository(@Nonnull ListRepository<Integer, T> repository,
         String domain, Function<E, Integer> subtypeFunc) throws OtherResponseException {
-        Optional<Long> optional = itemRepository.findMaxRid(domain);
-        int startIndex = optional.map(Long::intValue).map(repository::indexOf)
-            .map(index -> index + 1).orElse(0);
-        ListRepoIterator<Integer, T> iterator = repository.listRepoIterator(startIndex);
+        long start = itemRepository.findMaxRid(domain).orElse(0L);
+        List<Integer> indices = repository.indices().stream()
+            .filter(id -> id > start).sorted().collect(Collectors.toList());
         int success = 0, total = 0, notFound = 0;
-        while (iterator.hasNext()) {
+        for (int id : indices) {
             try {
-                T item = iterator.next();
+                T item = repository.findById(id);
                 int subtype = subtypeFunc.apply(item.getSubtype());
-                Source source = Source.record(domain, subtype, item.getId());
+                Source source = Source.record(domain, subtype, item);
                 if (insertItem(item, source) >= 0) {
                     success++;
                 }
@@ -127,12 +119,6 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         }
         if (item instanceof ImdbIdentifier) {
             itemEntity.setImdbId(((ImdbIdentifier) item).getImdbId());
-        }
-        if (item instanceof UpdateDatetimeSupplier) {
-            itemEntity.setUpdateTime(((UpdateDatetimeSupplier) item).getUpdate());
-        } else if (item instanceof UpdateDateSupplier) {
-            LocalDate date = ((UpdateDateSupplier) item).getUpdate();
-            itemEntity.setUpdateTime(LocalDateTime.of(date, LocalTime.MIN));
         }
         List<? extends Link> resources = item.getLinks();
         Integer count = template.execute(status -> insertResource(itemEntity, resources));

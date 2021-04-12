@@ -30,8 +30,7 @@ public interface ResourceService {
      */
     <E extends Enum<E>, T extends IdentifierItem<E>>
     void importIntListRepository(ListRepository<Integer, T> repository, String domain,
-        Function<E, Integer> subtypeFunc)
-        throws OtherResponseException;
+        Function<E, Integer> subtypeFunc) throws OtherResponseException;
 
     /**
      * Search resources of the given key.

@@ -13,12 +13,13 @@ import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
+import wsg.tools.internet.info.adult.west.PornTubeSite;
+import wsg.tools.internet.info.adult.wiki.CelebrityWikiSite;
 import wsg.tools.internet.movie.resource.AbstractListResourceSite;
 import wsg.tools.internet.movie.resource.BdMovieType;
 import wsg.tools.internet.movie.resource.GrapeVodType;
@@ -92,15 +93,49 @@ public class ResourceScheduler extends BaseServiceImpl {
         MidnightSite site = manager.midnightSite();
         for (MidnightAmateurColumn type : MidnightAmateurColumn.values()) {
             MidnightColumn column = type.getColumn();
-            int subtype = column.getCode();
-            MidnightPageReq first = MidnightPageReq.first();
+            MidnightPageReq first = MidnightPageReq.first(column);
+            int subtype = column.getId();
             try {
-                adultService.importLatestByPage(site.getHostname(), subtype,
-                    req -> site.findPage(column, req), first,
+                adultService.importLatestByPage(site.getHostname(), subtype, site::findPage, first,
                     index -> site.findAmateurEntry(type, index.getId()));
             } catch (OtherResponseException e) {
                 log.error(e.getMessage());
             }
+        }
+    }
+
+    @Scheduled(cron = "0 0 18 * * ?")
+    public void importMidnightFormally() {
+        MidnightColumn column = MidnightColumn.ENTRY;
+        MidnightSite site = manager.midnightSite();
+        MidnightPageReq first = MidnightPageReq.first(column);
+        int subtype = column.getId();
+        try {
+            adultService.importLatestByPage(site.getHostname(), subtype, site::findPage, first,
+                index -> site.findFormalEntry(index.getId()));
+        } catch (OtherResponseException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    @Scheduled(cron = "0 0 0 1 1 ?")
+    public void importCelebrityWiki() {
+        CelebrityWikiSite site = manager.celebrityWikiSite();
+        String domain = site.getHostname();
+        try {
+            adultService.importCelebrityEntries(domain, site::findAdultEntry, site.getRepository());
+        } catch (OtherResponseException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    @Scheduled(cron = "0 0 6 * * ?")
+    public void importPornTubeSite() {
+        PornTubeSite site = manager.pornTubeSite();
+        try {
+            adultService.importIntListRepository(site.getHostname(), 0, site.getRepository());
+        } catch (OtherResponseException e) {
+            log.error(e.getMessage());
         }
     }
 
@@ -111,8 +146,6 @@ public class ResourceScheduler extends BaseServiceImpl {
             resourceService.importIntListRepository(repository, site.getHostname(), subtypeFunc);
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
-        } catch (UnexpectedException e) {
-            log.error(e.getCause().getMessage());
         }
     }
 }

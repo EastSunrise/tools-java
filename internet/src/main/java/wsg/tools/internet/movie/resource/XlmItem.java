@@ -4,7 +4,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import wsg.tools.internet.base.view.NextSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * Items of {@link XlmSite}.
@@ -34,12 +34,12 @@ public class XlmItem extends BaseIdentifiedItem<XlmColumn>
     }
 
     @Override
-    public Integer nextId() {
+    public Integer getNextId() {
         return next;
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 

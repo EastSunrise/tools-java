@@ -43,10 +43,12 @@ import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.base.view.CoverSupplier;
+import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
+import wsg.tools.internet.info.adult.view.PreviewSupplier;
+import wsg.tools.internet.info.adult.view.VideoSupplier;
 
 /**
  * Configurations for MinIO.
@@ -62,10 +64,12 @@ public class MinioConfig implements InitializingBean {
 
     private static final MinioBucket[] BUCKETS = {
         new MinioBucket("covers").setPolicyAll(PolicyType.READ_ONLY),
-        new MinioBucket("album").setPolicyAll(PolicyType.READ_ONLY)
+        new MinioBucket("album").setPolicyAll(PolicyType.READ_ONLY),
+        new MinioBucket("video").setPolicyAll(PolicyType.READ_ONLY)
     };
     private static final MinioBucket BUCKET_COVER = BUCKETS[0];
     private static final MinioBucket BUCKET_ALBUM = BUCKETS[1];
+    private static final MinioBucket BUCKET_VIDEO = BUCKETS[2];
     private static final String CONNECTION_REFUSED = "Connection refused: connect";
     private final File tmpdir;
     private final SiteManager manager;
@@ -86,11 +90,32 @@ public class MinioConfig implements InitializingBean {
     }
 
     /**
+     * Uploads the preview to the server with the given arguments as the path in the bucket.
+     */
+    public String uploadPreview(@Nonnull PreviewSupplier supplier, @Nonnull Source source)
+        throws NotFiletypeException, NotFoundException, OtherResponseException {
+        String folder = "preview";
+        folder += Constants.URL_PATH_SEPARATOR + source.getDomain();
+        folder += Constants.URL_PATH_SEPARATOR + source.getSubtype();
+        String rid = String.valueOf(source.getRid());
+        return uploadURL(supplier.getPreviewURL(), Filetype.VIDEO, BUCKET_VIDEO, folder, rid);
+    }
+
+    /**
+     * Uploads the video to the server with the given arguments as the path in the bucket.
+     */
+    public String uploadVideo(@Nonnull VideoSupplier supplier, @Nonnull Source source)
+        throws NotFiletypeException, NotFoundException, OtherResponseException {
+        // todo upload video
+        return supplier.getVideoURL().toString();
+    }
+
+    /**
      * Uploads the cover to the server with the given source as the path in the bucket.
      *
      * @see #uploadCover(CoverSupplier, String, int, String)
      */
-    public String uploadCover(CoverSupplier supplier, Source source)
+    public String uploadCover(CoverSupplier supplier, @Nonnull Source source)
         throws NotFoundException, OtherResponseException, NotFiletypeException {
         String id = String.valueOf(source.getRid());
         return uploadCover(supplier, source.getDomain(), source.getSubtype(), id);
@@ -98,56 +123,38 @@ public class MinioConfig implements InitializingBean {
 
     /**
      * Uploads the cover to the server with the given arguments as the path in the bucket.
-     *
-     * @param supplier the supplier of the url pointing to the cover
-     * @return the url of the cover stored in the server
-     * @throws NotFoundException      if not found
-     * @throws NotFiletypeException   if the target is not an image file
-     * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
-    public String uploadCover(CoverSupplier supplier, String domain, int subtype, String id)
-        throws NotFiletypeException, NotFoundException, OtherResponseException {
-        Objects.requireNonNull(supplier, "the supplier of the cover");
-        Objects.requireNonNull(domain, "the domain of the cover");
-        Objects.requireNonNull(id, "the id of the cover");
-        URL cover = supplier.getCover();
-        if (cover == null) {
-            return null;
-        }
-        if (!Filetype.IMAGE.test(cover.getFile())) {
-            throw new NotFiletypeException(Filetype.IMAGE, cover.getFile());
-        }
-        File file = download(cover);
+    public String uploadCover(@Nonnull CoverSupplier supplier, String domain, int subtype,
+        String id) throws NotFiletypeException, NotFoundException, OtherResponseException {
         String folder = domain + Constants.URL_PATH_SEPARATOR + subtype;
-        return uploadLocal(file, BUCKET_COVER, folder, id);
+        return uploadURL(supplier.getCoverURL(), Filetype.IMAGE, BUCKET_COVER, folder, id);
     }
 
     /**
      * Uploads an album of images to the server with the given arguments as the path in the bucket.
-     *
-     * @param supplier the supplier of the album of images
-     * @return list of urls of the images stored in the server
-     * @throws NotFoundException      if any image is not found
-     * @throws NotFiletypeException   if any url is not an image file
-     * @throws OtherResponseException if an unexpected {@code HttpResponseException} occurs
      */
-    public List<String> uploadAlbum(AlbumSupplier supplier, String domain, int subtype, String id)
-        throws NotFoundException, OtherResponseException, NotFiletypeException {
-        Objects.requireNonNull(supplier, "the supplier of the cover");
-        Objects.requireNonNull(domain, "the domain of the cover");
-        Objects.requireNonNull(id, "the id of the cover");
+    public List<String> uploadAlbum(@Nonnull AlbumSupplier supplier, String domain, int subtype,
+        String id) throws NotFoundException, OtherResponseException, NotFiletypeException {
         List<URL> album = supplier.getAlbum();
         List<String> result = new ArrayList<>(album.size());
         String folder = String.join("/", domain, String.valueOf(subtype), id);
         for (int i = 0, albumSize = album.size(); i < albumSize; i++) {
-            URL image = album.get(i);
-            if (!Filetype.IMAGE.test(image.getFile())) {
-                throw new NotFiletypeException(Filetype.IMAGE, image.getFile());
-            }
-            File file = download(image);
-            result.add(uploadLocal(file, BUCKET_ALBUM, folder, String.valueOf(i)));
+            String sid = String.valueOf(i);
+            result.add(uploadURL(album.get(i), Filetype.IMAGE, BUCKET_ALBUM, folder, sid));
         }
         return result;
+    }
+
+    private String uploadURL(URL url, Filetype filetype, MinioBucket bucket, String folder,
+        String basename) throws NotFiletypeException, NotFoundException, OtherResponseException {
+        if (url == null) {
+            return null;
+        }
+        if (!filetype.test(url.getFile())) {
+            throw new NotFiletypeException(filetype, url.getFile());
+        }
+        File file = download(url);
+        return uploadLocal(file, bucket, folder, basename);
     }
 
     /**

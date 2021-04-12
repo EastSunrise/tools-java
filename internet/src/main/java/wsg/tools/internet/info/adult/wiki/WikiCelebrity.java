@@ -8,13 +8,13 @@ import java.util.Set;
  * A celebrity with basic information, works, and albums.
  *
  * @author Kingen
- * @see CelebrityWikiSite#findCelebrity(int, WikiCelebrityType)
+ * @see CelebrityWikiSite#findById(WikiCelebrityIndex)
  * @since 2021/2/24
  */
 public class WikiCelebrity extends WikiSimpleCelebrity {
 
     private final BasicInfo info;
-    private List<String> works;
+    private Set<String> works;
     private List<String> descriptions;
     private List<String> experiences;
     private List<String> groupLives;
@@ -30,12 +30,12 @@ public class WikiCelebrity extends WikiSimpleCelebrity {
         return info;
     }
 
-    public List<String> getWorks() {
+    public Set<String> getWorks() {
         return works;
     }
 
-    void setWorks(List<String> works) {
-        this.works = Collections.unmodifiableList(works);
+    void setWorks(Set<String> works) {
+        this.works = Collections.unmodifiableSet(works);
     }
 
     public List<String> getDescriptions() {

@@ -6,6 +6,8 @@ import java.time.LocalDate;
  * An entry of a Japanese adult video.
  *
  * @author Kingen
+ * @see AmateurJaAdultEntry
+ * @see FormalJaAdultEntry
  * @since 2021/4/7
  */
 public interface JaAdultEntry extends SerialNumSupplier, AdultEntry {

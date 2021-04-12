@@ -16,5 +16,5 @@ public interface NextSupplier<ID> {
      *
      * @return the identifier
      */
-    ID nextId();
+    ID getNextId();
 }

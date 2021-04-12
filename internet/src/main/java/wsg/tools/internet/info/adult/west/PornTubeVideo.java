@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.view.SourceSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.view.Describable;
-import wsg.tools.internet.info.adult.view.Tagged;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.info.adult.view.Classified;
 
 /**
  * A video on the site.
@@ -21,7 +19,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @since 2021/3/17
  */
 public class PornTubeVideo extends PornTubeSimpleVideo
-    implements SourceSupplier, Describable, UpdateDatetimeSupplier, Tagged {
+    implements WesternAdultEntry, UpdateDatetimeSupplier, Classified {
 
     private final URL video;
     private final String description;
@@ -39,7 +37,8 @@ public class PornTubeVideo extends PornTubeSimpleVideo
         this.postTime = postTime;
     }
 
-    public URL getVideo() {
+    @Override
+    public URL getVideoURL() {
         return video;
     }
 
@@ -48,13 +47,13 @@ public class PornTubeVideo extends PornTubeSimpleVideo
         return description;
     }
 
-    @Override
     public URL getSource() {
         return source;
     }
 
-    public Map<Integer, String> getCategories() {
-        return categories;
+    @Override
+    public String[] getCategories() {
+        return categories.values().toArray(new String[0]);
     }
 
     void setCategories(Map<Integer, String> categories) {

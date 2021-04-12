@@ -7,7 +7,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -101,11 +100,5 @@ public class ResourceController extends AbstractController {
     @ResponseBody
     public long identifyResources(@RequestBody List<ResourceCheckDto> checkDto) {
         return resourceService.identifyResources(checkDto);
-    }
-
-    @GetMapping("/adult/preview")
-    public String preview(Model model) {
-        model.addAttribute("views", adultService.findImages(Pageable.unpaged()));
-        return "info/adult/preview";
     }
 }

@@ -1,6 +1,5 @@
 package wsg.tools.boot.pojo.entity.resource;
 
-import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -63,9 +62,6 @@ public class ResourceItemEntity extends IdentityEntity
 
     @Column(length = 10)
     private String imdbId;
-
-    @Column(length = 0)
-    private LocalDateTime updateTime;
 
     @Column(nullable = false)
     private Boolean identified;

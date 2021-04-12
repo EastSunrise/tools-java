@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.view;
+package wsg.tools.internet.common;
 
 import java.time.LocalDateTime;
 import wsg.tools.internet.base.EntityInterface;
@@ -12,12 +12,13 @@ import wsg.tools.internet.base.EntityInterface;
  * @since 2021/2/25
  */
 @EntityInterface
-public interface UpdateDatetimeSupplier {
+public interface UpdateDatetimeSupplier extends UpdateTemporalSupplier<LocalDateTime> {
 
     /**
      * Returns the update datetime of the entity.
      *
      * @return the update datetime
      */
+    @Override
     LocalDateTime getUpdate();
 }

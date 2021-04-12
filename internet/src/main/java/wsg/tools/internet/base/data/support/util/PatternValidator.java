@@ -64,7 +64,7 @@ public class PatternValidator extends Validator<MatchResult> {
     public void describe(@Nonnull List<MatchResult> results) {
     }
 
-    protected enum MatcherType {
+    public enum MatcherType {
         /**
          * @see Matcher#matches()
          */

@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.apache.http.client.HttpResponseException;
 import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,10 +24,12 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.CacheResponseWrapper;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.DocumentHandler;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
@@ -107,7 +110,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
         if (!scripts.isEmpty()) {
             String script = scripts.last().html();
             Matcher srcMatcher = RegexUtils.findOrElseThrow(Lazy.VIDEO_URL_REGEX, script);
-            video.setSource(NetUtils.createURL(srcMatcher.group("u")));
+            video.setVideo(NetUtils.createURL(srcMatcher.group("u")));
         }
         String tags = metadata.get("video:tag");
         if (tags != null) {
@@ -303,7 +306,13 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             .addParameter("function", "get_block")
             .addParameter("block_id", blockId)
             .addParameter("sort_by", sortBy);
-        Document document = getDocument(wrapper, t -> true);
+        CacheResponseWrapper<Document> rw = null;
+        try {
+            rw = getResponseWrapper(wrapper, new DocumentHandler(), t -> true);
+        } catch (HttpResponseException e) {
+            throw SiteUtils.handleException(e);
+        }
+        Document document = rw.getContent();
         Elements items = document.selectFirst("#" + blockId + "_items").children();
         int totalPages = 1;
         Element pagination = document.selectFirst(".pagination");
@@ -350,6 +359,6 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
         private static final Pattern CATEGORY_HREF_REGEX = Pattern
             .compile(HOME + "/categories/(?<p>[A-Za-z-]+)/");
         private static final Pattern VIDEO_URL_REGEX = Pattern
-            .compile("video_url: '(?<u>[\\w:/.]+)'");
+            .compile("video_url: '(?:function/0/)?(?<u>[\\w:/.]+)'");
     }
 }

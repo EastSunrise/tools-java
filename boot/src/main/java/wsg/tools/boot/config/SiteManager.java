@@ -13,6 +13,9 @@ import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.support.BasicDownloader;
 import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
+import wsg.tools.internet.info.adult.west.BabesTubeSite;
+import wsg.tools.internet.info.adult.west.PornTubeSite;
+import wsg.tools.internet.info.adult.wiki.CelebrityWikiSite;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.imdb.ImdbCnSite;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
@@ -46,6 +49,9 @@ public class SiteManager implements DisposableBean {
     private Downloader downloader;
     private LicencePlateSite licencePlateSite;
     private MidnightSite midnightSite;
+    private CelebrityWikiSite celebrityWikiSite;
+    private PornTubeSite pornTubeSite;
+    private BabesTubeSite babesTubeSite;
 
     @Autowired
     public SiteManager(PathConfiguration configuration) {
@@ -132,13 +138,34 @@ public class SiteManager implements DisposableBean {
         return downloader;
     }
 
+    public CelebrityWikiSite celebrityWikiSite() {
+        if (celebrityWikiSite == null) {
+            celebrityWikiSite = new CelebrityWikiSite();
+        }
+        return celebrityWikiSite;
+    }
+
+    public PornTubeSite pornTubeSite() {
+        if (pornTubeSite == null) {
+            pornTubeSite = new PornTubeSite();
+        }
+        return pornTubeSite;
+    }
+
+    public BabesTubeSite babesTubeSite() {
+        if (babesTubeSite == null) {
+            babesTubeSite = new BabesTubeSite();
+        }
+        return babesTubeSite;
+    }
+
     @Override
     public void destroy() throws IOException {
         if (imdbRepository != null && imdbRepository instanceof Closeable) {
             ((Closeable) imdbRepository).close();
         }
         close(doubanSite, bdMovieSite, movieHeavenSite, xlcSite, xlmSite, grapeSite,
-            licencePlateSite, midnightSite);
+            licencePlateSite, midnightSite, celebrityWikiSite, pornTubeSite, babesTubeSite);
     }
 
     private void close(Closeable... sites) throws IOException {

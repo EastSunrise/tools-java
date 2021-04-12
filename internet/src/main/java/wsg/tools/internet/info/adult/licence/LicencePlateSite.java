@@ -1,6 +1,5 @@
 package wsg.tools.internet.info.adult.licence;
 
-import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.Iterator;
@@ -11,6 +10,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -20,6 +20,8 @@ import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.support.BasicSiblingEntity;
+import wsg.tools.internet.base.view.SiblingSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -52,13 +54,16 @@ public class LicencePlateSite extends BaseSite
      * Retrieve an item by the specified identifier.
      *
      * @see LicencePlateItem#getId()
-     * @see LicencePlateItem#nextId()
+     * @see LicencePlateItem#getNextId()
      */
     @Nonnull
     @Override
     public LicencePlateItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        SnapshotStrategy<Document> strategy = doc -> getNext(doc) == null;
+        SnapshotStrategy<Document> strategy = doc -> {
+            SiblingSupplier<String> sibling = getSibling(doc);
+            return sibling.getPreviousId() == null || sibling.getNextId() == null;
+        };
         Document document = getDocument(httpGet("/%s", id.toLowerCase(Locale.ROOT)), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
@@ -77,8 +82,9 @@ public class LicencePlateSite extends BaseSite
         if (!lines.isEmpty()) {
             desc += lines.removeLast();
         }
-        String nextId = getNext(document);
-        LicencePlateItem item = new LicencePlateItem(id, serialNum, desc, update, nextId);
+        SiblingSupplier<String> sibling = getSibling(document);
+        LicencePlateItem item = new LicencePlateItem(id, serialNum, desc, update,
+            sibling.getPreviousId(), sibling.getNextId());
         Element img = content.selectFirst(CssSelectors.TAG_IMG);
         if (img != null) {
             item.setCover(NetUtils.createURL(img.attr(CssSelectors.ATTR_SRC)));
@@ -100,14 +106,21 @@ public class LicencePlateSite extends BaseSite
         return item;
     }
 
-    private String getNext(Document document) {
-        Element a = document.selectFirst(".post-next").selectFirst(CssSelectors.TAG_A);
-        if (!a.hasAttr(CssSelectors.ATTR_REL)) {
-            return null;
+    private SiblingSupplier<String> getSibling(Document document) {
+        Elements navigation = document.selectFirst(".post-navigation").select(CssSelectors.TAG_A);
+        String previous = null;
+        Element first = navigation.first();
+        if (first.hasAttr(CssSelectors.ATTR_REL)) {
+            String href = first.attr(CssSelectors.ATTR_HREF);
+            previous = RegexUtils.matchesOrElseThrow(Lazy.URL_REGEX, href).group("id");
         }
-        String href = a.attr(CssSelectors.ATTR_HREF);
-        String id = RegexUtils.matchesOrElseThrow(Lazy.URL_REGEX, href).group("id");
-        return URLDecoder.decode(id, Constants.UTF_8);
+        String next = null;
+        Element last = navigation.last();
+        if (last.hasAttr(CssSelectors.ATTR_REL)) {
+            String href = last.attr(CssSelectors.ATTR_HREF);
+            next = RegexUtils.matchesOrElseThrow(Lazy.URL_REGEX, href).group("id");
+        }
+        return new BasicSiblingEntity<>(previous, next);
     }
 
     private static class Lazy {

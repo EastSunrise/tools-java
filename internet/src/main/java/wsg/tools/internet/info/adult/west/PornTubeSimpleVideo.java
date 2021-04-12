@@ -49,7 +49,7 @@ public class PornTubeSimpleVideo implements PornTubeVideoIndex, TitledAdultEntry
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return thumb;
     }
 

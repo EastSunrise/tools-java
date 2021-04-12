@@ -4,9 +4,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import wsg.tools.internet.base.support.BasicSiblingEntity;
 import wsg.tools.internet.base.view.Identifier;
-import wsg.tools.internet.base.view.NextSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Describable;
 import wsg.tools.internet.info.adult.view.Tagged;
@@ -18,15 +18,14 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see LicencePlateSite#findById(String)
  * @since 2021/3/9
  */
-public class LicencePlateItem
-    implements Identifier<String>, UpdateDatetimeSupplier, NextSupplier<String>,
-    AmateurJaAdultEntry, Tagged, Describable {
+public class LicencePlateItem extends BasicSiblingEntity<String>
+    implements Identifier<String>, UpdateDatetimeSupplier, AmateurJaAdultEntry, Tagged,
+    Describable {
 
     private final String id;
     private final String serialNum;
     private final String description;
     private final LocalDateTime updateTime;
-    private final String nextId;
 
     private URL cover;
     private String performer;
@@ -38,12 +37,12 @@ public class LicencePlateItem
     private String[] tags;
 
     LicencePlateItem(String id, String serialNum, String description, LocalDateTime updateTime,
-        String nextId) {
+        String previous, String next) {
+        super(previous, next);
         this.id = id;
         this.serialNum = serialNum;
         this.description = description;
         this.updateTime = updateTime;
-        this.nextId = nextId;
     }
 
     @Override
@@ -57,7 +56,7 @@ public class LicencePlateItem
     }
 
     @Override
-    public URL getCover() {
+    public URL getCoverURL() {
         return cover;
     }
 
@@ -73,11 +72,6 @@ public class LicencePlateItem
     @Override
     public LocalDateTime getUpdate() {
         return updateTime;
-    }
-
-    @Override
-    public String nextId() {
-        return nextId;
     }
 
     @Override

@@ -1,14 +1,18 @@
 package wsg.tools.internet.common;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.jetbrains.annotations.Contract;
@@ -19,7 +23,9 @@ import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.page.PageReq;
 import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.view.SiblingSupplier;
 
 /**
  * Utility for operations on sites.
@@ -43,6 +49,19 @@ public final class SiteUtils {
     }
 
     /**
+     * Finds a header of the specified name.
+     */
+    @Nonnull
+    public static Header findHeader(@Nonnull Header[] headers, String name) {
+        for (Header header : headers) {
+            if (header.getName().equalsIgnoreCase(name)) {
+                return header;
+            }
+        }
+        throw new IllegalArgumentException("Can't find the header of " + name);
+    }
+
+    /**
      * Splits a {@link HttpResponseException}.
      *
      * @return other exception
@@ -56,6 +75,43 @@ public final class SiteUtils {
             throw new NotFoundException(e.getMessage());
         }
         return new OtherResponseException(e);
+    }
+
+    /**
+     * Collects doubly-linked entities recursively.
+     * <p>
+     * Notes that the type of {@code ID} must override {@link Object#equals(Object)}, otherwise a
+     * stack overflow exception may occurs.
+     *
+     * @param retrievable the function to retrieve an entity by an identifier
+     * @param first       the identifier of the first entity
+     * @param <ID>        type of identifiers that should override {@link #equals(Object)}
+     * @param <T>         type of entities
+     * @return a linked list of entities
+     */
+    @Nonnull
+    public static <ID, T extends SiblingSupplier<ID>>
+    List<T> collectSiblingEntities(RepoRetrievable<ID, T> retrievable, ID first)
+        throws NotFoundException, OtherResponseException {
+        List<T> entities = new LinkedList<>();
+        find(first, retrievable, new HashSet<>(), entities);
+        return entities;
+    }
+
+    private static <ID, T extends SiblingSupplier<ID>>
+    void find(ID id, RepoRetrievable<ID, T> retrievable, Set<ID> ids, List<T> entities)
+        throws NotFoundException, OtherResponseException {
+        if (id == null) {
+            return;
+        }
+        if (ids.contains(id)) {
+            return;
+        }
+        T t = retrievable.findById(id);
+        entities.add(t);
+        ids.add(id);
+        find(t.getNextId(), retrievable, ids, entities);
+        find(t.getPreviousId(), retrievable, ids, entities);
     }
 
     /**

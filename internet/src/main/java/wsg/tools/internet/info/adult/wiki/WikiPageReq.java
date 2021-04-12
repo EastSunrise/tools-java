@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Contract;
 import wsg.tools.internet.base.page.BasicPageReq;
 import wsg.tools.internet.base.page.PageReq;
+import wsg.tools.internet.base.view.SubtypeSupplier;
 
 /**
  * An implementation of {@link PageReq} for {@link CelebrityWikiSite}, with a fixed page size.
@@ -11,17 +12,20 @@ import wsg.tools.internet.base.page.PageReq;
  * @author Kingen
  * @since 2021/3/11
  */
-public class WikiPageReq extends BasicPageReq {
+public class WikiPageReq extends BasicPageReq implements SubtypeSupplier<WikiCelebrityType> {
 
     private static final long serialVersionUID = 2881971676332630439L;
+    private static final int FIXED_SIZE = 100;
 
-    /**
-     * Creates an instance of paged request.
-     *
-     * @param current zero-based page index, must not be negative.
-     */
+    private final WikiCelebrityType type;
+
+    public WikiPageReq(int current, WikiCelebrityType type) {
+        super(current, FIXED_SIZE);
+        this.type = type;
+    }
+
     public WikiPageReq(int current) {
-        super(current, 100);
+        this(current, null);
     }
 
     @Nonnull
@@ -38,5 +42,10 @@ public class WikiPageReq extends BasicPageReq {
     @Override
     public BasicPageReq previous() {
         return new WikiPageReq(super.previous().getCurrent());
+    }
+
+    @Override
+    public WikiCelebrityType getSubtype() {
+        return type;
     }
 }

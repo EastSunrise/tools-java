@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import wsg.tools.internet.base.view.NextSupplier;
-import wsg.tools.internet.base.view.UpdateDatetimeSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
@@ -14,7 +14,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * Album including a series of photos.
  *
  * @author Kingen
- * @see CelebrityWikiSite#findAlbum(int, WikiAlbumType)
+ * @see CelebrityWikiSite#findAlbum(WikiAlbumIndex)
  * @since 2021/2/26
  */
 public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumSupplier, Tagged,
@@ -25,7 +25,7 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
     private final String title;
     private LocalDateTime updateTime;
     private List<URL> album;
-    private List<Integer> relatedCelebrities;
+    private List<WikiCelebrityIndex> relatedCelebrities;
     private String[] tags;
     private Integer next;
 
@@ -49,7 +49,7 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
     }
 
     @Override
-    public WikiAlbumType getType() {
+    public WikiAlbumType getSubtype() {
         return type;
     }
 
@@ -77,11 +77,11 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
         this.tags = tags;
     }
 
-    public List<Integer> getRelatedCelebrities() {
+    public List<WikiCelebrityIndex> getRelatedCelebrities() {
         return relatedCelebrities;
     }
 
-    void setRelatedCelebrities(List<Integer> relatedCelebrities) {
+    void setRelatedCelebrities(List<WikiCelebrityIndex> relatedCelebrities) {
         this.relatedCelebrities = Collections.unmodifiableList(relatedCelebrities);
     }
 
@@ -90,7 +90,7 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
     }
 
     @Override
-    public Integer nextId() {
+    public Integer getNextId() {
         return next;
     }
 
