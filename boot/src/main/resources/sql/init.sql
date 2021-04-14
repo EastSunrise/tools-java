@@ -7,3 +7,8 @@ alter table video_season
     auto_increment = 40000000;
 alter table video_episode
     auto_increment = 60000000;
+
+alter table ja_adult_video
+    auto_increment = 10000000;
+alter table west_adult_video
+    auto_increment = 20000000;

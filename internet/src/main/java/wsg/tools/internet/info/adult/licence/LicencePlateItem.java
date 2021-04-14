@@ -4,11 +4,14 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.base.support.BasicSiblingEntity;
 import wsg.tools.internet.base.view.Identifier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Describable;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
+import wsg.tools.internet.info.adult.view.ImageSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
@@ -18,8 +21,8 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see LicencePlateSite#findById(String)
  * @since 2021/3/9
  */
-public class LicencePlateItem extends BasicSiblingEntity<String>
-    implements Identifier<String>, UpdateDatetimeSupplier, AmateurJaAdultEntry, Tagged,
+public class LicencePlateItem extends BasicSiblingEntity<String> implements Identifier<String>,
+    UpdateDatetimeSupplier, AmateurJaAdultEntry, DurationSupplier, ImageSupplier, Tagged,
     Describable {
 
     private final String id;
@@ -27,7 +30,7 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
     private final String description;
     private final LocalDateTime updateTime;
 
-    private URL cover;
+    private URL image;
     private String performer;
     private Duration duration;
     private LocalDate release;
@@ -56,12 +59,12 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
     }
 
     @Override
-    public URL getCoverURL() {
-        return cover;
+    public URL getImageURL() {
+        return image;
     }
 
-    void setCover(URL cover) {
-        this.cover = cover;
+    void setImage(URL image) {
+        this.image = image;
     }
 
     @Override
@@ -133,6 +136,7 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
         this.series = series;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;

@@ -237,7 +237,13 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     public WikiAdultEntry findAdultEntry(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/fanhao/%s.html", id), t -> false);
+        RequestWrapper wrapper = null;
+        try {
+            wrapper = httpGet("/fanhao/%s.html", id);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(e.getMessage());
+        }
+        Document document = getDocument(wrapper, t -> false);
         WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {

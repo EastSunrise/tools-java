@@ -4,6 +4,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.common.CoverSupplier;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Tagged;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
@@ -15,7 +18,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @see CelebrityWikiSite#findAdultEntry(String)
  * @since 2021/2/24
  */
-public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Tagged {
+public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, CoverSupplier,
+    DurationSupplier, Tagged {
 
     private final WikiSimpleCelebrity celebrity;
     private final String serialNum;
@@ -59,6 +63,7 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Tag
         return cover;
     }
 
+    @Nonnull
     @Override
     public List<String> getActresses() {
         return actresses;
@@ -126,6 +131,7 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Tag
         this.series = series;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;

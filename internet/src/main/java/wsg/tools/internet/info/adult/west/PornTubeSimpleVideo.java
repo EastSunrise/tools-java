@@ -4,6 +4,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.Objects;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
@@ -14,7 +15,7 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @see PornTubeSite#findAllByTag(PornTubeTag)
  * @since 2021/3/31
  */
-public class PornTubeSimpleVideo implements PornTubeVideoIndex, TitledAdultEntry {
+public class PornTubeSimpleVideo implements PornTubeVideoIndex, TitledAdultEntry, DurationSupplier {
 
     private final int id;
     private final URL thumb;

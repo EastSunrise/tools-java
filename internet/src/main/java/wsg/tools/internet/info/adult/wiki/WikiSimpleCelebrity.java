@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.net.URL;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
@@ -50,6 +51,7 @@ public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, T
         this.cover = cover;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;

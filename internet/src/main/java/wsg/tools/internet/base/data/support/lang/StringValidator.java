@@ -32,6 +32,8 @@ public class StringValidator extends Validator<String> {
         if (!texts.isEmpty()) {
             long count = texts.stream().filter(String::isBlank).count();
             log.info("Count of blank texts: {}", count);
+            long unstripped = texts.stream().filter(s -> s.length() != s.strip().length()).count();
+            log.info("Count of not stripped texts: {}", unstripped);
         }
     }
 }

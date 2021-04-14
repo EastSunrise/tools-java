@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,6 +42,7 @@ public final class MapUtilsExt {
     /**
      * Obtains a list of strings from the given map and remove the key.
      */
+    @Nonnull
     public static List<String> getStringList(@Nonnull Map<String, String> map,
         String separatorChars, String... keys) {
         return getValues(map, Function.identity(), separatorChars, keys);
@@ -93,15 +95,16 @@ public final class MapUtilsExt {
      * @param separatorChars chars to split the string
      * @return list of values, ignoring {@literal null}
      */
+    @Nonnull
     public static <T> List<T> getValues(@Nonnull Map<String, String> map,
         @Nonnull Function<? super String, T> function, String separatorChars, String... keys) {
-        return getValue(map, s -> {
+        return Optional.ofNullable(getValue(map, s -> {
             List<T> list = new ArrayList<>();
             for (String part : StringUtils.split(s, separatorChars)) {
                 CollectionUtils.addIgnoreNull(list, function.apply(part));
             }
-            return list.isEmpty() ? null : list;
-        }, keys);
+            return list;
+        }, keys)).orElse(new ArrayList<>());
     }
 
     /**

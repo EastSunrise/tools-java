@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.Classified;
@@ -51,6 +52,7 @@ public class PornTubeVideo extends PornTubeSimpleVideo
         return source;
     }
 
+    @Nonnull
     @Override
     public String[] getCategories() {
         return categories.values().toArray(new String[0]);
@@ -60,6 +62,7 @@ public class PornTubeVideo extends PornTubeSimpleVideo
         this.categories = categories;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags.stream().map(PornTubeTag::getTitle).toArray(String[]::new);

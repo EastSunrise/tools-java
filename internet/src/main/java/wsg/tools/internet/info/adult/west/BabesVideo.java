@@ -3,6 +3,7 @@ package wsg.tools.internet.info.adult.west;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.common.VideoQuality;
 
@@ -150,6 +151,7 @@ public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDat
         this.video = video;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;

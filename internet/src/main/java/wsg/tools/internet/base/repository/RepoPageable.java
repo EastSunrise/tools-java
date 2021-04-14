@@ -20,12 +20,12 @@ public interface RepoPageable<P extends PageReq, R extends PageResult<?, P>> {
     /**
      * Retrieves a paged result of the indices by the given pagination information.
      *
-     * @param request the pagination information
+     * @param req the pagination information
      * @return a paged result of the indices
      * @throws NullPointerException   if the specified request is null
      * @throws NotFoundException      if the page of the specified request is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
     @Nonnull
-    R findPage(P request) throws NotFoundException, OtherResponseException;
+    R findPage(P req) throws NotFoundException, OtherResponseException;
 }

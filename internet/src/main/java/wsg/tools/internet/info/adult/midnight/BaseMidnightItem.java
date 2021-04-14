@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDateTime;
+import wsg.tools.internet.base.view.SiblingSupplier;
 
 /**
  * A base item in the {@link MidnightSite}.
@@ -8,12 +9,14 @@ import java.time.LocalDateTime;
  * @author Kingen
  * @since 2021/3/2
  */
-class BaseMidnightItem implements MidnightIndex {
+class BaseMidnightItem implements MidnightIndex, SiblingSupplier<Integer> {
 
     private final int id;
     private final String title;
     private final LocalDateTime addTime;
     private String[] keywords;
+    private Integer previousId;
+    private Integer nextId;
 
     BaseMidnightItem(int id, String title, LocalDateTime addTime) {
         this.id = id;
@@ -42,5 +45,23 @@ class BaseMidnightItem implements MidnightIndex {
 
     void setKeywords(String[] keywords) {
         this.keywords = keywords;
+    }
+
+    @Override
+    public Integer getNextId() {
+        return nextId;
+    }
+
+    void setNextId(Integer nextId) {
+        this.nextId = nextId;
+    }
+
+    @Override
+    public Integer getPreviousId() {
+        return previousId;
+    }
+
+    void setPreviousId(Integer previousId) {
+        this.previousId = previousId;
     }
 }

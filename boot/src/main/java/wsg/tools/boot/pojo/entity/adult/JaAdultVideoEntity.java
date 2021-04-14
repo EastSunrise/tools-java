@@ -3,24 +3,33 @@ package wsg.tools.boot.pojo.entity.adult;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Index;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.JaAdultEntry;
-import wsg.tools.internet.info.adult.view.Tagged;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
@@ -30,13 +39,19 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @since 2021/2/23
  */
 @Entity
-@Table(name = "ja_adult_video")
-public class JaAdultVideoEntity extends IdentityEntity implements JaAdultEntry, TitledAdultEntry,
-    Tagged, AlbumSupplier {
+@Table(
+    name = "ja_adult_video",
+    indexes = @Index(name = "index_ja_adult_serial_num", columnList = "serialNum", unique = true),
+    uniqueConstraints = @UniqueConstraint(name = "uni_ja_adult_video_source", columnNames = {
+        "domain", "subtype", "rid"
+    })
+)
+public class JaAdultVideoEntity extends IdentityEntity
+    implements JaAdultEntry, TitledAdultEntry, CoverSupplier, DurationSupplier, AlbumSupplier {
 
     private static final long serialVersionUID = 718083190465191530L;
 
-    @Column(nullable = false, unique = true, length = 15)
+    @Column(length = 15)
     private String serialNum;
 
     @Column(length = 127)
@@ -61,14 +76,19 @@ public class JaAdultVideoEntity extends IdentityEntity implements JaAdultEntry, 
     @Column(length = 63)
     private String series;
 
-    @Column(length = 127)
-    private String[] tags;
+    @ManyToMany
+    @JoinTable(
+        name = "ja_adult_video_tag",
+        joinColumns = @JoinColumn(name = "video_id", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "tag", referencedColumnName = "tag")
+    )
+    private Set<JaAdultTagEntity> tags;
 
     @MinioStored(type = Filetype.IMAGE)
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "adult_video_image")
+    @CollectionTable(name = "ja_adult_video_image")
     @Column(name = "image", nullable = false, length = 127)
-    private List<String> images;
+    private List<String> images = new ArrayList<>();
 
     @Embedded
     private Source source;
@@ -158,12 +178,11 @@ public class JaAdultVideoEntity extends IdentityEntity implements JaAdultEntry, 
         this.series = series;
     }
 
-    @Override
-    public String[] getTags() {
+    public Set<JaAdultTagEntity> getTags() {
         return tags;
     }
 
-    public void setTags(String[] tags) {
+    public void setTags(Set<JaAdultTagEntity> tags) {
         this.tags = tags;
     }
 
@@ -175,6 +194,7 @@ public class JaAdultVideoEntity extends IdentityEntity implements JaAdultEntry, 
         this.images = images;
     }
 
+    @Nonnull
     @Override
     public List<URL> getAlbum() {
         return images.stream().map(NetUtils::createURL).collect(Collectors.toList());

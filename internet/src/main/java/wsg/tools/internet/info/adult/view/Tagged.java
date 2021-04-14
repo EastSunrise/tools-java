@@ -1,5 +1,7 @@
 package wsg.tools.internet.info.adult.view;
 
+import javax.annotation.Nonnull;
+
 /**
  * Indicates that the entry has tags.
  *
@@ -13,5 +15,6 @@ public interface Tagged {
      *
      * @return the tags
      */
+    @Nonnull
     String[] getTags();
 }

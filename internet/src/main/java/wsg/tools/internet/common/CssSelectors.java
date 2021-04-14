@@ -12,6 +12,9 @@ public final class CssSelectors {
      * Common HTML tags.
      */
     public static final String TAG_A = "a";
+    public static final String TAG_P = "p";
+    public static final String TAG_BR = "br";
+    public static final String TAG_TD = "td";
     public static final String TAG_LI = "li";
     public static final String TAG_DIV = "div";
     public static final String TAG_SPAN = "span";

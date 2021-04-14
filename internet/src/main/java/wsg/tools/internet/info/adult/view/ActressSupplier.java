@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.view;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a supplier of actresses.
@@ -15,5 +16,6 @@ public interface ActressSupplier {
      *
      * @return the actresses
      */
+    @Nonnull
     List<String> getActresses();
 }

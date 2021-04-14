@@ -2,6 +2,7 @@ package wsg.tools.internet.info.adult.view;
 
 import java.net.URL;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a supplier of an album that contains a series of images.
@@ -16,5 +17,6 @@ public interface AlbumSupplier {
      *
      * @return the list of images as the album
      */
+    @Nonnull
     List<URL> getAlbum();
 }

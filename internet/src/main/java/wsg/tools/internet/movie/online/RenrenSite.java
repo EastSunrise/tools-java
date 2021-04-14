@@ -39,18 +39,18 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
      */
     @Nonnull
     @Override
-    public RenrenPageResult findPage(@Nonnull RenrenPageReq request)
+    public RenrenPageResult findPage(@Nonnull RenrenPageReq req)
         throws NotFoundException, OtherResponseException {
         RequestWrapper wrapper = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
-            Optional.ofNullable(request.getType()).map(Object::toString).orElse("all"),
-            Optional.ofNullable(request.getArea()).map(Object::toString).orElse("all"),
-            Optional.ofNullable(request.getGenre()).map(Object::toString).orElse("all"),
-            Optional.ofNullable(request.getStatus()).map(Object::toString).orElse("all"),
-            request.getSort(), request.getCurrent() + 1);
+            Optional.ofNullable(req.getType()).map(Object::toString).orElse("all"),
+            Optional.ofNullable(req.getArea()).map(Object::toString).orElse("all"),
+            Optional.ofNullable(req.getGenre()).map(Object::toString).orElse("all"),
+            Optional.ofNullable(req.getStatus()).map(Object::toString).orElse("all"),
+            req.getSort(), req.getCurrent() + 1);
         RenrenResponse response = getObject(wrapper, Lazy.MAPPER, RenrenResponse.class, t -> true);
         RenrenResponse.Result result = response.getResult();
-        return new RenrenPageResult(result.getContent(), request, result.isEnd());
+        return new RenrenPageResult(result.getContent(), req, result.isEnd());
     }
 
     @Override

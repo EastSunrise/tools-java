@@ -3,10 +3,12 @@ package wsg.tools.boot.pojo.entity.adult;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
@@ -23,7 +25,12 @@ import wsg.tools.internet.info.adult.west.WesternAdultEntry;
  * @since 2021/4/10
  */
 @Entity
-@Table(name = "west_adult_video")
+@Table(
+    name = "west_adult_video",
+    uniqueConstraints = @UniqueConstraint(name = "uni_wt_adult_video_source", columnNames = {
+        "domain", "subtype", "rid"
+    })
+)
 public class WesternAdultVideoEntity extends IdentityEntity
     implements WesternAdultEntry, Classified, PreviewSupplier {
 
@@ -113,6 +120,7 @@ public class WesternAdultVideoEntity extends IdentityEntity
         this.video = video;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;
@@ -122,6 +130,7 @@ public class WesternAdultVideoEntity extends IdentityEntity
         this.tags = tags;
     }
 
+    @Nonnull
     @Override
     public String[] getCategories() {
         return categories;

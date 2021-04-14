@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.base.view.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
@@ -63,11 +64,13 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
         return updateTime;
     }
 
+    @Nonnull
     @Override
     public List<URL> getAlbum() {
         return album;
     }
 
+    @Nonnull
     @Override
     public String[] getTags() {
         return tags;

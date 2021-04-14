@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import javax.annotation.Nonnull;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
 
 /**
@@ -14,7 +16,8 @@ import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
  * @see MidnightSite#findFormalEntry(int)
  * @since 2021/3/10
  */
-public class MidnightFormalEntry extends MidnightAlbum implements FormalJaAdultEntry {
+public class MidnightFormalEntry extends MidnightAlbum
+    implements FormalJaAdultEntry, DurationSupplier {
 
     private String serialNum;
     private List<String> actresses;
@@ -37,6 +40,7 @@ public class MidnightFormalEntry extends MidnightAlbum implements FormalJaAdultE
         this.serialNum = serialNum;
     }
 
+    @Nonnull
     @Override
     public List<String> getActresses() {
         return actresses;
@@ -44,11 +48,6 @@ public class MidnightFormalEntry extends MidnightAlbum implements FormalJaAdultE
 
     void setActresses(List<String> actresses) {
         this.actresses = actresses;
-    }
-
-    @Override
-    public URL getCoverURL() {
-        return null;
     }
 
     @Override

@@ -104,7 +104,7 @@ public final class AmateurCatSite extends BaseSite
         Element main = document.selectFirst("#main");
         String serialNum = main.selectFirst("h1.entry-title").text();
         String src = main.selectFirst("img.size-full").attr(CssSelectors.ATTR_SRC);
-        URL cover = NetUtils.createURL(src);
+        URL image = NetUtils.createURL(src);
         String author = main.selectFirst("span.author").text();
         String updatedStr = main.selectFirst("time.updated").attr(CssSelectors.ATTR_DATETIME);
         LocalDateTime updated = LocalDateTime.parse(updatedStr, FORMATTER);
@@ -114,7 +114,7 @@ public final class AmateurCatSite extends BaseSite
 
         Element content = main.selectFirst("div.entry-content");
         Pair<String, List<String>> pair = getDescAndLines(content);
-        AmateurCatItem item = new AmateurCatItem(id, serialNum, cover, pair.getLeft(), author,
+        AmateurCatItem item = new AmateurCatItem(id, serialNum, image, pair.getLeft(), author,
             updated, published, next);
         if (pair.getRight() != null) {
             AdultEntryParser parser = AdultEntryParser.create(extractInfo(pair.getRight()));

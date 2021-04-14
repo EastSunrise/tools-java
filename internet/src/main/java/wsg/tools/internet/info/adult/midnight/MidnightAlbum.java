@@ -4,6 +4,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nonnull;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
 
 /**
@@ -22,6 +23,7 @@ public class MidnightAlbum extends BaseMidnightItem implements AlbumSupplier {
         this.album = Collections.unmodifiableList(album);
     }
 
+    @Nonnull
     @Override
     public List<URL> getAlbum() {
         return album;

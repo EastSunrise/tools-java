@@ -1,11 +1,11 @@
 package wsg.tools.internet.info.adult.common;
 
-import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
@@ -15,6 +15,7 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.SerialNumSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
@@ -25,7 +26,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @author Kingen
  * @since 2021/4/7
  */
-public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultEntry {
+public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultEntry,
+    DurationSupplier {
 
     private final Map<String, String> info;
 
@@ -75,6 +77,7 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
      *
      * @see ActressSupplier#getActresses()
      */
+    @Nonnull
     public List<String> getActresses(String separatorChars) {
         return MapUtilsExt.getStringList(info, separatorChars, "女优", "演员");
     }
@@ -82,11 +85,6 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
     @Override
     public String getTitle() {
         return MapUtilsExt.getString(info, "名称");
-    }
-
-    @Override
-    public URL getCoverURL() {
-        throw new UnsupportedOperationException("Can't extract the cover");
     }
 
     @Override
@@ -143,8 +141,10 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
      *
      * @see Tagged#getTags()
      */
+    @Nonnull
     public String[] getTags(String separatorChars) {
-        return MapUtilsExt.getValue(info, s -> StringUtils.split(s, separatorChars), "ジャンル", "类别");
+        return Optional.ofNullable(MapUtilsExt.getValue(info,
+            s -> StringUtils.split(s, separatorChars), "ジャンル", "类别")).orElse(new String[0]);
     }
 
     /**

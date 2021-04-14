@@ -1,9 +1,8 @@
 package wsg.tools.boot.service.impl;
 
-import java.time.LocalDateTime;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -20,8 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
+import wsg.tools.boot.dao.jpa.mapper.JaAdultTagRepository;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.WesternAdultVideoRepository;
+import wsg.tools.boot.pojo.entity.adult.JaAdultTagEntity;
 import wsg.tools.boot.pojo.entity.adult.JaAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.adult.WesternAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.base.Failure;
@@ -31,30 +32,25 @@ import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.page.PageReq;
-import wsg.tools.internet.base.page.PageResult;
 import wsg.tools.internet.base.repository.LinkedRepoIterator;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.RepoPageable;
-import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.common.UpdateTemporalSupplier;
 import wsg.tools.internet.info.adult.common.SerialNumber;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Classified;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
+import wsg.tools.internet.info.adult.view.ImageSupplier;
 import wsg.tools.internet.info.adult.view.JaAdultEntry;
 import wsg.tools.internet.info.adult.view.PreviewSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 import wsg.tools.internet.info.adult.west.WesternAdultEntry;
-import wsg.tools.internet.info.adult.wiki.WikiAdultEntry;
-import wsg.tools.internet.info.adult.wiki.WikiCelebrity;
-import wsg.tools.internet.info.adult.wiki.WikiCelebrityIndex;
 
 /**
  * @author Kingen
@@ -65,24 +61,24 @@ import wsg.tools.internet.info.adult.wiki.WikiCelebrityIndex;
 @Service
 public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
-    private static final LocalDateTime START = LocalDateTime.MIN;
-
     private final JaAdultVideoRepository jaVideoRepository;
+    private final JaAdultTagRepository jaTagRepository;
     private final WesternAdultVideoRepository wtVideoRepository;
     private final FailureRepository failureRepository;
-    private final MinioConfig config;
     private final TransactionTemplate template;
+    private final MinioConfig config;
 
     @Autowired
     public AdultServiceImpl(JaAdultVideoRepository jaVideoRepository,
-        WesternAdultVideoRepository wtVideoRepository,
-        FailureRepository failureRepository, MinioConfig config,
-        TransactionTemplate template) {
+        JaAdultTagRepository jaTagRepository, WesternAdultVideoRepository wtVideoRepository,
+        FailureRepository failureRepository,
+        TransactionTemplate template, MinioConfig config) {
         this.jaVideoRepository = jaVideoRepository;
+        this.jaTagRepository = jaTagRepository;
         this.wtVideoRepository = wtVideoRepository;
         this.failureRepository = failureRepository;
-        this.config = config;
         this.template = template;
+        this.config = config;
     }
 
     @Override
@@ -118,154 +114,144 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public <I, T extends IntIdentifier & JaAdultEntry & UpdateDatetimeSupplier, P extends PageReq>
-    void importLatestByPage(String domain, int subtype,
-        @Nonnull RepoPageable<P, PageResult<I, P>> pageable, P firstReq,
-        RepoRetrievable<I, T> retrievable) throws OtherResponseException {
-        LocalDateTime deadline = jaVideoRepository.getLatestTimestamp(domain, subtype)
-            .orElse(START);
-        P req = firstReq;
-        List<T> entities = new ArrayList<>();
-        while (true) {
-            PageResult<I, P> result = null;
-            try {
-                result = pageable.findPage(req);
-            } catch (NotFoundException e) {
-                throw new AppException(e);
-            }
-            boolean dead = false;
-            for (I index : result.getContent()) {
-                T t;
-                try {
-                    t = retrievable.findById(index);
-                } catch (NotFoundException e) {
-                    throw new AppException(e);
-                }
-                if (t.getUpdate().compareTo(deadline) <= 0) {
-                    dead = true;
-                    break;
-                }
-                entities.add(t);
-            }
-            if (dead || !result.hasNext()) {
-                break;
-            }
-            req = result.nextPageRequest();
-        }
-        if (entities.isEmpty()) {
-            return;
-        }
-        int success = 0, total = 0;
-        for (int i = entities.size() - 1; i >= 0; i--) {
-            T t = entities.get(i);
-            if (t.getSerialNum() != null) {
-                Source source = Source.record(domain, subtype, t);
-                success += saveJaAdultEntry(t, source);
-            }
-            total++;
-        }
-        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
-            total - success);
-    }
-
-    @Override
-    public void
-    importCelebrityEntries(String domain, RepoRetrievable<String, WikiAdultEntry> retrievable,
-        @Nonnull ListRepository<WikiCelebrityIndex, WikiCelebrity> repository)
-        throws OtherResponseException {
-        int start = jaVideoRepository.getMaxSubtype(domain).orElse(1);
-        List<WikiCelebrityIndex> indices = repository.indices().stream()
-            .filter(index -> index.getId() > start)
-            .sorted(Comparator.comparing(WikiCelebrityIndex::getId))
-            .collect(Collectors.toList());
-        if (indices.isEmpty()) {
-            return;
-        }
-        int success = 0, total = 0;
-        for (WikiCelebrityIndex index : indices) {
-            WikiCelebrity celebrity = null;
-            try {
-                celebrity = repository.findById(index);
-            } catch (NotFoundException e) {
-                continue;
-            }
-            Set<String> works = celebrity.getWorks();
-            if (CollectionUtils.isEmpty(works)) {
-                continue;
-            }
-            total += works.size();
-            int celebrityId = celebrity.getId();
-            success += Objects.requireNonNull(template.execute(status -> {
-                int count = 0, id = 0;
-                for (String work : works) {
-                    WikiAdultEntry entry = null;
-                    try {
-                        entry = retrievable.findById(work);
-                    } catch (NotFoundException e) {
-                        continue;
-                    } catch (OtherResponseException e) {
-                        // rollback
-                        throw new AppException(e);
-                    }
-                    Source source = Source.record(domain, celebrityId, id, null);
-                    id++;
-                    count += saveJaAdultEntry(entry, source);
-                }
-                return count;
-            }));
-        }
-        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
-            total - success);
-    }
-
-    @Override
     public int saveJaAdultEntry(@Nonnull JaAdultEntry entry, Source source) {
         String serialNum = entry.getSerialNum();
-        try {
-            serialNum = SerialNumber.format(serialNum);
-        } catch (IllegalArgumentException e) {
-            String message = "The serial number is invalid: " + serialNum;
-            failureRepository.insert(new Failure(source, message));
-            return 0;
+        if (serialNum != null) {
+            try {
+                serialNum = SerialNumber.format(serialNum);
+            } catch (IllegalArgumentException e) {
+                String message = "The serial number is invalid: " + serialNum;
+                failureRepository.insert(new Failure(source, message));
+                return 0;
+            }
         }
-        JaAdultVideoEntity entity = copyEntry(entry, source.getDomain(), source.getSubtype());
+        JaAdultVideoEntity entity = copyEntry(entry, source);
         entity.setSource(source);
-
-        Optional<JaAdultVideoEntity> optional = jaVideoRepository.findBySerialNum(serialNum);
-        if (optional.isEmpty()) {
+        if (serialNum == null) {
             jaVideoRepository.insert(entity);
             return 1;
         }
 
-        JaAdultVideoEntity exists = optional.get();
-        if (merge(exists, entity)) {
-            String message = "The target serial number exists: " + serialNum;
-            failureRepository.insert(new Failure(source, message));
-            return 0;
+        String fsn = serialNum;
+        return Objects.requireNonNull(template.execute(status -> {
+            Optional<JaAdultVideoEntity> optional = jaVideoRepository.findBySerialNum(fsn);
+            if (optional.isEmpty()) {
+                jaVideoRepository.insert(entity);
+                return 1;
+            }
+            JaAdultVideoEntity exists = optional.get();
+
+            // if duplicate in the same site
+            if (exists.getSource().getDomain().equals(entity.getSource().getDomain())) {
+                return 0;
+            }
+
+            // if any property has conflict values
+            if (merge(exists, entity)) {
+                String message = "The target serial number exists: " + fsn;
+                failureRepository.insert(new Failure(source, message));
+                return 0;
+            }
+
+            // merge the two entities
+            if (exists.getImages() != null) {
+                if (entity.getImages() == null) {
+                    entity.setImages(exists.getImages());
+                } else {
+                    entity.getImages().addAll(exists.getImages());
+                }
+            }
+            Set<JaAdultTagEntity> tags = new HashSet<>();
+            if (exists.getTags() != null) {
+                tags.addAll(exists.getTags());
+            }
+            if (entity.getTags() != null) {
+                tags.addAll(entity.getTags());
+            }
+            entity.setTags(tags);
+            entity.setId(exists.getId());
+            jaVideoRepository.updateById(entity);
+            return 1;
+        }));
+    }
+
+    private JaAdultVideoEntity copyEntry(JaAdultEntry entry, Source source) {
+        JaAdultVideoEntity entity = new JaAdultVideoEntity();
+        entity.setSerialNum(entry.getSerialNum());
+        if (entry instanceof TitledAdultEntry) {
+            entity.setTitle(((TitleSupplier) entry).getTitle());
         }
-        if (exists.getImages() != null) {
-            if (entity.getImages() == null) {
-                entity.setImages(exists.getImages());
-            } else {
-                entity.getImages().addAll(exists.getImages());
+        if (entry instanceof CoverSupplier) {
+            try {
+                entity.setCover(config.uploadCover((CoverSupplier) entry, source));
+            } catch (NotFoundException | NotFiletypeException ignored) {
+            } catch (OtherResponseException e) {
+                throw new AppException(e);
             }
         }
-        if (entity.getCoverURL() == null) {
-            entity.setCover(exists.getCover());
-        } else if (exists.getCoverURL() != null) {
-            entity.getImages().add(exists.getCover());
+        entity.setMosaic(entry.getMosaic());
+        if (entry instanceof DurationSupplier) {
+            entity.setDuration(((DurationSupplier) entry).getDuration());
         }
-        Set<String> tags = new HashSet<>();
-        if (exists.getTags() != null) {
-            tags.addAll(Arrays.asList(exists.getTags()));
+        entity.setRelease(entry.getRelease());
+        entity.setProducer(entry.getProducer());
+        entity.setDistributor(entry.getDistributor());
+        entity.setSeries(entry.getSeries());
+        if (entry instanceof Tagged) {
+            Set<JaAdultTagEntity> tagEntities = Arrays.stream(((Tagged) entry).getTags())
+                .distinct().map(tag -> {
+                    JaAdultTagEntity tagEntity = new JaAdultTagEntity();
+                    tagEntity.setTag(tag);
+                    return tagEntity;
+                }).collect(Collectors.toSet());
+            entity.setTags(new HashSet<>(jaTagRepository.saveAll(tagEntities)));
         }
-        if (entity.getTags() != null) {
-            tags.addAll(Arrays.asList(entity.getTags()));
+        List<URL> images = new ArrayList<>();
+        if (entry instanceof ImageSupplier) {
+            CollectionUtils.addIgnoreNull(images, ((ImageSupplier) entry).getImageURL());
         }
-        entity.setTags(tags.toArray(new String[0]));
-        entity.setId(exists.getId());
-        jaVideoRepository.updateById(entity);
-        return 1;
+        if (entry instanceof AlbumSupplier) {
+            images.addAll(((AlbumSupplier) entry).getAlbum());
+        }
+        try {
+            entity.setImages(config.uploadAlbum(images, source));
+        } catch (NotFoundException | NotFiletypeException ignored) {
+        } catch (OtherResponseException e) {
+            throw new AppException(e);
+        }
+        return entity;
+    }
+
+    private boolean merge(JaAdultVideoEntity old, JaAdultVideoEntity add) {
+        return merge(old, add, JaAdultVideoEntity::getTitle, JaAdultVideoEntity::setTitle)
+            || merge(old, add, JaAdultVideoEntity::getCover, JaAdultVideoEntity::setCover)
+            || merge(old, add, JaAdultVideoEntity::getMosaic, JaAdultVideoEntity::setMosaic)
+            || merge(old, add, JaAdultVideoEntity::getDuration, JaAdultVideoEntity::setDuration)
+            || merge(old, add, JaAdultVideoEntity::getRelease, JaAdultVideoEntity::setRelease)
+            || merge(old, add, JaAdultVideoEntity::getProducer, JaAdultVideoEntity::setProducer)
+            || merge(old, add, JaAdultVideoEntity::getDistributor,
+            JaAdultVideoEntity::setDistributor)
+            || merge(old, add, JaAdultVideoEntity::getSeries, JaAdultVideoEntity::setSeries);
+    }
+
+    /**
+     * Returns {@code true} if the two values of the specific property are both not null and not
+     * equivalent. Otherwise, return {@code false} and merge the non-null value, if exists, to the
+     * new entity.
+     */
+    private <T> boolean merge(JaAdultVideoEntity exists, JaAdultVideoEntity newEntity,
+        @Nonnull Function<JaAdultVideoEntity, T> getter,
+        @Nonnull BiConsumer<JaAdultVideoEntity, T> setter) {
+        T existsValue = getter.apply(exists);
+        if (existsValue == null) {
+            return false;
+        }
+        T newValue = getter.apply(newEntity);
+        if (newValue == null) {
+            setter.accept(exists, existsValue);
+            return false;
+        }
+        return !newValue.equals(existsValue);
     }
 
     @Override
@@ -290,8 +276,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public int
-    saveWesternAdultEntry(@Nonnull WesternAdultEntry entry, Source source) {
+    public int saveWesternAdultEntry(@Nonnull WesternAdultEntry entry, Source source) {
         WesternAdultVideoEntity entity = new WesternAdultVideoEntity();
         entity.setTitle(entry.getTitle());
         try {
@@ -322,70 +307,5 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         entity.setSource(source);
         wtVideoRepository.insert(entity);
         return 1;
-    }
-
-    private JaAdultVideoEntity copyEntry(JaAdultEntry entry, String domain, int subtype) {
-        JaAdultVideoEntity entity = new JaAdultVideoEntity();
-        String serialNum = entry.getSerialNum();
-        entity.setSerialNum(serialNum);
-        if (entry instanceof TitledAdultEntry) {
-            entity.setTitle(((TitleSupplier) entry).getTitle());
-        }
-        try {
-            entity.setCover(config.uploadCover(entry, domain, subtype, serialNum));
-        } catch (NotFoundException | NotFiletypeException ignored) {
-        } catch (OtherResponseException e) {
-            throw new AppException(e);
-        }
-        entity.setMosaic(entry.getMosaic());
-        entity.setDuration(entry.getDuration());
-        entity.setRelease(entry.getRelease());
-        entity.setProducer(entry.getProducer());
-        entity.setDistributor(entry.getDistributor());
-        entity.setSeries(entry.getSeries());
-        if (entry instanceof Tagged) {
-            entity.setTags(((Tagged) entry).getTags());
-        }
-        if (entry instanceof AlbumSupplier) {
-            try {
-                AlbumSupplier supplier = (AlbumSupplier) entry;
-                entity.setImages(config.uploadAlbum(supplier, domain, subtype, serialNum));
-            } catch (NotFoundException | NotFiletypeException ignored) {
-            } catch (OtherResponseException e) {
-                throw new AppException(e);
-            }
-        }
-        return entity;
-    }
-
-    private boolean merge(JaAdultVideoEntity old, JaAdultVideoEntity add) {
-        return merge(old, add, JaAdultVideoEntity::getTitle, JaAdultVideoEntity::setTitle)
-            || merge(old, add, JaAdultVideoEntity::getMosaic, JaAdultVideoEntity::setMosaic)
-            || merge(old, add, JaAdultVideoEntity::getDuration, JaAdultVideoEntity::setDuration)
-            || merge(old, add, JaAdultVideoEntity::getRelease, JaAdultVideoEntity::setRelease)
-            || merge(old, add, JaAdultVideoEntity::getProducer, JaAdultVideoEntity::setProducer)
-            || merge(old, add, JaAdultVideoEntity::getDistributor,
-            JaAdultVideoEntity::setDistributor)
-            || merge(old, add, JaAdultVideoEntity::getSeries, JaAdultVideoEntity::setSeries);
-    }
-
-    /**
-     * Returns {@code true} if the two values of the specific property are both not null and not
-     * equivalent. Otherwise, return {@code false} and merge the non-null value, if exists, to the
-     * new entity.
-     */
-    private <T> boolean merge(JaAdultVideoEntity exists, JaAdultVideoEntity newEntity,
-        @Nonnull Function<JaAdultVideoEntity, T> getter,
-        @Nonnull BiConsumer<JaAdultVideoEntity, T> setter) {
-        T existsValue = getter.apply(exists);
-        if (existsValue == null) {
-            return false;
-        }
-        T newValue = getter.apply(newEntity);
-        if (newValue == null) {
-            setter.accept(exists, existsValue);
-            return false;
-        }
-        return !newValue.equals(existsValue);
     }
 }

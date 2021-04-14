@@ -70,7 +70,8 @@ public final class MidnightSite extends BaseSite
             .addParameter("myorder", 0);
         Document document = getDocument(wrapper, t -> true);
         List<MidnightIndex> indices = new ArrayList<>();
-        Elements lis = document.selectFirst("div[role=main]").select(CssSelectors.TAG_LI);
+        Element article = document.selectFirst(".article");
+        Elements lis = article.select(CssSelectors.TAG_LI);
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_A);
             String href = a.attr(CssSelectors.ATTR_HREF);
@@ -81,8 +82,11 @@ public final class MidnightSite extends BaseSite
             LocalDateTime release = DocumentUtils.parseInterval(time);
             indices.add(new BaseMidnightItem(id, title, release));
         }
-        Element nav = document.selectFirst(NAV_NAVIGATION);
-        int total = Integer.parseInt(nav.selectFirst("a[title=总数]").selectFirst("b").text());
+        Element a = article.selectFirst("a[title=总数]");
+        int total = indices.size();
+        if (a != null) {
+            total = Integer.parseInt(a.text());
+        }
         return new MidnightPageResult(indices, req, total);
     }
 
@@ -149,7 +153,6 @@ public final class MidnightSite extends BaseSite
             entry.setProducer(parser.getProducer());
             entry.setDistributor(parser.getDistributor());
             entry.setSeries(parser.getSeries());
-            parser.check("商品発売日");
             return entry;
         });
     }
@@ -197,6 +200,17 @@ public final class MidnightSite extends BaseSite
         String keywords = DocumentUtils.getMetadata(document).get("keywords");
         if (StringUtils.isNotBlank(keywords)) {
             t.setKeywords(keywords.split(","));
+        }
+        Element navigation = document.selectFirst(".post-navigation");
+        String preHref = navigation.selectFirst(".pre-post").attr(CssSelectors.ATTR_HREF);
+        if (!"#".equals(preHref)) {
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ITEM_URL_REGEX, preHref);
+            t.setPreviousId(Integer.parseInt(matcher.group("id")));
+        }
+        String nextHref = navigation.selectFirst(".next-post").attr(CssSelectors.ATTR_HREF);
+        if (!"#".equals(nextHref)) {
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ITEM_URL_REGEX, nextHref);
+            t.setNextId(Integer.parseInt(matcher.group("id")));
         }
         return t;
     }

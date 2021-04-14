@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
 
 /**
  * An item with an amateur adult entry.
@@ -14,7 +15,8 @@ import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
  * @see MidnightSite#findAmateurEntry(MidnightAmateurColumn, int)
  * @since 2021/3/28
  */
-public class MidnightAmateurEntry extends MidnightAlbum implements AmateurJaAdultEntry {
+public class MidnightAmateurEntry extends MidnightAlbum
+    implements AmateurJaAdultEntry, DurationSupplier {
 
     private String serialNum;
     private String performer;
@@ -44,11 +46,6 @@ public class MidnightAmateurEntry extends MidnightAlbum implements AmateurJaAdul
 
     void setPerformer(String performer) {
         this.performer = performer;
-    }
-
-    @Override
-    public URL getCoverURL() {
-        return null;
     }
 
     @Override

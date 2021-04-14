@@ -15,22 +15,24 @@ import wsg.tools.internet.base.page.PageReq;
  */
 public class MidnightPageReq extends BasicPageReq {
 
+    public static final int MIN_PAGE_SIZE = 10;
+    public static final int MAX_PAGE_SIZE = 80;
     private static final long serialVersionUID = -8443301620276250501L;
-    private static final int MIN_PAGE_SIZE = 10;
-    private static final int MAX_PAGE_SIZE = 80;
-
     private final MidnightColumn column;
-    private final LocalDate start;
-    private final LocalDate end;
     private final OrderBy orderBy;
+    private LocalDate start;
+    private LocalDate end;
 
     public MidnightPageReq(int current, int pageSize, @Nonnull MidnightColumn column,
         @Nonnull OrderBy orderBy) {
-        this(current, pageSize, column, null, null, orderBy);
+        super(current, pageSize);
+        AssertUtils.requireRange(pageSize, MIN_PAGE_SIZE, MAX_PAGE_SIZE + 1);
+        this.column = column;
+        this.orderBy = orderBy;
     }
 
     public MidnightPageReq(int current, int pageSize, @Nonnull MidnightColumn column,
-        LocalDate start, LocalDate end, @Nonnull OrderBy orderBy) {
+        @Nonnull LocalDate start, @Nonnull LocalDate end, @Nonnull OrderBy orderBy) {
         super(current, pageSize);
         AssertUtils.requireRange(pageSize, MIN_PAGE_SIZE, MAX_PAGE_SIZE + 1);
         this.column = column;
@@ -88,7 +90,7 @@ public class MidnightPageReq extends BasicPageReq {
         return orderBy;
     }
 
-    enum OrderBy implements TextSupplier {
+    public enum OrderBy implements TextSupplier {
         /**
          * The count of likes
          */

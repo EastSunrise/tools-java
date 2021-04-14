@@ -87,7 +87,7 @@ public class LicencePlateSite extends BaseSite
             sibling.getPreviousId(), sibling.getNextId());
         Element img = content.selectFirst(CssSelectors.TAG_IMG);
         if (img != null) {
-            item.setCover(NetUtils.createURL(img.attr(CssSelectors.ATTR_SRC)));
+            item.setImage(NetUtils.createURL(img.attr(CssSelectors.ATTR_SRC)));
         }
         if (lines.isEmpty()) {
             return item;

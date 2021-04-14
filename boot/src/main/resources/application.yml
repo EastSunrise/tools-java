@@ -7,6 +7,7 @@ spring:
     url: jdbc:mysql://192.168.1.108:3306/tools?useUnicdeo=true&characterEncoding=UTF-8&serverTimezone=GMT%2B8
     username: root
     password: root
+    data: classpath:sql/init.sql
   jpa:
     show-sql: true
     open-in-view: false

@@ -9,6 +9,8 @@ import wsg.tools.internet.base.view.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Describable;
+import wsg.tools.internet.info.adult.view.DurationSupplier;
+import wsg.tools.internet.info.adult.view.ImageSupplier;
 
 /**
  * An item on the {@link AmateurCatSite}.
@@ -17,12 +19,12 @@ import wsg.tools.internet.info.adult.view.Describable;
  * @see AmateurCatSite#findById(String)
  * @since 2021/2/28
  */
-public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, Describable,
-    UpdateDatetimeSupplier, NextSupplier<String> {
+public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, DurationSupplier,
+    ImageSupplier, Describable, UpdateDatetimeSupplier, NextSupplier<String> {
 
     private final String id;
     private final String serialNum;
-    private final URL cover;
+    private final URL image;
     private final String description;
     private final String author;
     private final LocalDateTime updated;
@@ -37,11 +39,11 @@ public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, 
     private String series;
     private String[] tags;
 
-    AmateurCatItem(String id, String serialNum, URL cover, String description,
+    AmateurCatItem(String id, String serialNum, URL image, String description,
         String author, LocalDateTime updated, LocalDateTime published, String next) {
         this.id = id;
         this.serialNum = serialNum;
-        this.cover = cover;
+        this.image = image;
         this.description = description;
         this.author = author;
         this.updated = updated;
@@ -60,8 +62,8 @@ public class AmateurCatItem implements Identifier<String>, AmateurJaAdultEntry, 
     }
 
     @Override
-    public URL getCoverURL() {
-        return cover;
+    public URL getImageURL() {
+        return image;
     }
 
     @Override
