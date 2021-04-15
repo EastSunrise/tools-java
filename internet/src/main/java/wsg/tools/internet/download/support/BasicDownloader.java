@@ -2,7 +2,9 @@ package wsg.tools.internet.download.support;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
@@ -12,6 +14,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.lang.StringUtilsExt;
+import wsg.tools.common.net.NetUtils;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.Downloader;
 import wsg.tools.internet.download.FileExistStrategy;
@@ -79,7 +82,12 @@ public final class BasicDownloader implements Downloader {
         }
         log.info("Downloading from {} to {}", url, dest);
         try {
-            FileUtils.copyURLToFile(url, dest, TIMEOUT, TIMEOUT);
+            URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(TIMEOUT);
+            connection.setReadTimeout(TIMEOUT);
+            connection.setRequestProperty("Referer", NetUtils.getHostURI(url));
+            InputStream input = connection.getInputStream();
+            FileUtils.copyInputStreamToFile(input, dest);
         } catch (IOException e) {
             Matcher matcher = Lazy.RESPONSE_EXCEPTION_REGEX.matcher(e.getMessage());
             if (matcher.lookingAt()) {

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
@@ -160,6 +161,44 @@ public final class SiteUtils {
         throws NotFoundException, OtherResponseException {
         List<I> indices = new ArrayList<>();
         forEachPage(pageable, firstReq, indices::add);
+        return indices;
+    }
+
+    /**
+     * Collects all indices by traversing the pages in a pageable repository until matching the
+     * specified predicate. This method requires that the indices found by page are ordered.
+     *
+     * @param <I>       type of the content of each page
+     * @param <P>       type of requests with pagination information
+     * @param pageable  the function to retrieve a page by a given request with pagination
+     *                  information
+     * @param firstReq  the first request with pagination information
+     * @param predicate predicate that ends the traversal
+     * @return list of all indices that match the specified predicate
+     * @throws NotFoundException      if any page is not found
+     * @throws OtherResponseException if an unexpected error occurs when requesting
+     */
+    @Nonnull
+    public static <I, P extends PageReq> List<I>
+    collectPageUntil(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
+        @Nonnull Predicate<I> predicate) throws NotFoundException, OtherResponseException {
+        List<I> indices = new ArrayList<>();
+        P req = firstReq;
+        boolean dead = false;
+        while (true) {
+            PageResult<I, P> result = pageable.findPage(req);
+            for (I index : result.getContent()) {
+                if (predicate.test(index)) {
+                    dead = true;
+                    break;
+                }
+                indices.add(index);
+            }
+            if (dead || !result.hasNext()) {
+                break;
+            }
+            req = result.nextPageRequest();
+        }
         return indices;
     }
 

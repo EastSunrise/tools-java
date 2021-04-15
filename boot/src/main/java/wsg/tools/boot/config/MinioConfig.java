@@ -130,6 +130,9 @@ public class MinioConfig implements InitializingBean {
         return result;
     }
 
+    /**
+     * todo return the source url if fails.
+     */
     private String uploadURL(URL url, Filetype filetype, MinioBucket bucket, @Nonnull Source source,
         String prefix, int index)
         throws NotFiletypeException, NotFoundException, OtherResponseException {

@@ -14,8 +14,7 @@ public class CacheableResponseWrapper<T> extends BasicResponseWrapper<T> impleme
 
     private final boolean snapshot;
 
-    public CacheableResponseWrapper(Header[] headers, T content,
-        boolean snapshot) {
+    public CacheableResponseWrapper(Header[] headers, T content, boolean snapshot) {
         super(headers, content);
         this.snapshot = snapshot;
     }

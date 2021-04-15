@@ -11,6 +11,7 @@ import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.download.Downloader;
 import wsg.tools.internet.download.FileExistStrategy;
 import wsg.tools.internet.download.support.BasicDownloader;
+import wsg.tools.internet.info.adult.ggg.GggSite;
 import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.info.adult.west.BabesTubeSite;
@@ -50,6 +51,7 @@ public class SiteManager implements DisposableBean {
     private LicencePlateSite licencePlateSite;
     private MidnightSite midnightSite;
     private CelebrityWikiSite celebrityWikiSite;
+    private GggSite gggSite;
     private PornTubeSite pornTubeSite;
     private BabesTubeSite babesTubeSite;
 
@@ -145,6 +147,13 @@ public class SiteManager implements DisposableBean {
         return celebrityWikiSite;
     }
 
+    public GggSite gggSite() {
+        if (gggSite == null) {
+            gggSite = new GggSite();
+        }
+        return gggSite;
+    }
+
     public PornTubeSite pornTubeSite() {
         if (pornTubeSite == null) {
             pornTubeSite = new PornTubeSite();
@@ -165,7 +174,8 @@ public class SiteManager implements DisposableBean {
             ((Closeable) imdbRepository).close();
         }
         close(doubanSite, bdMovieSite, movieHeavenSite, xlcSite, xlmSite, grapeSite,
-            licencePlateSite, midnightSite, celebrityWikiSite, pornTubeSite, babesTubeSite);
+            licencePlateSite, midnightSite, celebrityWikiSite, gggSite, pornTubeSite,
+            babesTubeSite);
     }
 
     private void close(Closeable... sites) throws IOException {

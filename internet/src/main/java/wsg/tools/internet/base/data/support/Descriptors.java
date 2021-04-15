@@ -1,6 +1,7 @@
 package wsg.tools.internet.base.data.support;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -65,6 +66,32 @@ public final class Descriptors {
     public static <T, K> Descriptor<T> test(Predicate<T> predicate, Function<T, K> identifier) {
         return values -> values.stream().filter(predicate).map(identifier)
             .forEach(id -> log.info("{}", id));
+    }
+
+    /**
+     * Returns a descriptor to list stationary points of a list of values which are monotonous in
+     * most sections.
+     *
+     * @see wsg.tools.common.lang.AssertUtils#isMonotonous(Iterator, Comparator)
+     */
+    @Nonnull
+    @Contract(pure = true)
+    public static <T, K> Descriptor<T>
+    stationaryPoints(@Nonnull Comparator<? super T> comparator, Function<T, K> identifier) {
+        return values -> {
+            Iterator<T> iterator = values.iterator();
+            if (!iterator.hasNext()) {
+                return;
+            }
+            T previous = iterator.next();
+            while (iterator.hasNext()) {
+                T current = iterator.next();
+                if (comparator.compare(previous, current) > 0) {
+                    log.info("{} -> {}", identifier.apply(previous), identifier.apply(current));
+                }
+                previous = current;
+            }
+        };
     }
 
     /**

@@ -1,5 +1,7 @@
 package wsg.tools.boot.service.intf;
 
+import java.util.Optional;
+import wsg.tools.boot.pojo.entity.base.FailureReason;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.ListRepository;
@@ -35,9 +37,9 @@ public interface AdultService {
      *
      * @param entry  the entry to be saved
      * @param source the source of the entry
-     * @return 1 if succeeded, otherwise return 0
+     * @return {@code Optional#empty()} if succeeds, otherwise a failure reason
      */
-    int saveJaAdultEntry(JaAdultEntry entry, Source source);
+    Optional<FailureReason> saveJaAdultEntry(JaAdultEntry entry, Source source);
 
     /**
      * Imports latest adult entries from the specified list repository.

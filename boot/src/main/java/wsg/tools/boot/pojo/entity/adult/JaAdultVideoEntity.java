@@ -85,7 +85,7 @@ public class JaAdultVideoEntity extends IdentityEntity
     private Set<JaAdultTagEntity> tags;
 
     @MinioStored(type = Filetype.IMAGE)
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "ja_adult_video_image")
     @Column(name = "image", nullable = false, length = 127)
     private List<String> images = new ArrayList<>();
@@ -147,7 +147,7 @@ public class JaAdultVideoEntity extends IdentityEntity
         return publish;
     }
 
-    public void setRelease(LocalDate release) {
+    public void setPublish(LocalDate release) {
         this.publish = release;
     }
 

@@ -307,8 +307,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         throws NotFoundException, OtherResponseException {
         CacheResponseWrapper<Document> responseWrapper = null;
         try {
-            responseWrapper = getResponseWrapper(wrapper,
-                new DocumentHandler(), strategy);
+            responseWrapper = getResponseWrapper(wrapper, new DocumentHandler(), strategy);
         } catch (HttpResponseException e) {
             throw SiteUtils.handleException(e);
         }

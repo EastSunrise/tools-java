@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Utility for {@link java.net}
@@ -14,6 +15,24 @@ import java.util.Objects;
 public final class NetUtils {
 
     private NetUtils() {
+    }
+
+    /**
+     * Return the host URI, as a string, like <i>https://www.example.com/</i>.
+     *
+     * @return the host URI
+     */
+    @Nonnull
+    public static String getHostURI(@Nonnull URL url) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(url.getProtocol());
+        builder.append("://");
+        builder.append(url.getHost());
+        if (url.getPort() != -1) {
+            builder.append(":");
+            builder.append(url.getPort());
+        }
+        return builder.toString();
     }
 
     /**

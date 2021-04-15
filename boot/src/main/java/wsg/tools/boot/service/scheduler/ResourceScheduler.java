@@ -3,7 +3,10 @@ package wsg.tools.boot.service.scheduler;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -11,13 +14,17 @@ import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.config.SiteManager;
+import wsg.tools.boot.dao.api.impl.GggGoodAdapter;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultVideoRepository;
+import wsg.tools.boot.pojo.entity.adult.JaAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
+import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
@@ -27,6 +34,11 @@ import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.info.adult.ggg.GggCategory;
+import wsg.tools.internet.info.adult.ggg.GggGood;
+import wsg.tools.internet.info.adult.ggg.GggGoodView;
+import wsg.tools.internet.info.adult.ggg.GggPageReq;
+import wsg.tools.internet.info.adult.ggg.GggSite;
 import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightAmateurColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightColumn;
@@ -59,6 +71,7 @@ public class ResourceScheduler extends BaseServiceImpl {
 
     private static final int DEFAULT_SUBTYPE = Source.DEFAULT_SUBTYPE;
     private static final LocalDate MIDNIGHT_START = LocalDate.of(2019, 1, 1);
+    private static final LocalDate GGG_START = LocalDate.of(2010, 1, 1);
 
     private final ResourceService resourceService;
     private final AdultService adultService;
@@ -144,19 +157,81 @@ public class ResourceScheduler extends BaseServiceImpl {
             if (indices.isEmpty()) {
                 return;
             }
-            indices.sort(Comparator.comparing(MidnightIndex::getId));
-            int success = 0, total = 0;
+            indices.sort(Comparator.comparing(MidnightIndex::getUpdate));
+            BatchResult<Integer> result = BatchResult.empty();
             for (MidnightIndex index : indices) {
-                T entry = retrievable.findById(index.getId());
+                int id = index.getId();
+                T entry = retrievable.findById(id);
                 Source source = Source.record(domain, subtype, entry);
-                success += adultService.saveJaAdultEntry(entry, source);
-                total++;
+                adultService.saveJaAdultEntry(entry, source)
+                    .ifPresentOrElse(reason -> result.fail(id, reason.getText()), result::succeed);
             }
-            log.info("Imported {} entries from {}: {} succeed, {} failed", column, domain,
-                success, total - success);
+            log.info("Imported {} entries from {}:", column, domain);
+            result.print(String::valueOf);
         } catch (NotFoundException | OtherResponseException e) {
+            log.error(e.getMessage());
             throw new AppException(e);
         }
+    }
+
+    public void importGgg() {
+        GggSite site = manager.gggSite();
+        String domain = site.getHostname();
+        for (GggCategory category : GggCategory.all()) {
+            int subtype = category.getCode();
+            Optional<LocalDateTime> op = jaVideoRepository.getLatestTimestamp(domain, subtype);
+            Set<Source> exists = new HashSet<>();
+            op.map(dt -> findVideosByTimestamp(domain, dt)).map(List::stream)
+                .ifPresent(st -> st.map(JaAdultVideoEntity::getSource).forEach(exists::add));
+            LocalDate start = op.map(LocalDateTime::toLocalDate).orElse(GGG_START);
+            try {
+                List<GggGood> goods = SiteUtils.collectPageUntil(site, GggPageReq.byDate(category),
+                    good -> good.getUpdate().isBefore(start));
+                goods.sort(Comparator.comparing(GggGood::getUpdate));
+                BatchResult<Integer> result = BatchResult.empty();
+                Iterator<GggGood> iterator = goods.iterator();
+                // goods updated at the start date
+                while (iterator.hasNext()) {
+                    GggGood good = iterator.next();
+                    Source source = Source.record(domain, subtype, good);
+                    if (exists.contains(source)) {
+                        continue;
+                    }
+                    int id = good.getId();
+                    GggGoodView view = site.findById(id);
+                    GggGoodAdapter adapter = new GggGoodAdapter(good, view);
+                    adultService.saveJaAdultEntry(adapter, source)
+                        .ifPresentOrElse(r -> result.fail(id, r.getText()), result::succeed);
+                    if (good.getUpdate().isAfter(start)) {
+                        break;
+                    }
+                }
+                // goods updated after the start date
+                while (iterator.hasNext()) {
+                    GggGood good = iterator.next();
+                    int id = good.getId();
+                    Source source = Source.record(domain, subtype, good);
+                    GggGoodView view = site.findById(id);
+                    GggGoodAdapter adapter = new GggGoodAdapter(good, view);
+                    adultService.saveJaAdultEntry(adapter, source)
+                        .ifPresentOrElse(r -> result.fail(id, r.getText()), result::succeed);
+                }
+                log.info("Imported {} entries from {}:", category, domain);
+                result.print(String::valueOf);
+            } catch (NotFoundException | OtherResponseException e) {
+                log.error(e.getMessage());
+                throw new AppException(e);
+            }
+        }
+    }
+
+    private List<JaAdultVideoEntity> findVideosByTimestamp(String domain, LocalDateTime timestamp) {
+        Source source = new Source();
+        source.setDomain(domain);
+        source.setTimestamp(timestamp);
+        JaAdultVideoEntity probe = new JaAdultVideoEntity();
+        probe.setSource(source);
+        return jaVideoRepository.findAll(Example.of(probe));
     }
 
     @Scheduled(cron = "0 0 0 1 1 ?")
@@ -177,7 +252,7 @@ public class ResourceScheduler extends BaseServiceImpl {
         if (indices.isEmpty()) {
             return;
         }
-        int[] count = new int[3];
+        BatchResult<String> result = BatchResult.empty();
         for (WikiCelebrityIndex index : indices) {
             WikiCelebrity celebrity = null;
             try {
@@ -191,7 +266,6 @@ public class ResourceScheduler extends BaseServiceImpl {
             if (CollectionUtils.isEmpty(works)) {
                 continue;
             }
-            count[0] += works.size();
             int celebrityId = celebrity.getId();
             template.execute(status -> {
                 int id = 0;
@@ -200,24 +274,25 @@ public class ResourceScheduler extends BaseServiceImpl {
                     try {
                         entry = site.findAdultEntry(work);
                     } catch (NotFoundException e) {
-                        count[2]++;
+                        result.fail(work, "Not Found");
                         continue;
                     } catch (OtherResponseException e) {
                         // rollback
                         throw new AppException(e);
                     }
                     Source source = Source.record(domain, celebrityId, id, null);
-                    count[1] += adultService.saveJaAdultEntry(entry, source);
+                    adultService.saveJaAdultEntry(entry, source)
+                        .ifPresentOrElse(r -> result.fail(work, r.getText()), result::succeed);
                     id++;
                 }
                 return null;
             });
         }
-        log.info("Imported adult entries from {}: {} succeed, {} failed, {} not found", domain,
-            count[1], count[0] - count[1] - count[2], count[2]);
+        log.info("Imported adult entries from {}:", domain);
+        result.print(Function.identity());
     }
 
-    @Scheduled(cron = "0 0 6 * * ?")
+    @Scheduled(cron = "0 0 8 * * ?")
     public void importPornTubeSite() {
         PornTubeSite site = manager.pornTubeSite();
         try {

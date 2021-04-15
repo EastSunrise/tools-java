@@ -3,6 +3,7 @@ package wsg.tools.boot.pojo.entity.base;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -59,7 +60,12 @@ public class Source implements Serializable {
         this.timestamp = timestamp;
     }
 
-    protected Source() {
+    public Source() {
+    }
+
+    public Source(@Nonnull String domain, int subtype) {
+        this.domain = domain;
+        this.subtype = subtype;
     }
 
     /**
@@ -97,15 +103,49 @@ public class Source implements Serializable {
         return domain;
     }
 
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
     public Integer getSubtype() {
         return subtype;
+    }
+
+    public void setSubtype(int subtype) {
+        this.subtype = subtype;
     }
 
     public Long getRid() {
         return rid;
     }
 
+    public void setRid(long rid) {
+        this.rid = rid;
+    }
+
     public LocalDateTime getTimestamp() {
         return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Source source = (Source) o;
+        return Objects.equals(domain, source.domain) && Objects
+            .equals(subtype, source.subtype) && Objects.equals(rid, source.rid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(domain, subtype, rid);
     }
 }

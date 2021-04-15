@@ -247,6 +247,7 @@ public class BaseSite implements Closeable {
      * @param strategy       the strategy of updating the snapshot
      * @return a wrapper of the headers and content of the response
      * @throws HttpResponseException if an error occurs when requesting
+     * @see #getContent(RequestWrapper, ContentHandler, SnapshotStrategy)
      */
     public <T> CacheResponseWrapper<T> getResponseWrapper(@Nonnull RequestWrapper wrapper,
         @Nonnull ContentHandler<? extends T> contentHandler, SnapshotStrategy<T> strategy)
@@ -274,6 +275,73 @@ public class BaseSite implements Closeable {
         return new CacheableResponseWrapper<>(rw.getHeaders(), t, true);
     }
 
+    private ResponseWrapper<String> readSnapshot(File cf, File hf) {
+        ObjectInputStream stream = null;
+        try {
+            log.info("Read wrapper from {}", cf.getPath());
+            String content = FileUtils.readFileToString(cf, Constants.UTF_8);
+            stream = new ObjectInputStream(FileUtils.openInputStream(hf));
+            return new BasicResponseWrapper<>((Header[]) stream.readObject(), content);
+        } catch (IOException | ClassNotFoundException e) {
+            throw new UnexpectedException(e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
+    /**
+     * An extension of {@link #execute} which assumes that the content of the response is a {@code
+     * String}. It generated a string from the response and returns the target object to which the
+     * string content is converted.
+     *
+     * @param wrapper        the wrapper containing the request to be executed
+     * @param contentHandler how to convert the string of the content to an object of target type
+     * @param strategy       the strategy of updating the snapshot
+     * @return the target object to which the string content is converted
+     * @throws HttpResponseException if an error occurs when requesting
+     * @see #getResponseWrapper(RequestWrapper, ContentHandler, SnapshotStrategy)
+     */
+    public <T> T getContent(@Nonnull RequestWrapper wrapper,
+        @Nonnull ContentHandler<? extends T> contentHandler, SnapshotStrategy<T> strategy)
+        throws HttpResponseException {
+        String filepath = wrapper.filepath();
+        File cf = new File(TMPDIR + filepath + "." + contentHandler.extension());
+
+        // if the snapshot files do not exist.
+        if (!cf.canRead()) {
+            return updateSnapshot(wrapper, cf, contentHandler);
+        }
+        // if the snapshot has expired
+        if (snapshotLifeCycle > 0) {
+            long expire = cf.lastModified() + snapshotLifeCycle;
+            if (System.currentTimeMillis() > expire) {
+                return updateSnapshot(wrapper, cf, contentHandler);
+            }
+        }
+        String content = null;
+        try {
+            log.info("Read content from {}", cf.getPath());
+            content = FileUtils.readFileToString(cf, Constants.UTF_8);
+        } catch (IOException e) {
+            throw new UnexpectedException(e);
+        }
+        T t = contentHandler.handleContent(content);
+        if (strategy.ifUpdate(t)) {
+            return updateSnapshot(wrapper, cf, contentHandler);
+        }
+        return t;
+    }
+
+    private <T> T updateSnapshot(RequestWrapper wrapper, File cf, ContentHandler<? extends T> ch)
+        throws HttpResponseException {
+        return updateSnapshot(wrapper, cf, null, ch).getContent();
+    }
+
     /**
      * Executes the request, handle the response, return it as an object, and write to the file as a
      * snapshot.
@@ -291,37 +359,20 @@ public class BaseSite implements Closeable {
         } catch (IOException e) {
             throw new UnexpectedException(e);
         }
-        try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(hf))) {
-            stream.writeObject(rw.getHeaders());
-        } catch (IOException e) {
-            log.error(e.getMessage());
+        if (hf != null) {
+            try (ObjectOutputStream os = new ObjectOutputStream(FileUtils.openOutputStream(hf))) {
+                os.writeObject(rw.getHeaders());
+            } catch (IOException e) {
+                log.error(e.getMessage());
+            }
         }
         T t = ch.handleContent(rw.getContent());
         return new CacheableResponseWrapper<>(rw.getHeaders(), t, false);
     }
 
-    private ResponseWrapper<String> readSnapshot(File cf, File hf) {
-        log.info("Read from {}", cf.getPath());
-        ObjectInputStream stream = null;
-        try {
-            String content = FileUtils.readFileToString(cf, Constants.UTF_8);
-            stream = new ObjectInputStream(FileUtils.openInputStream(hf));
-            return new BasicResponseWrapper<>((Header[]) stream.readObject(), content);
-        } catch (IOException | ClassNotFoundException e) {
-            throw new UnexpectedException(e);
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
-    }
-
     /**
-     * An extension of {@link #getResponseWrapper} which returns the html content of the response as
-     * a {@code Document} and splits the exception if thrown.
+     * An extension of {@link #getContent} which returns the html content of the response as a
+     * {@code Document} and splits the exception if thrown.
      *
      * @throws NotFoundException      if the target document is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
@@ -330,15 +381,15 @@ public class BaseSite implements Closeable {
     public Document getDocument(RequestWrapper wrapper, SnapshotStrategy<Document> strategy)
         throws NotFoundException, OtherResponseException {
         try {
-            return getResponseWrapper(wrapper, new DocumentHandler(), strategy).getContent();
+            return getContent(wrapper, new DocumentHandler(), strategy);
         } catch (HttpResponseException e) {
             throw SiteUtils.handleException(e);
         }
     }
 
     /**
-     * An extension of {@link #getResponseWrapper} which returns the html content of the response as
-     * a {@code Document}.
+     * An extension of {@link #getContent} which returns the html content of the response as a
+     * {@code Document}.
      * <p>
      * Different from the method {@link #getDocument}, this method will throw a runtime exception
      * instead of {@code NotFoundException} if the target document is not found.
@@ -356,8 +407,8 @@ public class BaseSite implements Closeable {
     }
 
     /**
-     * An extension of {@link #getResponseWrapper} which returns the json content of the response as
-     * a Java object and splits the exception if thrown.
+     * An extension of {@link #getContent} which returns the json content of the response as a Java
+     * object and splits the exception if thrown.
      *
      * @throws NotFoundException      if the target object is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
@@ -367,15 +418,14 @@ public class BaseSite implements Closeable {
         SnapshotStrategy<T> strategy) throws NotFoundException, OtherResponseException {
         try {
             JsonHandler<? extends T> handler = new JsonHandler<>(mapper, clazz);
-            return getResponseWrapper(wrapper, handler, strategy).getContent();
+            return getContent(wrapper, handler, strategy);
         } catch (HttpResponseException e) {
             throw SiteUtils.handleException(e);
         }
     }
 
     /**
-     * An extension of {@link #getResponseWrapper} which returns the json content of the response as
-     * a
+     * An extension of {@link #getContent} which returns the json content of the response as a
      * <i>generic</i> Java object and splits the exception if thrown.
      *
      * @throws NotFoundException      if the target object is not found
@@ -386,8 +436,7 @@ public class BaseSite implements Closeable {
         TypeReference<? extends T> type, SnapshotStrategy<T> strategy)
         throws NotFoundException, OtherResponseException {
         try {
-            JsonHandler<? extends T> handler = new JsonHandler<>(mapper, type);
-            return getResponseWrapper(wrapper, handler, strategy).getContent();
+            return getContent(wrapper, new JsonHandler<>(mapper, type), strategy);
         } catch (HttpResponseException e) {
             throw SiteUtils.handleException(e);
         }

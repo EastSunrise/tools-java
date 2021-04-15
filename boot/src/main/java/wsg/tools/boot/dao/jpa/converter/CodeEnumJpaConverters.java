@@ -2,6 +2,7 @@ package wsg.tools.boot.dao.jpa.converter;
 
 import javax.persistence.Converter;
 import wsg.tools.boot.common.enums.ResourceType;
+import wsg.tools.boot.pojo.entity.base.FailureReason;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.IntCodeSupplier;
@@ -23,6 +24,14 @@ public final class CodeEnumJpaConverters {
 
         public MarkEnumConverter() {
             super(MarkEnumAdapter.class);
+        }
+    }
+
+    @Converter(autoApply = true)
+    public static class FailureReasonConverter extends CodeEnumConverter<FailureReason> {
+
+        public FailureReasonConverter() {
+            super(FailureReason.class);
         }
     }
 

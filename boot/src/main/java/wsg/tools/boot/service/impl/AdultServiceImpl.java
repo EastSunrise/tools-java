@@ -10,10 +10,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -26,8 +28,10 @@ import wsg.tools.boot.pojo.entity.adult.JaAdultTagEntity;
 import wsg.tools.boot.pojo.entity.adult.JaAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.adult.WesternAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.base.Failure;
+import wsg.tools.boot.pojo.entity.base.FailureReason;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
+import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.io.NotFiletypeException;
@@ -85,10 +89,10 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     public <T extends AmateurJaAdultEntry & UpdateTemporalSupplier<?>>
     void importLinkedRepository(String domain, int subtype, LinkedRepository<String, T> repository)
         throws OtherResponseException {
-        Optional<String> optional = jaVideoRepository.getFirstOrderUpdateTime(domain, subtype);
+        Optional<String> last = jaVideoRepository.getFirstOrderUpdateTime(domain, subtype);
         LinkedRepoIterator<String, T> iterator;
-        if (optional.isPresent()) {
-            iterator = repository.linkedRepoIterator(optional.get());
+        if (last.isPresent()) {
+            iterator = repository.linkedRepoIterator(last.get());
             try {
                 iterator.next();
             } catch (NotFoundException e) {
@@ -97,7 +101,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         } else {
             iterator = repository.linkedRepoIterator();
         }
-        int success = 0, total = 0;
+        BatchResult<String> result = BatchResult.empty();
         while (iterator.hasNext()) {
             T item = null;
             try {
@@ -106,30 +110,34 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 throw new AppException(e);
             }
             Source source = Source.record(domain, subtype, 0, item);
-            success += saveJaAdultEntry(item, source);
-            total++;
+            Optional<FailureReason> reason = saveJaAdultEntry(item, source);
+            if (reason.isPresent()) {
+                result.fail(item.getSerialNum(), reason.get().getText());
+            } else {
+                result.succeed();
+            }
         }
-        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
-            total - success);
+        log.info("Imported adult entries from {}:", domain);
+        result.print(Function.identity());
     }
 
     @Override
-    public int saveJaAdultEntry(@Nonnull JaAdultEntry entry, Source source) {
+    public Optional<FailureReason> saveJaAdultEntry(@Nonnull JaAdultEntry entry, Source source) {
         String serialNum = entry.getSerialNum();
         if (serialNum != null) {
             try {
                 serialNum = SerialNumber.format(serialNum);
             } catch (IllegalArgumentException e) {
-                String message = "The serial number is invalid: " + serialNum;
-                failureRepository.insert(new Failure(source, message));
-                return 0;
+                FailureReason reason = FailureReason.ARG_INVALID;
+                failureRepository.insert(new Failure(source, reason, "serial number", serialNum));
+                return Optional.of(reason);
             }
         }
         JaAdultVideoEntity entity = copyEntry(entry, source);
         entity.setSource(source);
         if (serialNum == null) {
             jaVideoRepository.insert(entity);
-            return 1;
+            return Optional.empty();
         }
 
         String fsn = serialNum;
@@ -137,28 +145,33 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             Optional<JaAdultVideoEntity> optional = jaVideoRepository.findBySerialNum(fsn);
             if (optional.isEmpty()) {
                 jaVideoRepository.insert(entity);
-                return 1;
+                return Optional.empty();
             }
             JaAdultVideoEntity exists = optional.get();
 
             // if duplicate in the same site
             if (exists.getSource().getDomain().equals(entity.getSource().getDomain())) {
-                return 0;
+                return Optional.of(FailureReason.EXISTS);
             }
 
             // if any property has conflict values
-            if (merge(exists, entity)) {
-                String message = "The target serial number exists: " + fsn;
-                failureRepository.insert(new Failure(source, message));
-                return 0;
+            Optional<Pair<String, Object>> merge = fail(exists, entity);
+            if (merge.isPresent()) {
+                Pair<String, Object> pair = merge.get();
+                FailureReason reason = FailureReason.ARG_INVALID;
+                String name = pair.getLeft();
+                String arg = pair.getRight().toString();
+                failureRepository.insert(new Failure(source, reason, fsn, name, arg));
+                return Optional.of(reason);
             }
 
             // merge the two entities
-            if (exists.getImages() != null) {
+            List<String> existsImages = exists.getImages();
+            if (existsImages != null) {
                 if (entity.getImages() == null) {
-                    entity.setImages(exists.getImages());
+                    entity.setImages(existsImages);
                 } else {
-                    entity.getImages().addAll(exists.getImages());
+                    entity.getImages().addAll(existsImages);
                 }
             }
             Set<JaAdultTagEntity> tags = new HashSet<>();
@@ -171,7 +184,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             entity.setTags(tags);
             entity.setId(exists.getId());
             jaVideoRepository.updateById(entity);
-            return 1;
+            return Optional.empty();
         }));
     }
 
@@ -193,7 +206,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         if (entry instanceof DurationSupplier) {
             entity.setDuration(((DurationSupplier) entry).getDuration());
         }
-        entity.setRelease(entry.getRelease());
+        entity.setPublish(entry.getRelease());
         entity.setProducer(entry.getProducer());
         entity.setDistributor(entry.getDistributor());
         entity.setSeries(entry.getSeries());
@@ -222,36 +235,45 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         return entity;
     }
 
-    private boolean merge(JaAdultVideoEntity old, JaAdultVideoEntity add) {
-        return merge(old, add, JaAdultVideoEntity::getTitle, JaAdultVideoEntity::setTitle)
-            || merge(old, add, JaAdultVideoEntity::getCover, JaAdultVideoEntity::setCover)
-            || merge(old, add, JaAdultVideoEntity::getMosaic, JaAdultVideoEntity::setMosaic)
-            || merge(old, add, JaAdultVideoEntity::getDuration, JaAdultVideoEntity::setDuration)
-            || merge(old, add, JaAdultVideoEntity::getRelease, JaAdultVideoEntity::setRelease)
-            || merge(old, add, JaAdultVideoEntity::getProducer, JaAdultVideoEntity::setProducer)
-            || merge(old, add, JaAdultVideoEntity::getDistributor,
-            JaAdultVideoEntity::setDistributor)
-            || merge(old, add, JaAdultVideoEntity::getSeries, JaAdultVideoEntity::setSeries);
+    private Optional<Pair<String, Object>> fail(JaAdultVideoEntity old, JaAdultVideoEntity add) {
+        return Optional.<Pair<String, Object>>empty()
+            .or(fail(old, add, "title", JaAdultVideoEntity::getTitle, JaAdultVideoEntity::setTitle))
+            .or(fail(old, add, "cover", JaAdultVideoEntity::getCover, JaAdultVideoEntity::setCover))
+            .or(fail(old, add, "mosaic", JaAdultVideoEntity::getMosaic,
+                JaAdultVideoEntity::setMosaic))
+            .or(fail(old, add, "duration", JaAdultVideoEntity::getDuration,
+                JaAdultVideoEntity::setDuration))
+            .or(fail(old, add, "release", JaAdultVideoEntity::getRelease,
+                JaAdultVideoEntity::setPublish))
+            .or(fail(old, add, "producer", JaAdultVideoEntity::getProducer,
+                JaAdultVideoEntity::setProducer))
+            .or(fail(old, add, "distributor", JaAdultVideoEntity::getDistributor,
+                JaAdultVideoEntity::setDistributor))
+            .or(fail(old, add, "series", JaAdultVideoEntity::getSeries,
+                JaAdultVideoEntity::setSeries));
     }
 
     /**
-     * Returns {@code true} if the two values of the specific property are both not null and not
-     * equivalent. Otherwise, return {@code false} and merge the non-null value, if exists, to the
-     * new entity.
+     * Returns the pair of property name and newer value if the two values of the specific property
+     * are both not null and not equivalent. Otherwise, return {@code Optional#empty()} and merge
+     * the non-null value, if exists, to the newer entity.
      */
-    private <T> boolean merge(JaAdultVideoEntity exists, JaAdultVideoEntity newEntity,
-        @Nonnull Function<JaAdultVideoEntity, T> getter,
+    private <T> Supplier<Optional<Pair<String, Object>>> fail(JaAdultVideoEntity exists,
+        JaAdultVideoEntity newEntity, String name, @Nonnull Function<JaAdultVideoEntity, T> getter,
         @Nonnull BiConsumer<JaAdultVideoEntity, T> setter) {
         T existsValue = getter.apply(exists);
         if (existsValue == null) {
-            return false;
+            return Optional::empty;
         }
         T newValue = getter.apply(newEntity);
         if (newValue == null) {
             setter.accept(exists, existsValue);
-            return false;
+            return Optional::empty;
         }
-        return !newValue.equals(existsValue);
+        if (newValue.equals(existsValue)) {
+            return Optional::empty;
+        }
+        return () -> Optional.of(Pair.of(name, newValue));
     }
 
     @Override
