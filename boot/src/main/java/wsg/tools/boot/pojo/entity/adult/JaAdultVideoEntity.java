@@ -3,7 +3,7 @@ package wsg.tools.boot.pojo.entity.adult;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -15,6 +15,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -54,7 +55,7 @@ public class JaAdultVideoEntity extends IdentityEntity
     @Column(length = 15)
     private String serialNum;
 
-    @Column(length = 127)
+    @Column
     private String title;
 
     @Column(length = 127)
@@ -70,25 +71,41 @@ public class JaAdultVideoEntity extends IdentityEntity
     @Column(length = 63)
     private String producer;
 
-    @Column(length = 63)
+    @Column
     private String distributor;
 
     @Column(length = 63)
     private String series;
 
-    @ManyToMany
     @JoinTable(
         name = "ja_adult_video_tag",
         joinColumns = @JoinColumn(name = "video_id", referencedColumnName = "id"),
-        inverseJoinColumns = @JoinColumn(name = "tag", referencedColumnName = "tag")
+        inverseJoinColumns = @JoinColumn(name = "tag", referencedColumnName = "tag"),
+        foreignKey = @ForeignKey(name = "fk_ja_adult_video_tag_on_video_id"),
+        inverseForeignKey = @ForeignKey(name = "fk_ja_adult_video_tag_on_tag")
     )
-    private Set<JaAdultTagEntity> tags;
+    @ManyToMany(fetch = FetchType.LAZY)
+    private Set<JaAdultTagEntity> tags = new HashSet<>();
 
     @MinioStored(type = Filetype.IMAGE)
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "ja_adult_video_image")
+    @CollectionTable(
+        name = "ja_adult_video_image",
+        joinColumns = @JoinColumn(name = "video_id", referencedColumnName = "id"),
+        foreignKey = @ForeignKey(name = "fk_ja_adult_video_image_on_video_id")
+    )
     @Column(name = "image", nullable = false, length = 127)
-    private List<String> images = new ArrayList<>();
+    private Set<String> images = new HashSet<>();
+
+    @JoinTable(
+        name = "ja_adult_video_actress",
+        joinColumns = @JoinColumn(name = "video_id", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "actress_id", referencedColumnName = "id"),
+        foreignKey = @ForeignKey(name = "fk_ja_adult_video_actress_on_video_id"),
+        inverseForeignKey = @ForeignKey(name = "fk_ja_adult_video_actress_on_actress_id")
+    )
+    @ManyToMany(fetch = FetchType.LAZY)
+    private Set<JaAdultActressEntity> actresses = new HashSet<>();
 
     @Embedded
     private Source source;
@@ -147,6 +164,10 @@ public class JaAdultVideoEntity extends IdentityEntity
         return publish;
     }
 
+    public LocalDate getPublish() {
+        return publish;
+    }
+
     public void setPublish(LocalDate release) {
         this.publish = release;
     }
@@ -186,11 +207,11 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.tags = tags;
     }
 
-    public List<String> getImages() {
+    public Set<String> getImages() {
         return images;
     }
 
-    public void setImages(List<String> images) {
+    public void setImages(Set<String> images) {
         this.images = images;
     }
 
@@ -198,6 +219,14 @@ public class JaAdultVideoEntity extends IdentityEntity
     @Override
     public List<URL> getAlbum() {
         return images.stream().map(NetUtils::createURL).collect(Collectors.toList());
+    }
+
+    public Set<JaAdultActressEntity> getActresses() {
+        return actresses;
+    }
+
+    public void setActresses(Set<JaAdultActressEntity> actresses) {
+        this.actresses = actresses;
     }
 
     public Source getSource() {

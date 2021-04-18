@@ -11,10 +11,15 @@ public class Measurements {
     private final int bust;
     private Integer waist;
     private Integer hip;
-    private CupEnum cup;
 
     public Measurements(int bust) {
         this.bust = bust;
+    }
+
+    public Measurements(int bust, int waist, int hip) {
+        this.bust = bust;
+        this.waist = waist;
+        this.hip = hip;
     }
 
     public int getBust() {
@@ -35,13 +40,5 @@ public class Measurements {
 
     public void setHip(Integer hip) {
         this.hip = hip;
-    }
-
-    public CupEnum getCup() {
-        return cup;
-    }
-
-    public void setCup(CupEnum cup) {
-        this.cup = cup;
     }
 }

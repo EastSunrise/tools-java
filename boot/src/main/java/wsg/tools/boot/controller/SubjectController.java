@@ -98,7 +98,7 @@ public class SubjectController extends AbstractController {
         if (user == null) {
             return BAD_REQUEST.build();
         }
-        BatchResult<Long> result = BatchResult.empty();
+        BatchResult<Long> result = BatchResult.create();
         for (DoubanMark mark : DoubanMark.values()) {
             try {
                 result = result.plus(subjectService.importDouban(user, since, mark));

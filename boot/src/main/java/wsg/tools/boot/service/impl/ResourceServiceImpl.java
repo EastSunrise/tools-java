@@ -32,11 +32,11 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity_;
 import wsg.tools.boot.pojo.entity.resource.ResourceLinkEntity;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.ResourceService;
-import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.UpdateTemporalSupplier;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.view.FilenameSupplier;
@@ -72,7 +72,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     }
 
     @Override
-    public <E extends Enum<E>, T extends IdentifierItem<E>>
+    public <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
     void importIntListRepository(@Nonnull ListRepository<Integer, T> repository,
         String domain, Function<E, Integer> subtypeFunc) throws OtherResponseException {
         long start = itemRepository.findMaxRid(domain).orElse(0L);
@@ -83,7 +83,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             try {
                 T item = repository.findById(id);
                 int subtype = subtypeFunc.apply(item.getSubtype());
-                Source source = Source.record(domain, subtype, item);
+                Source source = Source.of(domain, subtype, item.getId(), item);
                 if (insertItem(item, source) >= 0) {
                     success++;
                 }
@@ -106,7 +106,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         itemEntity.setIdentified(false);
         try {
             itemEntity.setCover(config.uploadCover(item, source));
-        } catch (NotFoundException | NotFiletypeException | OtherResponseException ignored) {
+        } catch (NotFoundException ignored) {
         }
         if (item instanceof YearSupplier) {
             itemEntity.setYear(((YearSupplier) item).getYear());

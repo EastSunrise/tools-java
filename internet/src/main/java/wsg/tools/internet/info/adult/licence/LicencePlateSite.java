@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
@@ -51,23 +50,25 @@ public class LicencePlateSite extends BaseSite
     }
 
     /**
-     * Retrieve an item by the specified identifier.
+     * Retrieve an item by the specified path.
      *
-     * @see LicencePlateItem#getId()
+     * @see LicencePlateItem#getAsPath()
      * @see LicencePlateItem#getNextId()
+     * @see LicencePlateItem#getPreviousId()
      */
     @Nonnull
     @Override
-    public LicencePlateItem findById(@Nonnull String id)
+    public LicencePlateItem findById(@Nonnull String path)
         throws NotFoundException, OtherResponseException {
         SnapshotStrategy<Document> strategy = doc -> {
             SiblingSupplier<String> sibling = getSibling(doc);
             return sibling.getPreviousId() == null || sibling.getNextId() == null;
         };
-        Document document = getDocument(httpGet("/%s", id.toLowerCase(Locale.ROOT)), strategy);
+        Document document = getDocument(httpGet("/%s", path), strategy);
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);
+        int id = Integer.parseInt(article.id().substring(5));
         String serialNum = article.selectFirst(".entry-title").text();
         Element content = article.selectFirst(".single-content");
 

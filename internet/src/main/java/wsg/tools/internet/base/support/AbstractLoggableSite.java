@@ -57,7 +57,7 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
         if (file.canRead()) {
             try (ObjectInputStream stream = new ObjectInputStream(
                 FileUtils.openInputStream(file))) {
-                log.info("Read cookies from {}.", file.getPath());
+                log.trace("Read cookies from {}.", file.getPath());
                 CookieStore cookieStore = (CookieStore) stream.readObject();
                 context.setCookieStore(cookieStore);
             } catch (IOException | ClassNotFoundException e) {
@@ -74,7 +74,7 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
         String filepath = httpGet("").filepath() + ".cookie";
         File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
         try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(file))) {
-            log.info("Synchronize cookies of {}.", getHost());
+            log.trace("Synchronize cookies of {}.", getHost());
             stream.writeObject(getContext().getCookieStore());
         } catch (IOException e) {
             log.error(e.getMessage());

@@ -1,5 +1,6 @@
 package wsg.tools.boot.common.util;
 
+import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
@@ -23,11 +25,30 @@ import wsg.tools.common.constant.Constants;
  * @author Kingen
  * @since 2020/7/12
  */
-public class BeanUtilExt {
+public final class BeanUtilExt {
 
     private static final String PROPERTY_NAME_CLASS = "class";
     private static final Map<Pair<Class<?>, Class<?>>, List<PropertyCopier>> COPIERS =
         new ConcurrentHashMap<>(Constants.DEFAULT_MAP_CAPACITY);
+    private static final Map<Class<?>, BeanOpt<?>> OPTS = new ConcurrentHashMap<>(2);
+
+    private BeanUtilExt() {
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> BeanOpt<T> getBeanOpt(@Nonnull Class<T> clazz) {
+        BeanOpt<T> opt = (BeanOpt<T>) OPTS.get(clazz);
+        if (opt != null) {
+            return opt;
+        }
+        try {
+            opt = new BeanOpt<>(clazz);
+        } catch (IntrospectionException e) {
+            throw new AppException(e);
+        }
+        OPTS.put(clazz, opt);
+        return opt;
+    }
 
     public static <From, To> To convert(From from, Class<To> toClass) {
         if (null == from) {

@@ -83,7 +83,8 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
             String href = a.attr(CssSelectors.ATTR_HREF);
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.GOOD_HREF_REGEX, href);
             int id = Integer.parseInt(matcher.group("id"));
-            String title = a.text();
+            Element span = a.selectFirst(CssSelectors.TAG_SPAN);
+            String title = span == null ? a.text().strip() : span.attr(CssSelectors.ATTR_TITLE);
             Elements info = p.nextElementSibling().child(0).children();
             Iterator<Element> iterator = info.iterator();
             iterator.next();
@@ -100,11 +101,9 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
             if (!BLANK_IMAGE.equals(src)) {
                 good.setImage(NetUtils.createURL(HOME + src.substring(2)));
             }
-            List<String> tags = collect(iterator);
-            good.setTags(tags.toArray(new String[0]));
+            good.setTags(collect(iterator).toArray(new String[0]));
             good.setDistributor(getText(iterator.next()));
-            List<String> actresses = collect(iterator);
-            good.setActresses(actresses.isEmpty() ? null : actresses);
+            good.setActresses(collect(iterator));
             iterator.next();
             Element font = iterator.next();
             String description = font.text();

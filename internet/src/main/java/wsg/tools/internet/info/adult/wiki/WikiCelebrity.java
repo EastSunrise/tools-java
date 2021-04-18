@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -14,7 +15,7 @@ import java.util.Set;
 public class WikiCelebrity extends WikiSimpleCelebrity {
 
     private final BasicInfo info;
-    private Set<String> works;
+    private Set<String> works = new HashSet<>();
     private List<String> descriptions;
     private List<String> experiences;
     private List<String> groupLives;

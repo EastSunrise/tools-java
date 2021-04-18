@@ -12,7 +12,7 @@ import wsg.tools.internet.info.adult.view.DurationSupplier;
  * An item with an amateur adult entry.
  *
  * @author Kingen
- * @see MidnightSite#findAmateurEntry(MidnightAmateurColumn, int)
+ * @see MidnightSite#findAmateurEntry(MidnightColumn, int)
  * @since 2021/3/28
  */
 public class MidnightAmateurEntry extends MidnightAlbum

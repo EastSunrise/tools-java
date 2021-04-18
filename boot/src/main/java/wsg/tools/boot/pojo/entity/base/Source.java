@@ -9,7 +9,6 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import org.jetbrains.annotations.Contract;
 import wsg.tools.internet.base.repository.Repository;
-import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.common.UpdateTemporalSupplier;
@@ -68,25 +67,9 @@ public class Source implements Serializable {
         this.subtype = subtype;
     }
 
-    /**
-     * Returns an instance of {@link Source} representing a record of the given subtype of the given
-     * repository.
-     */
-    @Nonnull
-    @Contract(value = "_, _, _ -> new", pure = true)
-    public static Source record(@Nonnull String domain, int subtype, @Nonnull IntIdentifier item) {
-        LocalDateTime timestamp = null;
-        if (item instanceof UpdateDatetimeSupplier) {
-            timestamp = ((UpdateDatetimeSupplier) item).getUpdate();
-        } else if (item instanceof UpdateDateSupplier) {
-            timestamp = ((UpdateDateSupplier) item).getUpdate().atTime(LocalTime.MIDNIGHT);
-        }
-        return new Source(domain, subtype, (long) item.getId(), timestamp);
-    }
-
     @Nonnull
     @Contract("_, _, _, _ -> new")
-    public static Source record(@Nonnull String domain, int subtype, long rid,
+    public static Source of(@Nonnull String domain, int subtype, long rid,
         UpdateTemporalSupplier<?> supplier) {
         LocalDateTime timestamp = null;
         if (supplier != null) {

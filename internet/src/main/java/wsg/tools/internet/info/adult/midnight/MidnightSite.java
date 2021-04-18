@@ -21,15 +21,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.support.RequestWrapper;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -59,15 +60,8 @@ public final class MidnightSite extends BaseSite
     @Contract("_ -> new")
     public MidnightPageResult findPage(@Nonnull MidnightPageReq req)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/e/action/ListInfo.php")
-            .addParameter("page", req.getCurrent())
-            .addParameter("classid", req.getColumn().getId())
-            .addParameter("starttime", req.getStart())
-            .addParameter("endtime", req.getEnd())
-            .addParameter("line", req.getPageSize())
-            .addParameter("tempid", "11")
-            .addParameter("orderby", req.getOrderBy().getText())
-            .addParameter("myorder", 0);
+        String page = req.getCurrent() == 0 ? "" : "_" + (req.getCurrent() + 1);
+        RequestWrapper wrapper = httpGet("/%s/index%s.html", req.getColumn().getAsPath(), page);
         Document document = getDocument(wrapper, t -> true);
         List<MidnightIndex> indices = new ArrayList<>();
         Element article = document.selectFirst(".article");
@@ -78,15 +72,9 @@ public final class MidnightSite extends BaseSite
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ITEM_URL_REGEX, href);
             int id = Integer.parseInt(matcher.group("id"));
             String title = a.attr(CssSelectors.ATTR_TITLE);
-            String time = li.selectFirst(CssSelectors.TAG_TIME).text().strip();
-            LocalDateTime release = DocumentUtils.parseInterval(time);
-            indices.add(new BaseMidnightItem(id, title, release));
+            indices.add(new MidnightIndex(id, title));
         }
-        Element a = article.selectFirst("a[title=总数]");
-        int total = indices.size();
-        if (a != null) {
-            total = Integer.parseInt(a.text());
-        }
+        int total = Integer.parseInt(article.selectFirst("#max-page").text());
         return new MidnightPageResult(indices, req, total);
     }
 
@@ -138,11 +126,15 @@ public final class MidnightSite extends BaseSite
     /**
      * Retrieves an item with an amateur adult entry.
      *
+     * @see MidnightColumn#isAmateur()
      * @see MidnightIndex#getId()
      */
-    public MidnightAmateurEntry findAmateurEntry(@Nonnull MidnightAmateurColumn type, int id)
+    public MidnightAmateurEntry findAmateurEntry(@Nonnull MidnightColumn column, int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(type.getColumn(), id, (title, addTime, contents) -> {
+        if (!column.isAmateur()) {
+            throw new IllegalArgumentException("Not an amateur column");
+        }
+        return getItem(column, id, (title, addTime, contents) -> {
             List<URL> images = getImages(contents);
             MidnightAmateurEntry entry = new MidnightAmateurEntry(id, title, addTime, images);
             AdultEntryParser parser = AdultEntryParser.create(getInfo(contents));
@@ -150,9 +142,9 @@ public final class MidnightSite extends BaseSite
             entry.setPerformer(parser.getPerformer());
             entry.setDuration(parser.getDuration());
             entry.setRelease(parser.getRelease());
-            entry.setProducer(parser.getProducer());
-            entry.setDistributor(parser.getDistributor());
-            entry.setSeries(parser.getSeries());
+            entry.setProducer(StringUtilsExt.convertFullWidth(parser.getProducer()));
+            entry.setDistributor(StringUtilsExt.convertFullWidth(parser.getDistributor()));
+            entry.setSeries(StringUtilsExt.convertFullWidth(parser.getSeries()));
             return entry;
         });
     }
@@ -173,9 +165,9 @@ public final class MidnightSite extends BaseSite
             entry.setActresses(parser.getActresses(", "));
             entry.setDuration(parser.getDuration());
             entry.setRelease(parser.getRelease());
-            entry.setProducer(parser.getProducer());
-            entry.setDistributor(parser.getDistributor());
-            entry.setSeries(parser.getSeries());
+            entry.setProducer(StringUtilsExt.convertFullWidth(parser.getProducer()));
+            entry.setDistributor(StringUtilsExt.convertFullWidth(parser.getDistributor()));
+            entry.setSeries(StringUtilsExt.convertFullWidth(parser.getSeries()));
             return entry;
         });
     }
@@ -191,7 +183,7 @@ public final class MidnightSite extends BaseSite
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/%s/%d.html", column.getText(), id);
+        RequestWrapper wrapper = httpGet("/%s/%d.html", column.getAsPath(), id);
         Document document = getDocument(wrapper, t -> false);
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime addTime = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
@@ -252,7 +244,7 @@ public final class MidnightSite extends BaseSite
             }
             String[] parts0 = parts[0].split(Constants.WHITESPACE, 2);
             String key = parts0[parts0.length - 1];
-            MapUtilsExt.putIfAbsent(info, key, parts[1]);
+            MapUtilsExt.putIfAbsent(info, key, parts[1].strip());
         }
         return info;
     }
@@ -284,7 +276,7 @@ public final class MidnightSite extends BaseSite
         private static final Pattern ITEM_URL_REGEX;
 
         static {
-            String columns = Arrays.stream(MidnightColumn.values()).map(TextSupplier::getText)
+            String columns = Arrays.stream(MidnightColumn.values()).map(PathSupplier::getAsPath)
                 .collect(Collectors.joining("|"));
             ITEM_URL_REGEX = Pattern.compile(
                 "https://www\\.shenyequ\\.com/(?<t>" + columns + ")/(?<id>\\d+).html");

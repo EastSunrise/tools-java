@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
@@ -25,7 +26,7 @@ public class JaAdultTagEntity extends BaseEntity {
     @Column(length = 31)
     private String tag;
 
-    @ManyToMany(mappedBy = "tags")
+    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     private List<JaAdultVideoEntity> videos;
 
     public String getTag() {

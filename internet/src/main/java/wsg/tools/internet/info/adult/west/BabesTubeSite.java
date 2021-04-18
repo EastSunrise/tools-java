@@ -227,8 +227,9 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             int pounds = Integer.parseInt(enMatcher.group("p"));
             return (int) Math.round(pounds * KILOGRAMS_PER_POUND);
         }, "Weight"));
-        model.setMeasurements(MapUtilsExt.getValue(info, s -> {
-            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.MEASURE_REGEX, s);
+        String measurements = MapUtilsExt.getString(info, "Measurements");
+        if (measurements != null) {
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.MEASURE_REGEX, measurements);
             int bust = Integer.parseInt(matcher.group("b"));
             Measurements measure = new Measurements(bust);
             String waist = matcher.group("w");
@@ -239,12 +240,12 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             if (hip != null) {
                 measure.setHip(Integer.parseInt(hip));
             }
+            model.setMeasurements(measure);
             String cup = matcher.group("c");
             if (cup != null) {
-                measure.setCup(Enum.valueOf(CupEnum.class, cup.substring(0, 1)));
+                model.setCup(Enum.valueOf(CupEnum.class, cup.substring(0, 1)));
             }
-            return measure;
-        }, "Measurements"));
+        }
         model.setHairColor(MapUtilsExt.getEnumOf(info, Color.class, true, "Hair color"));
         model.setEyeColor(MapUtilsExt.getEnumOf(info, Color.class, true, "Eye color"));
         model.setBirthday(

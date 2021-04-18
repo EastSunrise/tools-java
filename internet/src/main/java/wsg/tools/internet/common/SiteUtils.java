@@ -144,6 +144,42 @@ public final class SiteUtils {
     }
 
     /**
+     * Traverses the pages in a pageable repository until an index matches the specified predicate.
+     * This method requires that the indices found by page are ordered.
+     *
+     * @param pageable  the function to retrieve a page by a given request with pagination
+     *                  information
+     * @param firstReq  the first request with pagination information
+     * @param action    action to be performed for content of each page
+     * @param predicate predicate that ends the traversal
+     * @param <I>       type of the content of each page
+     * @param <P>       type of requests with pagination information
+     * @throws NotFoundException      if any page is not found
+     * @throws OtherResponseException if an unexpected error occurs when requesting
+     */
+    public static <I, P extends PageReq> void
+    forEachPageUntil(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
+        @Nonnull Consumer<I> action, @Nonnull Predicate<I> predicate)
+        throws NotFoundException, OtherResponseException {
+        P req = firstReq;
+        boolean dead = false;
+        while (true) {
+            PageResult<I, P> result = pageable.findPage(req);
+            for (I index : result.getContent()) {
+                if (predicate.test(index)) {
+                    dead = true;
+                    break;
+                }
+                action.accept(index);
+            }
+            if (dead || !result.hasNext()) {
+                break;
+            }
+            req = result.nextPageRequest();
+        }
+    }
+
+    /**
      * Collects all indices by traversing the pages in a pageable repository.
      *
      * @param <I>      type of the content of each page
@@ -161,44 +197,6 @@ public final class SiteUtils {
         throws NotFoundException, OtherResponseException {
         List<I> indices = new ArrayList<>();
         forEachPage(pageable, firstReq, indices::add);
-        return indices;
-    }
-
-    /**
-     * Collects all indices by traversing the pages in a pageable repository until matching the
-     * specified predicate. This method requires that the indices found by page are ordered.
-     *
-     * @param <I>       type of the content of each page
-     * @param <P>       type of requests with pagination information
-     * @param pageable  the function to retrieve a page by a given request with pagination
-     *                  information
-     * @param firstReq  the first request with pagination information
-     * @param predicate predicate that ends the traversal
-     * @return list of all indices that match the specified predicate
-     * @throws NotFoundException      if any page is not found
-     * @throws OtherResponseException if an unexpected error occurs when requesting
-     */
-    @Nonnull
-    public static <I, P extends PageReq> List<I>
-    collectPageUntil(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
-        @Nonnull Predicate<I> predicate) throws NotFoundException, OtherResponseException {
-        List<I> indices = new ArrayList<>();
-        P req = firstReq;
-        boolean dead = false;
-        while (true) {
-            PageResult<I, P> result = pageable.findPage(req);
-            for (I index : result.getContent()) {
-                if (predicate.test(index)) {
-                    dead = true;
-                    break;
-                }
-                indices.add(index);
-            }
-            if (dead || !result.hasNext()) {
-                break;
-            }
-            req = result.nextPageRequest();
-        }
         return indices;
     }
 

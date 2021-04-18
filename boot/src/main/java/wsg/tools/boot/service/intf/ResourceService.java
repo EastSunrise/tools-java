@@ -9,6 +9,7 @@ import wsg.tools.boot.pojo.entity.resource.ResourceItemEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.UpdateTemporalSupplier;
 import wsg.tools.internet.movie.resource.view.IdentifierItem;
 
 /**
@@ -28,7 +29,7 @@ public interface ResourceService {
      * @param subtypeFunc the function to generate the subtype of an item
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    <E extends Enum<E>, T extends IdentifierItem<E>>
+    <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
     void importIntListRepository(ListRepository<Integer, T> repository, String domain,
         Function<E, Integer> subtypeFunc) throws OtherResponseException;
 

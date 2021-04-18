@@ -2,7 +2,6 @@ package wsg.tools.internet.info.adult.midnight;
 
 import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
-import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * An index pointing to a {@link BaseMidnightItem} in the {@link MidnightSite}.
@@ -11,6 +10,23 @@ import wsg.tools.internet.common.UpdateDatetimeSupplier;
  * @see MidnightSite#findPage(MidnightPageReq)
  * @since 2021/3/8
  */
-public interface MidnightIndex extends IntIdentifier, TitleSupplier, UpdateDatetimeSupplier {
+public class MidnightIndex implements IntIdentifier, TitleSupplier {
 
+    private final int id;
+    private final String title;
+
+    MidnightIndex(int id, String title) {
+        this.id = id;
+        this.title = title;
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
+    }
 }

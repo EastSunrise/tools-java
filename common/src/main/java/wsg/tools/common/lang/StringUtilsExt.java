@@ -29,6 +29,36 @@ public final class StringUtilsExt {
     }
 
     /**
+     * Converts a full-width string to half-width one.
+     *
+     * @param text the string to be converted
+     */
+    public static String convertFullWidth(String text) {
+        if (text == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (char ch : text.toCharArray()) {
+            // [!-}]
+            if (65281 <= ch && ch < 65374) {
+                sb.append((char) ((int) ch - 65248));
+                continue;
+            }
+            // space
+            if (ch == 12288) {
+                sb.append((char) 32);
+                continue;
+            }
+            if (ch == 8226) {
+                sb.append((char) 183);
+                continue;
+            }
+            sb.append(ch);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Encode a string as a pattern with special chars escaped.
      */
     public static String encodeAsPattern(String str) {

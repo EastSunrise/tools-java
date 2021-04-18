@@ -1,6 +1,5 @@
 package wsg.tools.boot.pojo.result;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import javax.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
+import wsg.tools.boot.pojo.entity.base.FailureReason;
 
 /**
  * Result when handle multi-data.
@@ -38,8 +38,8 @@ public class BatchResult<T> extends BaseResult {
      */
     @Nonnull
     @Contract(" -> new")
-    public static <V> BatchResult<V> empty() {
-        return new BatchResult<>(0, Collections.emptyMap());
+    public static <V> BatchResult<V> create() {
+        return new BatchResult<>(0, new HashMap<>(4));
     }
 
     /**
@@ -65,6 +65,13 @@ public class BatchResult<T> extends BaseResult {
      */
     public void fail(@Nonnull T t, @Nonnull String reason) {
         fails.put(t, reason);
+    }
+
+    /**
+     * Adds a failure.
+     */
+    public void fail(@Nonnull T t, @Nonnull FailureReason reason) {
+        fails.put(t, reason.getText());
     }
 
     /**

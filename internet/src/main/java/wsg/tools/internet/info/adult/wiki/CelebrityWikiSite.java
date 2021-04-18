@@ -17,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -177,17 +176,12 @@ public final class CelebrityWikiSite extends BaseSite
                 celebrity.setWorks(getWorks(prompt.nextElementSibling()));
             }
         }
-        Set<WikiAlbumIndex> albums = getSimpleAlbums(subtype, id);
-        if (CollectionUtils.isNotEmpty(albums)) {
-            celebrity.setAlbums(albums);
-        }
+        celebrity.setAlbums(getSimpleAlbums(subtype, id));
         return celebrity;
     }
 
     /**
      * Retrieves an album of the given identifier.
-     *
-     * @see WikiAlbumIndex#getId()
      */
     @Nonnull
     public WikiAlbum findAlbum(@Nonnull WikiAlbumIndex index)
@@ -314,15 +308,15 @@ public final class CelebrityWikiSite extends BaseSite
         BasicInfo info = new BasicInfo();
         info.setGender(MapUtilsExt.getEnumOfTitle(map, Gender.class, false, "性别"));
         info.setFullName(MapUtilsExt.getString(map, "姓名"));
-        setStringList(map, info, BasicInfo::setZhNames, "中文名");
-        setStringList(map, info, BasicInfo::setJaNames, "日文名");
-        setStringList(map, info, BasicInfo::setEnNames, "英文名");
-        setStringList(map, info, BasicInfo::setAka, "别名");
+        info.setZhNames(MapUtilsExt.getStringList(map, SEPARATOR, "中文名"));
+        info.setJaNames(MapUtilsExt.getStringList(map, SEPARATOR, "日文名"));
+        info.setEnNames(MapUtilsExt.getStringList(map, SEPARATOR, "英文名"));
+        info.setAka(MapUtilsExt.getStringList(map, SEPARATOR, "别名"));
 
         info.setZodiac(MapUtilsExt.getValue(map,
             text -> EnumUtilExt.valueOfTitle(Zodiac.class, text.substring(0, 1), false), "生肖"));
         info.setConstellation(MapUtilsExt.getEnumOfAka(map, Constellation.class, "星座"));
-        setStringList(map, info, BasicInfo::setInterests, "兴趣", "爱好");
+        info.setInterests(MapUtilsExt.getStringList(map, SEPARATOR, "兴趣", "爱好"));
 
         info.setHeight(MapUtilsExt.getValue(map, text -> {
             Matcher matcher = Lazy.HEIGHT_REGEX.matcher(text);
@@ -372,14 +366,6 @@ public final class CelebrityWikiSite extends BaseSite
         }
     }
 
-    private <T> void setStringList(Map<String, String> map, T t,
-        BiConsumer<T, List<String>> set, String... keys) {
-        List<String> values = MapUtilsExt.getStringList(map, SEPARATOR, keys);
-        if (CollectionUtils.isNotEmpty(values)) {
-            set.accept(t, values);
-        }
-    }
-
     private Set<String> getWorks(Element icon) {
         Set<String> works = new HashSet<>();
         Element tbody = icon.selectFirst("tbody");
@@ -399,18 +385,16 @@ public final class CelebrityWikiSite extends BaseSite
                 works.add(text.toUpperCase(Locale.ROOT));
             }
         }
-        return works.isEmpty() ? null : works;
+        return works;
     }
 
+    @Nonnull
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
         RequestWrapper wrapper = httpGet("/%s/m%s/pic.html", type.getText(), id);
         Document document = getDocument(wrapper, t -> false);
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
-        if (lis.isEmpty()) {
-            return null;
-        }
-        Set<WikiAlbumIndex> albums = new HashSet<>();
+        Set<WikiAlbumIndex> albums = new HashSet<>(lis.size());
         for (Element li : lis) {
             Element a = li.selectFirst(CssSelectors.TAG_A);
             String href = a.attr(CssSelectors.ATTR_HREF);

@@ -1,6 +1,8 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.common.util.function.TextSupplier;
+import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Contract;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * Columns of {@link MidnightSite}.
@@ -8,7 +10,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-public enum MidnightColumn implements TextSupplier {
+public enum MidnightColumn implements PathSupplier {
 
     /**
      * @see <a href="https://www.shenyequ.com/youyou/">Collections</a>
@@ -36,13 +38,19 @@ public enum MidnightColumn implements TextSupplier {
     PRESTIGE(33, "prestige", 12417);
 
     private final int id;
-    private final String text;
+    private final String path;
     private final int first;
 
-    MidnightColumn(int id, String text, int first) {
+    MidnightColumn(int id, String path, int first) {
         this.id = id;
-        this.text = text;
+        this.path = path;
         this.first = first;
+    }
+
+    @Nonnull
+    @Contract(value = " -> new", pure = true)
+    public static MidnightColumn[] amateurs() {
+        return new MidnightColumn[]{ARA, LUXU, PRESTIGE};
     }
 
     public int getId() {
@@ -53,8 +61,12 @@ public enum MidnightColumn implements TextSupplier {
         return first;
     }
 
+    public boolean isAmateur() {
+        return id == 31 || id == 32 || id == 33;
+    }
+
     @Override
-    public String getText() {
-        return text;
+    public String getAsPath() {
+        return path;
     }
 }

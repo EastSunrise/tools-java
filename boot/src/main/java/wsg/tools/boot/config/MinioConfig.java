@@ -41,7 +41,6 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.io.Filetype;
-import wsg.tools.common.io.NotFiletypeException;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
@@ -92,7 +91,7 @@ public class MinioConfig implements InitializingBean {
      * Uploads the preview to the server with the given arguments as the path in the bucket.
      */
     public String uploadPreview(@Nonnull PreviewSupplier supplier, @Nonnull Source source)
-        throws NotFiletypeException, NotFoundException, OtherResponseException {
+        throws NotFoundException {
         URL url = supplier.getPreviewURL();
         return uploadURL(url, Filetype.VIDEO, BUCKET_VIDEO, source, "preview", -1);
     }
@@ -101,7 +100,7 @@ public class MinioConfig implements InitializingBean {
      * Uploads the video to the server with the given arguments as the path in the bucket.
      */
     public String uploadVideo(@Nonnull VideoSupplier supplier, @Nonnull Source source)
-        throws NotFiletypeException, NotFoundException, OtherResponseException {
+        throws NotFoundException {
         // todo upload video
         return supplier.getVideoURL().toString();
     }
@@ -110,7 +109,7 @@ public class MinioConfig implements InitializingBean {
      * Uploads the cover to the server with the given source as the path in the bucket.
      */
     public String uploadCover(@Nonnull CoverSupplier supplier, @Nonnull Source source)
-        throws NotFoundException, OtherResponseException, NotFiletypeException {
+        throws NotFoundException {
         return uploadURL(supplier.getCoverURL(), Filetype.IMAGE, BUCKET_COVER, source, "", -1);
     }
 
@@ -118,7 +117,7 @@ public class MinioConfig implements InitializingBean {
      * Uploads an album of images to the server with the given arguments as the path in the bucket.
      */
     public List<String> uploadAlbum(@Nonnull List<URL> images, @Nonnull Source source)
-        throws NotFoundException, OtherResponseException, NotFiletypeException {
+        throws NotFoundException {
         List<String> result = new ArrayList<>(images.size());
         for (int i = 0, albumSize = images.size(); i < albumSize; i++) {
             URL url = images.get(i);
@@ -131,19 +130,32 @@ public class MinioConfig implements InitializingBean {
     }
 
     /**
-     * todo return the source url if fails.
+     * Uploads a file to the server.
+     *
+     * @param url      the url of the file to be uploaded
+     * @param filetype type of the file
+     * @param bucket   the bucket to which the file is uploaded
+     * @param source   the source of the file
+     * @param prefix   the prefix of the path where the file is uploaded, may null
+     * @param index    the index of the file under the specified source, may -1
+     * @return the path where the file is stored in the server, or the source url if failed
+     * @throws NotFoundException if the file is not found
      */
-    private String uploadURL(URL url, Filetype filetype, MinioBucket bucket, @Nonnull Source source,
-        String prefix, int index)
-        throws NotFiletypeException, NotFoundException, OtherResponseException {
+    public String uploadURL(URL url, Filetype filetype, MinioBucket bucket, @Nonnull Source source,
+        String prefix, int index) throws NotFoundException {
         if (url == null) {
             return null;
         }
         Objects.requireNonNull(source.getDomain());
         if (!filetype.test(url.getFile())) {
-            throw new NotFiletypeException(filetype, url.getFile());
+            return url.toString();
         }
-        File file = download(url);
+        File file = null;
+        try {
+            file = download(url);
+        } catch (OtherResponseException e) {
+            return url.toString();
+        }
         String folder = source.getDomain() + Constants.URL_PATH_SEPARATOR + source.getSubtype();
         if (StringUtils.isNotBlank(prefix)) {
             folder = prefix + Constants.URL_PATH_SEPARATOR + folder;
@@ -182,7 +194,7 @@ public class MinioConfig implements InitializingBean {
         }
         try {
             client().putObject(bucket.getName(), target, file.getPath());
-            log.info("Uploaded {} to {}/{}", file, bucket.getName(), target);
+            log.trace("Uploaded {} to {}/{}", file, bucket.getName(), target);
             return client().getObjectUrl(bucket.getName(), target);
         } catch (InvalidBucketNameException | XmlPullParserException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | NoResponseException | ErrorResponseException | InternalException | InvalidArgumentException e) {
             throw new AppException(e);
@@ -210,8 +222,7 @@ public class MinioConfig implements InitializingBean {
         } catch (SocketTimeoutException e) {
             throw new OtherResponseException(HttpStatus.SC_REQUEST_TIMEOUT, e.getMessage());
         } catch (SSLException | SocketException e) {
-            String message = e.getMessage();
-            throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, message);
+            throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (OtherResponseException e) {
             throw e;
         } catch (IOException e) {

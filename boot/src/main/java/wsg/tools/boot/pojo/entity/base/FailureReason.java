@@ -11,7 +11,8 @@ import wsg.tools.common.util.function.TextSupplier;
  */
 public enum FailureReason implements IntCodeSupplier, TextSupplier {
     EXISTS(101, "The target exists"),
-    ARG_INVALID(201, "The argument is invalid");
+    ARG_INVALID(201, "The argument is invalid"),
+    KEY_LACKING(202, "The key is lacking");
 
     private final int code;
     private final String text;

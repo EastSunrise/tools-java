@@ -4,9 +4,11 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.support.BasicSiblingEntity;
-import wsg.tools.internet.base.view.Identifier;
+import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
 import wsg.tools.internet.info.adult.view.Describable;
@@ -21,11 +23,11 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see LicencePlateSite#findById(String)
  * @since 2021/3/9
  */
-public class LicencePlateItem extends BasicSiblingEntity<String> implements Identifier<String>,
-    UpdateDatetimeSupplier, AmateurJaAdultEntry, DurationSupplier, ImageSupplier, Tagged,
-    Describable {
+public class LicencePlateItem extends BasicSiblingEntity<String>
+    implements IntIdentifier, PathSupplier, UpdateDatetimeSupplier, AmateurJaAdultEntry,
+    DurationSupplier, ImageSupplier, Tagged, Describable {
 
-    private final String id;
+    private final int id;
     private final String serialNum;
     private final String description;
     private final LocalDateTime updateTime;
@@ -37,9 +39,9 @@ public class LicencePlateItem extends BasicSiblingEntity<String> implements Iden
     private String producer;
     private String distributor;
     private String series;
-    private String[] tags;
+    private String[] tags = new String[0];
 
-    LicencePlateItem(String id, String serialNum, String description, LocalDateTime updateTime,
+    LicencePlateItem(int id, String serialNum, String description, LocalDateTime updateTime,
         String previous, String next) {
         super(previous, next);
         this.id = id;
@@ -49,8 +51,13 @@ public class LicencePlateItem extends BasicSiblingEntity<String> implements Iden
     }
 
     @Override
-    public String getId() {
+    public int getId() {
         return id;
+    }
+
+    @Override
+    public String getAsPath() {
+        return serialNum.toLowerCase(Locale.ROOT);
     }
 
     @Override

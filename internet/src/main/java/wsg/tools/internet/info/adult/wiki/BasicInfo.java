@@ -18,7 +18,7 @@ import wsg.tools.internet.info.adult.common.CupEnum;
  * @since 2021/2/26
  */
 @Getter
-class BasicInfo {
+public class BasicInfo {
 
     private Gender gender;
     private String fullName;

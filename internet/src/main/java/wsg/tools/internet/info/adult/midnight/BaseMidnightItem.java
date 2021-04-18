@@ -2,6 +2,7 @@ package wsg.tools.internet.info.adult.midnight;
 
 import java.time.LocalDateTime;
 import wsg.tools.internet.base.view.SiblingSupplier;
+import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**
  * A base item in the {@link MidnightSite}.
@@ -9,29 +10,17 @@ import wsg.tools.internet.base.view.SiblingSupplier;
  * @author Kingen
  * @since 2021/3/2
  */
-class BaseMidnightItem implements MidnightIndex, SiblingSupplier<Integer> {
+class BaseMidnightItem extends MidnightIndex
+    implements UpdateDatetimeSupplier, SiblingSupplier<Integer> {
 
-    private final int id;
-    private final String title;
     private final LocalDateTime addTime;
     private String[] keywords;
     private Integer previousId;
     private Integer nextId;
 
     BaseMidnightItem(int id, String title, LocalDateTime addTime) {
-        this.id = id;
-        this.title = title;
+        super(id, title);
         this.addTime = addTime;
-    }
-
-    @Override
-    public int getId() {
-        return id;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
     }
 
     @Override

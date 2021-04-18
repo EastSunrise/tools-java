@@ -4,6 +4,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
 import wsg.tools.internet.common.enums.Color;
+import wsg.tools.internet.info.adult.common.CupEnum;
 import wsg.tools.internet.info.adult.common.Measurements;
 
 /**
@@ -24,6 +25,7 @@ public class BabesModel implements BabesModelIndex {
     private Integer height;
     private Integer weight;
     private Measurements measurements;
+    private CupEnum cup;
     private Color hairColor;
     private Color eyeColor;
     private LocalDate birthday;
@@ -86,6 +88,14 @@ public class BabesModel implements BabesModelIndex {
 
     void setMeasurements(Measurements measurements) {
         this.measurements = measurements;
+    }
+
+    public CupEnum getCup() {
+        return cup;
+    }
+
+    void setCup(CupEnum cup) {
+        this.cup = cup;
     }
 
     public Color getHairColor() {
