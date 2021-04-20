@@ -14,28 +14,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.HttpGet;
 import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.CacheResponseWrapper;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.DocumentHandler;
 import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
+import wsg.tools.internet.common.VoidResponseHandler;
 import wsg.tools.internet.common.enums.Color;
 import wsg.tools.internet.info.adult.common.CupEnum;
 import wsg.tools.internet.info.adult.common.Measurements;
@@ -57,6 +60,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     private static final double CENTIMETERS_PER_INCH = 2.54;
     private static final double KILOGRAMS_PER_POUND = 0.4535924;
     private static final Pattern SEPARATOR = Pattern.compile(", ");
+    private static final HttpHost CDN = httpsHost("temw6juvcn.ent-cdn.com");
 
     public BabesTubeSite() {
         super("Babes Tube", httpsHost("babestube.com"));
@@ -106,12 +110,6 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
         BabesMember author = new BabesMember(authorId, member.text());
         BabesVideo video = new BabesVideo(id, titlePath, title, cover, duration, rating, views,
             likes, dislikes, comments, description, author, uploadTime);
-        Elements scripts = viewlist.selectFirst(".player-holder").select(CssSelectors.TAG_SCRIPT);
-        if (!scripts.isEmpty()) {
-            String script = scripts.last().html();
-            Matcher srcMatcher = RegexUtils.findOrElseThrow(Lazy.VIDEO_URL_REGEX, script);
-            video.setVideo(NetUtils.createURL(srcMatcher.group("u")));
-        }
         String tags = metadata.get("video:tag");
         if (tags != null) {
             video.setTags(SEPARATOR.split(tags));
@@ -121,6 +119,33 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             video.setQuality(VideoQuality.valueOf(quality));
         }
         return video;
+    }
+
+    /**
+     * Retrieves the screenshots of a video.
+     *
+     * @see BabesVideoIndex#getId()
+     */
+    public List<URL> getScreenshots(int id) throws HttpResponseException {
+        AssertUtils.requireRange(id, 1, null);
+        List<URL> screenshots = new ArrayList<>();
+        String path = "/contents/videos_screenshots/%d/%d/400x225/%d.jpg";
+        int i = 1;
+        while (true) {
+            int page = id / 1000 * 1000;
+            String uri = String.format(path, page, id, i);
+            try {
+                execute(CDN, new HttpGet(uri), new VoidResponseHandler());
+            } catch (HttpResponseException e) {
+                if (e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+                    break;
+                }
+                throw e;
+            }
+            screenshots.add(NetUtils.createURL(CDN.toURI() + uri));
+            i++;
+        }
+        return screenshots;
     }
 
     /**
@@ -272,20 +297,14 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             int id = Integer.parseInt(matcher.group("id"));
             String titlePath = matcher.group("p");
             String title = a.attr(CssSelectors.ATTR_TITLE);
-            Map<String, String> dataset = item.selectFirst(".lazyload").dataset();
-            URL cover = NetUtils.createURL(dataset.get("src"));
             Duration duration = TimeUtils.parseDuration(item.selectFirst(".time").text());
             String rate = item.selectFirst(".rate").text();
             double rating = Integer.parseInt(rate.substring(0, rate.length() - 1)) / 100.0D;
             Elements info = item.select(".count");
             String viewsText = info.first().text().replace(" ", "");
             int views = Integer.parseInt(viewsText.substring(0, viewsText.length() - 5));
-            BabesVideo index = new BabesVideo(id, titlePath, title, cover, duration,
-                rating, views);
-            String preview = dataset.get("preview");
-            if (preview != null) {
-                index.setPreview(NetUtils.createURL(preview));
-            }
+            BabesVideoIndex index = new BabesVideoIndex(id, titlePath, title, duration, rating,
+                views);
             Element quality = item.selectFirst(".quality");
             if (quality != null) {
                 index.setQuality(VideoQuality.valueOf(quality.text()));
@@ -307,13 +326,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             .addParameter("function", "get_block")
             .addParameter("block_id", blockId)
             .addParameter("sort_by", sortBy);
-        CacheResponseWrapper<Document> rw = null;
-        try {
-            rw = getResponseWrapper(wrapper, new DocumentHandler(), t -> true);
-        } catch (HttpResponseException e) {
-            throw SiteUtils.handleException(e);
-        }
-        Document document = rw.getContent();
+        Document document = getDocument(wrapper, t -> true);
         Elements items = document.selectFirst("#" + blockId + "_items").children();
         int totalPages = 1;
         Element pagination = document.selectFirst(".pagination");
@@ -359,7 +372,5 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             .compile(HOME + "/members/(?<id>\\d+)/");
         private static final Pattern CATEGORY_HREF_REGEX = Pattern
             .compile(HOME + "/categories/(?<p>[A-Za-z-]+)/");
-        private static final Pattern VIDEO_URL_REGEX = Pattern
-            .compile("video_url: '(?:function/0/)?(?<u>[\\w:/.]+)'");
     }
 }

@@ -20,6 +20,7 @@ import wsg.tools.boot.common.util.BeanOpt;
 import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.api.adapter.JaAdultActressAdapter;
+import wsg.tools.boot.dao.api.adapter.WesternAdultEntry;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultActressRepository;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultTagRepository;
@@ -36,24 +37,17 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
-import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.UpdateTemporalSupplier;
 import wsg.tools.internet.info.adult.common.SerialNumber;
 import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.AlbumSupplier;
-import wsg.tools.internet.info.adult.view.Classified;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
 import wsg.tools.internet.info.adult.view.JaAdultEntry;
-import wsg.tools.internet.info.adult.view.PreviewSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 import wsg.tools.internet.info.adult.view.TitledAdultEntry;
-import wsg.tools.internet.info.adult.west.WesternAdultEntry;
 
 /**
  * @author Kingen
@@ -245,39 +239,17 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public <T extends IntIdentifier & WesternAdultEntry & UpdateTemporalSupplier<?>>
-    void importIntListRepository(String domain, int subtype,
-        @Nonnull ListRepository<Integer, T> repository)
-        throws OtherResponseException {
-        long start = wtVideoRepository.getMaxRid(domain, subtype).orElse(0L);
-        List<Integer> indices = repository.indices().stream()
-            .filter(id -> id > start).sorted().collect(Collectors.toList());
-        int success = 0;
-        for (int id : indices) {
-            try {
-                T item = repository.findById(id);
-                Source source = Source.of(domain, subtype, item.getId(), item);
-                success += saveWesternAdultEntry(item, source);
-            } catch (NotFoundException ignored) {
-            }
-        }
-        log.info("Imported adult entries from {}: {} succeed, {} failed", domain, success,
-            indices.size() - success);
-    }
-
-    @Override
-    public int saveWesternAdultEntry(@Nonnull WesternAdultEntry entry, Source source) {
+    public Optional<FailureReason>
+    saveWesternAdultEntry(@Nonnull WesternAdultEntry entry, Source source) {
         WesternAdultVideoEntity entity = new WesternAdultVideoEntity();
         entity.setTitle(entry.getTitle());
         try {
             entity.setCover(config.uploadCover(entry, source));
         } catch (NotFoundException ignored) {
         }
-        if (entry instanceof PreviewSupplier) {
-            try {
-                entity.setPreview(config.uploadPreview((PreviewSupplier) entry, source));
-            } catch (NotFoundException ignored) {
-            }
+        try {
+            entity.setPreview(config.uploadPreview(entry, source));
+        } catch (NotFoundException ignored) {
         }
         entity.setDuration(entry.getDuration());
         try {
@@ -285,11 +257,10 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         } catch (NotFoundException ignored) {
         }
         entity.setTags(entry.getTags());
-        if (entry instanceof Classified) {
-            entity.setCategories(((Classified) entry).getCategories());
-        }
+        entity.setCategories(entry.getCategories());
+        entity.setDescription(entry.getDescription());
         entity.setSource(source);
         wtVideoRepository.insert(entity);
-        return 1;
+        return Optional.empty();
     }
 }

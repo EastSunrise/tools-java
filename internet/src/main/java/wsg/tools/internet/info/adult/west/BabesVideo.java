@@ -4,8 +4,8 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import javax.annotation.Nonnull;
+import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.common.VideoQuality;
 
 /**
  * A video with details on the site.
@@ -14,47 +14,22 @@ import wsg.tools.internet.info.adult.common.VideoQuality;
  * @see BabesTubeSite#findById(String)
  * @since 2021/4/3
  */
-public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDatetimeSupplier {
+public class BabesVideo extends BabesVideoIndex implements UpdateDatetimeSupplier, CoverSupplier {
 
-    private final int id;
-    private final String titlePath;
-    private final String title;
     private final URL cover;
-    private final Duration duration;
-    private final double rating;
-    private final int views;
-    private URL preview;
-    private VideoQuality quality;
-    private int likes;
-    private int dislikes;
-    private int comments;
-    private String description;
-    private BabesMember author;
-    private LocalDateTime uploadTime;
-    private URL video;
-    private String[] tags;
-
-    BabesVideo(int id, String titlePath, String title, URL cover, Duration duration,
-        double rating, int views) {
-        this.id = id;
-        this.titlePath = titlePath;
-        this.title = title;
-        this.cover = cover;
-        this.duration = duration;
-        this.rating = rating;
-        this.views = views;
-    }
+    private final int likes;
+    private final int dislikes;
+    private final int comments;
+    private final String description;
+    private final BabesMember author;
+    private final LocalDateTime uploadTime;
+    private String[] tags = new String[0];
 
     BabesVideo(int id, String titlePath, String title, URL cover, Duration duration, double rating,
         int views, int likes, int dislikes, int comments, String description, BabesMember author,
         LocalDateTime uploadTime) {
-        this.id = id;
-        this.titlePath = titlePath;
-        this.title = title;
+        super(id, titlePath, title, duration, rating, views);
         this.cover = cover;
-        this.duration = duration;
-        this.rating = rating;
-        this.views = views;
         this.likes = likes;
         this.dislikes = dislikes;
         this.comments = comments;
@@ -64,56 +39,8 @@ public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDat
     }
 
     @Override
-    public int getId() {
-        return id;
-    }
-
-    @Override
-    public String getAsPath() {
-        return id + "/" + titlePath;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
     public URL getCoverURL() {
         return cover;
-    }
-
-    @Override
-    public Duration getDuration() {
-        return duration;
-    }
-
-    @Override
-    public int getViews() {
-        return views;
-    }
-
-    @Override
-    public double getRating() {
-        return rating;
-    }
-
-    @Override
-    public URL getPreviewURL() {
-        return preview;
-    }
-
-    void setPreview(URL preview) {
-        this.preview = preview;
-    }
-
-    @Override
-    public VideoQuality getQuality() {
-        return quality;
-    }
-
-    void setQuality(VideoQuality quality) {
-        this.quality = quality;
     }
 
     public int getLikes() {
@@ -128,7 +55,6 @@ public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDat
         return comments;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
@@ -142,17 +68,7 @@ public class BabesVideo implements BabesVideoIndex, WesternAdultEntry, UpdateDat
         return uploadTime;
     }
 
-    @Override
-    public URL getVideoURL() {
-        return video;
-    }
-
-    void setVideo(URL video) {
-        this.video = video;
-    }
-
     @Nonnull
-    @Override
     public String[] getTags() {
         return tags;
     }

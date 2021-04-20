@@ -101,8 +101,12 @@ public class MinioConfig implements InitializingBean {
      */
     public String uploadVideo(@Nonnull VideoSupplier supplier, @Nonnull Source source)
         throws NotFoundException {
+        URL url = supplier.getVideoURL();
+        if (url == null) {
+            return null;
+        }
         // todo upload video
-        return supplier.getVideoURL().toString();
+        return url.toString();
     }
 
     /**

@@ -1,8 +1,6 @@
 package wsg.tools.boot.pojo.entity.adult;
 
-import java.net.URL;
 import java.time.Duration;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -13,10 +11,6 @@ import wsg.tools.boot.config.MinioStored;
 import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
-import wsg.tools.common.net.NetUtils;
-import wsg.tools.internet.info.adult.view.Classified;
-import wsg.tools.internet.info.adult.view.PreviewSupplier;
-import wsg.tools.internet.info.adult.west.WesternAdultEntry;
 
 /**
  * The entity of a western adult video.
@@ -31,8 +25,7 @@ import wsg.tools.internet.info.adult.west.WesternAdultEntry;
         "domain", "subtype", "rid"
     })
 )
-public class WesternAdultVideoEntity extends IdentityEntity
-    implements WesternAdultEntry, Classified, PreviewSupplier {
+public class WesternAdultVideoEntity extends IdentityEntity {
 
     private static final long serialVersionUID = -7759493928773926950L;
 
@@ -53,28 +46,23 @@ public class WesternAdultVideoEntity extends IdentityEntity
     @MinioStored(type = Filetype.VIDEO)
     private String video;
 
+    @Column(length = 1023)
     private String[] tags;
 
     private String[] categories;
 
-    @Column(length = 63)
+    @Column(length = 2047)
     private String description;
 
     @Embedded
     private Source source;
 
-    @Override
     public String getTitle() {
         return title;
     }
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    @Override
-    public URL getCoverURL() {
-        return Optional.ofNullable(cover).map(NetUtils::createURL).orElse(null);
     }
 
     public String getCover() {
@@ -85,11 +73,6 @@ public class WesternAdultVideoEntity extends IdentityEntity
         this.cover = cover;
     }
 
-    @Override
-    public URL getPreviewURL() {
-        return Optional.ofNullable(preview).map(NetUtils::createURL).orElse(null);
-    }
-
     public String getPreview() {
         return preview;
     }
@@ -98,18 +81,12 @@ public class WesternAdultVideoEntity extends IdentityEntity
         this.preview = preview;
     }
 
-    @Override
     public Duration getDuration() {
         return duration;
     }
 
     public void setDuration(Duration duration) {
         this.duration = duration;
-    }
-
-    @Override
-    public URL getVideoURL() {
-        return Optional.ofNullable(video).map(NetUtils::createURL).orElse(null);
     }
 
     public String getVideo() {
@@ -121,7 +98,6 @@ public class WesternAdultVideoEntity extends IdentityEntity
     }
 
     @Nonnull
-    @Override
     public String[] getTags() {
         return tags;
     }
@@ -131,7 +107,6 @@ public class WesternAdultVideoEntity extends IdentityEntity
     }
 
     @Nonnull
-    @Override
     public String[] getCategories() {
         return categories;
     }
@@ -140,7 +115,6 @@ public class WesternAdultVideoEntity extends IdentityEntity
         this.categories = categories;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,10 +20,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import wsg.tools.boot.config.SiteManager;
+import wsg.tools.boot.dao.api.adapter.WesternAdultEntry;
+import wsg.tools.boot.dao.api.adapter.impl.BabesVideoAdapter;
 import wsg.tools.boot.dao.api.adapter.impl.CelebrityAdapter;
+import wsg.tools.boot.dao.api.adapter.impl.PornTubeVideoAdapter;
 import wsg.tools.boot.dao.api.impl.GggGoodAdapter;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultVideoRepository;
+import wsg.tools.boot.dao.jpa.mapper.WesternAdultVideoRepository;
 import wsg.tools.boot.pojo.entity.adult.JaAdultVideoEntity;
+import wsg.tools.boot.pojo.entity.adult.WesternAdultVideoEntity;
 import wsg.tools.boot.pojo.entity.base.FailureReason;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
@@ -47,7 +53,11 @@ import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.info.adult.view.JaAdultEntry;
+import wsg.tools.internet.info.adult.west.BabesPageReq;
+import wsg.tools.internet.info.adult.west.BabesTubeSite;
+import wsg.tools.internet.info.adult.west.BabesVideo;
 import wsg.tools.internet.info.adult.west.PornTubeSite;
+import wsg.tools.internet.info.adult.west.PornTubeVideo;
 import wsg.tools.internet.info.adult.wiki.CelebrityWikiSite;
 import wsg.tools.internet.info.adult.wiki.WikiAdultEntry;
 import wsg.tools.internet.info.adult.wiki.WikiCelebrity;
@@ -68,14 +78,17 @@ public class AdultScheduler {
 
     private final SiteManager manager;
     private final JaAdultVideoRepository jaVideoRepository;
+    private final WesternAdultVideoRepository wtVideoRepository;
     private final AdultService adultService;
     private final TransactionTemplate template;
 
     @Autowired
     public AdultScheduler(SiteManager manager, JaAdultVideoRepository jaVideoRepository,
+        WesternAdultVideoRepository wtVideoRepository,
         AdultService adultService, TransactionTemplate template) {
         this.manager = manager;
         this.jaVideoRepository = jaVideoRepository;
+        this.wtVideoRepository = wtVideoRepository;
         this.adultService = adultService;
         this.template = template;
     }
@@ -83,12 +96,121 @@ public class AdultScheduler {
     @Scheduled(cron = "0 0 8 * * ?")
     public void importPornTubeSite() {
         PornTubeSite site = manager.pornTubeSite();
+        String domain = site.getHostname();
+        int subtype = 0;
+        long startId = wtVideoRepository.getMaxRid(domain, subtype).orElse(0L);
         try {
-            adultService.importIntListRepository(site.getHostname(), 0, site.getRepository());
-        } catch (OtherResponseException e) {
+            List<Integer> ids = site.findAllVideoIndices().keySet().stream()
+                .filter(id -> id > startId).sorted().collect(Collectors.toList());
+            BatchResult<Integer> result = BatchResult.create();
+            for (int id : ids) {
+                PornTubeVideo video = site.findById(id);
+                WesternAdultEntry entry = new PornTubeVideoAdapter(video);
+                Source source = Source.of(domain, subtype, id, video);
+                Optional<FailureReason> reason = adultService.saveWesternAdultEntry(entry, source);
+                if (reason.isPresent()) {
+                    result.fail(id, reason.get());
+                } else {
+                    result.succeed();
+                }
+            }
+            log.info("Imported adult entries from {}:", domain);
+            result.print(String::valueOf);
+        } catch (OtherResponseException | NotFoundException e) {
             log.error(e.getMessage());
             throw new AppException(e);
         }
+    }
+
+    public void importBabesTubeSite() {
+        BabesTubeSite site = manager.babesTubeSite();
+        String domain = site.getHostname();
+        int subtype = 0;
+        Optional<LocalDateTime> timeOp = wtVideoRepository.getLatestTimestamp(domain, subtype);
+        Long startId = wtVideoRepository.getMaxRid(domain, subtype).orElse(0L);
+        LocalDateTime startTime = timeOp.orElse(DEFAULT_START_TIME);
+        BabesPageReq firstReq = BabesPageReq.first();
+        Deque<BabesVideoAdapter> adapters = new LinkedList<>();
+        try {
+            SiteUtils.forEachPageUntil(site, firstReq, Constants.emptyConsumer(), index -> {
+                if (index.getId() <= startId) {
+                    return false;
+                }
+                BabesVideo video;
+                try {
+                    video = site.findById(index.getAsPath());
+                } catch (OtherResponseException | NotFoundException e) {
+                    throw new AppException(e);
+                }
+                if (video.getUpdate().isBefore(startTime)) {
+                    return true;
+                }
+                adapters.addLast(new BabesVideoAdapter(index, video));
+                return false;
+            });
+            if (adapters.isEmpty()) {
+                return;
+            }
+            Set<Source> exists = Collections.emptySet();
+            if (timeOp.isPresent()) {
+                exists = findWtSourcesByTime(domain, subtype, startTime);
+            }
+            BatchResult<Integer> result = BatchResult.create();
+            Set<Integer> ids = new HashSet<>();
+            // videos updated at the start time
+            while (!adapters.isEmpty()) {
+                BabesVideoAdapter adapter = adapters.removeLast();
+                int id = adapter.getId();
+                if (ids.contains(id)) {
+                    continue;
+                }
+                ids.add(id);
+                Source source = Source.of(domain, subtype, id, adapter);
+                if (exists.contains(source)) {
+                    continue;
+                }
+                Optional<FailureReason> op = adultService.saveWesternAdultEntry(adapter, source);
+                if (op.isPresent()) {
+                    result.fail(id, op.get());
+                } else {
+                    result.succeed();
+                }
+                if (adapter.getUpdate().isAfter(startTime)) {
+                    break;
+                }
+            }
+            // videos updated after the start time
+            while (!adapters.isEmpty()) {
+                BabesVideoAdapter adapter = adapters.removeLast();
+                int id = adapter.getId();
+                if (ids.contains(id)) {
+                    continue;
+                }
+                ids.add(id);
+                Source source = Source.of(domain, subtype, id, adapter);
+                Optional<FailureReason> op = adultService.saveWesternAdultEntry(adapter, source);
+                if (op.isPresent()) {
+                    result.fail(id, op.get());
+                } else {
+                    result.succeed();
+                }
+            }
+            log.info("Imported adult entries from {}:", domain);
+            result.print(String::valueOf);
+        } catch (NotFoundException | OtherResponseException e) {
+            throw new AppException(e);
+        }
+    }
+
+    private Set<Source> findWtSourcesByTime(String domain, int subtype, LocalDateTime timestamp) {
+        Source source = new Source();
+        source.setDomain(domain);
+        source.setSubtype(subtype);
+        source.setTimestamp(timestamp);
+        WesternAdultVideoEntity probe = new WesternAdultVideoEntity();
+        probe.setSource(source);
+        return wtVideoRepository.findAll(Example.of(probe)).stream()
+            .map(WesternAdultVideoEntity::getSource).collect(Collectors.toSet());
     }
 
     @Scheduled(cron = "0 0 11 * * ?")

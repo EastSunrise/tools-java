@@ -9,7 +9,6 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.view.Classified;
 
 /**
  * A video on the site.
@@ -19,8 +18,7 @@ import wsg.tools.internet.info.adult.view.Classified;
  * @see PornTubeSite#findById(Integer)
  * @since 2021/3/17
  */
-public class PornTubeVideo extends PornTubeSimpleVideo
-    implements WesternAdultEntry, UpdateDatetimeSupplier, Classified {
+public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetimeSupplier {
 
     private final URL video;
     private final String description;
@@ -38,12 +36,10 @@ public class PornTubeVideo extends PornTubeSimpleVideo
         this.postTime = postTime;
     }
 
-    @Override
     public URL getVideoURL() {
         return video;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
@@ -53,7 +49,6 @@ public class PornTubeVideo extends PornTubeSimpleVideo
     }
 
     @Nonnull
-    @Override
     public String[] getCategories() {
         return categories.values().toArray(new String[0]);
     }
@@ -63,7 +58,6 @@ public class PornTubeVideo extends PornTubeSimpleVideo
     }
 
     @Nonnull
-    @Override
     public String[] getTags() {
         return tags.stream().map(PornTubeTag::getTitle).toArray(String[]::new);
     }

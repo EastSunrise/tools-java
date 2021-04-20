@@ -1,5 +1,6 @@
 package wsg.tools.boot.dao.jpa.mapper;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +26,14 @@ public interface WesternAdultVideoRepository extends BaseRepository<WesternAdult
      */
     @Query("select max(source.rid) from WesternAdultVideoEntity where source.domain=?1 and source.subtype=?2")
     Optional<Long> getMaxRid(@Nonnull String domain, int subtype);
+
+    /**
+     * Retrieves the latest update time of the subtype of the domain.
+     *
+     * @param domain  the domain of the repository
+     * @param subtype the subtype of the source
+     * @return optional of the maximum rid
+     */
+    @Query("select max(source.timestamp) from WesternAdultVideoEntity where source.domain=?1 and source.subtype=?2")
+    Optional<LocalDateTime> getLatestTimestamp(@Nonnull String domain, int subtype);
 }
