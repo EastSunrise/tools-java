@@ -99,7 +99,7 @@ public final class AmateurCatSite extends BaseSite
     @Override
     public AmateurCatItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/%s", id), doc -> getNext(doc) == null);
+        Document document = getDocument(httpGet("/%s", id));
 
         Element main = document.selectFirst("#main");
         String serialNum = main.selectFirst("h1.entry-title").text();

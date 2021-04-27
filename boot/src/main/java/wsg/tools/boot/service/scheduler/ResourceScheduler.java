@@ -68,7 +68,7 @@ public class ResourceScheduler extends BaseServiceImpl {
     void importIntRange(@Nonnull S site, Function<E, Integer> subtypeFunc) {
         try {
             ListRepository<Integer, T> repository = site.getRepository();
-            resourceService.importIntListRepository(repository, site.getHostname(), subtypeFunc);
+            resourceService.importIntListRepository(repository, site.getName(), subtypeFunc);
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
         }

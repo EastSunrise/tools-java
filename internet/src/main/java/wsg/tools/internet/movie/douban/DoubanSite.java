@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -36,7 +37,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.AbstractLoggableSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
@@ -89,7 +89,12 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         "https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-Za-z%.-]+)&query=(?<q>[0-9A-Za-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
 
     public DoubanSite() {
-        super("Douban", httpsHost("douban.com"));
+        this("");
+    }
+
+    public DoubanSite(String subHost) {
+        super("Douban",
+            httpsHost((StringUtils.isBlank(subHost) ? "" : subHost + ".") + "douban.com"));
     }
 
     /**
@@ -99,13 +104,13 @@ public class DoubanSite extends AbstractLoggableSite<Long>
      */
     public void login(String username, String password) throws OtherResponseException {
         logout();
-        RequestWrapper wrapper = create("accounts", METHOD_POST, "/j/mobile/login/basic")
+        RequestBuilder builder = create("accounts", METHOD_POST, "/j/mobile/login/basic")
             .addParameter("ck", "").addParameter("name", username)
             .addParameter("password", password)
-            .addParameter("remember", true);
+            .addParameter("remember", String.valueOf(true));
         LoginResult result = null;
         try {
-            result = getObject(wrapper, MAPPER, LoginResult.class, t -> true);
+            result = getObject(builder, MAPPER, LoginResult.class);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -128,11 +133,11 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         if (user() == null) {
             return;
         }
-        findDocument(httpGet(""), t -> true);
-        RequestWrapper wrapper = httpGet("/accounts/logout")
+        findDocument(httpGet(""));
+        RequestBuilder builder = httpGet("/accounts/logout")
             .addParameter("source", "main")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        findDocument(wrapper, t -> true);
+        findDocument(builder);
     }
 
     /**
@@ -145,8 +150,8 @@ public class DoubanSite extends AbstractLoggableSite<Long>
     public BaseDoubanSubject findById(@Nonnull Long id)
         throws NotFoundException, OtherResponseException {
         String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestWrapper wrapper = create(substation, METHOD_GET, "/subject/%d", id);
-        Document document = getDocument(wrapper, t -> false);
+        RequestBuilder builder = create(substation, METHOD_GET, "/subject/%d", id);
+        Document document = getDocument(builder);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         BaseDoubanSubject subject;
@@ -258,12 +263,12 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         int start = 0;
         while (true) {
-            RequestWrapper wrapper = create(catalog.getAsPath(), METHOD_GET,
+            RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
                 "/people/%d/%s", userId, mark.getAsPath())
                 .addParameter("sort", "time")
-                .addParameter("start", start)
+                .addParameter("start", String.valueOf(start))
                 .addParameter("mode", "list");
-            Document document = getDocument(wrapper, t -> true);
+            Document document = getDocument(builder);
             boolean done = false;
             String listClass = ".list-view";
             for (Element li : document.selectFirst(listClass).select(CssSelectors.TAG_LI)) {
@@ -302,10 +307,10 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         List<Long> ids = new LinkedList<>();
         int start = 0;
         while (true) {
-            RequestWrapper wrapper = create(catalog.getAsPath(), METHOD_GET,
+            RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
                 "/people/%d/%s", userId, catalog.getCreator().getPlurality())
-                .addParameter("start", start);
-            Document document = getDocument(wrapper, t -> true);
+                .addParameter("start", String.valueOf(start));
+            Document document = getDocument(builder);
             String itemClass = ".item";
             for (Element div : document.select(itemClass)) {
                 Element a = div.selectFirst(".title").selectFirst(CssSelectors.TAG_A);
@@ -337,14 +342,14 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         }
         AssertUtils.requireNotBlank(imdbId);
         String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestWrapper wrapper = create(substation, METHOD_POST, "/new_subject")
+        RequestBuilder builder = create(substation, METHOD_POST, "/new_subject")
             .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue())
             .addParameter("type", "0")
             .addParameter("p_title", imdbId)
             .addParameter("p_uid", imdbId)
-            .addParameter("cat", DoubanCatalog.MOVIE.getCode())
+            .addParameter("cat", String.valueOf(DoubanCatalog.MOVIE.getCode()))
             .addParameter("subject_submit", "下一步");
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(builder);
 
         Element fieldset = document.selectFirst("div#content")
             .selectFirst(CssSelectors.TAG_FIELDSET);
@@ -372,10 +377,10 @@ public class DoubanSite extends AbstractLoggableSite<Long>
     public List<SearchItem> searchSubject(@Nonnull DoubanCatalog catalog, String keyword)
         throws NotFoundException, OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
-        RequestWrapper wrapper = create("search", "/%s/subject_search", catalog.getAsPath())
+        RequestBuilder builder = create("search", "/%s/subject_search", catalog.getAsPath())
             .addParameter("search_text", keyword)
-            .addParameter("cat", catalog.getCode());
-        Document document = getDocument(wrapper, t -> true);
+            .addParameter("cat", String.valueOf(catalog.getCode()));
+        Document document = getDocument(builder);
         return document.select("div.item-root").stream().map(div -> {
             Element a = div.selectFirst("a.title-text");
             String url = a.attr(CssSelectors.ATTR_HREF);
@@ -394,11 +399,11 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         if (StringUtils.isBlank(keyword)) {
             throw new IllegalArgumentException("Keyword mustn't be blank.");
         }
-        RequestWrapper wrapper = httpGet("/search").addParameter("q", keyword);
+        RequestBuilder builder = httpGet("/search").addParameter("q", keyword);
         if (catalog != null) {
-            wrapper.addParameter("cat", catalog.getCode());
+            builder.addParameter("cat", String.valueOf(catalog.getCode()));
         }
-        Document document = getDocument(wrapper, t -> true);
+        Document document = getDocument(builder);
         return document.selectFirst("div.search-result").select("div.result").stream().map(div -> {
             Element a = div.selectFirst(CssSelectors.TAG_H3).selectFirst(CssSelectors.TAG_A);
             Matcher matcher = RegexUtils

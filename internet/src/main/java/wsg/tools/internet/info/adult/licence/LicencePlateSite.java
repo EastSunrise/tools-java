@@ -14,7 +14,6 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
@@ -60,11 +59,7 @@ public class LicencePlateSite extends BaseSite
     @Override
     public LicencePlateItem findById(@Nonnull String path)
         throws NotFoundException, OtherResponseException {
-        SnapshotStrategy<Document> strategy = doc -> {
-            SiblingSupplier<String> sibling = getSibling(doc);
-            return sibling.getPreviousId() == null || sibling.getNextId() == null;
-        };
-        Document document = getDocument(httpGet("/%s", path), strategy);
+        Document document = getDocument(httpGet("/%s", path));
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);

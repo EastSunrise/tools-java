@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.imdb;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,11 +25,9 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.movie.common.RangeYear;
 import wsg.tools.internet.movie.common.Release;
 
@@ -48,19 +48,19 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
     private static final String INTERNAL_SERVER_ERROR = "500";
 
     public ImdbCnSite() {
-        super("IMDb CN", httpsHost("imdb.cn"), new ImdbCnResponseHandler());
+        super("IMDb CN", httpsHost("imdb.cn"));
     }
 
     @Nonnull
     @Override
     public ImdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/title/%s", imdbId), t -> false);
+        Document document = getDocument(httpGet("/title/%s", imdbId));
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        RequestWrapper wrapper = httpGet("/index/video.editform/index.html")
+        RequestBuilder builder = httpGet("/index/video.editform/index.html")
             .addParameter("m_id", dataset.get("movie_id"))
             .addParameter("location", dataset.get("location"));
-        Document editForm = getDocument(wrapper, t -> false);
+        Document editForm = getDocument(builder);
         Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -123,9 +123,9 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
 
     private List<String[]> getEpisodes(String seriesId)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/title/%s/episodelist", seriesId)
-            .addParameter("season", 1);
-        Document document = getDocument(wrapper, t -> false);
+        RequestBuilder builder = httpGet("/title/%s/episodelist", seriesId)
+            .addParameter("season", String.valueOf(1));
+        Document document = getDocument(builder);
         int seasonsCount =
             document.selectFirst("select#ep_season").select(CssSelectors.TAG_OPTION).size() - 1;
 
@@ -155,9 +155,8 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                 }
                 page++;
                 document = getDocument(httpGet("/title/%s/episodelist", seriesId)
-                        .addParameter("season", currentSeason)
-                        .addParameter("page", page),
-                    t -> false);
+                    .addParameter("season", String.valueOf(currentSeason))
+                    .addParameter("page", String.valueOf(page)));
             }
             if (map.isEmpty()) {
                 result.add(new String[1]);
@@ -172,23 +171,21 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                 break;
             }
             document = getDocument(httpGet("/title/%s/episodelist", seriesId)
-                .addParameter("season", currentSeason), t -> false);
+                .addParameter("season", String.valueOf(currentSeason)));
         }
         return result;
     }
 
-    private static final class ImdbCnResponseHandler extends WrappedStringResponseHandler {
-
-        @Override
-        protected String handleContent(String content) throws HttpResponseException {
-            if (NOT_FOUND.equals(content)) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
-            }
-            if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
-                throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Server is limit to access.");
-            }
-            return content;
+    @Override
+    public String getContent(@Nonnull RequestBuilder builder) throws IOException {
+        String content = super.getContent(builder);
+        if (NOT_FOUND.equals(content)) {
+            throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, NOT_FOUND);
         }
+        if (INTERNAL_SERVER_ERROR.equals(Jsoup.parse(content).title())) {
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                "Server is limit to access.");
+        }
+        return content;
     }
 }

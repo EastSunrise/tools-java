@@ -44,7 +44,7 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
     name = "ja_adult_video",
     indexes = @Index(name = "index_ja_adult_serial_num", columnList = "serialNum", unique = true),
     uniqueConstraints = @UniqueConstraint(name = "uni_ja_adult_video_source", columnNames = {
-        "domain", "subtype", "rid"
+        "sname", "subtype", "rid"
     })
 )
 public class JaAdultVideoEntity extends IdentityEntity

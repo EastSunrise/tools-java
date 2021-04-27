@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -26,7 +27,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -48,7 +48,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     private static final String DOWNLOAD_ASP = "/download.asp";
 
     public XlmSite() {
-        super("Xlm", httpsHost("xleimi.com"), new WrappedStringResponseHandler(Constants.GBK));
+        super("Xlm", httpsHost("xleimi.com"));
     }
 
     /**
@@ -67,7 +67,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
      * @see <a href="https://www.xleimi.com/">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet(""), t -> true);
+        Document document = findDocument(httpGet(""));
         Elements as = document.selectFirst(".newdy").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -81,9 +81,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
     @Nonnull
     @Override
     public XlmItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/dy/k%d.html", id);
-        Document document = getDocument(wrapper, doc -> getNext(doc) == null);
-
+        Document document = getDocument(httpGet("/dy/k%d.html", id));
         Element last = document.selectFirst("div.conpath").select(CssSelectors.TAG_A).last();
         String columnHref = last.attr(CssSelectors.ATTR_HREF);
         Matcher columnMatcher = RegexUtils.matchesOrElseThrow(Lazy.COLUMN_HREF_REGEX, columnHref);
@@ -92,9 +90,8 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);
-        URL source = NetUtils.toURL(wrapper.getUri());
         String title = ((TextNode) last.nextSibling()).text().strip();
-        XlmItem item = new XlmItem(column, source, id, title, releaseTime);
+        XlmItem item = new XlmItem(column, id, title, releaseTime);
         Element image = document.selectFirst(".bodytxt").selectFirst(CssSelectors.TAG_IMG);
         if (image != null) {
             item.setCover(NetUtils.createURL(image.attr(CssSelectors.ATTR_SRC)));
@@ -135,6 +132,12 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         }
         return Integer.parseInt(RegexUtils.matchesOrElseThrow(Lazy.ITEM_HREF_REGEX, next.attr(
             CssSelectors.ATTR_HREF)).group("id"));
+    }
+
+    @Override
+    public String getContent(@Nonnull RequestBuilder builder) throws IOException {
+        WrappedStringResponseHandler handler = new WrappedStringResponseHandler(Constants.GBK);
+        return getResponseWrapper(builder, handler).getContent();
     }
 
     private static class Lazy {

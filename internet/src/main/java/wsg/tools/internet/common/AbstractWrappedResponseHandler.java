@@ -1,4 +1,4 @@
-package wsg.tools.internet.base.support;
+package wsg.tools.internet.common;
 
 import java.io.IOException;
 import javax.annotation.Nonnull;

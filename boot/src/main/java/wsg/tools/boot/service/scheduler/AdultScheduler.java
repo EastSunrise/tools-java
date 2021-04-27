@@ -96,9 +96,9 @@ public class AdultScheduler {
     @Scheduled(cron = "0 0 8 * * ?")
     public void importPornTubeSite() {
         PornTubeSite site = manager.pornTubeSite();
-        String domain = site.getHostname();
+        String sname = site.getName();
         int subtype = 0;
-        long startId = wtVideoRepository.getMaxRid(domain, subtype).orElse(0L);
+        long startId = wtVideoRepository.getMaxRid(sname, subtype).orElse(0L);
         try {
             List<Integer> ids = site.findAllVideoIndices().keySet().stream()
                 .filter(id -> id > startId).sorted().collect(Collectors.toList());
@@ -106,7 +106,7 @@ public class AdultScheduler {
             for (int id : ids) {
                 PornTubeVideo video = site.findById(id);
                 WesternAdultEntry entry = new PornTubeVideoAdapter(video);
-                Source source = Source.of(domain, subtype, id, video);
+                Source source = Source.of(sname, subtype, id, video);
                 Optional<FailureReason> reason = adultService.saveWesternAdultEntry(entry, source);
                 if (reason.isPresent()) {
                     result.fail(id, reason.get());
@@ -114,7 +114,7 @@ public class AdultScheduler {
                     result.succeed();
                 }
             }
-            log.info("Imported adult entries from {}:", domain);
+            log.info("Imported adult entries from {}:", sname);
             result.print(String::valueOf);
         } catch (OtherResponseException | NotFoundException e) {
             log.error(e.getMessage());
@@ -124,10 +124,10 @@ public class AdultScheduler {
 
     public void importBabesTubeSite() {
         BabesTubeSite site = manager.babesTubeSite();
-        String domain = site.getHostname();
+        String sname = site.getName();
         int subtype = 0;
-        Optional<LocalDateTime> timeOp = wtVideoRepository.getLatestTimestamp(domain, subtype);
-        Long startId = wtVideoRepository.getMaxRid(domain, subtype).orElse(0L);
+        Optional<LocalDateTime> timeOp = wtVideoRepository.getLatestTimestamp(sname, subtype);
+        Long startId = wtVideoRepository.getMaxRid(sname, subtype).orElse(0L);
         LocalDateTime startTime = timeOp.orElse(DEFAULT_START_TIME);
         BabesPageReq firstReq = BabesPageReq.first();
         Deque<BabesVideoAdapter> adapters = new LinkedList<>();
@@ -153,7 +153,7 @@ public class AdultScheduler {
             }
             Set<Source> exists = Collections.emptySet();
             if (timeOp.isPresent()) {
-                exists = findWtSourcesByTime(domain, subtype, startTime);
+                exists = findWtSourcesByTime(sname, subtype, startTime);
             }
             BatchResult<Integer> result = BatchResult.create();
             Set<Integer> ids = new HashSet<>();
@@ -165,7 +165,7 @@ public class AdultScheduler {
                     continue;
                 }
                 ids.add(id);
-                Source source = Source.of(domain, subtype, id, adapter);
+                Source source = Source.of(sname, subtype, id, adapter);
                 if (exists.contains(source)) {
                     continue;
                 }
@@ -187,7 +187,7 @@ public class AdultScheduler {
                     continue;
                 }
                 ids.add(id);
-                Source source = Source.of(domain, subtype, id, adapter);
+                Source source = Source.of(sname, subtype, id, adapter);
                 Optional<FailureReason> op = adultService.saveWesternAdultEntry(adapter, source);
                 if (op.isPresent()) {
                     result.fail(id, op.get());
@@ -195,16 +195,16 @@ public class AdultScheduler {
                     result.succeed();
                 }
             }
-            log.info("Imported adult entries from {}:", domain);
+            log.info("Imported adult entries from {}:", sname);
             result.print(String::valueOf);
         } catch (NotFoundException | OtherResponseException e) {
             throw new AppException(e);
         }
     }
 
-    private Set<Source> findWtSourcesByTime(String domain, int subtype, LocalDateTime timestamp) {
+    private Set<Source> findWtSourcesByTime(String sname, int subtype, LocalDateTime timestamp) {
         Source source = new Source();
-        source.setDomain(domain);
+        source.setSname(sname);
         source.setSubtype(subtype);
         source.setTimestamp(timestamp);
         WesternAdultVideoEntity probe = new WesternAdultVideoEntity();
@@ -217,10 +217,10 @@ public class AdultScheduler {
     public void importLicencePlate() {
         LicencePlateSite site = manager.licencePlateSite();
         LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
-        String domain = site.getHostname();
+        String sname = site.getName();
         int subtype = 0;
         try {
-            Optional<String> last = jaVideoRepository.getFirstOrderUpdateTime(domain, subtype);
+            Optional<String> last = jaVideoRepository.getFirstOrderUpdateTime(sname, subtype);
             LinkedRepoIterator<String, LicencePlateItem> iterator;
             if (last.isPresent()) {
                 iterator = repository.linkedRepoIterator(last.get());
@@ -231,7 +231,7 @@ public class AdultScheduler {
             BatchResult<String> result = BatchResult.create();
             while (iterator.hasNext()) {
                 LicencePlateItem item = iterator.next();
-                Source source = Source.of(domain, subtype, item.getId(), item);
+                Source source = Source.of(sname, subtype, item.getId(), item);
                 Optional<FailureReason> reason = adultService.saveJaAdultEntry(item, source);
                 if (reason.isPresent()) {
                     result.fail(item.getSerialNum(), reason.get().getText());
@@ -239,7 +239,7 @@ public class AdultScheduler {
                     result.succeed();
                 }
             }
-            log.info("Imported adult entries from {}:", domain);
+            log.info("Imported adult entries from {}:", sname);
             result.print(Function.identity());
         } catch (OtherResponseException | NotFoundException e) {
             log.error(e.getMessage());
@@ -250,23 +250,22 @@ public class AdultScheduler {
     @Scheduled(cron = "0 0 18 * * ?")
     public void importMidnightAmateur() {
         MidnightSite site = manager.midnightSite();
-        String domain = site.getHostname();
+        String sname = site.getName();
         for (MidnightColumn column : MidnightColumn.amateurs()) {
-            importMidnight(domain, column, site, id -> site.findAmateurEntry(column, id));
+            importMidnight(sname, column, site, id -> site.findAmateurEntry(column, id));
         }
     }
 
     @Scheduled(cron = "0 30 17 * * ?")
     public void importMidnightFormally() {
-        MidnightColumn column = MidnightColumn.ENTRY;
         MidnightSite site = manager.midnightSite();
-        importMidnight(site.getHostname(), column, site, site::findFormalEntry);
+        importMidnight(site.getName(), MidnightColumn.ENTRY, site, site::findFormalEntry);
     }
 
-    private <T extends MidnightAlbum & JaAdultEntry> void importMidnight(String domain,
+    private <T extends MidnightAlbum & JaAdultEntry> void importMidnight(String sname,
         MidnightColumn column, MidnightSite site, RepoRetrievable<Integer, T> retrievable) {
         int subtype = column.getId();
-        Optional<LocalDateTime> timeOp = jaVideoRepository.getLatestTimestamp(domain, subtype);
+        Optional<LocalDateTime> timeOp = jaVideoRepository.getLatestTimestamp(sname, subtype);
         LocalDateTime startTime = timeOp.orElse(DEFAULT_START_TIME);
         MidnightPageReq firstReq = MidnightPageReq.first(column);
         try {
@@ -289,14 +288,14 @@ public class AdultScheduler {
             }
             Set<Source> exists = Collections.emptySet();
             if (timeOp.isPresent()) {
-                exists = findSourcesByTime(domain, subtype, startTime);
+                exists = findSourcesByTime(sname, subtype, startTime);
             }
             BatchResult<Integer> result = BatchResult.create();
             // items updated at the start time
             while (!ts.isEmpty()) {
                 T t = ts.removeLast();
                 int id = t.getId();
-                Source source = Source.of(domain, subtype, id, t);
+                Source source = Source.of(sname, subtype, id, t);
                 if (exists.contains(source)) {
                     continue;
                 }
@@ -314,7 +313,7 @@ public class AdultScheduler {
             while (!ts.isEmpty()) {
                 T t = ts.removeLast();
                 int id = t.getId();
-                Source source = Source.of(domain, subtype, id, t);
+                Source source = Source.of(sname, subtype, id, t);
                 Optional<FailureReason> reason = adultService.saveJaAdultEntry(t, source);
                 if (reason.isPresent()) {
                     result.fail(id, reason.get());
@@ -322,7 +321,7 @@ public class AdultScheduler {
                     result.succeed();
                 }
             }
-            log.info("Imported {} entries from {}:", column, domain);
+            log.info("Imported {} entries from {}:", column, sname);
             result.print(String::valueOf);
         } catch (NotFoundException | OtherResponseException e) {
             log.error(e.getMessage());
@@ -333,10 +332,10 @@ public class AdultScheduler {
     @Scheduled(cron = "0 0 2 * * ?")
     public void importGgg() {
         GggSite site = manager.gggSite();
-        String domain = site.getHostname();
+        String sname = site.getName();
         for (GggCategory category : GggCategory.all()) {
             int subtype = category.getCode();
-            Optional<LocalDateTime> timeOp = jaVideoRepository.getLatestTimestamp(domain, subtype);
+            Optional<LocalDateTime> timeOp = jaVideoRepository.getLatestTimestamp(sname, subtype);
             LocalDate startDate = timeOp.map(LocalDateTime::toLocalDate).orElse(DEFAULT_START_DATE);
             GggPageReq firstReq = GggPageReq.byDate(category);
             try {
@@ -348,14 +347,14 @@ public class AdultScheduler {
                 }
                 Set<Source> exists = Collections.emptySet();
                 if (timeOp.isPresent()) {
-                    exists = findSourcesByTime(domain, subtype, timeOp.get());
+                    exists = findSourcesByTime(sname, subtype, timeOp.get());
                 }
                 BatchResult<Integer> result = BatchResult.create();
                 // goods updated at the start date
                 while (!goods.isEmpty()) {
                     GggGood good = goods.removeLast();
                     int id = good.getId();
-                    Source source = Source.of(domain, subtype, id, good);
+                    Source source = Source.of(sname, subtype, id, good);
                     if (exists.contains(source)) {
                         continue;
                     }
@@ -375,7 +374,7 @@ public class AdultScheduler {
                 while (!goods.isEmpty()) {
                     GggGood good = goods.removeLast();
                     int id = good.getId();
-                    Source source = Source.of(domain, subtype, id, good);
+                    Source source = Source.of(sname, subtype, id, good);
                     GggGoodView view = site.findById(id);
                     GggGoodAdapter adapter = new GggGoodAdapter(good, view);
                     Optional<FailureReason> reason = adultService.saveJaAdultEntry(adapter, source);
@@ -385,7 +384,7 @@ public class AdultScheduler {
                         result.succeed();
                     }
                 }
-                log.info("Imported entries of {} from {}:", category.getCode(), domain);
+                log.info("Imported entries of {} from {}:", category.getCode(), sname);
                 result.print(String::valueOf);
             } catch (NotFoundException | OtherResponseException e) {
                 log.error(e.getMessage());
@@ -394,9 +393,9 @@ public class AdultScheduler {
         }
     }
 
-    private Set<Source> findSourcesByTime(String domain, int subtype, LocalDateTime timestamp) {
+    private Set<Source> findSourcesByTime(String sname, int subtype, LocalDateTime timestamp) {
         Source source = new Source();
-        source.setDomain(domain);
+        source.setSname(sname);
         source.setSubtype(subtype);
         source.setTimestamp(timestamp);
         JaAdultVideoEntity probe = new JaAdultVideoEntity();
@@ -408,9 +407,9 @@ public class AdultScheduler {
     @Scheduled(cron = "0 0 0 1 1 ?")
     public void importCelebrityWiki() {
         CelebrityWikiSite site = manager.celebrityWikiSite();
-        String domain = site.getHostname();
+        String sname = site.getName();
         // the id of a celebrity as the subtype of her works
-        int startCelebrityId = jaVideoRepository.getMaxSubtype(domain).orElse(1);
+        int startCelebrityId = jaVideoRepository.getMaxSubtype(sname).orElse(1);
         try {
             List<WikiCelebrityIndex> indices = site.findAllCelebrityIndices();
             // the remaining celebrities, sorted by id
@@ -436,7 +435,7 @@ public class AdultScheduler {
                 }
                 int id = index.getId();
                 CelebrityAdapter adapter = new CelebrityAdapter(celebrity, site::findAlbum);
-                Source celSrc = Source.of(domain, 0, id, null);
+                Source celSrc = Source.of(sname, 0, id, null);
                 template.execute(status -> {
                     Optional<FailureReason> reason = adultService
                         .saveJaAdultActress(adapter, celSrc);
@@ -455,7 +454,7 @@ public class AdultScheduler {
                             // rollback
                             throw new AppException(e);
                         }
-                        Source source = Source.of(domain, id, count, null);
+                        Source source = Source.of(sname, id, count, null);
                         adultService.saveJaAdultEntry(entry, source);
                         count++;
                     }
@@ -463,7 +462,7 @@ public class AdultScheduler {
                     return null;
                 });
             }
-            log.info("Imported adult entries from {}:", domain);
+            log.info("Imported adult entries from {}:", sname);
             result.print(String::valueOf);
         } catch (OtherResponseException e) {
             log.error(e.getMessage());

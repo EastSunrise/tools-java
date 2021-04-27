@@ -19,8 +19,8 @@ public class XlmItem extends BaseIdentifiedItem<XlmColumn>
     private URL cover;
     private Integer next;
 
-    XlmItem(XlmColumn subtype, URL source, int id, String title, LocalDateTime releaseTime) {
-        super(subtype, source, id, title);
+    XlmItem(XlmColumn subtype, int id, String title, LocalDateTime releaseTime) {
+        super(subtype, id, title);
         this.releaseTime = Objects.requireNonNull(releaseTime, "the release time of an item");
     }
 

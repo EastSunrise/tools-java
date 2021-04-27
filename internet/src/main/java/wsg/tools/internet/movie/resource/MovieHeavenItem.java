@@ -22,9 +22,9 @@ public class MovieHeavenItem extends BaseIdentifiedItem<MovieHeavenType>
     private ResourceState state;
     private Integer year;
 
-    MovieHeavenItem(MovieHeavenType subtype, URL source, int id, String title, LocalDate addDate,
+    MovieHeavenItem(MovieHeavenType subtype, int id, String title, LocalDate addDate,
         URL cover) {
-        super(subtype, source, id, title);
+        super(subtype, id, title);
         this.addDate = Objects.requireNonNull(addDate, "the added date of an item");
         this.cover = Objects.requireNonNull(cover, "the cover of an item");
     }

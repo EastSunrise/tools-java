@@ -74,8 +74,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     @Override
     public <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
     void importIntListRepository(@Nonnull ListRepository<Integer, T> repository,
-        String domain, Function<E, Integer> subtypeFunc) throws OtherResponseException {
-        long start = itemRepository.findMaxRid(domain).orElse(0L);
+        String sname, Function<E, Integer> subtypeFunc) throws OtherResponseException {
+        long start = itemRepository.findMaxRid(sname).orElse(0L);
         List<Integer> indices = repository.indices().stream()
             .filter(id -> id > start).sorted().collect(Collectors.toList());
         int success = 0, total = 0, notFound = 0;
@@ -83,7 +83,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             try {
                 T item = repository.findById(id);
                 int subtype = subtypeFunc.apply(item.getSubtype());
-                Source source = Source.of(domain, subtype, item.getId(), item);
+                Source source = Source.of(sname, subtype, item.getId(), item);
                 if (insertItem(item, source) >= 0) {
                     success++;
                 }
@@ -92,7 +92,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             }
             total++;
         }
-        log.info("Imported resources from {}: {} succeed, {} failed, {} not found", domain, success,
+        log.info("Imported resources from {}: {} succeed, {} failed, {} not found", sname, success,
             total - success - notFound, notFound);
     }
 

@@ -2,7 +2,6 @@ package wsg.tools.internet.movie.resource;
 
 import javax.annotation.Nonnull;
 import org.apache.http.HttpHost;
-import wsg.tools.internet.base.WrappedResponseHandler;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
@@ -22,11 +21,6 @@ public abstract class AbstractListResourceSite<T> extends BaseSite
 
     protected AbstractListResourceSite(String name, HttpHost host) {
         super(name, host);
-    }
-
-    protected AbstractListResourceSite(String name, HttpHost host,
-        WrappedResponseHandler<String> defaultHandler) {
-        super(name, host, defaultHandler);
     }
 
     /**

@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,7 @@ import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.info.adult.view.PreviewSupplier;
 import wsg.tools.internet.info.adult.view.VideoSupplier;
 
@@ -150,7 +152,7 @@ public class MinioConfig implements InitializingBean {
         if (url == null) {
             return null;
         }
-        Objects.requireNonNull(source.getDomain());
+        Objects.requireNonNull(source.getSname());
         if (!filetype.test(url.getFile())) {
             return url.toString();
         }
@@ -160,7 +162,7 @@ public class MinioConfig implements InitializingBean {
         } catch (OtherResponseException e) {
             return url.toString();
         }
-        String folder = source.getDomain() + Constants.URL_PATH_SEPARATOR + source.getSubtype();
+        String folder = source.getSname() + Constants.URL_PATH_SEPARATOR + source.getSubtype();
         if (StringUtils.isNotBlank(prefix)) {
             folder = prefix + Constants.URL_PATH_SEPARATOR + folder;
         }
@@ -227,8 +229,8 @@ public class MinioConfig implements InitializingBean {
             throw new OtherResponseException(HttpStatus.SC_REQUEST_TIMEOUT, e.getMessage());
         } catch (SSLException | SocketException e) {
             throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (OtherResponseException e) {
-            throw e;
+        } catch (HttpResponseException e) {
+            throw SiteUtils.handleException(e);
         } catch (IOException e) {
             throw new AppException(e);
         }

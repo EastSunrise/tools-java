@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -19,7 +20,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -43,7 +43,7 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
      * Retrieves all categories.
      */
     public List<GggCategory> findAllCategories() throws OtherResponseException {
-        Document document = findDocument(httpGet("/home/index.php"), t -> true);
+        Document document = findDocument(httpGet("/home/index.php"));
         List<GggCategory> categories = new ArrayList<>();
         Element div = document.selectFirst("#CategoryDiv");
         categories.addAll(getCategories(div.selectFirst("#category0"), false));
@@ -68,13 +68,13 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
     @Override
     public GggPageResult findPage(@Nonnull GggPageReq req)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/home/index.php")
+        RequestBuilder builder = httpGet("/home/index.php")
             .addParameter("c", "CategoryAction")
             .addParameter("m", "listDetail")
-            .addParameter("categoryNo", req.getCategory().getCode())
-            .addParameter("orderField", req.getOrder())
-            .addParameter("page", req.getCurrent() + 1);
-        Document document = getDocument(wrapper, t -> true);
+            .addParameter("categoryNo", String.valueOf(req.getCategory().getCode()))
+            .addParameter("orderField", req.getOrder().getAsPath())
+            .addParameter("page", String.valueOf(req.getCurrent() + 1));
+        Document document = getDocument(builder);
         Elements tables = document.selectFirst("#GoodsCarForm").select(".TableStyle");
         List<GggGood> goods = new ArrayList<>(tables.size());
         for (Element table : tables) {
@@ -124,7 +124,7 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
     @Override
     public GggGoodView findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/home/goods-view-%d", id), t -> false);
+        Document document = getDocument(httpGet("/home/goods-view-%d", id));
         Element table1 = document.selectFirst("#table1");
         Elements tds = table1.selectFirst("#table7").select(CssSelectors.TAG_TD);
         String title = tds.first().text().strip();

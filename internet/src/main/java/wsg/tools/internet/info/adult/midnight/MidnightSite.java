@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Document;
@@ -29,7 +30,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
@@ -61,8 +61,8 @@ public final class MidnightSite extends BaseSite
     public MidnightPageResult findPage(@Nonnull MidnightPageReq req)
         throws NotFoundException, OtherResponseException {
         String page = req.getCurrent() == 0 ? "" : "_" + (req.getCurrent() + 1);
-        RequestWrapper wrapper = httpGet("/%s/index%s.html", req.getColumn().getAsPath(), page);
-        Document document = getDocument(wrapper, t -> true);
+        RequestBuilder builder = httpGet("/%s/index%s.html", req.getColumn().getAsPath(), page);
+        Document document = getDocument(builder);
         List<MidnightIndex> indices = new ArrayList<>();
         Element article = document.selectFirst(".article");
         Elements lis = article.select(CssSelectors.TAG_LI);
@@ -183,8 +183,8 @@ public final class MidnightSite extends BaseSite
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/%s/%d.html", column.getAsPath(), id);
-        Document document = getDocument(wrapper, t -> false);
+        RequestBuilder builder = httpGet("/%s/%d.html", column.getAsPath(), id);
+        Document document = getDocument(builder);
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime addTime = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
@@ -219,7 +219,7 @@ public final class MidnightSite extends BaseSite
                 break;
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
-            document = getDocument(httpGet(URI.create(nextHref).getPath()), t -> false);
+            document = getDocument(httpGet(URI.create(nextHref).getPath()));
         }
         return contents;
     }

@@ -22,7 +22,7 @@ import wsg.tools.common.io.Filetype;
 @Table(
     name = "west_adult_video",
     uniqueConstraints = @UniqueConstraint(name = "uni_wt_adult_video_source", columnNames = {
-        "domain", "subtype", "rid"
+        "sname", "subtype", "rid"
     })
 )
 public class WesternAdultVideoEntity extends IdentityEntity {

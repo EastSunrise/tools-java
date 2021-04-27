@@ -1,10 +1,10 @@
-package wsg.tools.internet.base.support;
+package wsg.tools.internet.common;
 
 import org.apache.http.Header;
 import wsg.tools.internet.base.ResponseWrapper;
 
 /**
- * Basic implementation of {@link ResponseWrapper}.
+ * A basic implementation of {@link ResponseWrapper}.
  *
  * @author Kingen
  * @since 2021/4/9

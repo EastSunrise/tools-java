@@ -19,20 +19,9 @@ public interface ResourceItemRepository extends BaseRepository<ResourceItemEntit
     /**
      * Finds the maximum rid of the whole repository.
      *
-     * @param domain the domain of the repository
+     * @param sname the name of the site
      * @return optional of the maximum rid
      */
-    @Query("select max(source.rid) from ResourceItemEntity where source.domain=?1")
-    Optional<Long> findMaxRid(@Nonnull String domain);
-
-    /**
-     * Finds the maximum rid of the subtype of the repository.
-     *
-     * @param domain  the domain of the repository
-     * @param subtype the subtype of the source
-     * @return optional of the maximum rid
-     */
-    @Query("select max(source.rid) from ResourceItemEntity "
-        + "where source.domain=?1 and source.subtype=?2")
-    Optional<Long> findMaxRid(@Nonnull String domain, int subtype);
+    @Query("select max(source.rid) from ResourceItemEntity where source.sname=?1")
+    Optional<Long> findMaxRid(@Nonnull String sname);
 }

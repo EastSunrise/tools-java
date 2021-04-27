@@ -18,10 +18,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -39,11 +37,9 @@ import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.common.enums.BloodType;
 import wsg.tools.internet.common.enums.Constellation;
 import wsg.tools.internet.common.enums.Gender;
@@ -69,7 +65,7 @@ public final class CelebrityWikiSite extends BaseSite
     private static final String NO_PERSON_IMG = "noperson.jpg";
 
     public CelebrityWikiSite() {
-        super("Wiki of Celebrities", httpHost("mrenbaike.net"), new WikiResponseHandler());
+        super("Wiki of Celebrities", httpHost("mrenbaike.net"));
     }
 
     /**
@@ -87,7 +83,7 @@ public final class CelebrityWikiSite extends BaseSite
      */
     @Nonnull
     public List<WikiCelebrityIndex> findAllCelebrityIndices() throws OtherResponseException {
-        Document document = findDocument(httpGet("/comp/sitemap"), t -> true);
+        Document document = findDocument(httpGet("/comp/sitemap"));
         return document.select(".ulist").last().select(CssSelectors.TAG_A)
             .stream().map(this::getIndex).collect(Collectors.toList());
     }
@@ -103,8 +99,7 @@ public final class CelebrityWikiSite extends BaseSite
         String page = current == 0 ? "" : ("_" + (current + 1));
         String text = Optional.ofNullable(req.getSubtype()).map(WikiCelebrityType::getText)
             .orElse("mingren");
-        RequestWrapper wrapper = httpGet("/%s/index%s.html", text, page);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/%s/index%s.html", text, page));
 
         Element box = document.selectFirst(".personbox");
         Elements as = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_A);
@@ -134,8 +129,7 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiCelebrityType subtype = index.getSubtype();
-        RequestWrapper wrapper = httpGet("/%s/m%d/info.html", subtype.getText(), id);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/%s/m%d/info.html", subtype.getText(), id));
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -188,8 +182,7 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiAlbumType type = index.getSubtype();
-        RequestWrapper wrapper = httpGet("/tuku/%s/%d.html", type.getText(), id);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/tuku/%s/%d.html", type.getText(), id));
         Element show = document.selectFirst("div.picshow");
         String title = show.selectFirst(CssSelectors.TAG_H1).text();
         String timeStr = ((TextNode) show.selectFirst(".info").childNode(0)).text();
@@ -231,13 +224,13 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     public WikiAdultEntry findAdultEntry(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = null;
+        RequestBuilder builder = null;
         try {
-            wrapper = httpGet("/fanhao/%s.html", id);
+            builder = httpGet("/fanhao/%s.html", id);
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
         }
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(builder);
         WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
@@ -391,8 +384,7 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/%s/m%s/pic.html", type.getText(), id);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/%s/m%s/pic.html", type.getText(), id));
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         Set<WikiAlbumIndex> albums = new HashSet<>(lis.size());
         for (Element li : lis) {
@@ -406,6 +398,17 @@ public final class CelebrityWikiSite extends BaseSite
             albums.add(new WikiAlbum(albumId, albumType, title));
         }
         return albums;
+    }
+
+    @Nonnull
+    @Override
+    public Document getDocument(@Nonnull RequestBuilder builder)
+        throws NotFoundException, OtherResponseException {
+        Document document = super.getDocument(builder);
+        if (TIP_MSG.equals(document.title())) {
+            throw new NotFoundException(document.selectFirst("div.content").text());
+        }
+        return document;
     }
 
     private static class Lazy {
@@ -431,19 +434,6 @@ public final class CelebrityWikiSite extends BaseSite
                 .collect(Collectors.joining("|"));
             ALBUM_URL_REGEX = Pattern.compile(HOME_PAGE +
                 "/tuku/(?<t>" + albumTypes + ")/(?<id>\\d+)(_(?<i>\\d+))?\\.html");
-        }
-    }
-
-    private static class WikiResponseHandler extends WrappedStringResponseHandler {
-
-        @Override
-        protected String handleContent(String content) throws HttpResponseException {
-            Document document = Jsoup.parse(content);
-            if (TIP_MSG.equals(document.title())) {
-                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND,
-                    document.selectFirst("div.content").text());
-            }
-            return content;
         }
     }
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
@@ -16,7 +17,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.Region;
@@ -41,14 +41,14 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Override
     public RenrenPageResult findPage(@Nonnull RenrenPageReq req)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = create("content.json", METHOD_GET,
+        RequestBuilder builder = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
             Optional.ofNullable(req.getType()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getArea()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getGenre()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getStatus()).map(Object::toString).orElse("all"),
             req.getSort(), req.getCurrent() + 1);
-        RenrenResponse response = getObject(wrapper, Lazy.MAPPER, RenrenResponse.class, t -> true);
+        RenrenResponse response = getObject(builder, Lazy.MAPPER, RenrenResponse.class);
         RenrenResponse.Result result = response.getResult();
         return new RenrenPageResult(result.getContent(), req, result.isEnd());
     }
@@ -57,11 +57,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     @Nonnull
     public RenrenSeries findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = create("m", METHOD_GET, "/detail/%d", id);
-        Document document = getDocument(wrapper, doc -> {
-            SeriesStatus status = getStatus(doc);
-            return status != null && status != SeriesStatus.CONCLUDED;
-        });
+        Document document = getDocument(create("m", METHOD_GET, "/detail/%d", id));
         Element info = document.selectFirst(".info");
         String title = info.selectFirst(".title-text").text().strip();
         String description = info.selectFirst(".desc").text().strip();

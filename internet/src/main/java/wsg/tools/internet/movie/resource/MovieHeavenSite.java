@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
+import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.Year;
@@ -20,7 +21,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.jetbrains.annotations.Contract;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -33,12 +34,10 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedContentException;
-import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -61,16 +60,10 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     private static final String XUNLEI = "xunlei";
     private static final String URL_SEPARATOR = "#";
     private static final String EXTRA_COVER_HEAD = "https://img22.qayqa.com:6868http";
+    private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
 
     public MovieHeavenSite() {
-        super("Movie Heaven", httpsHost("993dy.com"), new MovieHeaverResponseHandler());
-    }
-
-    @Nonnull
-    @Override
-    @Contract(pure = true)
-    public String getHostname() {
-        return "993vod.com";
+        super("Movie Heaven", httpsHost("www.993dy.com"));
     }
 
     /**
@@ -88,7 +81,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
      * @see <a href="https://www.993vod.com/">Home</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet(""), t -> true);
+        Document document = findDocument(httpGet(""));
         Elements lis = document.selectFirst("div.newbox").select(CssSelectors.TAG_LI);
         int max = 1;
         for (Element li : lis) {
@@ -103,9 +96,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
     @Override
     public MovieHeavenItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/vod-detail-id-%d.html", id);
-        Document document = getDocument(wrapper,
-            doc -> getTypeAndState(doc).getRight() != ResourceState.FINISHED);
+        Document document = getDocument(httpGet("/vod-detail-id-%d.html", id));
         if (TIP_TITLE.equals(document.title())) {
             String message = document.selectFirst("h4.infotitle1").text();
             throw new NotFoundException(message);
@@ -113,7 +104,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         Map<String, Element> info = document.selectFirst("div.info").select(CssSelectors.TAG_SPAN)
             .stream().collect(Collectors.toMap(Element::text, e -> e));
 
-        String timeText = ((TextNode) info.get("上架时间：").nextSibling()).text();
+        String timeText = ((TextNode) info.get("更新日期：").nextSibling()).text();
         LocalDate date = LocalDate.parse(timeText, DateTimeFormatter.ISO_LOCAL_DATE);
         Element image = document.selectFirst(".pic").selectFirst(CssSelectors.TAG_IMG);
         String src = image.attr(CssSelectors.ATTR_SRC);
@@ -121,13 +112,12 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
             src = src.substring(EXTRA_COVER_HEAD.length() - 4);
         }
         URL cover = NetUtils.createURL(src);
-        URL source = NetUtils.toURL(wrapper.getUri());
         Pair<MovieHeavenType, ResourceState> pair = getTypeAndState(document);
         String title = document.selectFirst(".location").children().last().text();
-        MovieHeavenItem item = new MovieHeavenItem(pair.getLeft(), source, id, title, date, cover);
+        MovieHeavenItem item = new MovieHeavenItem(pair.getLeft(), id, title, date, cover);
 
         item.setState(pair.getRight());
-        String text = ((TextNode) info.get("上映年代：").nextSibling()).text();
+        String text = ((TextNode) info.get("上映年代：").nextSibling()).text().strip();
         if (StringUtils.isNotBlank(text) && !UNKNOWN_YEAR.equals(text)) {
             int year = Integer.parseInt(text);
             if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
@@ -144,7 +134,10 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_URL_REGEX, varUrls);
             String entries = StringEscapeUtils.unescapeHtml4(matcher.group("entries"));
             for (String entry : entries.split(URL_SEPARATOR)) {
-                Matcher rMatcher = RegexUtils.matchesOrElseThrow(Lazy.RESOURCE_REGEX, entry);
+                Matcher rMatcher = Lazy.RESOURCE_REGEX.matcher(entry);
+                if (!rMatcher.matches()) {
+                    continue;
+                }
                 String url = rMatcher.group("u");
                 if (StringUtils.isBlank(url) || Thunder.EMPTY_LINK.equals(url)) {
                     continue;
@@ -197,6 +190,15 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         throw new UnexpectedContentException("Can't find state");
     }
 
+    @Override
+    public String getContent(@Nonnull RequestBuilder builder) throws IOException {
+        String content = super.getContent(builder);
+        if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
+            throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
+        }
+        return content;
+    }
+
     private static class Lazy {
 
         private static final Pattern ITEM_HREF_REGEX = Pattern
@@ -205,25 +207,12 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         private static final Pattern RESOURCE_REGEX = Pattern
             .compile("(?<t>(第\\d+集\\$)?[^$]+)\\$(?<u>[^$]*)");
         private static final Pattern VAR_URL_REGEX = Pattern
-            .compile("var downurls=\"(?<entries>.*)#\";");
+            .compile("var downurls=\"(?<entries>.*)#?\";");
 
         static {
             String types = Arrays.stream(MovieHeavenType.values()).map(IntCodeSupplier::getCode)
                 .map(String::valueOf).collect(Collectors.joining("|"));
             TYPE_HREF_REGEX = Pattern.compile("/vod-type-id-(?<id>" + types + ")-pg-1\\.html");
-        }
-    }
-
-    private static class MovieHeaverResponseHandler extends WrappedStringResponseHandler {
-
-        private static final String ILLEGAL_ARGUMENT = "您的提交带有不合法参数,谢谢合作!";
-
-        @Override
-        protected String handleContent(String content) throws HttpResponseException {
-            if (StringUtils.contains(content, ILLEGAL_ARGUMENT)) {
-                throw new HttpResponseException(HttpStatus.SC_FORBIDDEN, ILLEGAL_ARGUMENT);
-            }
-            return content;
         }
     }
 }

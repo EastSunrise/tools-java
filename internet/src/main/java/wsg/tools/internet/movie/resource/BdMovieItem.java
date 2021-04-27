@@ -23,8 +23,8 @@ public class BdMovieItem extends BaseIdentifiedItem<BdMovieType>
     private Integer next;
     private URL cover;
 
-    BdMovieItem(BdMovieType subtype, URL source, int id, String title, LocalDateTime updateTime) {
-        super(subtype, source, id, title);
+    BdMovieItem(BdMovieType subtype, int id, String title, LocalDateTime updateTime) {
+        super(subtype, id, title);
         this.updateTime = Objects.requireNonNull(updateTime, "the update time of an item");
     }
 

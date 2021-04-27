@@ -1,6 +1,5 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -76,7 +75,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet("/movies/index.htm"), t -> true);
+        Document document = findDocument(httpGet("/movies/index.htm"));
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -93,7 +92,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     @Override
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/zx/%d.htm", id), t -> false);
+        Document document = getDocument(httpGet("/zx/%d.htm", id));
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
@@ -104,9 +103,8 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         BdMovieType realType = EnumUtilExt.valueOfText(BdMovieType.class, realTypeText, false);
         String release = metadata.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
-        URL source = NetUtils.createURL(location);
         String title = metadata.get("og:title");
-        BdMovieItem item = new BdMovieItem(realType, source, id, title, updateTime);
+        BdMovieItem item = new BdMovieItem(realType, id, title, updateTime);
         item.setNext(getNext(document));
         String cover = metadata.get("og:image");
         if (!cover.isEmpty()) {

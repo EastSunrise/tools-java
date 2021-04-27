@@ -25,12 +25,12 @@ public interface ResourceService {
      * identifiers and can be classified.
      *
      * @param repository  the target repository
-     * @param domain      the domain of the repository
+     * @param sname       the name of the site
      * @param subtypeFunc the function to generate the subtype of an item
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
     <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
-    void importIntListRepository(ListRepository<Integer, T> repository, String domain,
+    void importIntListRepository(ListRepository<Integer, T> repository, String sname,
         Function<E, Integer> subtypeFunc) throws OtherResponseException;
 
     /**

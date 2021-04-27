@@ -89,7 +89,35 @@ public enum MovieHeavenType implements IntCodeSupplier {
     /**
      * @see <a href="https://www.993vod.com/vod-type-id-22-pg-1.html">4K</a>
      */
-    FOUR_K(22);
+    FOUR_K(22),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-23-pg-1.html">Crime Movies</a>
+     */
+    CRIME_MOVIE(23),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-25-pg-1.html">Mystery Movies</a>
+     */
+    MYSTERY_MOVIE(25),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-26-pg-1.html">Disaster Movies</a>
+     */
+    DISASTER_MOVIE(26),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-27-pg-1.html">Adventure Movies</a>
+     */
+    ADVENTURE_MOVIE(27),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-28-pg-1.html">Thriller Movies</a>
+     */
+    THRILLER_MOVIE(28),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-29-pg-1.html">Fantasy Movies</a>
+     */
+    FANTASY_MOVIE(29),
+    /**
+     * @see <a href="https://www.993vod.com/vod-type-id-30-pg-1.html">Documentaries</a>
+     */
+    DOCUMENTARY(30);
 
     private final int id;
 

@@ -110,7 +110,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             JaAdultVideoEntity exists = optional.get();
 
             // if duplicate in the same site
-            if (exists.getSource().getDomain().equals(entity.getSource().getDomain())) {
+            if (exists.getSource().getSname().equals(entity.getSource().getSname())) {
                 return Optional.of(FailureReason.EXISTS);
             }
 

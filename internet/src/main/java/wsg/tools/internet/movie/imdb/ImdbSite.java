@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -27,7 +28,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -80,7 +80,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     @Nonnull
     @Override
     public ImdbTitle findById(@Nonnull String tt) throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/title/%s", tt), t -> false);
+        Document document = getDocument(httpGet("/title/%s", tt));
         ImdbTitle title;
         try {
             String html = document.selectFirst("script[type=application/ld+json]").html();
@@ -160,9 +160,9 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         int currentSeason = 0;
         while (true) {
             currentSeason++;
-            RequestWrapper wrapper = httpGet("/title/%s/episodes", seriesId)
-                .addParameter("season", currentSeason);
-            Document document = getDocument(wrapper, t -> false);
+            RequestBuilder builder = httpGet("/title/%s/episodes", seriesId)
+                .addParameter("season", String.valueOf(currentSeason));
+            Document document = getDocument(builder);
             String title = document.title();
             if (title.endsWith(EPISODES_PAGE_TITLE_SUFFIX)) {
                 break;

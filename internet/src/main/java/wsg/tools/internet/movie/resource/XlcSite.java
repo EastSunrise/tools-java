@@ -1,6 +1,5 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +30,6 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -76,7 +74,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet("/ajax-show-id-new.html"), t -> true);
+        Document document = findDocument(httpGet("/ajax-show-id-new.html"));
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
         for (Element a : as) {
@@ -90,9 +88,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     @Nonnull
     @Override
     public XlcItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/vod-read-id-%d.html", id);
-        Document document = getDocument(wrapper,
-            doc -> getTypeAndState(doc).getRight() != ResourceState.FINISHED);
+        Document document = getDocument(httpGet("/vod-read-id-%d.html", id));
         String title = document.title();
         if (SYSTEM_TIP.equals(title)) {
             throw new NotFoundException(document.body().text().strip());
@@ -109,9 +105,8 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         Pair<XlcType, ResourceState> pair = getTypeAndState(document);
         XlcType type = pair.getLeft();
         ResourceState state = pair.getRight();
-        URL source = NetUtils.toURL(wrapper.getUri());
         title = title.substring(0, title.length() - TITLE_SUFFIX_LENGTH);
-        XlcItem item = new XlcItem(type, source, id, title, updateDate, state);
+        XlcItem item = new XlcItem(type, id, title, updateDate, state);
 
         String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
         if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {

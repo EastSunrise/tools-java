@@ -1,6 +1,5 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -72,7 +70,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Last Update Movie</a>
      */
     public int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet("/movie/1-0-0-0-0-0-0"), t -> true);
+        Document document = findDocument(httpGet("/movie/1-0-0-0-0-0-0"));
         Elements list = document.select(".list_mov");
         int max = 1;
         for (Element div : list) {
@@ -86,8 +84,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
     @Nonnull
     @Override
     public Y80sItem findById(@Nonnull Integer id) throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/movie/%d", id);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/movie/%d", id));
         if (document.childNodes().size() == 1) {
             throw new NotFoundException("Target page is empty.");
         }
@@ -100,8 +97,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
         Y80sType realType = EnumUtilExt.valueOfText(Y80sType.class, typeStr, false);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-        URL source = NetUtils.toURL(wrapper.getUri());
-        Y80sItem item = new Y80sItem(realType, source, id, lis.last().text().strip(), updateDate);
+        Y80sItem item = new Y80sItem(realType, id, lis.last().text().strip(), updateDate);
 
         String src = document.selectFirst(".img-responsive").attr(CssSelectors.ATTR_SRC);
         item.setCover(NetUtils.createURL(Constants.HTTP_SCHEME + src));

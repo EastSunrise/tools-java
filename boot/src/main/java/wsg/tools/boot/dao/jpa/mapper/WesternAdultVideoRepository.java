@@ -18,22 +18,22 @@ import wsg.tools.boot.pojo.entity.adult.WesternAdultVideoEntity;
 public interface WesternAdultVideoRepository extends BaseRepository<WesternAdultVideoEntity, Long> {
 
     /**
-     * Retrieves the max rid of the specified domain.
+     * Retrieves the max rid of the specified site.
      *
-     * @param domain  the domain to be queried
+     * @param sname   the name of the site to be queried
      * @param subtype the subtype to be queried
      * @return optional of the maximum rid
      */
-    @Query("select max(source.rid) from WesternAdultVideoEntity where source.domain=?1 and source.subtype=?2")
-    Optional<Long> getMaxRid(@Nonnull String domain, int subtype);
+    @Query("select max(source.rid) from WesternAdultVideoEntity where source.sname=?1 and source.subtype=?2")
+    Optional<Long> getMaxRid(@Nonnull String sname, int subtype);
 
     /**
-     * Retrieves the latest update time of the subtype of the domain.
+     * Retrieves the latest update time of the subtype of the site.
      *
-     * @param domain  the domain of the repository
+     * @param sname   the name of the site
      * @param subtype the subtype of the source
      * @return optional of the maximum rid
      */
-    @Query("select max(source.timestamp) from WesternAdultVideoEntity where source.domain=?1 and source.subtype=?2")
-    Optional<LocalDateTime> getLatestTimestamp(@Nonnull String domain, int subtype);
+    @Query("select max(source.timestamp) from WesternAdultVideoEntity where source.sname=?1 and source.subtype=?2")
+    Optional<LocalDateTime> getLatestTimestamp(@Nonnull String sname, int subtype);
 }

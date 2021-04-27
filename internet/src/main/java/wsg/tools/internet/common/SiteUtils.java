@@ -121,7 +121,7 @@ public final class SiteUtils {
      * @param pageable the function to retrieve a page by a given request with pagination
      *                 information
      * @param firstReq the first request with pagination information
-     * @param action   action to be performed for content of each page
+     * @param action   action to be performed for the content of each page
      * @param <I>      type of the content of each page
      * @param <P>      type of requests with pagination information
      * @throws NotFoundException      if any page is not found
@@ -129,13 +129,11 @@ public final class SiteUtils {
      */
     public static <I, P extends PageReq> void
     forEachPage(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
-        @Nonnull Consumer<I> action) throws NotFoundException, OtherResponseException {
+        @Nonnull Consumer<List<I>> action) throws NotFoundException, OtherResponseException {
         P req = firstReq;
         while (true) {
             PageResult<I, P> result = pageable.findPage(req);
-            for (I index : result.getContent()) {
-                action.accept(index);
-            }
+            action.accept(result.getContent());
             if (!result.hasNext()) {
                 break;
             }
@@ -196,7 +194,7 @@ public final class SiteUtils {
     List<I> collectPage(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq)
         throws NotFoundException, OtherResponseException {
         List<I> indices = new ArrayList<>();
-        forEachPage(pageable, firstReq, indices::add);
+        forEachPage(pageable, firstReq, indices::addAll);
         return indices;
     }
 

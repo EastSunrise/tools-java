@@ -22,17 +22,13 @@ import wsg.tools.internet.common.UpdateTemporalSupplier;
 @Embeddable
 public class Source implements Serializable {
 
-    /**
-     * Default subtype for the repository which has only one subtype.
-     */
-    public static final int DEFAULT_SUBTYPE = 0;
     private static final long serialVersionUID = 38168257706310693L;
 
     /**
-     * The domain of the {@link Repository}
+     * The name of the site
      */
     @Column(nullable = false, length = 31)
-    private String domain;
+    private String sname;
 
     /**
      * The subtype that the entity belongs to in the repository
@@ -52,8 +48,8 @@ public class Source implements Serializable {
     @Column(length = 0)
     private LocalDateTime timestamp;
 
-    private Source(String domain, Integer subtype, Long rid, LocalDateTime timestamp) {
-        this.domain = domain;
+    private Source(String sname, Integer subtype, Long rid, LocalDateTime timestamp) {
+        this.sname = sname;
         this.subtype = subtype;
         this.rid = rid;
         this.timestamp = timestamp;
@@ -62,14 +58,14 @@ public class Source implements Serializable {
     public Source() {
     }
 
-    public Source(@Nonnull String domain, int subtype) {
-        this.domain = domain;
+    public Source(@Nonnull String sname, int subtype) {
+        this.sname = sname;
         this.subtype = subtype;
     }
 
     @Nonnull
     @Contract("_, _, _, _ -> new")
-    public static Source of(@Nonnull String domain, int subtype, long rid,
+    public static Source of(@Nonnull String sname, int subtype, long rid,
         UpdateTemporalSupplier<?> supplier) {
         LocalDateTime timestamp = null;
         if (supplier != null) {
@@ -79,15 +75,15 @@ public class Source implements Serializable {
                 timestamp = ((UpdateDateSupplier) supplier).getUpdate().atTime(LocalTime.MIDNIGHT);
             }
         }
-        return new Source(domain, subtype, rid, timestamp);
+        return new Source(sname, subtype, rid, timestamp);
     }
 
-    public String getDomain() {
-        return domain;
+    public String getSname() {
+        return sname;
     }
 
-    public void setDomain(String domain) {
-        this.domain = domain;
+    public void setSname(String sname) {
+        this.sname = sname;
     }
 
     public Integer getSubtype() {
@@ -123,12 +119,12 @@ public class Source implements Serializable {
             return false;
         }
         Source source = (Source) o;
-        return Objects.equals(domain, source.domain) && Objects
+        return Objects.equals(sname, source.sname) && Objects
             .equals(subtype, source.subtype) && Objects.equals(rid, source.rid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(domain, subtype, rid);
+        return Objects.hash(sname, subtype, rid);
     }
 }

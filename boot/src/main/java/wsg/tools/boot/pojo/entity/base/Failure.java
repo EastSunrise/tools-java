@@ -17,7 +17,7 @@ import wsg.tools.internet.base.repository.Repository;
 @Table(
     name = "failure",
     uniqueConstraints = @UniqueConstraint(name = "uni_failure_source", columnNames = {
-        "domain", "subtype", "rid"
+        "sname", "subtype", "rid"
     })
 )
 public class Failure extends IdentityEntity {

@@ -1,7 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
 import java.io.IOException;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,9 +15,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -30,14 +31,11 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.ResponseWrapper;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
-import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.support.Ed2kLink;
 import wsg.tools.internet.download.support.InvalidResourceException;
@@ -56,7 +54,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     private static final String BT_ATTACH_PREFIX = "http://51btbtt.com/attach-download";
 
     public GrapeSite() {
-        super("Grape Vod", httpsHost("putaoys.com"), new GrapeResponseHandler());
+        super("Grape Vod", httpsHost("putaoys.com"));
     }
 
     /**
@@ -77,14 +75,12 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     @Nonnull
     public GrapeNewsItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/movie/%d.html", id);
-        Document document = getDocument(wrapper, t -> false);
+        Document document = getDocument(httpGet("/movie/%d.html", id));
         String datetime = document.selectFirst(".updatetime").text();
         LocalDate releaseDate = LocalDate.parse(datetime.substring(5));
         Element h1 = document.selectFirst("div.news_title_all").selectFirst(CssSelectors.TAG_H1);
-        URL source = NetUtils.toURL(wrapper.getUri());
         String title = h1.text().strip();
-        GrapeNewsItem item = new GrapeNewsItem(source, id, title, releaseDate);
+        GrapeNewsItem item = new GrapeNewsItem(id, title, releaseDate);
 
         Element info = document.selectFirst(".text");
         Element image = info.selectFirst(CssSelectors.TAG_IMG);
@@ -134,8 +130,8 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         String order = pageRequest.getOrderBy().getText();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
-        RequestWrapper wrapper = httpGet("/index.php").addParameter("s", arg);
-        Document document = getDocument(wrapper, t -> true);
+        RequestBuilder builder = httpGet("/index.php").addParameter("s", arg);
+        Document document = getDocument(builder);
         String summary = ((TextNode) document.selectFirst(".ui-page-big").childNode(0)).text();
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.PAGE_SUM_REGEX, summary.strip());
         int total = Integer.parseInt(matcher.group("t"));
@@ -162,7 +158,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     @Nonnull
     public GrapeVodItem findVodItem(@Nonnull String path)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet(path), t -> false);
+        Document document = getDocument(httpGet(path));
 
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
@@ -202,19 +198,16 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         return item;
     }
 
-    private static class GrapeResponseHandler extends WrappedStringResponseHandler {
-
-        @Override
-        public ResponseWrapper<String> handleResponse(@Nonnull HttpResponse response)
-            throws IOException {
-            try {
-                return super.handleResponse(response);
-            } catch (HttpResponseException e) {
-                if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
-                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
-                }
-                throw e;
+    @Override
+    public <T> T execute(@Nonnull HttpRequest request, ResponseHandler<? extends T> responseHandler)
+        throws IOException {
+        try {
+            return super.execute(request, responseHandler);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, e.getReasonPhrase());
             }
+            throw e;
         }
     }
 

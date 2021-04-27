@@ -3,14 +3,16 @@ package wsg.tools.internet.movie.douban.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.client.methods.RequestBuilder;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
-import wsg.tools.internet.base.SnapshotStrategy;
-import wsg.tools.internet.base.support.RequestWrapper;
+import wsg.tools.internet.base.ResponseWrapper;
+import wsg.tools.internet.base.WrappedResponseHandler;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.DomesticCity;
@@ -54,7 +56,7 @@ public class ApiDoubanSite extends DoubanSite {
     private final String apikey;
 
     public ApiDoubanSite(String apikey) {
-        super();
+        super("api");
         this.apikey = AssertUtils.requireNotBlank(apikey);
     }
 
@@ -64,51 +66,50 @@ public class ApiDoubanSite extends DoubanSite {
      */
     public Subject apiMovieSubject(long subjectId)
         throws NotFoundException, OtherResponseException {
-        return getObject(apiWrapper("/v2/movie/subject/%d", subjectId), Subject.class);
+        return getObject(httpGet("/v2/movie/subject/%d", subjectId), Subject.class);
     }
 
     public ImdbInfo apiMovieImdb(String imdbId) throws NotFoundException, OtherResponseException {
-        return getObject(apiWrapper("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
+        return getObject(httpGet("/v2/movie/imdb/%s", imdbId), ImdbInfo.class);
     }
 
     public Celebrity apiMovieCelebrity(long celebrityId)
         throws NotFoundException, OtherResponseException {
-        return getObject(apiWrapper("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
+        return getObject(httpGet("/v2/movie/celebrity/%d", celebrityId), Celebrity.class);
     }
 
     /**
      * It's updated every Friday.
      */
     public RankedResult apiMovieWeekly() throws NotFoundException, OtherResponseException {
-        return getObject(apiWrapper("/v2/movie/weekly"), RankedResult.class, t -> true);
+        return getObject(httpGet("/v2/movie/weekly"), RankedResult.class);
     }
 
     /**
      * It's updated every Friday.
      */
     public BoxResult apiMovieUsBox() throws NotFoundException, OtherResponseException {
-        return getObject(apiWrapper("/v2/movie/us_box"), BoxResult.class, t -> true);
+        return getObject(httpGet("/v2/movie/us_box"), BoxResult.class);
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieTop250()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiWrapper("/v2/movie/top250"));
+        return getApiChart(httpGet("/v2/movie/top250"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieNewMovies()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiWrapper("/v2/movie/new_movies"));
+        return getApiChart(httpGet("/v2/movie/new_movies"));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(DomesticCity city)
         throws NotFoundException, OtherResponseException {
-        return getApiChart(
-            apiWrapper("/v2/movie/in_theaters").addParameter("city", city.getText()));
+        return getApiChart(httpGet("/v2/movie/in_theaters").addParameter("city", city.getText()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon()
         throws NotFoundException, OtherResponseException {
-        return getApiChart(apiWrapper("/v2/movie/coming_soon"));
+        return getApiChart(httpGet("/v2/movie/coming_soon"));
     }
 
     /**
@@ -116,15 +117,15 @@ public class ApiDoubanSite extends DoubanSite {
      *
      * @return pair of title-subjects
      */
-    private Pair<String, List<SimpleSubject>> getApiChart(RequestWrapper builder)
+    private Pair<String, List<SimpleSubject>> getApiChart(RequestBuilder builder)
         throws NotFoundException, OtherResponseException {
         int start = 0;
         List<SimpleSubject> subjects = new LinkedList<>();
         String title;
-        builder.addParameter("count", MAX_COUNT_ONCE);
+        builder.addParameter("count", String.valueOf(MAX_COUNT_ONCE));
         while (true) {
-            builder.addParameter("start", start);
-            ChartResult chartResult = getObject(builder, ChartResult.class, t -> true);
+            builder.addParameter("start", String.valueOf(start));
+            ChartResult chartResult = getObject(builder, ChartResult.class);
             subjects.addAll(chartResult.getContent());
             title = chartResult.getTitle();
             start += chartResult.getCount();
@@ -179,9 +180,9 @@ public class ApiDoubanSite extends DoubanSite {
         List<C> content = new LinkedList<>();
         O owner;
         while (true) {
-            RequestWrapper builder = apiWrapper(path, ownerId)
-                .addParameter("start", start)
-                .addParameter("count", MAX_COUNT_ONCE);
+            RequestBuilder builder = httpGet(path, ownerId)
+                .addParameter("start", String.valueOf(start))
+                .addParameter("count", String.valueOf(MAX_COUNT_ONCE));
             ContentResult<O, C> contentResult = getObject(builder, type);
             content.addAll(contentResult.getContent());
             owner = contentResult.getOwner();
@@ -193,22 +194,20 @@ public class ApiDoubanSite extends DoubanSite {
         return Pair.of(owner, content);
     }
 
-    private <T> T getObject(RequestWrapper builder, Class<T> clazz)
+    private <T> T getObject(@Nonnull RequestBuilder builder, TypeReference<T> type)
         throws NotFoundException, OtherResponseException {
-        return getObject(builder, clazz, t -> false);
+        return getObject(builder, MAPPER, type);
     }
 
-    private <T> T getObject(@Nonnull RequestWrapper builder, TypeReference<T> type)
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
-        return getObject(builder, MAPPER, type, t -> false);
+        return getObject(builder, MAPPER, clazz);
     }
 
-    private <T> T getObject(RequestWrapper builder, Class<T> clazz, SnapshotStrategy<T> strategy)
-        throws NotFoundException, OtherResponseException {
-        return getObject(builder, MAPPER, clazz, strategy);
-    }
-
-    private RequestWrapper apiWrapper(String path, Object... pathArgs) {
-        return create("api", METHOD_GET, path, pathArgs).setToken("apikey", apikey);
+    @Override
+    public <T> ResponseWrapper<T> getResponseWrapper(@Nonnull RequestBuilder builder,
+        WrappedResponseHandler<T> responseHandler) throws IOException {
+        builder.addParameter("apikey", apikey);
+        return super.getResponseWrapper(builder, responseHandler);
     }
 }

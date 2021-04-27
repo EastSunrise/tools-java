@@ -21,8 +21,8 @@ public class Y80sItem extends BaseIdentifiedItem<Y80sType>
     private Integer year;
     private Long dbId;
 
-    Y80sItem(Y80sType subtype, URL source, int id, String title, LocalDate updateDate) {
-        super(subtype, source, id, title);
+    Y80sItem(Y80sType subtype, int id, String title, LocalDate updateDate) {
+        super(subtype, id, title);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
     }
 

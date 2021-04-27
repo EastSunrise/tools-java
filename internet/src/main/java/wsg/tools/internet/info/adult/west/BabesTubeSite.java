@@ -1,5 +1,7 @@
 package wsg.tools.internet.info.adult.west;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -14,15 +16,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.http.HttpHost;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
@@ -32,14 +35,16 @@ import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.common.VoidResponseHandler;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Color;
+import wsg.tools.internet.download.Downloader;
+import wsg.tools.internet.download.FileExistStrategy;
+import wsg.tools.internet.download.support.BasicDownloader;
 import wsg.tools.internet.info.adult.common.CupEnum;
 import wsg.tools.internet.info.adult.common.Measurements;
 import wsg.tools.internet.info.adult.common.VideoQuality;
@@ -60,7 +65,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     private static final double CENTIMETERS_PER_INCH = 2.54;
     private static final double KILOGRAMS_PER_POUND = 0.4535924;
     private static final Pattern SEPARATOR = Pattern.compile(", ");
-    private static final HttpHost CDN = httpsHost("temw6juvcn.ent-cdn.com");
+    private static final String CDN = "https://temw6juvcn.ent-cdn.com";
 
     public BabesTubeSite() {
         super("Babes Tube", httpsHost("babestube.com"));
@@ -85,7 +90,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     @Override
     public BabesVideo findById(@Nonnull String videoPath)
         throws OtherResponseException, NotFoundException {
-        Document document = getDocument(httpGet("/videos/%s/", videoPath), t -> false);
+        Document document = getDocument(httpGet("/videos/%s/", videoPath));
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String url = metadata.get("og:url");
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VIDEO_HREF_REGEX, url);
@@ -126,23 +131,26 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      *
      * @see BabesVideoIndex#getId()
      */
-    public List<URL> getScreenshots(int id) throws HttpResponseException {
+    public List<URL> getScreenshots(int id) {
         AssertUtils.requireRange(id, 1, null);
         List<URL> screenshots = new ArrayList<>();
         String path = "/contents/videos_screenshots/%d/%d/400x225/%d.jpg";
         int i = 1;
         while (true) {
             int page = id / 1000 * 1000;
-            String uri = String.format(path, page, id, i);
+            URL url = NetUtils.createURL(CDN + String.format(path, page, id, i));
             try {
-                execute(CDN, new HttpGet(uri), new VoidResponseHandler());
+                String child = FilenameUtils.getPath(url.getFile());
+                Lazy.DOWNLOADER.download(new File(Constants.SYSTEM_TMPDIR, child), url);
             } catch (HttpResponseException e) {
                 if (e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                     break;
                 }
-                throw e;
+                throw new UnexpectedException(e);
+            } catch (IOException e) {
+                throw new UnexpectedException(e);
             }
-            screenshots.add(NetUtils.createURL(CDN.toURI() + uri));
+            screenshots.add(url);
             i++;
         }
         return screenshots;
@@ -211,7 +219,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      */
     public BabesModel findModel(@Nonnull String namePath)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/models/%s/", namePath), t -> true);
+        Document document = getDocument(httpGet("/models/%s/", namePath));
         Element main = document.selectFirst(".main");
         String src = main.selectFirst(".model").selectFirst(".thumb").attr(CssSelectors.ATTR_SRC);
         URL cover = NetUtils.createURL(src);
@@ -316,17 +324,17 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
 
     @Nonnull
     @Contract("_, _, _, _ -> new")
-    private Block getBlock(String blockId, String path, int page, Object sortBy)
+    private Block getBlock(String blockId, String path, int page, String sortBy)
         throws NotFoundException, OtherResponseException {
         if (page > 0) {
             path += (page + 1) + "/";
         }
-        RequestWrapper wrapper = httpGet(path)
+        RequestBuilder builder = httpGet(path)
             .addParameter("mode", "async")
             .addParameter("function", "get_block")
             .addParameter("block_id", blockId)
             .addParameter("sort_by", sortBy);
-        Document document = getDocument(wrapper, t -> true);
+        Document document = getDocument(builder);
         Elements items = document.selectFirst("#" + blockId + "_items").children();
         int totalPages = 1;
         Element pagination = document.selectFirst(".pagination");
@@ -372,5 +380,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             .compile(HOME + "/members/(?<id>\\d+)/");
         private static final Pattern CATEGORY_HREF_REGEX = Pattern
             .compile(HOME + "/categories/(?<p>[A-Za-z-]+)/");
+        private static final Downloader DOWNLOADER = new BasicDownloader()
+            .strategy(FileExistStrategy.FINISH);
     }
 }

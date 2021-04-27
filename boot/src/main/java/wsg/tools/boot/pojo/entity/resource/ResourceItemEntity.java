@@ -35,7 +35,7 @@ import wsg.tools.internet.movie.imdb.ImdbIdentifier;
     },
     uniqueConstraints = @UniqueConstraint(
         name = "unique_resource_item_source",
-        columnNames = {"domain", "rid"}
+        columnNames = {"sname", "rid"}
     )
 )
 public class ResourceItemEntity extends IdentityEntity

@@ -8,12 +8,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.RequestBuilder;
 import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.SnapshotStrategy;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.DomesticCity;
@@ -36,23 +35,21 @@ public class ScoreSite extends BaseSite {
     public TournamentPageResult findAllTournaments(@Nonnull TournamentPageReq request)
         throws NotFoundException, OtherResponseException {
         String type = request.getStatus() == null ? "all" : request.getStatus().getText();
-        RequestWrapper wrapper = httpPost("/services/api_url.php")
+        RequestBuilder builder = RequestBuilder.post("/services/api_url.php")
             .addParameter("api_path", "/services/match/web_tournament_group_list.php")
             .addParameter("method", "get")
             .addParameter("platform", "web")
             .addParameter("api_version", "9.9.9")
-            .addParameter("language_id", 1)
-            .addParameter("gameID", request.getGame().getCode())
+            .addParameter("language_id", String.valueOf(1))
+            .addParameter("gameID", String.valueOf(request.getGame().getCode()))
             .addParameter("type", type)
-            .addParameter("page", request.getCurrent() + 1)
-            .addParameter("limit", request.getPageSize());
+            .addParameter("page", String.valueOf(request.getCurrent() + 1))
+            .addParameter("limit", String.valueOf(request.getPageSize()));
         if (request.getYear() != null) {
-            wrapper.addParameter("year", request.getYear().getValue());
+            builder.addParameter("year", String.valueOf(request.getYear().getValue()));
         }
-        TournamentPageResponse response = getObject(wrapper, Lazy.MAPPER,
-            TournamentPageResponse.class,
-            res -> res.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES || !res.getData()
-                .getList().stream().allMatch(t -> t.getStatus() == ScoreStatus.FINISHED));
+        TournamentPageResponse response = getObject(builder, Lazy.MAPPER,
+            TournamentPageResponse.class);
         if (response.getStatusCode() >= HttpStatus.SC_MULTIPLE_CHOICES) {
             if (response.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 throw new NotFoundException(response.getMessage());
@@ -68,15 +65,9 @@ public class ScoreSite extends BaseSite {
      */
     public List<TournamentRound> findRoundsByTournament(@Nonnull Tournament tournament)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = create("img1", METHOD_GET, "/tr/%d.json", tournament.getId());
-        SnapshotStrategy<List<TournamentRound>> strategy;
-        if (tournament.getStatus() == ScoreStatus.FINISHED) {
-            strategy = t -> false;
-        } else {
-            strategy = t -> true;
-        }
-        return getObject(wrapper, Lazy.MAPPER, new TypeReference<>() {
-        }, strategy);
+        return getObject(create("img1", METHOD_GET, "/tr/%d.json", tournament.getId()),
+            Lazy.MAPPER, new TypeReference<>() {
+            });
     }
 
     /**
@@ -86,9 +77,9 @@ public class ScoreSite extends BaseSite {
      */
     public List<MatchRecord> findMatchRecordsByRoundItem(@Nonnull RoundItem item)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = create("img1", METHOD_GET, "/tr_round/%d.json", item.getId());
-        return getObject(wrapper, Lazy.MAPPER, new TypeReference<>() {
-        }, records -> !records.stream().allMatch(r -> r.getStatus() == ScoreStatus.FINISHED));
+        RequestBuilder builder = create("img1", METHOD_GET, "/tr_round/%d.json", item.getId());
+        return getObject(builder, Lazy.MAPPER, new TypeReference<>() {
+        });
     }
 
     private static class Lazy {

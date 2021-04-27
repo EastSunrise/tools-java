@@ -22,9 +22,8 @@ public class XlcItem extends BaseIdentifiedItem<XlcType>
     private URL cover;
     private Integer year;
 
-    XlcItem(XlcType subtype, URL source, int id, String title, LocalDate updateDate,
-        ResourceState state) {
-        super(subtype, source, id, title);
+    XlcItem(XlcType subtype, int id, String title, LocalDate updateDate, ResourceState state) {
+        super(subtype, id, title);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
         this.state = state;
     }

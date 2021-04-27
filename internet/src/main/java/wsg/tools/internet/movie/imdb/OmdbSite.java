@@ -7,20 +7,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.RequestBuilder;
 import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.support.BaseSite;
-import wsg.tools.internet.base.support.RequestWrapper;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedException;
-import wsg.tools.internet.common.WrappedStringResponseHandler;
 import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.enums.ImdbRating;
@@ -60,7 +60,7 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     private final String apikey;
 
     public OmdbSite(String apikey) {
-        super("OMDb", httpsHost("omdbapi.com"), new OmdbResponseHandler());
+        super("OMDb", httpsHost("omdbapi.com"));
         this.apikey = Objects.requireNonNull(apikey);
     }
 
@@ -71,9 +71,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     @Override
     public OmdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/").addParameter("i", imdbId)
-            .addParameter("plot", "full");
-        OmdbTitle title = getObject(wrapper, OmdbTitle.class);
+        OmdbTitle title = getObject(httpGet("/").addParameter("i", imdbId)
+            .addParameter("plot", "full"), OmdbTitle.class);
         title.setImdbId(imdbId);
         return title;
     }
@@ -85,9 +84,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbSeason season(String seriesId, int season)
         throws NotFoundException, OtherResponseException {
-        RequestWrapper wrapper = httpGet("/").addParameter("i", seriesId)
-            .addParameter("season", season);
-        return getObject(wrapper, OmdbSeason.class);
+        return getObject(httpGet("/").addParameter("i", seriesId)
+            .addParameter("season", String.valueOf(season)), OmdbSeason.class);
     }
 
     /**
@@ -98,8 +96,8 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
     public OmdbEpisode episode(String seriesId, int season, int episode)
         throws NotFoundException, OtherResponseException {
         return getObject(httpGet("/").addParameter("i", seriesId)
-            .addParameter("season", season)
-            .addParameter("episode", episode), OmdbEpisode.class);
+            .addParameter("season", String.valueOf(season))
+            .addParameter("episode", String.valueOf(episode)), OmdbEpisode.class);
     }
 
     /**
@@ -118,48 +116,47 @@ public final class OmdbSite extends BaseSite implements ImdbRepository<OmdbTitle
      */
     public OmdbTitle search(String s, SearchType type, Integer year, int page)
         throws OtherResponseException, NotFoundException {
-        RequestWrapper wrapper = httpGet("/").addParameter("s", s);
+        RequestBuilder builder = httpGet("/").addParameter("s", s);
         if (type != null) {
-            wrapper.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
+            builder.addParameter("type", type.toString().toLowerCase(Locale.ENGLISH));
         }
         if (year != null) {
-            wrapper.addParameter("y", year);
+            builder.addParameter("y", String.valueOf(year));
         }
         if (page < 1 || page > MAX_PAGE) {
             throw new IllegalArgumentException("Illegal page " + page + ", required: 1-100");
         } else {
-            wrapper.addParameter("page", page);
+            builder.addParameter("page", String.valueOf(page));
         }
-        return getObject(wrapper, OmdbTitle.class);
+        return getObject(builder, OmdbTitle.class);
     }
 
-    private <T> T getObject(RequestWrapper builder, Class<T> clazz)
+    private <T> T getObject(RequestBuilder builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
-        builder.setToken("apikey", apikey);
-        return getObject(builder, MAPPER, clazz, t -> false);
+        builder.addParameter("apikey", apikey);
+        return getObject(builder, MAPPER, clazz);
     }
 
-    private static class OmdbResponseHandler extends WrappedStringResponseHandler {
-
-        @Override
-        protected String handleContent(String content) throws HttpResponseException {
-            JsonNode node;
-            try {
-                node = MAPPER.readTree(content);
-            } catch (JsonProcessingException e) {
-                throw new UnexpectedException(e);
+    @Nonnull
+    @Override
+    public String getContent(@Nonnull RequestBuilder builder) throws IOException {
+        String content = super.getContent(builder);
+        JsonNode node;
+        try {
+            node = MAPPER.readTree(content);
+        } catch (JsonProcessingException e) {
+            throw new UnexpectedException(e);
+        }
+        boolean response = Boolean.parseBoolean(node.get("Response").asText());
+        if (response) {
+            return content.replace("\"N/A\"", "null");
+        } else {
+            String error = node.get("Error").asText();
+            if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error)
+                || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
+                throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
             }
-            boolean response = Boolean.parseBoolean(node.get("Response").asText());
-            if (response) {
-                return content.replace("\"N/A\"", "null");
-            } else {
-                String error = node.get("Error").asText();
-                if (NOT_FOUND_MSG.equals(error) || SEASON_NOT_FOUND_MSG.equals(error)
-                    || EPISODE_NOT_FOUND_MSG.equalsIgnoreCase(error)) {
-                    throw new HttpResponseException(HttpStatus.SC_NOT_FOUND, error);
-                }
-                throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
-            }
+            throw new HttpResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, error);
         }
     }
 }

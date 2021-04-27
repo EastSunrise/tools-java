@@ -3,7 +3,6 @@ package wsg.tools.internet.movie.resource;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import wsg.tools.internet.common.UpdateDateSupplier;
 
 /**
@@ -18,8 +17,8 @@ public class GrapeNewsItem extends BaseIdentifiedItem<GrapeVodType> implements U
     private final LocalDate releaseDate;
     private URL cover;
 
-    GrapeNewsItem(@Nonnull URL source, int id, String title, LocalDate releaseDate) {
-        super(GrapeVodType.BT_MOVIE, source, id, title);
+    GrapeNewsItem(int id, String title, LocalDate releaseDate) {
+        super(GrapeVodType.BT_MOVIE, id, title);
         this.releaseDate = Objects.requireNonNull(releaseDate, "the release date of an item");
     }
 

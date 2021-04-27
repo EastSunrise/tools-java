@@ -12,10 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpResponseException;
 import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.download.Downloader;
 import wsg.tools.internet.download.FileExistStrategy;
 
@@ -92,7 +92,7 @@ public final class BasicDownloader implements Downloader {
             Matcher matcher = Lazy.RESPONSE_EXCEPTION_REGEX.matcher(e.getMessage());
             if (matcher.lookingAt()) {
                 int code = Integer.parseInt(matcher.group("c"));
-                throw new OtherResponseException(code, e.getMessage());
+                throw new HttpResponseException(code, e.getMessage());
             }
             throw e;
         }
