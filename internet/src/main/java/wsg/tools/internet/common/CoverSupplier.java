@@ -1,7 +1,7 @@
 package wsg.tools.internet.common;
 
 import java.net.URL;
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Represents a supplier of the url of the cover.
@@ -9,7 +9,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2021/3/19
  */
-@EntityInterface
+@EntityProperty
 public interface CoverSupplier {
 
     /**

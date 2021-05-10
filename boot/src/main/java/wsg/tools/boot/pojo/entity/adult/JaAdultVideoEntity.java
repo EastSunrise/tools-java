@@ -4,11 +4,8 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -27,11 +24,10 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.common.CoverSupplier;
-import wsg.tools.internet.info.adult.view.AlbumSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
-import wsg.tools.internet.info.adult.view.JaAdultEntry;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
+import wsg.tools.internet.info.adult.view.SerialNumSupplier;
 
 /**
  * The entity of an adult video.
@@ -47,8 +43,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
         "sname", "subtype", "rid"
     })
 )
-public class JaAdultVideoEntity extends IdentityEntity
-    implements JaAdultEntry, TitledAdultEntry, CoverSupplier, DurationSupplier, AlbumSupplier {
+public class JaAdultVideoEntity extends IdentityEntity implements SerialNumSupplier,
+    TitleSupplier, CoverSupplier, DurationSupplier {
 
     private static final long serialVersionUID = 718083190465191530L;
 
@@ -141,7 +137,6 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.cover = cover;
     }
 
-    @Override
     public Boolean getMosaic() {
         return mosaic;
     }
@@ -159,11 +154,6 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.duration = duration;
     }
 
-    @Override
-    public LocalDate getRelease() {
-        return publish;
-    }
-
     public LocalDate getPublish() {
         return publish;
     }
@@ -172,7 +162,6 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.publish = release;
     }
 
-    @Override
     public String getProducer() {
         return producer;
     }
@@ -181,7 +170,6 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.producer = producer;
     }
 
-    @Override
     public String getDistributor() {
         return distributor;
     }
@@ -190,7 +178,6 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.distributor = distributor;
     }
 
-    @Override
     public String getSeries() {
         return series;
     }
@@ -213,12 +200,6 @@ public class JaAdultVideoEntity extends IdentityEntity
 
     public void setImages(Set<String> images) {
         this.images = images;
-    }
-
-    @Nonnull
-    @Override
-    public List<URL> getAlbum() {
-        return images.stream().map(NetUtils::createURL).collect(Collectors.toList());
     }
 
     public Set<JaAdultActressEntity> getActresses() {

@@ -4,6 +4,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -17,6 +18,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
@@ -29,6 +32,7 @@ import wsg.tools.internet.common.OtherResponseException;
  * @see <a href="http://buzz.ggg-av.com/">GGG-AV</a>
  * @since 2021/4/13
  */
+@ConcreteSite(status = SiteStatus.INVALID)
 public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPageResult>,
     RepoRetrievable<Integer, GggGoodView> {
 
@@ -101,7 +105,7 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
             if (!BLANK_IMAGE.equals(src)) {
                 good.setImage(NetUtils.createURL(HOME + src.substring(2)));
             }
-            good.setTags(collect(iterator).toArray(new String[0]));
+            good.setTags(new HashSet<>(collect(iterator)));
             good.setDistributor(getText(iterator.next()));
             good.setActresses(collect(iterator));
             iterator.next();

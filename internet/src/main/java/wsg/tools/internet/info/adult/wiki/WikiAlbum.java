@@ -3,12 +3,14 @@ package wsg.tools.internet.info.adult.wiki;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.view.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.view.AlbumSupplier;
+import wsg.tools.internet.info.adult.view.ImagesSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
@@ -18,7 +20,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see CelebrityWikiSite#findAlbum(WikiAlbumIndex)
  * @since 2021/2/26
  */
-public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumSupplier, Tagged,
+public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, ImagesSupplier, Tagged,
     NextSupplier<Integer> {
 
     private final int id;
@@ -27,7 +29,7 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
     private LocalDateTime updateTime;
     private List<URL> album;
     private List<WikiCelebrityIndex> relatedCelebrities;
-    private String[] tags;
+    private Set<String> tags = new HashSet<>(0);
     private Integer next;
 
     WikiAlbum(int id, WikiAlbumType type, String title) {
@@ -66,17 +68,17 @@ public class WikiAlbum implements WikiAlbumIndex, UpdateDatetimeSupplier, AlbumS
 
     @Nonnull
     @Override
-    public List<URL> getAlbum() {
+    public List<URL> getImages() {
         return album;
     }
 
     @Nonnull
     @Override
-    public String[] getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
-    void setTags(String[] tags) {
+    void setTags(Set<String> tags) {
         this.tags = tags;
     }
 

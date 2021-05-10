@@ -44,7 +44,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @author Kingen
  * @since 2020/6/16
  */
-@ConcreteSite(status = SiteStatus.BLOCKED)
+@ConcreteSite(status = SiteStatus.NORMAL)
 public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-ÿ]+";

@@ -1,6 +1,6 @@
 package wsg.tools.internet.base.view;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Represents a supplier of the subtype to which the item belongs in the repository.
@@ -8,7 +8,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2021/3/12
  */
-@EntityInterface
+@EntityProperty
 public interface SubtypeSupplier<E extends Enum<E>> {
 
     /**

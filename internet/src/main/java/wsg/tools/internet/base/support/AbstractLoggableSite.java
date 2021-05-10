@@ -26,9 +26,8 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
     }
 
     protected AbstractLoggableSite(String name, HttpHost host, CloseableHttpClient client,
-        @Nonnull HttpClientContext context, double getPermitsPerSecond,
-        double otherPermitsPerSecond) {
-        super(name, host, client, context, getPermitsPerSecond, otherPermitsPerSecond);
+        @Nonnull HttpClientContext context) {
+        super(name, host, client, context);
     }
 
     /**

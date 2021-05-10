@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
-import wsg.tools.internet.info.adult.view.AlbumSupplier;
+import wsg.tools.internet.info.adult.view.ImagesSupplier;
 
 /**
  * An item with a list of images.
@@ -14,18 +14,18 @@ import wsg.tools.internet.info.adult.view.AlbumSupplier;
  * @see MidnightSite#findAlbum(int)
  * @since 2021/3/2
  */
-public class MidnightAlbum extends BaseMidnightItem implements AlbumSupplier {
+public class MidnightAlbum extends BaseMidnightItem implements ImagesSupplier {
 
-    private final List<URL> album;
+    private final List<URL> images;
 
-    MidnightAlbum(int id, String title, LocalDateTime addTime, List<URL> album) {
+    MidnightAlbum(int id, String title, LocalDateTime addTime, List<URL> images) {
         super(id, title, addTime);
-        this.album = Collections.unmodifiableList(album);
+        this.images = Collections.unmodifiableList(images);
     }
 
     @Nonnull
     @Override
-    public List<URL> getAlbum() {
-        return album;
+    public List<URL> getImages() {
+        return images;
     }
 }

@@ -1,11 +1,11 @@
 package wsg.tools.internet.info.adult.ggg;
 
 import java.net.URL;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
-import wsg.tools.internet.info.adult.view.Describable;
+import wsg.tools.internet.common.Describable;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * The view of a good on the site.
@@ -14,8 +14,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @see GggSite#findById(Integer)
  * @since 2021/4/13
  */
-public class GggGoodView
-    implements IntIdentifier, TitledAdultEntry, CoverSupplier, Describable, ImageSupplier {
+public class GggGoodView implements IntIdentifier,
+    TitleSupplier, CoverSupplier, Describable, ImageSupplier {
 
     private final int id;
     private final String title;

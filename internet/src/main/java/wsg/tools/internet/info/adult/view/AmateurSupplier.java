@@ -1,12 +1,15 @@
 package wsg.tools.internet.info.adult.view;
 
+import wsg.tools.internet.base.EntityProperty;
+
 /**
- * An adult entry performed by an amateur who appears occasionally.
+ * Represents a supplier of an amateur who appears in the video occasionally.
  *
  * @author Kingen
  * @since 2021/4/7
  */
-public interface AmateurJaAdultEntry extends JaAdultEntry {
+@EntityProperty
+public interface AmateurSupplier {
 
     /**
      * Returns the performer of the entry.

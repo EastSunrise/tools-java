@@ -1,10 +1,18 @@
 package wsg.tools.boot.pojo.entity.adult;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import wsg.tools.boot.config.MinioStored;
@@ -32,7 +40,7 @@ public class WesternAdultVideoEntity extends IdentityEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 127)
+    @Column(length = 127)
     @MinioStored(type = Filetype.IMAGE)
     private String cover;
 
@@ -47,15 +55,26 @@ public class WesternAdultVideoEntity extends IdentityEntity {
     private String video;
 
     @Column(length = 1023)
-    private String[] tags;
+    private List<String> tags;
 
-    private String[] categories;
+    @Column
+    private List<String> categories;
 
     @Column(length = 2047)
     private String description;
 
     @Embedded
     private Source source;
+
+    @MinioStored(type = Filetype.IMAGE)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+        name = "west_adult_video_image",
+        joinColumns = @JoinColumn(name = "video_id", referencedColumnName = "id"),
+        foreignKey = @ForeignKey(name = "fk_wt_adult_video_image_on_video_id")
+    )
+    @Column(name = "image", nullable = false, length = 127)
+    private Set<String> images = new HashSet<>();
 
     public String getTitle() {
         return title;
@@ -98,20 +117,20 @@ public class WesternAdultVideoEntity extends IdentityEntity {
     }
 
     @Nonnull
-    public String[] getTags() {
+    public List<String> getTags() {
         return tags;
     }
 
-    public void setTags(String[] tags) {
+    public void setTags(List<String> tags) {
         this.tags = tags;
     }
 
     @Nonnull
-    public String[] getCategories() {
+    public List<String> getCategories() {
         return categories;
     }
 
-    public void setCategories(String[] categories) {
+    public void setCategories(List<String> categories) {
         this.categories = categories;
     }
 
@@ -129,5 +148,13 @@ public class WesternAdultVideoEntity extends IdentityEntity {
 
     public void setSource(Source source) {
         this.source = source;
+    }
+
+    public Set<String> getImages() {
+        return images;
+    }
+
+    public void setImages(Set<String> images) {
+        this.images = images;
     }
 }

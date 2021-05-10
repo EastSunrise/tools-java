@@ -1,6 +1,6 @@
 package wsg.tools.internet.base.view;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Indicates that the entity has an integer identifier.
@@ -10,7 +10,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2021/2/26
  */
-@EntityInterface
+@EntityProperty
 public interface IntIdentifier {
 
     /**

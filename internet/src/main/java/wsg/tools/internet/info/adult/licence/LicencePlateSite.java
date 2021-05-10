@@ -93,7 +93,7 @@ public class LicencePlateSite extends BaseSite
         parser.verifySerialNumber(item);
         item.setPerformer(parser.getPerformer());
         item.setDuration(parser.getDuration());
-        item.setRelease(parser.getRelease());
+        item.setPublish(parser.getPublish());
         item.setProducer(parser.getProducer());
         item.setDistributor(parser.getDistributor());
         item.setSeries(parser.getSeries());

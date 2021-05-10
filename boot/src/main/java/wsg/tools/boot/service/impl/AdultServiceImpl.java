@@ -1,9 +1,7 @@
 package wsg.tools.boot.service.impl;
 
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +10,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -20,7 +17,8 @@ import wsg.tools.boot.common.util.BeanOpt;
 import wsg.tools.boot.common.util.BeanUtilExt;
 import wsg.tools.boot.config.MinioConfig;
 import wsg.tools.boot.dao.api.adapter.JaAdultActressAdapter;
-import wsg.tools.boot.dao.api.adapter.WesternAdultEntry;
+import wsg.tools.boot.dao.api.adapter.JaAdultEntryAdapter;
+import wsg.tools.boot.dao.api.adapter.WestAdultEntryAdapter;
 import wsg.tools.boot.dao.jpa.mapper.FailureRepository;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultActressRepository;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultTagRepository;
@@ -36,18 +34,8 @@ import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.AdultService;
-import wsg.tools.common.util.function.TitleSupplier;
-import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.info.adult.common.SerialNumber;
-import wsg.tools.internet.info.adult.view.ActressSupplier;
-import wsg.tools.internet.info.adult.view.AlbumSupplier;
-import wsg.tools.internet.info.adult.view.DurationSupplier;
-import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
-import wsg.tools.internet.info.adult.view.ImageSupplier;
-import wsg.tools.internet.info.adult.view.JaAdultEntry;
-import wsg.tools.internet.info.adult.view.Tagged;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * @author Kingen
@@ -81,8 +69,9 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
     }
 
     @Override
-    public Optional<FailureReason> saveJaAdultEntry(@Nonnull JaAdultEntry entry, Source source) {
-        String serialNum = entry.getSerialNum();
+    public Optional<FailureReason> saveJaAdultEntry(@Nonnull JaAdultEntryAdapter adapter,
+        Source source) {
+        String serialNum = adapter.getSerialNum();
         if (serialNum != null) {
             try {
                 serialNum = SerialNumber.format(serialNum);
@@ -92,7 +81,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
                 return Optional.of(reason);
             }
         }
-        JaAdultVideoEntity entity = copyEntry(entry, source);
+        JaAdultVideoEntity entity = adapt(adapter, source);
         entity.setSource(source);
         if (serialNum == null) {
             jaVideoRepository.insert(entity);
@@ -140,60 +129,43 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         }));
     }
 
-    private JaAdultVideoEntity copyEntry(JaAdultEntry entry, Source source) {
+    private JaAdultVideoEntity adapt(JaAdultEntryAdapter adapter, Source source) {
         JaAdultVideoEntity entity = new JaAdultVideoEntity();
-        if (entry instanceof TitledAdultEntry) {
-            entity.setTitle(((TitleSupplier) entry).getTitle());
-        }
-        if (entry instanceof CoverSupplier) {
-            try {
-                entity.setCover(config.uploadCover((CoverSupplier) entry, source));
-            } catch (NotFoundException ignored) {
-            }
-        }
-        entity.setMosaic(entry.getMosaic());
-        if (entry instanceof DurationSupplier) {
-            entity.setDuration(((DurationSupplier) entry).getDuration());
-        }
-        entity.setPublish(entry.getRelease());
-        entity.setProducer(entry.getProducer());
-        entity.setDistributor(entry.getDistributor());
-        entity.setSeries(entry.getSeries());
-        if (entry instanceof Tagged) {
-            Set<JaAdultTagEntity> tagEntities = Arrays.stream(((Tagged) entry).getTags())
-                .distinct().map(tag -> {
-                    JaAdultTagEntity tagEntity = new JaAdultTagEntity();
-                    tagEntity.setTag(tag);
-                    return tagEntity;
-                }).collect(Collectors.toSet());
-            entity.setTags(new HashSet<>(jaTagRepository.saveAll(tagEntities)));
-        }
-        List<URL> images = new ArrayList<>();
-        if (entry instanceof ImageSupplier) {
-            CollectionUtils.addIgnoreNull(images, ((ImageSupplier) entry).getImageURL());
-        }
-        if (entry instanceof AlbumSupplier) {
-            images.addAll(((AlbumSupplier) entry).getAlbum());
-        }
+        entity.setTitle(adapter.getTitle());
         try {
-            entity.setImages(new HashSet<>(config.uploadAlbum(images, source)));
+            entity.setCover(config.uploadCover(adapter, source));
         } catch (NotFoundException ignored) {
         }
-        if (entry instanceof FormalJaAdultEntry) {
-            List<String> names = ((ActressSupplier) entry).getActresses();
-            List<JaAdultActressEntity> actresses = new ArrayList<>(names.size());
-            for (String name : names) {
-                Optional<JaAdultActressEntity> actressOp = actressRepository.findByName(name);
-                if (actressOp.isPresent()) {
-                    actresses.add(actressOp.get());
-                    continue;
-                }
-                JaAdultActressEntity actressEntity = new JaAdultActressEntity();
-                actressEntity.setName(name);
-                actresses.add(actressRepository.save(actressEntity));
-            }
-            entity.setActresses(new HashSet<>(actresses));
+        entity.setMosaic(adapter.getMosaic());
+        entity.setDuration(adapter.getDuration());
+        entity.setPublish(adapter.getPublish());
+        entity.setProducer(adapter.getProducer());
+        entity.setDistributor(adapter.getDistributor());
+        entity.setSeries(adapter.getSeries());
+        Set<JaAdultTagEntity> tagEntities = adapter.getTags().stream()
+            .map(tag -> {
+                JaAdultTagEntity tagEntity = new JaAdultTagEntity();
+                tagEntity.setTag(tag);
+                return tagEntity;
+            }).collect(Collectors.toSet());
+        entity.setTags(new HashSet<>(jaTagRepository.saveAll(tagEntities)));
+        try {
+            entity.setImages(new HashSet<>(config.uploadAlbum(adapter.getImages(), source)));
+        } catch (NotFoundException ignored) {
         }
+        List<String> names = adapter.getActresses();
+        List<JaAdultActressEntity> actresses = new ArrayList<>(names.size());
+        for (String name : names) {
+            Optional<JaAdultActressEntity> actressOp = actressRepository.findByName(name);
+            if (actressOp.isPresent()) {
+                actresses.add(actressOp.get());
+                continue;
+            }
+            JaAdultActressEntity actressEntity = new JaAdultActressEntity();
+            actressEntity.setName(name);
+            actresses.add(actressRepository.save(actressEntity));
+        }
+        entity.setActresses(new HashSet<>(actresses));
         return entity;
     }
 
@@ -208,7 +180,7 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
             return Optional.of(reason);
         }
         try {
-            actress.setImages(new HashSet<>(config.uploadAlbum(adapter.getAlbum(), source)));
+            actress.setImages(new HashSet<>(config.uploadAlbum(adapter.getImages(), source)));
         } catch (NotFoundException ignored) {
         }
         Optional<JaAdultActressEntity> entityOp = actressRepository.findByName(name);
@@ -240,26 +212,26 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
 
     @Override
     public Optional<FailureReason>
-    saveWesternAdultEntry(@Nonnull WesternAdultEntry entry, Source source) {
+    saveWesternAdultEntry(@Nonnull WestAdultEntryAdapter adapter, Source source) {
         WesternAdultVideoEntity entity = new WesternAdultVideoEntity();
-        entity.setTitle(entry.getTitle());
+        entity.setTitle(adapter.getTitle());
         try {
-            entity.setCover(config.uploadCover(entry, source));
+            entity.setCover(config.uploadCover(adapter, source));
         } catch (NotFoundException ignored) {
         }
+        entity.setDuration(adapter.getDuration());
         try {
-            entity.setPreview(config.uploadPreview(entry, source));
+            entity.setVideo(config.uploadVideo(adapter, source));
         } catch (NotFoundException ignored) {
         }
-        entity.setDuration(entry.getDuration());
-        try {
-            entity.setVideo(config.uploadVideo(entry, source));
-        } catch (NotFoundException ignored) {
-        }
-        entity.setTags(entry.getTags());
-        entity.setCategories(entry.getCategories());
-        entity.setDescription(entry.getDescription());
+        entity.setTags(new ArrayList<>(adapter.getTags()));
+        entity.setCategories(new ArrayList<>(adapter.getCategories()));
+        entity.setDescription(adapter.getDescription());
         entity.setSource(source);
+        try {
+            entity.setImages(new HashSet<>(config.uploadAlbum(adapter.getImages(), source)));
+        } catch (NotFoundException ignored) {
+        }
         wtVideoRepository.insert(entity);
         return Optional.empty();
     }

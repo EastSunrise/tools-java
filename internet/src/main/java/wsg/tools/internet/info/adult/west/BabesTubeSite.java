@@ -1,14 +1,14 @@
 package wsg.tools.internet.info.adult.west;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -16,17 +16,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
-import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.TimeUtils;
@@ -40,11 +35,7 @@ import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Color;
-import wsg.tools.internet.download.Downloader;
-import wsg.tools.internet.download.FileExistStrategy;
-import wsg.tools.internet.download.support.BasicDownloader;
 import wsg.tools.internet.info.adult.common.CupEnum;
 import wsg.tools.internet.info.adult.common.Measurements;
 import wsg.tools.internet.info.adult.common.VideoQuality;
@@ -65,10 +56,9 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     private static final double CENTIMETERS_PER_INCH = 2.54;
     private static final double KILOGRAMS_PER_POUND = 0.4535924;
     private static final Pattern SEPARATOR = Pattern.compile(", ");
-    private static final String CDN = "https://temw6juvcn.ent-cdn.com";
 
     public BabesTubeSite() {
-        super("Babes Tube", httpsHost("babestube.com"));
+        super("Babes Tube", httpsHost("www.babestube.com"));
     }
 
     /**
@@ -117,7 +107,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             likes, dislikes, comments, description, author, uploadTime);
         String tags = metadata.get("video:tag");
         if (tags != null) {
-            video.setTags(SEPARATOR.split(tags));
+            video.setTags(new HashSet<>(Arrays.asList(SEPARATOR.split(tags))));
         }
         String quality = metadata.get("ya:ovs:quality");
         if (quality != null) {
@@ -127,33 +117,20 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
     }
 
     /**
-     * Retrieves the screenshots of a video.
+     * Retrieves the real-time source of the video.
      *
-     * @see BabesVideoIndex#getId()
+     * @see BabesVideoIndex#getAsPath()
      */
-    public List<URL> getScreenshots(int id) {
-        AssertUtils.requireRange(id, 1, null);
-        List<URL> screenshots = new ArrayList<>();
-        String path = "/contents/videos_screenshots/%d/%d/400x225/%d.jpg";
-        int i = 1;
-        while (true) {
-            int page = id / 1000 * 1000;
-            URL url = NetUtils.createURL(CDN + String.format(path, page, id, i));
-            try {
-                String child = FilenameUtils.getPath(url.getFile());
-                Lazy.DOWNLOADER.download(new File(Constants.SYSTEM_TMPDIR, child), url);
-            } catch (HttpResponseException e) {
-                if (e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-                    break;
-                }
-                throw new UnexpectedException(e);
-            } catch (IOException e) {
-                throw new UnexpectedException(e);
-            }
-            screenshots.add(url);
-            i++;
+    public URL getVideoSource(@Nonnull String videoPath)
+        throws NotFoundException, OtherResponseException {
+        Document document = getDocument(httpGet("/videos/%s/", videoPath));
+        Elements scripts = document.selectFirst(".player-holder").select(CssSelectors.TAG_SCRIPT);
+        if (!scripts.isEmpty()) {
+            String script = scripts.last().html();
+            Matcher srcMatcher = RegexUtils.findOrElseThrow(Lazy.VIDEO_URL_REGEX, script);
+            return NetUtils.createURL(srcMatcher.group("u"));
         }
-        return screenshots;
+        throw new NotFoundException("No source of the video is found");
     }
 
     /**
@@ -380,7 +357,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             .compile(HOME + "/members/(?<id>\\d+)/");
         private static final Pattern CATEGORY_HREF_REGEX = Pattern
             .compile(HOME + "/categories/(?<p>[A-Za-z-]+)/");
-        private static final Downloader DOWNLOADER = new BasicDownloader()
-            .strategy(FileExistStrategy.FINISH);
+        private static final Pattern VIDEO_URL_REGEX = Pattern
+            .compile("video_url: '(?<u>[\\w:/.]+)'");
     }
 }

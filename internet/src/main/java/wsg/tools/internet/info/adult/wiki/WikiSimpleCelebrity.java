@@ -1,6 +1,8 @@
 package wsg.tools.internet.info.adult.wiki;
 
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
@@ -19,7 +21,7 @@ public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, T
     private final String name;
     private final WikiCelebrityType type;
     private URL cover;
-    private String[] tags;
+    private Set<String> tags = new HashSet<>(0);
 
     WikiSimpleCelebrity(int id, String name, WikiCelebrityType type) {
         this.id = id;
@@ -53,11 +55,11 @@ public class WikiSimpleCelebrity implements WikiCelebrityIndex, CoverSupplier, T
 
     @Nonnull
     @Override
-    public String[] getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
-    void setTags(String[] tags) {
+    void setTags(Set<String> tags) {
         this.tags = tags;
     }
 }

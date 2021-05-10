@@ -205,7 +205,7 @@ public final class CelebrityWikiSite extends BaseSite
         }
         Element tags = text.selectFirst("div.ptags");
         if (tags != null) {
-            album.setTags(tags.select(CssSelectors.TAG_A).eachText().toArray(new String[0]));
+            album.setTags(new HashSet<>(tags.select(CssSelectors.TAG_A).eachText()));
         }
         Element next = show.selectFirst("div.next");
         String href = next.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
@@ -253,7 +253,7 @@ public final class CelebrityWikiSite extends BaseSite
         WikiAdultEntry entry = new WikiAdultEntry(celebrity, serialNum, title, cover, actresses);
         entry.setMosaic(parser.getMosaic());
         entry.setDuration(parser.getDuration());
-        entry.setRelease(parser.getRelease());
+        entry.setPublish(parser.getPublish());
         entry.setDirector(parser.getDirector());
         entry.setProducer(parser.getProducer());
         entry.setDistributor(parser.getDistributor());
@@ -282,7 +282,7 @@ public final class CelebrityWikiSite extends BaseSite
         }
         Elements tags = block01.selectFirst("div.txt03").select(CssSelectors.TAG_A);
         if (!tags.isEmpty()) {
-            t.setTags(tags.stream().map(Element::text).toArray(String[]::new));
+            t.setTags(new HashSet<>(tags.eachText()));
         }
         return t;
     }

@@ -3,13 +3,16 @@ package wsg.tools.internet.info.adult.wiki;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nonnull;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.common.CoverSupplier;
+import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
-import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
+import wsg.tools.internet.info.adult.view.SerialNumSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * An adult entry of a celebrity.
@@ -18,8 +21,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @see CelebrityWikiSite#findAdultEntry(String)
  * @since 2021/2/24
  */
-public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, CoverSupplier,
-    DurationSupplier, Tagged {
+public class WikiAdultEntry implements SerialNumSupplier, TitleSupplier,
+    CoverSupplier, DurationSupplier, Tagged, ActressSupplier {
 
     private final WikiSimpleCelebrity celebrity;
     private final String serialNum;
@@ -28,12 +31,12 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
     private final List<String> actresses;
     private boolean mosaic;
     private Duration duration;
-    private LocalDate release;
+    private LocalDate publish;
     private String director;
     private String producer;
     private String distributor;
     private String series;
-    private String[] tags;
+    private Set<String> tags = new HashSet<>(0);
 
     WikiAdultEntry(WikiSimpleCelebrity celebrity, String serialNum, String title,
         URL cover, List<String> actresses) {
@@ -69,7 +72,6 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
         return actresses;
     }
 
-    @Override
     public Boolean getMosaic() {
         return mosaic;
     }
@@ -87,13 +89,12 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
         this.duration = duration;
     }
 
-    @Override
-    public LocalDate getRelease() {
-        return release;
+    public LocalDate getPublish() {
+        return publish;
     }
 
-    void setRelease(LocalDate release) {
-        this.release = release;
+    void setPublish(LocalDate publish) {
+        this.publish = publish;
     }
 
     public String getDirector() {
@@ -104,7 +105,6 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
         this.director = director;
     }
 
-    @Override
     public String getProducer() {
         return producer;
     }
@@ -113,7 +113,6 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
         this.producer = producer;
     }
 
-    @Override
     public String getDistributor() {
         return distributor;
     }
@@ -122,7 +121,6 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
         this.distributor = distributor;
     }
 
-    @Override
     public String getSeries() {
         return series;
     }
@@ -133,11 +131,11 @@ public class WikiAdultEntry implements TitledAdultEntry, FormalJaAdultEntry, Cov
 
     @Nonnull
     @Override
-    public String[] getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
-    void setTags(String[] tags) {
+    void setTags(Set<String> tags) {
         this.tags = tags;
     }
 }

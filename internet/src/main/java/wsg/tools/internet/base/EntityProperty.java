@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that the annotated type is an interface of entities.
+ * Indicates that the annotated type is a property of an entity.
  *
  * @author Kingen
  * @since 2021/3/29
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface EntityInterface {
+public @interface EntityProperty {
 
 }

@@ -141,7 +141,7 @@ public final class MidnightSite extends BaseSite
             entry.setSerialNum(parser.getSerialNum());
             entry.setPerformer(parser.getPerformer());
             entry.setDuration(parser.getDuration());
-            entry.setRelease(parser.getRelease());
+            entry.setPublish(parser.getPublish());
             entry.setProducer(StringUtilsExt.convertFullWidth(parser.getProducer()));
             entry.setDistributor(StringUtilsExt.convertFullWidth(parser.getDistributor()));
             entry.setSeries(StringUtilsExt.convertFullWidth(parser.getSeries()));
@@ -164,7 +164,7 @@ public final class MidnightSite extends BaseSite
             entry.setSerialNum(parser.getSerialNum());
             entry.setActresses(parser.getActresses(", "));
             entry.setDuration(parser.getDuration());
-            entry.setRelease(parser.getRelease());
+            entry.setPublish(parser.getPublish());
             entry.setProducer(StringUtilsExt.convertFullWidth(parser.getProducer()));
             entry.setDistributor(StringUtilsExt.convertFullWidth(parser.getDistributor()));
             entry.setSeries(StringUtilsExt.convertFullWidth(parser.getSeries()));

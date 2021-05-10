@@ -1,7 +1,7 @@
-package wsg.tools.internet.info.adult.view;
+package wsg.tools.internet.common;
 
 /**
- * Represents a supplier of the description of the entry.
+ * Represents a supplier of the description of the entity.
  *
  * @author Kingen
  * @since 2021/4/7
@@ -9,7 +9,7 @@ package wsg.tools.internet.info.adult.view;
 public interface Describable {
 
     /**
-     * Returns the description of the entry.
+     * Returns the description of the entity.
      *
      * @return the description
      */

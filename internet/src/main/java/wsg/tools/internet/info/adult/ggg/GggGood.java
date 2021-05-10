@@ -2,16 +2,18 @@ package wsg.tools.internet.info.adult.ggg;
 
 import java.net.URL;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.Describable;
 import wsg.tools.internet.common.UpdateDateSupplier;
-import wsg.tools.internet.info.adult.view.Describable;
-import wsg.tools.internet.info.adult.view.FormalJaAdultEntry;
+import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * A good on the site.
@@ -20,8 +22,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @see GggSite#findPage(GggPageReq)
  * @since 2021/4/13
  */
-public class GggGood implements IntIdentifier, CodeSupplier<String>, FormalJaAdultEntry,
-    TitledAdultEntry, UpdateDateSupplier, ImageSupplier, Tagged, Describable {
+public class GggGood implements IntIdentifier, CodeSupplier<String>,
+    TitleSupplier, UpdateDateSupplier, ImageSupplier, Tagged, ActressSupplier, Describable {
 
     private final int id;
     private final String code;
@@ -29,7 +31,7 @@ public class GggGood implements IntIdentifier, CodeSupplier<String>, FormalJaAdu
     private final boolean mosaic;
     private final LocalDate publish;
     private URL image;
-    private String[] tags;
+    private Set<String> tags = new HashSet<>();
     private String distributor;
     private List<String> actresses;
     private String description;
@@ -57,8 +59,7 @@ public class GggGood implements IntIdentifier, CodeSupplier<String>, FormalJaAdu
         return title;
     }
 
-    @Override
-    public Boolean getMosaic() {
+    public boolean isMosaic() {
         return mosaic;
     }
 
@@ -78,15 +79,14 @@ public class GggGood implements IntIdentifier, CodeSupplier<String>, FormalJaAdu
 
     @Nonnull
     @Override
-    public String[] getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
-    void setTags(String[] tags) {
+    void setTags(Set<String> tags) {
         this.tags = tags;
     }
 
-    @Override
     public String getDistributor() {
         return distributor;
     }
@@ -112,25 +112,5 @@ public class GggGood implements IntIdentifier, CodeSupplier<String>, FormalJaAdu
 
     void setDescription(String description) {
         this.description = description;
-    }
-
-    @Override
-    public String getSerialNum() {
-        return null;
-    }
-
-    @Override
-    public LocalDate getRelease() {
-        return null;
-    }
-
-    @Override
-    public String getProducer() {
-        return null;
-    }
-
-    @Override
-    public String getSeries() {
-        return null;
     }
 }

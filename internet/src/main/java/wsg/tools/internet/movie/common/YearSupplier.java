@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.common;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Represents a supplier of the year of the entity.
@@ -8,7 +8,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2020/11/23
  */
-@EntityInterface
+@EntityProperty
 public interface YearSupplier {
 
     /**

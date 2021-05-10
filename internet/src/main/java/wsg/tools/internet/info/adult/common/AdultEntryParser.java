@@ -2,23 +2,23 @@ package wsg.tools.internet.info.adult.common;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import wsg.tools.common.util.MapUtilsExt;
+import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.info.adult.view.ActressSupplier;
-import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
+import wsg.tools.internet.info.adult.view.AmateurSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.SerialNumSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
-import wsg.tools.internet.info.adult.view.TitledAdultEntry;
 
 /**
  * This class helps extract information of adult entries from a map.
@@ -26,8 +26,8 @@ import wsg.tools.internet.info.adult.view.TitledAdultEntry;
  * @author Kingen
  * @since 2021/4/7
  */
-public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultEntry,
-    DurationSupplier {
+public final class AdultEntryParser implements SerialNumSupplier,
+    TitleSupplier, AmateurSupplier, DurationSupplier {
 
     private final Map<String, String> info;
 
@@ -87,7 +87,6 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
         return MapUtilsExt.getString(info, "名称");
     }
 
-    @Override
     public Boolean getMosaic() {
         String text = MapUtilsExt.getString(info, "是否有码");
         if (text == null) {
@@ -104,8 +103,7 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
         }, "时长", "收录时间", "収录时间", "収録时间", "収録時間", "播放时间");
     }
 
-    @Override
-    public LocalDate getRelease() {
+    public LocalDate getPublish() {
         return MapUtilsExt.getValue(info, s -> {
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.RELEASE_REGEX, s);
             String year = matcher.group("y");
@@ -121,17 +119,14 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
         return MapUtilsExt.getString(info, "导演");
     }
 
-    @Override
     public String getProducer() {
         return MapUtilsExt.getString(info, "制作商", "制造商", "制造厂", "メーカー", "メーカー名");
     }
 
-    @Override
     public String getDistributor() {
         return MapUtilsExt.getString(info, "厂商", "发行商", "レーベル");
     }
 
-    @Override
     public String getSeries() {
         return MapUtilsExt.getString(info, "シリーズ", "系列", "影片系列");
     }
@@ -142,9 +137,8 @@ public final class AdultEntryParser implements AmateurJaAdultEntry, TitledAdultE
      * @see Tagged#getTags()
      */
     @Nonnull
-    public String[] getTags(String separatorChars) {
-        return Optional.ofNullable(MapUtilsExt.getValue(info,
-            s -> StringUtils.split(s, separatorChars), "ジャンル", "类别")).orElse(new String[0]);
+    public Set<String> getTags(String separatorChars) {
+        return new HashSet<>(MapUtilsExt.getStringList(info, separatorChars, "ジャンル", "类别"));
     }
 
     /**

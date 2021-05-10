@@ -2,10 +2,8 @@ package wsg.tools.internet.base.support;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.util.concurrent.RateLimiter;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -14,7 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
-import org.apache.http.RequestLine;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
@@ -23,7 +20,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.cache.CachingHttpClients;
+import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
@@ -48,11 +45,9 @@ import wsg.tools.internet.common.WrappedStringResponseHandler;
  * @since 2021/2/28
  */
 @Slf4j
-@SuppressWarnings("UnstableApiUsage")
 public class BaseSite implements SiteClient, Closeable {
 
     protected static final int DEFAULT_TIME_OUT = 30000;
-    protected static final double DEFAULT_PERMITS_PER_SECOND = 10.0;
     protected static final String METHOD_GET = HttpGet.METHOD_NAME;
     protected static final String METHOD_POST = HttpPost.METHOD_NAME;
 
@@ -62,23 +57,18 @@ public class BaseSite implements SiteClient, Closeable {
 
     private final String name;
     private final HttpHost host;
-    private final RateLimiter getLimiter;
-    private final RateLimiter otherLimiter;
     private final CloseableHttpClient client;
     private final HttpClientContext context;
 
     protected BaseSite(String name, HttpHost host) {
-        this(name, host, defaultClient(), defaultContext(), DEFAULT_PERMITS_PER_SECOND,
-            DEFAULT_PERMITS_PER_SECOND);
+        this(name, host, defaultClient(), defaultContext());
     }
 
     protected BaseSite(String name, HttpHost host, CloseableHttpClient client,
-        HttpClientContext context, double getPermitsPerSecond, double otherPermitsPerSecond) {
+        HttpClientContext context) {
         SiteUtils.validateStatus(getClass());
         this.name = name;
         this.host = Objects.requireNonNull(host);
-        this.getLimiter = RateLimiter.create(getPermitsPerSecond);
-        this.otherLimiter = RateLimiter.create(otherPermitsPerSecond);
         this.client = Objects.requireNonNull(client);
         this.context = context;
     }
@@ -96,7 +86,7 @@ public class BaseSite implements SiteClient, Closeable {
     }
 
     private static CloseableHttpClient defaultClient() {
-        return CachingHttpClients.custom().setDefaultHeaders(List.of(USER_AGENT))
+        return CachingHttpClientBuilder.create().setDefaultHeaders(List.of(USER_AGENT))
             .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
     }
 
@@ -122,15 +112,6 @@ public class BaseSite implements SiteClient, Closeable {
     @Override
     public <T> T execute(@Nonnull HttpRequest request, ResponseHandler<? extends T> responseHandler)
         throws IOException {
-        RequestLine line = request.getRequestLine();
-        String method = line.getMethod();
-        URI uri = URI.create(host.toURI()).resolve(line.getUri());
-        log.info("{} from {}", method, uri);
-        if (METHOD_GET.equalsIgnoreCase(method)) {
-            getLimiter.acquire();
-        } else {
-            otherLimiter.acquire();
-        }
         return client.execute(host, request, responseHandler, context);
     }
 

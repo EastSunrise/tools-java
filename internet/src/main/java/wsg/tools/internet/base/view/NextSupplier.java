@@ -1,6 +1,6 @@
 package wsg.tools.internet.base.view;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Represents a supplier of the identifier of next entity.
@@ -8,7 +8,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2021/3/2
  */
-@EntityInterface
+@EntityProperty
 public interface NextSupplier<ID> {
 
     /**

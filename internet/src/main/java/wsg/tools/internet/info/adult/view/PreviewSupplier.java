@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.view;
 
 import java.net.URL;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Represents a supplier of the preview of the entry.
@@ -8,6 +9,7 @@ import java.net.URL;
  * @author Kingen
  * @since 2021/4/7
  */
+@EntityProperty
 public interface PreviewSupplier {
 
     /**

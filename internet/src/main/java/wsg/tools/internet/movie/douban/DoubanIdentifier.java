@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.douban;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Supplies the identifier on douban.
@@ -8,7 +8,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2020/11/4
  */
-@EntityInterface
+@EntityProperty
 public interface DoubanIdentifier {
 
     /**

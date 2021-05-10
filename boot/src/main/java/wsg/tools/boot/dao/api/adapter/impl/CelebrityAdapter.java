@@ -18,7 +18,7 @@ import wsg.tools.internet.info.adult.wiki.WikiAlbumIndex;
 import wsg.tools.internet.info.adult.wiki.WikiCelebrity;
 
 /**
- * Adapts a {@link WikiCelebrity} to a {@link JaAdultActressEntity}.
+ * Adapter that accepts a {@link WikiCelebrity} and returns a {@link JaAdultActressEntity}.
  *
  * @author Kingen
  * @since 2021/4/16
@@ -54,12 +54,12 @@ public class CelebrityAdapter implements JaAdultActressAdapter {
 
     @Nonnull
     @Override
-    public List<URL> getAlbum() {
+    public List<URL> getImages() {
         List<URL> result = new ArrayList<>();
         result.add(celebrity.getCoverURL());
         for (WikiAlbumIndex index : celebrity.getAlbums()) {
             try {
-                result.addAll(retrievable.findById(index).getAlbum());
+                result.addAll(retrievable.findById(index).getImages());
             } catch (NotFoundException | OtherResponseException e) {
                 throw new AppException(e);
             }

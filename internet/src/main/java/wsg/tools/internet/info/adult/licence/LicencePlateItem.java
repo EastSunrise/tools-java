@@ -4,16 +4,19 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.internet.base.support.BasicSiblingEntity;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.base.view.PathSupplier;
+import wsg.tools.internet.common.Describable;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
-import wsg.tools.internet.info.adult.view.AmateurJaAdultEntry;
-import wsg.tools.internet.info.adult.view.Describable;
+import wsg.tools.internet.info.adult.view.AmateurSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
+import wsg.tools.internet.info.adult.view.SerialNumSupplier;
 import wsg.tools.internet.info.adult.view.Tagged;
 
 /**
@@ -23,9 +26,9 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see LicencePlateSite#findById(String)
  * @since 2021/3/9
  */
-public class LicencePlateItem extends BasicSiblingEntity<String>
-    implements IntIdentifier, PathSupplier, UpdateDatetimeSupplier, AmateurJaAdultEntry,
-    DurationSupplier, ImageSupplier, Tagged, Describable {
+public class LicencePlateItem extends BasicSiblingEntity<String> implements IntIdentifier,
+    SerialNumSupplier, PathSupplier, UpdateDatetimeSupplier, AmateurSupplier, DurationSupplier,
+    ImageSupplier, Tagged, Describable {
 
     private final int id;
     private final String serialNum;
@@ -35,11 +38,11 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
     private URL image;
     private String performer;
     private Duration duration;
-    private LocalDate release;
+    private LocalDate publish;
     private String producer;
     private String distributor;
     private String series;
-    private String[] tags = new String[0];
+    private Set<String> tags = new HashSet<>(0);
 
     LicencePlateItem(int id, String serialNum, String description, LocalDateTime updateTime,
         String previous, String next) {
@@ -102,21 +105,14 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
         this.duration = duration;
     }
 
-    @Override
-    public Boolean getMosaic() {
-        return true;
+    public LocalDate getPublish() {
+        return publish;
     }
 
-    @Override
-    public LocalDate getRelease() {
-        return release;
+    void setPublish(LocalDate publish) {
+        this.publish = publish;
     }
 
-    void setRelease(LocalDate release) {
-        this.release = release;
-    }
-
-    @Override
     public String getProducer() {
         return producer;
     }
@@ -125,7 +121,6 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
         this.producer = producer;
     }
 
-    @Override
     public String getDistributor() {
         return distributor;
     }
@@ -134,7 +129,6 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
         this.distributor = distributor;
     }
 
-    @Override
     public String getSeries() {
         return series;
     }
@@ -145,11 +139,11 @@ public class LicencePlateItem extends BasicSiblingEntity<String>
 
     @Nonnull
     @Override
-    public String[] getTags() {
+    public Set<String> getTags() {
         return tags;
     }
 
-    void setTags(String[] tags) {
+    void setTags(Set<String> tags) {
         this.tags = tags;
     }
 }

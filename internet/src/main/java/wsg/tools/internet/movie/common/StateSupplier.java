@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.common;
 
-import wsg.tools.internet.base.EntityInterface;
+import wsg.tools.internet.base.EntityProperty;
 
 /**
  * Supplies the state of a item.
@@ -8,7 +8,7 @@ import wsg.tools.internet.base.EntityInterface;
  * @author Kingen
  * @since 2021/2/10
  */
-@EntityInterface
+@EntityProperty
 public interface StateSupplier {
 
     /**
