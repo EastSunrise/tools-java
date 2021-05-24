@@ -8,12 +8,13 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import java.net.URLDecoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -22,21 +23,24 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.repository.RepoRetrievable;
+import wsg.tools.internet.base.page.FixedSizePageReq;
 import wsg.tools.internet.base.support.AbstractLoggableSite;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
@@ -44,9 +48,7 @@ import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Language;
-import wsg.tools.internet.movie.common.Parsers;
 import wsg.tools.internet.movie.common.Runtime;
-import wsg.tools.internet.movie.common.enums.DoubanCatalog;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
@@ -58,59 +60,33 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  */
 @Slf4j
 @ConcreteSite
-public class DoubanSite extends AbstractLoggableSite<Long>
-    implements RepoRetrievable<Long, BaseDoubanSubject> {
-
-    public static final LocalDate DOUBAN_START_DATE = LocalDate.of(2005, 3, 6);
+public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepository {
 
     public static final Pattern URL_MOVIE_SUBJECT_REGEX =
         Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
-
     protected static final int MAX_COUNT_ONCE = 100;
-
-    protected static final ObjectMapper MAPPER = new ObjectMapper()
-        .registerModule(new SimpleModule()
-            .addDeserializer(MovieGenre.class, new TitleEnumDeserializer<>(MovieGenre.class)))
-        .registerModule(new JavaTimeModule().addDeserializer(LocalDateTime.class,
-            new LocalDateTimeDeserializer(Constants.YYYY_MM_DD_HH_MM_SS)));
-
-    private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern
-        .compile("[^()\\s]+\\((\\d+)\\)");
-
-    private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("(?<t>.*)\\s\\(豆瓣\\)");
-
-    private static final Pattern COLLECTIONS_PAGE_REGEX = Pattern
-        .compile("(\\d+)-(\\d+)\\s/\\s(\\d+)");
-
-    private static final Pattern COOKIE_DBCL2_REGEX = Pattern
-        .compile("\"(?<id>\\d+):[0-9A-Za-z+/]+\"");
-
-    private static final Pattern SEARCH_ITEM_HREF_REGEX = Pattern.compile(
-        "https://www\\.douban\\.com/link2/\\?url=(?<url>[0-9A-Za-z%.-]+)&query=(?<q>[0-9A-Za-z%]+)&cat_id=(?<cat>\\d*)&type=search&pos=(?<pos>\\d+)");
 
     public DoubanSite() {
         this("");
     }
 
-    public DoubanSite(String subHost) {
+    protected DoubanSite(String subHost) {
         super("Douban",
             httpsHost((StringUtils.isBlank(subHost) ? "" : subHost + ".") + "douban.com"));
     }
 
-    /**
-     * Log in the site with the given username and password.
-     *
-     * @throws LoginException if the given user and password is invalid or a CAPTCHA is required.
-     */
-    public void login(String username, String password) throws OtherResponseException {
+    @Override
+    public void login(String username, String password)
+        throws OtherResponseException, LoginException {
         logout();
         RequestBuilder builder = create("accounts", METHOD_POST, "/j/mobile/login/basic")
-            .addParameter("ck", "").addParameter("name", username)
-            .addParameter("password", password)
-            .addParameter("remember", String.valueOf(true));
+            .addParameter("ck", "")
+            .addParameter("remember", String.valueOf(true))
+            .addParameter("name", username)
+            .addParameter("password", password);
         LoginResult result = null;
         try {
-            result = getObject(builder, MAPPER, LoginResult.class);
+            result = getObject(builder, Lazy.MAPPER, LoginResult.class);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -125,10 +101,11 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         if (cookie == null) {
             return null;
         }
-        return Long.parseLong(
-            RegexUtils.matchesOrElseThrow(COOKIE_DBCL2_REGEX, cookie.getValue()).group("id"));
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.COOKIE_DBCL2_REGEX, cookie.getValue());
+        return Long.parseLong(matcher.group("id"));
     }
 
+    @Override
     public void logout() throws OtherResponseException {
         if (user() == null) {
             return;
@@ -140,96 +117,196 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         findDocument(builder);
     }
 
-    /**
-     * Obtains a subject by the given identifier.
-     * <p>
-     * Some x-rated subjects may be restricted to access without logging in.
-     */
     @Nonnull
     @Override
-    public BaseDoubanSubject findById(@Nonnull Long id)
+    public DoubanPageResult<SubjectIndex> searchGlobally(String keyword,
+        @Nonnull FixedSizePageReq req, @Nullable DoubanCatalog catalog)
+        throws OtherResponseException {
+        AssertUtils.requireNotBlank(keyword);
+        RequestBuilder builder = httpGet("/j/search")
+            .addParameter("q", keyword)
+            .addParameter("start", String.valueOf(req.getCurrent() * 20));
+        if (catalog != null) {
+            builder.addParameter("cat", String.valueOf(catalog.getCode()));
+        }
+        SearchResult result = null;
+        try {
+            result = getObject(builder, Lazy.MAPPER, SearchResult.class);
+        } catch (NotFoundException e) {
+            throw new UnexpectedException(e);
+        }
+        if (result.getMsg() != null) {
+            throw new OtherResponseException(HttpStatus.SC_INTERNAL_SERVER_ERROR, result.getMsg());
+        }
+        List<SubjectIndex> subjects = new ArrayList<>(result.getItems().size());
+        for (String item : result.getItems()) {
+            Element nbg = Jsoup.parse(item).body().selectFirst(".nbg");
+            String href = nbg.attr(CssSelectors.ATTR_HREF);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.SUBJECT_LINK_REGEX, href);
+            String url = URLDecoder.decode(matcher.group("u"), Constants.UTF_8);
+            Matcher urlMatcher = Lazy.SUBJECT_URL_REGEX.matcher(url);
+            if (!urlMatcher.matches()) {
+                log.info("Not a subject: {}", url);
+                continue;
+            }
+            long id = Long.parseLong(urlMatcher.group("id"));
+            int code = Integer.parseInt(matcher.group("c"));
+            DoubanCatalog cat = EnumUtilExt.valueOfIntCode(DoubanCatalog.class, code);
+            subjects.add(new BasicSubject(id, cat, nbg.attr(CssSelectors.ATTR_TITLE)));
+        }
+        return new DoubanPageResult<>(subjects, req, result.getTotal(), 20);
+    }
+
+    @Nonnull
+    @Override
+    public List<SubjectIndex> search(@Nonnull DoubanCatalog catalog, String keyword)
+        throws OtherResponseException {
+        AssertUtils.requireNotBlank(keyword);
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Nonnull
+    @Override
+    public DoubanPageResult<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
+        long userId, @Nonnull DoubanMark mark, @Nonnull FixedSizePageReq req)
         throws NotFoundException, OtherResponseException {
-        String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestBuilder builder = create(substation, METHOD_GET, "/subject/%d", id);
+        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
+            "/people/%d/%s", userId, mark.getAsPath())
+            .addParameter("start", String.valueOf(req.getCurrent() * 30))
+            .addParameter("sort", "time")
+            .addParameter("rating", "all")
+            .addParameter("filter", "all")
+            .addParameter("mode", "list");
+        Document document = getDocument(builder);
+        Elements lis = document.selectFirst(".list-view").select(".item");
+        List<MarkedSubject> subjects = new ArrayList<>(lis.size());
+        for (Element li : lis) {
+            long id = Long.parseLong(li.id().substring(4));
+            String title = li.selectFirst(CssSelectors.TAG_A).text().split("/")[0].strip();
+            LocalDate markedDate = LocalDate.parse(li.selectFirst(".date").text());
+            subjects.add(new MarkedSubject(id, catalog, title, markedDate));
+        }
+        String numStr = document.selectFirst(".subject-num").text();
+        int total = Integer.parseInt(numStr.split("/")[1].strip());
+        return new DoubanPageResult<>(subjects, req, total, 30);
+    }
+
+    @Nonnull
+    @Override
+    public DoubanPageResult<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog,
+        long userId, @Nonnull FixedSizePageReq req)
+        throws NotFoundException, OtherResponseException {
+        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
+            "/people/%d/%s", userId, catalog.getPersonPlurality())
+            .addParameter("start", String.valueOf(req.getCurrent() * 15));
+        Document document = getDocument(builder);
+        Elements items = document.select(".item");
+        List<PersonIndex> indices = new ArrayList<>(items.size());
+        for (Element item : items) {
+            Element a = item.selectFirst(CssSelectors.TAG_A);
+            String href = a.attr(CssSelectors.ATTR_HREF);
+            Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CREATOR_URL_REGEX, href);
+            long id = Long.parseLong(matcher.group("id"));
+            indices.add(new BasicPerson(id, catalog, a.attr(CssSelectors.ATTR_TITLE)));
+        }
+        String title = document.title();
+        Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CREATORS_PAGE_TITLE_REGEX, title);
+        long total = Long.parseLong(matcher.group("t"));
+        return new DoubanPageResult<>(indices, req, total, 15);
+    }
+
+    @Nonnull
+    @Override
+    public AbstractMovie findMovieById(long id)
+        throws NotFoundException, OtherResponseException {
+        return getSubject(DoubanCatalog.MOVIE, id,
+            (subject, document) -> {
+                AbstractMovie movie = (AbstractMovie) subject;
+                String title = document.title();
+                movie.setZhTitle(title.substring(0, title.length() - 5));
+                String name = movie.getName().replace("  ", " ");
+                if (name.startsWith(movie.getZhTitle())) {
+                    if (name.length() > movie.getZhTitle().length()) {
+                        String ot = name.substring(movie.getZhTitle().length());
+                        movie.setOriginalTitle(StringEscapeUtils.unescapeHtml4(ot.strip()));
+                    }
+                } else {
+                    throw new UnexpectedContentException("Name and zhTitle are not matched.");
+                }
+                String year = StringUtils.strip(document.selectFirst(".year").text(), "()");
+                movie.setYear(Integer.parseInt(year));
+                Element rating = document.selectFirst("div.rating_right");
+                movie.setReleased(!rating.hasClass("not_showed"));
+
+                Map<String, Element> metadata = getMetadata(document);
+                Element ls = metadata.get("语言:");
+                if (null != ls) {
+                    String[] languages = StringUtils
+                        .split(((TextNode) ls.nextSibling()).text(), "/");
+                    movie.setLanguages(Arrays.stream(languages)
+                        .map(language -> EnumUtilExt.valueOfAlias(Language.class, language.strip()))
+                        .collect(Collectors.toList()));
+                }
+                if (movie instanceof DoubanMovie) {
+                    movie.setRuntimes(getRuntimes(metadata.get("片长:")));
+                }
+                if (movie instanceof DoubanSeries) {
+                    DoubanSeries series = (DoubanSeries) movie;
+                    Element episodes = metadata.get("集数:");
+                    if (null != episodes) {
+                        String episodesCount = ((TextNode) episodes.nextSibling()).text().strip();
+                        series.setEpisodesCount(Integer.parseInt(episodesCount));
+                    }
+                    movie.setRuntimes(getRuntimes(metadata.get("单集片长:")));
+
+                    Element season = document.selectFirst("#season");
+                    if (season != null) {
+                        Elements options = season.select(CssSelectors.TAG_OPTION);
+                        long[] seasons = new long[options.size()];
+                        for (Element option : options) {
+                            int currentSeason = Integer.parseInt(option.text()) - 1;
+                            seasons[currentSeason] = Long.parseLong(option.val());
+                            if (option.hasAttr("selected")) {
+                                series.setCurrentSeason(Integer.parseInt(option.text()));
+                            }
+                        }
+                        series.setSeasons(seasons);
+                    }
+                }
+                Element imdb = metadata.get("IMDb:");
+                if (imdb != null) {
+                    movie.setImdbId(((TextNode) imdb.nextSibling()).text().strip());
+                }
+                return movie;
+            });
+    }
+
+    @Override
+    public DoubanBook findBookById(long id) throws NotFoundException, OtherResponseException {
+        return getSubject(DoubanCatalog.BOOK, id, (subject, document) -> (DoubanBook) subject);
+    }
+
+    private <T extends AbstractSubject> T getSubject(DoubanCatalog catalog, long id,
+        BiFunction<AbstractSubject, Document, T> decorator)
+        throws NotFoundException, OtherResponseException {
+        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET, "/subject/%d/", id);
         Document document = getDocument(builder);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
-        BaseDoubanSubject subject;
+        AbstractSubject subject;
         try {
-            subject = MAPPER.readValue(text, BaseDoubanSubject.class);
+            subject = Lazy.MAPPER.readValue(text, AbstractSubject.class);
         } catch (JsonProcessingException e) {
             throw new UnexpectedException(e);
         }
-
         subject.setId(id);
-        String zhTitle = RegexUtils.matchesOrElseThrow(PAGE_TITLE_REGEX, document.title())
-            .group("t");
-        subject.setZhTitle(zhTitle);
-        String name = subject.getName().replace("  ", " ");
-        if (name.startsWith(zhTitle)) {
-            if (name.length() > zhTitle.length()) {
-                subject.setOriginalTitle(
-                    StringEscapeUtils.unescapeHtml4(name.substring(zhTitle.length()).strip()));
-            }
-        } else {
-            throw new UnexpectedContentException("Name and zhTitle are not matched.");
-        }
-
-        String year = StringUtils.strip(document.selectFirst("span.year").html(), "()");
-        subject.setYear(Integer.parseInt(year));
-
-        Element rating = document.selectFirst("div.rating_right");
-        subject.setReleased(!rating.hasClass("not_showed"));
-
-        if (subject instanceof DoubanSeries) {
-            Element season = document.selectFirst("#season");
-            if (season != null) {
-                Elements options = season.select(CssSelectors.TAG_OPTION);
-                long[] seasons = new long[options.size()];
-                for (Element option : options) {
-                    seasons[Integer.parseInt(option.text()) - 1] = Long.parseLong(option.val());
-                    if (option.hasAttr("selected")) {
-                        ((DoubanSeries) subject).setCurrentSeason(Integer.parseInt(option.text()));
-                    }
-                }
-                ((DoubanSeries) subject).setSeasons(seasons);
-            }
-        }
-        Element info = document.selectFirst("div#info");
-        extractInfo(subject,
-            info.select("span.pl").stream().collect(Collectors.toMap(Element::text, e -> e)));
-        return subject;
+        return decorator.apply(subject, document);
     }
 
-    private void extractInfo(BaseDoubanSubject subject, Map<String, Element> spans) {
-        Element ls = spans.get("语言:");
-        if (null != ls) {
-            String[] languages = StringUtils.split(((TextNode) ls.nextSibling()).text(), "/");
-            subject.setLanguages(Arrays.stream(languages)
-                .map(language -> EnumUtilExt.valueOfAka(Language.class, language.strip()))
-                .collect(Collectors.toList()));
-        }
-        Element imdb = spans.get("IMDb链接:");
-        if (imdb != null) {
-            subject.setImdbId(imdb.nextElementSibling().text().strip());
-        }
-
-        if (subject instanceof DoubanMovie) {
-            DoubanMovie movie = (DoubanMovie) subject;
-            final String plDuration = "片长:";
-            movie.setRuntimes(getRuntimes(spans.get(plDuration)));
-        }
-
-        if (subject instanceof DoubanSeries) {
-            DoubanSeries series = (DoubanSeries) subject;
-            Element episodes = spans.get("集数:");
-            if (null != episodes) {
-                series.setEpisodesCount(
-                    Integer.parseInt(((TextNode) episodes.nextSibling()).text().strip()));
-            }
-            final String plDuration = "单集片长:";
-            series.setRuntimes(getRuntimes(spans.get(plDuration)));
-        }
+    private Map<String, Element> getMetadata(Document document) {
+        Elements pls = document.selectFirst("#info").select(".pl");
+        return pls.stream()
+            .collect(Collectors.toMap(Element::text, Function.identity()));
     }
 
     private List<Runtime> getRuntimes(Element span) {
@@ -246,97 +323,9 @@ public class DoubanSite extends AbstractLoggableSite<Long>
         return null;
     }
 
-    /**
-     * Obtains marked subjects of the given user since the given start date.
-     *
-     * @param userId  id of the user which returned by {@link #user()}
-     * @param catalog movie/book/music/...
-     * @param mark    wish/do/collect
-     * @return map of (id, mark date)
-     */
-    public Map<Long, LocalDate> collectUserSubjects(long userId, LocalDate since,
-        DoubanCatalog catalog, DoubanMark mark) throws NotFoundException, OtherResponseException {
-        if (since == null) {
-            since = DOUBAN_START_DATE;
-        }
-        log.info("Collect {} {} of user {} since {}", mark, catalog, userId, since);
-        Map<Long, LocalDate> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
-        int start = 0;
-        while (true) {
-            RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
-                "/people/%d/%s", userId, mark.getAsPath())
-                .addParameter("sort", "time")
-                .addParameter("start", String.valueOf(start))
-                .addParameter("mode", "list");
-            Document document = getDocument(builder);
-            boolean done = false;
-            String listClass = ".list-view";
-            for (Element li : document.selectFirst(listClass).select(CssSelectors.TAG_LI)) {
-                Element div = li.selectFirst(".title");
-                String href = div.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
-                long id = Long
-                    .parseLong(StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/"));
-                LocalDate markDate = LocalDate.parse(div.nextElementSibling().text().strip());
-                if (markDate.isBefore(since)) {
-                    done = true;
-                    break;
-                }
-                map.put(id, markDate);
-                start++;
-            }
-
-            String numStr = document.selectFirst("span.subject-num").text().strip();
-            Matcher matcher = RegexUtils.matchesOrElseThrow(COLLECTIONS_PAGE_REGEX, numStr);
-            if (start >= Integer.parseInt(matcher.group(3)) || done) {
-                break;
-            }
-        }
-        log.info("Collected {}: {}", catalog, map.size());
-        return map;
-    }
-
-    /**
-     * Obtains ids of collected creators of the given user.
-     *
-     * @param userId  id of the user which returned by {@link #user()}
-     * @param catalog movie/book/music/...
-     */
-    public List<Long> collectUserCreators(long userId, @Nonnull DoubanCatalog catalog)
-        throws NotFoundException, OtherResponseException {
-        log.info("Collect {} of user {}", catalog.getCreator().getPlurality(), userId);
-        List<Long> ids = new LinkedList<>();
-        int start = 0;
-        while (true) {
-            RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
-                "/people/%d/%s", userId, catalog.getCreator().getPlurality())
-                .addParameter("start", String.valueOf(start));
-            Document document = getDocument(builder);
-            String itemClass = ".item";
-            for (Element div : document.select(itemClass)) {
-                Element a = div.selectFirst(".title").selectFirst(CssSelectors.TAG_A);
-                String href = a.attr(CssSelectors.ATTR_HREF);
-                ids.add(Long.parseLong(
-                    StringUtils.substringAfterLast(StringUtils.strip(href, "/"), "/")));
-                start++;
-            }
-            Matcher matcher = RegexUtils
-                .matchesOrElseThrow(CREATORS_PAGE_TITLE_REGEX, document.title().strip());
-            if (start >= Integer.parseInt(matcher.group(1))) {
-                break;
-            }
-        }
-        log.info("Collected {} {}", ids.size(), catalog.getCreator().getPlurality());
-        return ids;
-    }
-
-    /**
-     * Obtains id of Douban by searching id of IMDb.
-     * <p>
-     *
-     * @throws LoginException if not logged in first.
-     */
-    @Nullable
-    public Long getDbIdByImdbId(String imdbId) throws NotFoundException, OtherResponseException {
+    @Override
+    public long getDbIdByImdbId(String imdbId)
+        throws NotFoundException, OtherResponseException, LoginException {
         if (user() == null) {
             throw new LoginException("Please log in first.");
         }
@@ -349,67 +338,49 @@ public class DoubanSite extends AbstractLoggableSite<Long>
             .addParameter("p_uid", imdbId)
             .addParameter("cat", String.valueOf(DoubanCatalog.MOVIE.getCode()))
             .addParameter("subject_submit", "下一步");
-        Document document = getDocument(builder);
-
+        Document document = findDocument(builder);
         Element fieldset = document.selectFirst("div#content")
             .selectFirst(CssSelectors.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");
         if (input == null) {
-            return null;
+            throw new NotFoundException("");
         }
         Element span = input.nextElementSibling();
         Element ref = span.nextElementSibling();
         if (ref == null) {
-            log.error(span.text());
-            return null;
+            throw new NotFoundException(span.text());
         }
         String href = ref.attr(CssSelectors.ATTR_HREF);
-        return Long
-            .parseLong(RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href).group("id"));
+        Matcher matcher = RegexUtils.matchesOrElseThrow(URL_MOVIE_SUBJECT_REGEX, href);
+        return Long.parseLong(matcher.group("id"));
     }
 
-    /**
-     * Search items by the given keyword under the given catalog module.
-     *
-     * @param catalog which catalog, not null
-     * @param keyword not blank
-     */
-    public List<SearchItem> searchSubject(@Nonnull DoubanCatalog catalog, String keyword)
-        throws NotFoundException, OtherResponseException {
-        AssertUtils.requireNotBlank(keyword);
-        RequestBuilder builder = create("search", "/%s/subject_search", catalog.getAsPath())
-            .addParameter("search_text", keyword)
-            .addParameter("cat", String.valueOf(catalog.getCode()));
-        Document document = getDocument(builder);
-        return document.select("div.item-root").stream().map(div -> {
-            Element a = div.selectFirst("a.title-text");
-            String url = a.attr(CssSelectors.ATTR_HREF);
-            return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
-        }).collect(Collectors.toList());
-    }
+    private static final class Lazy {
 
-    /**
-     * Search items by the given keyword globally.
-     *
-     * @param catalog which catalog, may null
-     * @param keyword not blank
-     */
-    public List<SearchItem> search(@Nullable DoubanCatalog catalog, String keyword)
-        throws NotFoundException, OtherResponseException {
-        if (StringUtils.isBlank(keyword)) {
-            throw new IllegalArgumentException("Keyword mustn't be blank.");
+        private static final Pattern COOKIE_DBCL2_REGEX = Pattern
+            .compile("\"(?<id>\\d+):[0-9A-Za-z+/]+\"");
+        private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new SimpleModule()
+                .addDeserializer(MovieGenre.class, EnumDeserializers.ofAlias(MovieGenre.class)))
+            .registerModule(new JavaTimeModule().addDeserializer(LocalDateTime.class,
+                new LocalDateTimeDeserializer(Constants.YYYY_MM_DD_HH_MM_SS)));
+        private static final Pattern SUBJECT_LINK_REGEX = Pattern.compile(
+            "https://www\\.douban\\.com/link2/\\?url=(?<u>[\\w%.-]+)"
+                + "&query=(?<q>[\\w%-]+)&cat_id=(?<c>\\d+)&type=search&pos=(?<p>\\d+)");
+        private static final Pattern CREATORS_PAGE_TITLE_REGEX = Pattern
+            .compile("[^()\\s]+\\((?<t>\\d+)\\)");
+        private static final Pattern SUBJECT_URL_REGEX;
+        private static final Pattern CREATOR_URL_REGEX;
+
+        static {
+            String catalogs = Arrays.stream(DoubanCatalog.values()).map(PathSupplier::getAsPath)
+                .collect(Collectors.joining("|"));
+            SUBJECT_URL_REGEX = Pattern
+                .compile("https://(" + catalogs + ")\\.douban\\.com/subject/(?<id>\\d+)/");
+            String creators = Arrays.stream(DoubanCatalog.values()).map(DoubanCatalog::getPerson)
+                .collect(Collectors.joining("|"));
+            CREATOR_URL_REGEX = Pattern.compile(
+                "https://(" + catalogs + ")\\.douban\\.com/(" + creators + ")/(?<id>\\d+)/");
         }
-        RequestBuilder builder = httpGet("/search").addParameter("q", keyword);
-        if (catalog != null) {
-            builder.addParameter("cat", String.valueOf(catalog.getCode()));
-        }
-        Document document = getDocument(builder);
-        return document.selectFirst("div.search-result").select("div.result").stream().map(div -> {
-            Element a = div.selectFirst(CssSelectors.TAG_H3).selectFirst(CssSelectors.TAG_A);
-            Matcher matcher = RegexUtils
-                .matchesOrElseThrow(SEARCH_ITEM_HREF_REGEX, a.attr(CssSelectors.ATTR_HREF));
-            String url = URLDecoder.decode(matcher.group("url"), Constants.UTF_8);
-            return new SearchItem(Parsers.parseDbId(url), a.text().strip(), url);
-        }).collect(Collectors.toList());
     }
 }

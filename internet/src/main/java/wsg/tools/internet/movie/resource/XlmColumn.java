@@ -67,7 +67,7 @@ public enum XlmColumn implements IntCodeSupplier {
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 

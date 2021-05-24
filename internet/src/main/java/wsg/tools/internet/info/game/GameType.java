@@ -33,7 +33,7 @@ public enum GameType implements IntCodeSupplier {
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return id;
     }
 }

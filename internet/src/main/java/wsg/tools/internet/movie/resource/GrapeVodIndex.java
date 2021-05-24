@@ -1,7 +1,7 @@
 package wsg.tools.internet.movie.resource;
 
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.PathSupplier;
+import wsg.tools.internet.common.TitleSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
 
 /**

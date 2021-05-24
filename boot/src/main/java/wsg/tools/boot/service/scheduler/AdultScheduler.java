@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +17,11 @@ import org.springframework.data.domain.Example;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import wsg.tools.boot.config.SiteManager;
 import wsg.tools.boot.dao.api.adapter.impl.CelebrityAdapter;
-import wsg.tools.boot.dao.api.adapter.impl.LicencePlateItemAdapter;
 import wsg.tools.boot.dao.api.adapter.impl.MidnightEntryAdapter;
 import wsg.tools.boot.dao.api.adapter.impl.PornTubeVideoAdapter;
 import wsg.tools.boot.dao.api.adapter.impl.WikiEntryAdapter;
+import wsg.tools.boot.dao.api.support.SiteManager;
 import wsg.tools.boot.dao.jpa.mapper.JaAdultVideoRepository;
 import wsg.tools.boot.dao.jpa.mapper.WesternAdultVideoRepository;
 import wsg.tools.boot.pojo.entity.adult.JaAdultVideoEntity;
@@ -33,14 +31,10 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.internet.base.repository.LinkedRepoIterator;
-import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.info.adult.licence.LicencePlateItem;
-import wsg.tools.internet.info.adult.licence.LicencePlateSite;
 import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightEntry;
 import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
@@ -104,40 +98,6 @@ public class AdultScheduler {
             }
             log.info("Imported adult entries from {}:", sname);
             result.print(String::valueOf);
-        } catch (OtherResponseException | NotFoundException e) {
-            log.error(e.getMessage());
-            throw new AppException(e);
-        }
-    }
-
-    @Scheduled(cron = "0 0 11 * * ?")
-    public void importLicencePlate() {
-        LicencePlateSite site = manager.licencePlateSite();
-        LinkedRepository<String, LicencePlateItem> repository = site.getRepository();
-        String sname = site.getName();
-        int subtype = 0;
-        try {
-            Optional<String> last = jaVideoRepository.getFirstOrderUpdateTime(sname, subtype);
-            LinkedRepoIterator<String, LicencePlateItem> iterator;
-            if (last.isPresent()) {
-                iterator = repository.linkedRepoIterator(last.get());
-                iterator.next();
-            } else {
-                iterator = repository.linkedRepoIterator();
-            }
-            BatchResult<String> result = BatchResult.create();
-            while (iterator.hasNext()) {
-                LicencePlateItemAdapter adapter = new LicencePlateItemAdapter(iterator.next());
-                Source source = Source.of(sname, subtype, adapter.getId(), adapter);
-                Optional<FailureReason> reason = adultService.saveJaAdultEntry(adapter, source);
-                if (reason.isPresent()) {
-                    result.fail(adapter.getSerialNum(), reason.get().getText());
-                } else {
-                    result.succeed();
-                }
-            }
-            log.info("Imported adult entries from {}:", sname);
-            result.print(Function.identity());
         } catch (OtherResponseException | NotFoundException e) {
             log.error(e.getMessage());
             throw new AppException(e);

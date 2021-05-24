@@ -133,7 +133,8 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
             linkEntity.setItemId(itemId);
             linkEntity.setTitle(resource.getTitle());
             linkEntity.setUrl(resource.getUrl());
-            linkEntity.setType(EnumUtilExt.valueOfAka(ResourceType.class, resource.getClass()));
+            linkEntity.setType(EnumUtilExt
+                .valueOfKey(ResourceType.class, resource.getClass(), ResourceType::getLinkClass));
             if (resource instanceof FilenameSupplier) {
                 linkEntity.setFilename(((FilenameSupplier) resource).getFilename());
             }

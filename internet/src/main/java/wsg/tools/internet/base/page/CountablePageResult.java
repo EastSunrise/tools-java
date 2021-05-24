@@ -18,8 +18,8 @@ public class CountablePageResult<T, P extends PageReq> extends AbstractPageResul
      *
      * @param totalPages the total amount of pages, must be positive
      */
-    public CountablePageResult(List<T> content, P request, int totalPages) {
-        super(content, request);
+    public CountablePageResult(List<T> content, P req, int totalPages) {
+        super(content, req);
         if (totalPages < 1) {
             throw new IllegalArgumentException("Total pages must not be less than one!");
         }

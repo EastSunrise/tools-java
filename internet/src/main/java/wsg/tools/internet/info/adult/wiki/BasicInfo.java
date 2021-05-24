@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import wsg.tools.internet.common.enums.BloodType;
-import wsg.tools.internet.common.enums.Constellation;
-import wsg.tools.internet.common.enums.Gender;
-import wsg.tools.internet.common.enums.Nation;
 import wsg.tools.internet.common.enums.Zodiac;
 import wsg.tools.internet.info.adult.common.CupEnum;
 
@@ -20,14 +17,14 @@ import wsg.tools.internet.info.adult.common.CupEnum;
 @Getter
 public class BasicInfo {
 
-    private Gender gender;
+    private String gender;
     private String fullName;
     private List<String> zhNames;
     private List<String> jaNames;
     private List<String> enNames;
     private List<String> aka;
     private Zodiac zodiac;
-    private Constellation constellation;
+    private String constellation;
     private List<String> interests;
     private Integer height;
     private Integer weight;
@@ -38,14 +35,14 @@ public class BasicInfo {
     private String firm;
     private String school;
     private String birthplace;
-    private Nation nation;
+    private String nation;
 
     private Set<String> others;
 
     BasicInfo() {
     }
 
-    void setGender(Gender gender) {
+    void setGender(String gender) {
         this.gender = gender;
     }
 
@@ -73,7 +70,7 @@ public class BasicInfo {
         this.zodiac = zodiac;
     }
 
-    void setConstellation(Constellation constellation) {
+    void setConstellation(String constellation) {
         this.constellation = constellation;
     }
 
@@ -119,7 +116,7 @@ public class BasicInfo {
         this.birthplace = birthplace;
     }
 
-    void setNation(Nation nation) {
+    void setNation(String nation) {
         this.nation = nation;
     }
 

@@ -1,14 +1,12 @@
 package wsg.tools.internet.common.enums;
 
-import wsg.tools.common.util.function.TitleSupplier;
-
 /**
  * Enum for genders.
  *
  * @author Kingen
  * @since 2020/7/26
  */
-public enum Gender implements TitleSupplier {
+public enum Gender {
     /**
      * Male
      */
@@ -22,14 +20,13 @@ public enum Gender implements TitleSupplier {
      */
     FAKE_FEMALE("伪娘");
 
-    private final String title;
+    private final String displayName;
 
-    Gender(String title) {
-        this.title = title;
+    Gender(String displayName) {
+        this.displayName = displayName;
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public String getDisplayName() {
+        return displayName;
     }
 }

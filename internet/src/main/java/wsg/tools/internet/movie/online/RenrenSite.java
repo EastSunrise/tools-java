@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
 import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import wsg.tools.common.jackson.deserializer.TitleEnumDeserializer;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.repository.RepoPageable;
@@ -67,18 +67,18 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
         int year = Integer.parseInt(matcher.group("y"));
         List<Region> regions = new ArrayList<>(1);
         List<MovieGenre> genres = new ArrayList<>(2);
-        regions.add(EnumUtilExt.valueOfAka(Region.class, parts[1]));
+        regions.add(EnumUtilExt.valueOfAlias(Region.class, parts[1]));
         boolean isGenre = false;
         for (int i = 2; i < parts.length; i++) {
             String part = parts[i];
             if (isGenre) {
-                genres.add(EnumUtilExt.valueOfTitle(MovieGenre.class, part, false));
+                genres.add(EnumUtilExt.valueOfAlias(MovieGenre.class, part));
             } else {
                 try {
-                    genres.add(EnumUtilExt.valueOfTitle(MovieGenre.class, part, false));
+                    genres.add(EnumUtilExt.valueOfAlias(MovieGenre.class, part));
                     isGenre = true;
                 } catch (IllegalArgumentException e) {
-                    regions.add(EnumUtilExt.valueOfAka(Region.class, part));
+                    regions.add(EnumUtilExt.valueOfAlias(Region.class, part));
                 }
             }
         }
@@ -91,7 +91,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
 
     private SeriesStatus getStatus(@Nonnull Document document) {
         return Optional.ofNullable(document.selectFirst(".playDateInfo")).map(Element::text)
-            .map(s -> SeriesStatus.CONCLUDED.getTitle().equals(s))
+            .map(s -> SeriesStatus.CONCLUDED.getDisplayName().equals(s))
             .map(flag -> flag ? SeriesStatus.CONCLUDED : SeriesStatus.AIRING)
             .orElse(null);
     }
@@ -100,7 +100,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
 
         private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new SimpleModule()
-                .addDeserializer(MovieGenre.class, new TitleEnumDeserializer<>(MovieGenre.class)));
+                .addDeserializer(MovieGenre.class, EnumDeserializers.ofAlias(MovieGenre.class)));
         private static final Pattern YEAR_REGEX = Pattern
             .compile("(?<y>\\d{4})(?:-\\d{2}-\\d{2})?");
     }

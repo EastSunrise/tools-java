@@ -14,6 +14,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.LinkedRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
@@ -31,7 +32,7 @@ import wsg.tools.internet.info.adult.common.AdultEntryParser;
  * @see <a href="https://www.chepaishe1.com/">Che Pai She</a>
  * @since 2021/3/9
  */
-@ConcreteSite
+@ConcreteSite(status = SiteStatus.INVALID)
 public class LicencePlateSite extends BaseSite
     implements RepoRetrievable<String, LicencePlateItem> {
 

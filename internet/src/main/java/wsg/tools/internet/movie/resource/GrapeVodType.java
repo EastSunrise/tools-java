@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * The subtype that an item belongs to in the {@link GrapeSite}.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/4
  */
-public enum GrapeVodType implements TextSupplier {
+public enum GrapeVodType implements PathSupplier {
 
     /**
      * @see <a href="https://www.putaoys.com/vod/list/dongman/">Animes</a>
@@ -88,16 +88,16 @@ public enum GrapeVodType implements TextSupplier {
     DRAMA_MOVIE(31, "juqingpian");
 
     private final int id;
-    private final String text;
+    private final String path;
 
-    GrapeVodType(int id, String text) {
+    GrapeVodType(int id, String path) {
         this.id = id;
-        this.text = text;
+        this.path = path;
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getAsPath() {
+        return path;
     }
 
     public int getId() {

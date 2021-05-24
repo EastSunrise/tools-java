@@ -1,6 +1,6 @@
 package wsg.tools.internet.common.enums;
 
-import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.common.util.function.AliasSupplier;
 
 /**
  * Twelve zodiacs.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2021/2/24
  */
-public enum Zodiac implements TitleSupplier {
+public enum Zodiac implements AliasSupplier {
 
     /**
      * Twelve zodiacs
@@ -26,14 +26,18 @@ public enum Zodiac implements TitleSupplier {
     DOG("狗"),
     PIG("猪");
 
-    private final String title;
+    private final String zhName;
 
-    Zodiac(String title) {
-        this.title = title;
+    Zodiac(String zhName) {
+        this.zhName = zhName;
+    }
+
+    public String getZhName() {
+        return zhName;
     }
 
     @Override
-    public String getTitle() {
-        return title;
+    public String[] getAlias() {
+        return new String[]{zhName};
     }
 }

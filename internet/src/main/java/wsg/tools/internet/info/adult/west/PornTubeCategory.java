@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.util.Objects;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.TitleSupplier;
 
 /**
  * A category on the site.

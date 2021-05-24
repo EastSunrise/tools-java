@@ -63,7 +63,7 @@ public class PornTubeVideo extends PornTubeSimpleVideo implements UpdateDatetime
 
     @Nonnull
     public Set<String> getTags() {
-        return tags.stream().map(PornTubeTag::getTitle).collect(Collectors.toSet());
+        return tags.stream().map(PornTubeTag::getTag).collect(Collectors.toSet());
     }
 
     void setTags(List<PornTubeTag> tags) {

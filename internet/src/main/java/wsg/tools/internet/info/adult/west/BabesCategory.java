@@ -1,9 +1,9 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.net.URL;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CoverSupplier;
+import wsg.tools.internet.common.TitleSupplier;
 
 /**
  * A category on the site.

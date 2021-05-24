@@ -3,7 +3,6 @@ package wsg.tools.internet.movie.imdb;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,8 +20,6 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
-import wsg.tools.common.jackson.deserializer.TextEnumDeserializer;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
@@ -35,8 +32,6 @@ import wsg.tools.internet.common.UnexpectedContentException;
 import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.movie.common.RangeYear;
-import wsg.tools.internet.movie.common.enums.ImdbRating;
-import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
  * <a href="https://imdb.com">IMDb</a>
@@ -44,7 +39,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @author Kingen
  * @since 2020/6/16
  */
-@ConcreteSite(status = SiteStatus.NORMAL)
+@ConcreteSite(status = SiteStatus.BLOCKED)
 public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle> {
 
     private static final String TEXT_REGEX_STR = "[ \"!#%&'()*+,-./0-9:>?A-Za-z·\u0080-ÿ]+";
@@ -64,14 +59,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
     private static final String EPISODES_PAGE_TITLE_SUFFIX = "- Episodes - IMDb";
     private static final ObjectMapper MAPPER =
         new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-            .setLocale(Locale.ENGLISH)
-            .registerModule(new SimpleModule()
-                .addDeserializer(MovieGenre.class, new TextEnumDeserializer<>(MovieGenre.class))
-                .addDeserializer(ImdbRating.class,
-                    new AkaEnumDeserializer<>(String.class, ImdbRating.class))
-                .addDeserializer(Language.class,
-                    new AkaEnumDeserializer<>(String.class, Language.class)))
-            .registerModule(new JavaTimeModule());
+            .setLocale(Locale.ENGLISH).registerModule(new JavaTimeModule());
 
     public ImdbSite() {
         super("IMDb", httpsHost("imdb.com"));
@@ -137,7 +125,7 @@ public final class ImdbSite extends BaseSite implements ImdbRepository<ImdbTitle
         block = details.get("Language");
         if (null != block) {
             List<Language> languages = block.select(CssSelectors.TAG_A).stream()
-                .map(a -> EnumUtilExt.valueOfAka(Language.class, a.text()))
+                .map(a -> EnumUtilExt.valueOfAlias(Language.class, a.text()))
                 .collect(Collectors.toList());
             title.setLanguages(languages);
         }

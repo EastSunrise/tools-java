@@ -28,7 +28,6 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
@@ -37,13 +36,11 @@ import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.BloodType;
-import wsg.tools.internet.common.enums.Constellation;
-import wsg.tools.internet.common.enums.Gender;
-import wsg.tools.internet.common.enums.Nation;
 import wsg.tools.internet.common.enums.Zodiac;
 import wsg.tools.internet.info.adult.common.AdultEntryParser;
 import wsg.tools.internet.info.adult.common.CupEnum;
@@ -97,7 +94,7 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int current = req.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
-        String text = Optional.ofNullable(req.getSubtype()).map(WikiCelebrityType::getText)
+        String text = Optional.ofNullable(req.getSubtype()).map(WikiCelebrityType::getAsPath)
             .orElse("mingren");
         Document document = getDocument(httpGet("/%s/index%s.html", text, page));
 
@@ -129,7 +126,7 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiCelebrityType subtype = index.getSubtype();
-        Document document = getDocument(httpGet("/%s/m%d/info.html", subtype.getText(), id));
+        Document document = getDocument(httpGet("/%s/m%d/info.html", subtype.getAsPath(), id));
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -182,7 +179,7 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiAlbumType type = index.getSubtype();
-        Document document = getDocument(httpGet("/tuku/%s/%d.html", type.getText(), id));
+        Document document = getDocument(httpGet("/tuku/%s/%d.html", type.getAsPath(), id));
         Element show = document.selectFirst("div.picshow");
         String title = show.selectFirst(CssSelectors.TAG_H1).text();
         String timeStr = ((TextNode) show.selectFirst(".info").childNode(0)).text();
@@ -291,7 +288,8 @@ public final class CelebrityWikiSite extends BaseSite
         String href = a.attr(CssSelectors.ATTR_HREF);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CELEBRITY_URL_REGEX, href);
         String t = matcher.group("t");
-        WikiCelebrityType type = EnumUtilExt.valueOfText(WikiCelebrityType.class, t, false);
+        WikiCelebrityType type = EnumUtilExt
+            .valueOfKey(WikiCelebrityType.class, t, WikiCelebrityType::getAsPath);
         int id = Integer.parseInt(matcher.group("id"));
         return new WikiSimpleCelebrity(id, a.text(), type);
     }
@@ -299,7 +297,7 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     private BasicInfo getBasicInfo(Map<String, String> map) {
         BasicInfo info = new BasicInfo();
-        info.setGender(MapUtilsExt.getEnumOfTitle(map, Gender.class, false, "性别"));
+        info.setGender(MapUtilsExt.getString(map, "性别"));
         info.setFullName(MapUtilsExt.getString(map, "姓名"));
         info.setZhNames(MapUtilsExt.getStringList(map, SEPARATOR, "中文名"));
         info.setJaNames(MapUtilsExt.getStringList(map, SEPARATOR, "日文名"));
@@ -307,8 +305,8 @@ public final class CelebrityWikiSite extends BaseSite
         info.setAka(MapUtilsExt.getStringList(map, SEPARATOR, "别名"));
 
         info.setZodiac(MapUtilsExt.getValue(map,
-            text -> EnumUtilExt.valueOfTitle(Zodiac.class, text.substring(0, 1), false), "生肖"));
-        info.setConstellation(MapUtilsExt.getEnumOfAka(map, Constellation.class, "星座"));
+            text -> EnumUtilExt.valueOfAlias(Zodiac.class, text.substring(0, 1)), "生肖"));
+        info.setConstellation(MapUtilsExt.getString(map, "星座"));
         info.setInterests(MapUtilsExt.getStringList(map, SEPARATOR, "兴趣", "爱好"));
 
         info.setHeight(MapUtilsExt.getValue(map, text -> {
@@ -340,7 +338,7 @@ public final class CelebrityWikiSite extends BaseSite
         info.setFirm(MapUtilsExt.getString(map, "事务所"));
         info.setSchool(MapUtilsExt.getString(map, "毕业院校"));
         info.setBirthplace(MapUtilsExt.getString(map, "出生地"));
-        info.setNation(MapUtilsExt.getEnumOfAka(map, Nation.class, "民族"));
+        info.setNation(MapUtilsExt.getString(map, "民族"));
 
         info.setOthers(new HashSet<>(map.keySet()));
         return info;
@@ -384,7 +382,7 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/%s/m%s/pic.html", type.getText(), id));
+        Document document = getDocument(httpGet("/%s/m%s/pic.html", type.getAsPath(), id));
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         Set<WikiAlbumIndex> albums = new HashSet<>(lis.size());
         for (Element li : lis) {
@@ -393,7 +391,8 @@ public final class CelebrityWikiSite extends BaseSite
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.ALBUM_URL_REGEX, href);
             int albumId = Integer.parseInt(matcher.group("id"));
             String typeStr = matcher.group("t");
-            WikiAlbumType albumType = EnumUtilExt.valueOfText(WikiAlbumType.class, typeStr, false);
+            WikiAlbumType albumType = EnumUtilExt
+                .valueOfKey(WikiAlbumType.class, typeStr, WikiAlbumType::getAsPath);
             String title = a.selectFirst(CssSelectors.TAG_IMG).attr(CssSelectors.ATTR_ALT);
             albums.add(new WikiAlbum(albumId, albumType, title));
         }
@@ -425,12 +424,12 @@ public final class CelebrityWikiSite extends BaseSite
         private static final Pattern TOTAL_REGEX = Pattern.compile("(?<t>\\d+)条");
 
         static {
-            String types = Arrays.stream(WikiCelebrityType.values()).map(TextSupplier::getText)
+            String types = Arrays.stream(WikiCelebrityType.values()).map(PathSupplier::getAsPath)
                 .collect(Collectors.joining("|"));
             CELEBRITY_URL_REGEX = Pattern.compile(HOME_PAGE +
                 "/(?<t>" + types + ")/m(?<id>\\d+)/((info|pic|news|comm)\\.html)?"
             );
-            String albumTypes = Arrays.stream(WikiAlbumType.values()).map(TextSupplier::getText)
+            String albumTypes = Arrays.stream(WikiAlbumType.values()).map(PathSupplier::getAsPath)
                 .collect(Collectors.joining("|"));
             ALBUM_URL_REGEX = Pattern.compile(HOME_PAGE +
                 "/tuku/(?<t>" + albumTypes + ")/(?<id>\\d+)(_(?<i>\\d+))?\\.html");

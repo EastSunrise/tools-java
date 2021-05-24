@@ -71,7 +71,7 @@ public class BatchResult<T> extends BaseResult {
      * Adds a failure.
      */
     public void fail(@Nonnull T t, @Nonnull FailureReason reason) {
-        fails.put(t, reason.getText());
+        fails.put(t, reason.getReason());
     }
 
     /**

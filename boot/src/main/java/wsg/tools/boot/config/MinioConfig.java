@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.xmlpull.v1.XmlPullParserException;
+import wsg.tools.boot.dao.api.support.SiteManager;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.common.constant.Constants;

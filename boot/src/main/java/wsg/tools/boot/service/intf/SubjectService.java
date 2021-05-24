@@ -1,18 +1,15 @@
 package wsg.tools.boot.service.intf;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.client.HttpResponseException;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.pojo.error.DataIntegrityException;
 import wsg.tools.boot.pojo.result.BatchResult;
-import wsg.tools.boot.pojo.result.SingleResult;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
@@ -26,40 +23,40 @@ import wsg.tools.internet.movie.common.enums.DoubanMark;
 public interface SubjectService {
 
     /**
-     * Import a subject obtained by id of douban.
+     * Imports a subject of the specified dbId.
      *
-     * @param dbId id of Douban
-     * @return result with subject id
-     * @throws OtherResponseException if an unexpected {@link HttpResponseException} occurs
+     * @param dbId the dbId of the subject to be imported
+     * @return the generated id of the saved subject
+     * @throws OtherResponseException if an unexpected error occurs
      * @throws DataIntegrityException if some required properties are lacking
      * @throws NotFoundException      if the subject of the given id is not found from Douban
      */
-    SingleResult<Long> importSubjectByDb(long dbId)
+    long importSubjectByDb(long dbId)
         throws DataIntegrityException, NotFoundException, OtherResponseException;
 
     /**
-     * Import a subject obtained by id of IMDb.
+     * Imports a subject of the specified imdbId.
      *
-     * @param imdbId id of IMDb, not null
-     * @return result with subject id
-     * @throws OtherResponseException if an unexpected {@link HttpResponseException} occurs
-     * @throws DataIntegrityException if some required properties are lacking
-     * @throws NotFoundException      if the subject of the given id is not found from IMDb
+     * @param imdbId id of IMDb, not blank
+     * @return the generated id of the saved subject
+     * @throws OtherResponseException   if an unexpected error occurs
+     * @throws DataIntegrityException   if some required properties are lacking
+     * @throws NotFoundException        if the subject of the given id is not found from IMDb
+     * @throws IllegalArgumentException if the specified imdbId is blank
      */
-    SingleResult<Long> importSubjectByImdb(String imdbId)
+    long importSubjectByImdb(String imdbId)
         throws OtherResponseException, DataIntegrityException, NotFoundException;
 
     /**
-     * Import subjects from Douban of the given user.
+     * Imports collected subjects the specified user.
      *
      * @param userId user id
-     * @param since  since when
      * @param mark   marking type
      * @return result of importing
-     * @throws OtherResponseException if an unexpected {@link HttpResponseException} occurs
-     * @throws NotFoundException      if subjects of the given user are not found from Douban
+     * @throws OtherResponseException if an unexpected error occurs
+     * @throws NotFoundException      if subjects of the specified user are not found
      */
-    BatchResult<Long> importDouban(long userId, @Nullable LocalDate since, DoubanMark mark)
+    BatchResult<Long> importDouban(long userId, @Nonnull DoubanMark mark)
         throws OtherResponseException, NotFoundException;
 
     /**

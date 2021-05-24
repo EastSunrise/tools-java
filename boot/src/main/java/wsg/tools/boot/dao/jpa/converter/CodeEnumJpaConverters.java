@@ -6,7 +6,6 @@ import wsg.tools.boot.pojo.entity.base.FailureReason;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.internet.movie.common.enums.DoubanMark;
 
 /**
  * Converters for {@link Enum}.
@@ -18,14 +17,6 @@ import wsg.tools.internet.movie.common.enums.DoubanMark;
  * @since 2020/7/13
  */
 public final class CodeEnumJpaConverters {
-
-    @Converter(autoApply = true)
-    public static class MarkEnumConverter extends CodeConverter<DoubanMark, MarkEnumAdapter> {
-
-        public MarkEnumConverter() {
-            super(MarkEnumAdapter.class);
-        }
-    }
 
     @Converter(autoApply = true)
     public static class FailureReasonConverter extends CodeEnumConverter<FailureReason> {
@@ -57,7 +48,7 @@ public final class CodeEnumJpaConverters {
 
         @Override
         protected E deserialize(Integer dbData) {
-            return EnumUtilExt.valueOfCode(eClass, dbData);
+            return EnumUtilExt.valueOfIntCode(eClass, dbData);
         }
 
         @Override

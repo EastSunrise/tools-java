@@ -15,29 +15,29 @@ import java.util.Objects;
 public abstract class AbstractPageResult<T, P extends PageReq> implements PageResult<T, P> {
 
     private final List<T> content = new ArrayList<>();
-    private final P request;
+    private final P req;
 
     /**
      * Constructs an instance of {@link PageResult}.
      *
      * @param content the content of this page, must not be {@literal null}.
-     * @param request the paging information, must not be {@literal null}.
+     * @param req     the paging information, must not be {@literal null}.
      */
-    protected AbstractPageResult(List<T> content, P request) {
+    protected AbstractPageResult(List<T> content, P req) {
         Objects.requireNonNull(content, "Content must not be null!");
-        Objects.requireNonNull(request, "PageRequest must not be null!");
+        Objects.requireNonNull(req, "PageRequest must not be null!");
         this.content.addAll(content);
-        this.request = request;
+        this.req = req;
     }
 
     @Override
     public int getCurrent() {
-        return request.getCurrent();
+        return req.getCurrent();
     }
 
     @Override
     public int getPageSize() {
-        return request.getPageSize();
+        return req.getPageSize();
     }
 
     @Override
@@ -61,7 +61,7 @@ public abstract class AbstractPageResult<T, P extends PageReq> implements PageRe
         if (!hasNext()) {
             throw new NoSuchElementException("Doesn't have next page.");
         }
-        return (P) request.next();
+        return (P) req.next();
     }
 
     @Override
@@ -70,6 +70,6 @@ public abstract class AbstractPageResult<T, P extends PageReq> implements PageRe
         if (!hasPrevious()) {
             throw new NoSuchElementException("Doesn't have previous page.");
         }
-        return (P) request.previous();
+        return (P) req.previous();
     }
 }

@@ -24,7 +24,6 @@ import wsg.tools.boot.pojo.entity.base.IdentityEntity;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.SerialNumSupplier;
@@ -43,8 +42,8 @@ import wsg.tools.internet.info.adult.view.SerialNumSupplier;
         "sname", "subtype", "rid"
     })
 )
-public class JaAdultVideoEntity extends IdentityEntity implements SerialNumSupplier,
-    TitleSupplier, CoverSupplier, DurationSupplier {
+public class JaAdultVideoEntity extends IdentityEntity
+    implements SerialNumSupplier, CoverSupplier, DurationSupplier {
 
     private static final long serialVersionUID = 718083190465191530L;
 
@@ -115,7 +114,6 @@ public class JaAdultVideoEntity extends IdentityEntity implements SerialNumSuppl
         this.serialNum = id;
     }
 
-    @Override
     public String getTitle() {
         return title;
     }

@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
  * @author Kingen
  * @since 2020/8/31
  */
-public class DoubanSeries extends BaseDoubanSubject {
+public class DoubanSeries extends AbstractMovie {
 
     private long[] seasons;
     private Integer currentSeason;

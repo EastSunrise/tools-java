@@ -1,9 +1,9 @@
 package wsg.tools.internet.movie.resource;
 
 import javax.annotation.Nonnull;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.base.page.BasicPageReq;
 import wsg.tools.internet.base.page.PageReq;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * An implementation of {@link PageReq} for {@link GrapeSite}, including a {@link OrderBy}.
@@ -49,7 +49,7 @@ public class GrapeVodPageReq extends BasicPageReq {
         return orderBy;
     }
 
-    enum OrderBy implements TextSupplier {
+    enum OrderBy implements PathSupplier {
         /**
          * The add time
          */
@@ -63,15 +63,15 @@ public class GrapeVodPageReq extends BasicPageReq {
          */
         RATING("gold");
 
-        private final String text;
+        private final String path;
 
-        OrderBy(String text) {
-            this.text = text;
+        OrderBy(String path) {
+            this.path = path;
         }
 
         @Override
-        public String getText() {
-            return text;
+        public String getAsPath() {
+            return path;
         }
     }
 }

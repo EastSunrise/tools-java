@@ -1,7 +1,6 @@
 package wsg.tools.boot.pojo.entity.base;
 
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
 
 /**
  * Reasons when failed to import an entity.
@@ -9,26 +8,25 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/4/15
  */
-public enum FailureReason implements IntCodeSupplier, TextSupplier {
+public enum FailureReason implements IntCodeSupplier {
     EXISTS(101, "The target exists"),
     ARG_INVALID(201, "The argument is invalid"),
     KEY_LACKING(202, "The key is lacking");
 
     private final int code;
-    private final String text;
+    private final String reason;
 
-    FailureReason(int code, String text) {
+    FailureReason(int code, String reason) {
         this.code = code;
-        this.text = text;
+        this.reason = reason;
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 
-    @Override
-    public String getText() {
-        return text;
+    public String getReason() {
+        return reason;
     }
 }

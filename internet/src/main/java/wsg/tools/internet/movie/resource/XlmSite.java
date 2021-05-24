@@ -86,7 +86,7 @@ public final class XlmSite extends AbstractListResourceSite<XlmItem> {
         String columnHref = last.attr(CssSelectors.ATTR_HREF);
         Matcher columnMatcher = RegexUtils.matchesOrElseThrow(Lazy.COLUMN_HREF_REGEX, columnHref);
         int code = Integer.parseInt(columnMatcher.group("c"));
-        XlmColumn column = EnumUtilExt.valueOfCode(XlmColumn.class, code);
+        XlmColumn column = EnumUtilExt.valueOfIntCode(XlmColumn.class, code);
         Element info = document.selectFirst(".info");
         Element font = info.selectFirst(".time").selectFirst(CssSelectors.TAG_FONT);
         LocalDateTime releaseTime = LocalDateTime.parse(font.text(), Lazy.FORMATTER);

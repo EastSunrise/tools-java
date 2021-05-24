@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.common.util.function.CodeSupplier;
 
 /**
  * Types of the resources under {@link BdMovieSite}.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/1
  */
-public enum BdMovieType implements TextSupplier {
+public enum BdMovieType implements CodeSupplier {
     /**
      * @see <a href="https://www.bd2020.com/zx/index.htm">Latest</a>
      */
@@ -34,20 +34,20 @@ public enum BdMovieType implements TextSupplier {
      */
     ANIME("dh", 387);
 
-    private final String text;
+    private final String code;
     private final int first;
 
-    BdMovieType(String text, int first) {
-        this.text = text;
+    BdMovieType(String code, int first) {
+        this.code = code;
         this.first = first;
-    }
-
-    @Override
-    public String getText() {
-        return text;
     }
 
     public int first() {
         return first;
+    }
+
+    @Override
+    public String getCode() {
+        return code;
     }
 }

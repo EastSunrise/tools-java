@@ -13,10 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
+import wsg.tools.internet.common.TitleSupplier;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 import wsg.tools.internet.movie.common.jackson.JoinedValue;
 

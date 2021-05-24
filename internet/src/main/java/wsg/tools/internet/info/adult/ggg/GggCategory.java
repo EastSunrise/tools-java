@@ -3,7 +3,6 @@ package wsg.tools.internet.info.adult.ggg;
 import java.io.Serializable;
 import java.util.Objects;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * A category on the site.
@@ -12,7 +11,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @see GggSite#findAllCategories()
  * @since 2021/4/13
  */
-public final class GggCategory implements IntCodeSupplier, TitleSupplier, Serializable {
+public final class GggCategory implements IntCodeSupplier, Serializable {
 
     public static final GggCategory ALL_NO_MOSAIC = new GggCategory(178, false);
     public static final GggCategory ALL_MOSAIC = new GggCategory(179, true);
@@ -22,17 +21,17 @@ public final class GggCategory implements IntCodeSupplier, TitleSupplier, Serial
 
     private final int code;
     private final boolean mosaic;
-    private String title;
+    private String displayName;
 
     GggCategory(int code, boolean mosaic) {
         this.code = code;
         this.mosaic = mosaic;
     }
 
-    GggCategory(int code, boolean mosaic, String title) {
+    GggCategory(int code, boolean mosaic, String displayName) {
         this.code = code;
         this.mosaic = mosaic;
-        this.title = title;
+        this.displayName = displayName;
     }
 
     public static GggCategory[] all() {
@@ -40,7 +39,7 @@ public final class GggCategory implements IntCodeSupplier, TitleSupplier, Serial
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 
@@ -65,8 +64,7 @@ public final class GggCategory implements IntCodeSupplier, TitleSupplier, Serial
         return Objects.hash(code);
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public String getDisplayName() {
+        return displayName;
     }
 }

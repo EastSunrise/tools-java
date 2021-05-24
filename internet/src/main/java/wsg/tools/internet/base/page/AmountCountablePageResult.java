@@ -20,11 +20,11 @@ public class AmountCountablePageResult<T, P extends PageReq> extends AbstractPag
      *              the length of the content given, if it is going to be the content of the last
      *              page.
      */
-    public AmountCountablePageResult(List<T> content, P request, long total) {
-        super(content, request);
+    public AmountCountablePageResult(List<T> content, P req, long total) {
+        super(content, req);
         if (!content.isEmpty()) {
-            int offset = request.getCurrent() * request.getPageSize();
-            if (offset + request.getPageSize() > total) {
+            int offset = req.getCurrent() * req.getPageSize();
+            if (offset + req.getPageSize() > total) {
                 total = offset + content.size();
             }
         }

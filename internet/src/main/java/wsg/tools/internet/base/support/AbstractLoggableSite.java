@@ -1,15 +1,21 @@
 package wsg.tools.internet.base.support;
 
-import java.util.Objects;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.CloseableHttpClient;
+import wsg.tools.common.constant.Constants;
+import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.base.Loggable;
+import wsg.tools.internet.common.UnexpectedException;
 
 /**
  * This class provides a skeletal implementation of a loggable site whose cookies that containing
@@ -21,8 +27,10 @@ import wsg.tools.internet.base.Loggable;
 @Slf4j
 public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggable<U> {
 
+    private static final File TMPDIR = new File(Constants.SYSTEM_TMPDIR);
+
     protected AbstractLoggableSite(String name, HttpHost host) {
-        super(name, host);
+        super(name, host, defaultClient(), loadContext(host));
     }
 
     protected AbstractLoggableSite(String name, HttpHost host, CloseableHttpClient client,
@@ -30,23 +38,32 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
         super(name, host, client, context);
     }
 
-    /**
-     * Returns the cookie of the given name in current context.
-     *
-     * @param name name of the cookie to be queried
-     * @return value of the cookie, may null
-     */
-    @Nullable
-    protected Cookie getCookie(String name) {
-        CookieStore cookieStore = getContext().getCookieStore();
-        if (cookieStore == null) {
-            return null;
-        }
-        for (Cookie cookie : cookieStore.getCookies()) {
-            if (Objects.equals(cookie.getName(), name)) {
-                return cookie;
+    @Nonnull
+    protected static HttpClientContext loadContext(@Nonnull HttpHost host) {
+        HttpClientContext context = defaultContext();
+        String filepath = StringUtilsExt.toFilename(host.toString()) + ".cookie";
+        File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
+        if (file.canRead()) {
+            try (ObjectInputStream stream = new ObjectInputStream(
+                FileUtils.openInputStream(file))) {
+                log.trace("Read cookies from {}.", file.getPath());
+                CookieStore cookieStore = (CookieStore) stream.readObject();
+                context.setCookieStore(cookieStore);
+            } catch (IOException | ClassNotFoundException e) {
+                throw new UnexpectedException(e);
             }
         }
-        return null;
+        return context;
+    }
+
+    @Override
+    public void close() throws IOException {
+        String filepath = StringUtilsExt.toFilename(getHost().toString()) + ".cookie";
+        File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
+        try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(file))) {
+            log.trace("Synchronize cookies of {}.", getHost());
+            stream.writeObject(getContext().getCookieStore());
+        }
+        super.close();
     }
 }

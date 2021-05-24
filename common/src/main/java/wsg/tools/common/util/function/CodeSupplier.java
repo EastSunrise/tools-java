@@ -1,19 +1,18 @@
 package wsg.tools.common.util.function;
 
 /**
- * Represents a supplier of codes.
+ * Represents a supplier of a code.
  *
- * @param <C> the type of supplied codes
  * @author Kingen
  * @since 2020/6/17
  */
 @FunctionalInterface
-public interface CodeSupplier<C> {
+public interface CodeSupplier {
 
     /**
-     * Returns a code.
+     * Returns the code.
      *
-     * @return a code
+     * @return the code
      */
-    C getCode();
+    String getCode();
 }

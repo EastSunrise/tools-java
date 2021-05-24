@@ -1,16 +1,12 @@
 package wsg.tools.internet.movie.online;
 
-import java.util.Locale;
-import javax.annotation.Nonnull;
-import wsg.tools.common.util.function.TitleSupplier;
-
 /**
  * The status of a series.
  *
  * @author Kingen
  * @since 2021/4/2
  */
-public enum SeriesStatus implements TitleSupplier {
+public enum SeriesStatus {
     /**
      * to be continued
      */
@@ -24,20 +20,13 @@ public enum SeriesStatus implements TitleSupplier {
      */
     PREPARING("未开播");
 
-    private final String title;
+    private final String displayName;
 
-    SeriesStatus(String title) {
-        this.title = title;
+    SeriesStatus(String displayName) {
+        this.displayName = displayName;
     }
 
-    @Nonnull
-    @Override
-    public String toString() {
-        return name().toLowerCase(Locale.ROOT);
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
+    public String getDisplayName() {
+        return displayName;
     }
 }

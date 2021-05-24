@@ -1,8 +1,8 @@
 package wsg.tools.internet.movie.online;
 
 import java.util.List;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.TitleSupplier;
 import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.common.enums.MovieGenre;

@@ -1,8 +1,6 @@
 package wsg.tools.internet.common.enums;
 
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Enum for domestic cities.
@@ -12,7 +10,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * Divisions for Stats</a>
  * @since 2020/7/17
  */
-public enum DomesticCity implements IntCodeSupplier, TextSupplier, TitleSupplier {
+public enum DomesticCity implements IntCodeSupplier {
     /**
      * domestic cities
      */
@@ -28,27 +26,25 @@ public enum DomesticCity implements IntCodeSupplier, TextSupplier, TitleSupplier
     ;
 
     private final int code;
-    private final String text;
-    private final String title;
+    private final String enName;
+    private final String zhName;
 
-    DomesticCity(int code, String text, String title) {
+    DomesticCity(int code, String enName, String zhName) {
         this.code = code;
-        this.text = text;
-        this.title = title;
+        this.enName = enName;
+        this.zhName = zhName;
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 
-    @Override
-    public String getText() {
-        return text;
+    public String getEnName() {
+        return enName;
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public String getZhName() {
+        return zhName;
     }
 }

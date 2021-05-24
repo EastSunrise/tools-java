@@ -1,24 +1,19 @@
 package wsg.tools.internet.movie.douban.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.methods.RequestBuilder;
-import wsg.tools.common.jackson.deserializer.AkaEnumDeserializer;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.ResponseWrapper;
 import wsg.tools.internet.base.WrappedResponseHandler;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.enums.DomesticCity;
-import wsg.tools.internet.common.enums.Language;
-import wsg.tools.internet.common.enums.Region;
-import wsg.tools.internet.movie.common.enums.DoubanSubtype;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.douban.api.container.BoxResult;
 import wsg.tools.internet.movie.douban.api.container.ChartResult;
@@ -41,17 +36,6 @@ import wsg.tools.internet.movie.douban.api.pojo.Work;
  * @since 2020/8/31
  */
 public class ApiDoubanSite extends DoubanSite {
-
-    static {
-        MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
-            .registerModule(new SimpleModule()
-                .addDeserializer(Language.class,
-                    new AkaEnumDeserializer<>(String.class, Language.class))
-                .addDeserializer(Region.class,
-                    new AkaEnumDeserializer<>(String.class, Region.class))
-                .addDeserializer(DoubanSubtype.class,
-                    new AkaEnumDeserializer<>(String.class, DoubanSubtype.class)));
-    }
 
     private final String apikey;
 
@@ -104,7 +88,7 @@ public class ApiDoubanSite extends DoubanSite {
 
     public Pair<String, List<SimpleSubject>> apiMovieInTheaters(DomesticCity city)
         throws NotFoundException, OtherResponseException {
-        return getApiChart(httpGet("/v2/movie/in_theaters").addParameter("city", city.getText()));
+        return getApiChart(httpGet("/v2/movie/in_theaters").addParameter("city", city.getEnName()));
     }
 
     public Pair<String, List<SimpleSubject>> apiMovieComingSoon()
@@ -196,12 +180,12 @@ public class ApiDoubanSite extends DoubanSite {
 
     private <T> T getObject(@Nonnull RequestBuilder builder, TypeReference<T> type)
         throws NotFoundException, OtherResponseException {
-        return getObject(builder, MAPPER, type);
+        return getObject(builder, Lazy.MAPPER, type);
     }
 
     private <T> T getObject(RequestBuilder builder, Class<T> clazz)
         throws NotFoundException, OtherResponseException {
-        return getObject(builder, MAPPER, clazz);
+        return getObject(builder, Lazy.MAPPER, clazz);
     }
 
     @Override
@@ -209,5 +193,10 @@ public class ApiDoubanSite extends DoubanSite {
         WrappedResponseHandler<T> responseHandler) throws IOException {
         builder.addParameter("apikey", apikey);
         return super.getResponseWrapper(builder, responseHandler);
+    }
+
+    private static class Lazy {
+
+        private static final ObjectMapper MAPPER = new ObjectMapper();
     }
 }

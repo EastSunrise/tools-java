@@ -1,8 +1,6 @@
 package wsg.tools.internet.common.enums;
 
-import org.apache.commons.lang3.ArrayUtils;
-import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.common.util.function.TitleSupplier;
+import wsg.tools.common.util.function.AliasSupplier;
 
 /**
  * Twelve constellations.
@@ -10,7 +8,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/7/26
  */
-public enum Constellation implements TitleSupplier, AkaPredicate<String> {
+public enum Constellation implements AliasSupplier {
     /**
      * Twelve constellations
      */
@@ -26,21 +24,20 @@ public enum Constellation implements TitleSupplier, AkaPredicate<String> {
     CAPRICORN("摩羯座", "山羊座", "魔羯座", "魔蝎座"),
     AQUARIUS("水瓶座", "みずがめ座"), PISCES("双鱼座");
 
-    private final String title;
-    private final String[] aka;
+    private final String zhName;
+    private final String[] alias;
 
-    Constellation(String title, String... aka) {
-        this.title = title;
-        this.aka = aka;
+    Constellation(String zhName, String... alias) {
+        this.zhName = zhName;
+        this.alias = alias;
+    }
+
+    public String getZhName() {
+        return zhName;
     }
 
     @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
-    public boolean alsoKnownAs(String other) {
-        return title.equals(other) || ArrayUtils.contains(aka, other);
+    public String[] getAlias() {
+        return alias;
     }
 }

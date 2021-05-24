@@ -2,7 +2,7 @@ package wsg.tools.boot.dao.api.impl;
 
 import java.util.List;
 import javax.annotation.Nonnull;
-import wsg.tools.boot.dao.api.intf.ImdbSeriesView;
+import wsg.tools.boot.dao.api.ImdbSeriesView;
 import wsg.tools.internet.movie.imdb.ImdbSeries;
 
 /**

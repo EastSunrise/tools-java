@@ -27,6 +27,7 @@ import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.common.util.function.CodeSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
@@ -100,7 +101,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
             throw new NotFoundException("Not a movie page");
         }
         String realTypeText = urlMatcher.group("t");
-        BdMovieType realType = EnumUtilExt.valueOfText(BdMovieType.class, realTypeText, false);
+        BdMovieType realType = EnumUtilExt.valueOfCode(BdMovieType.class, realTypeText);
         String release = metadata.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = metadata.get("og:title");
@@ -229,7 +230,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         private static final Pattern DISK_URLS_SEPARATOR = Pattern.compile("###?\r\n|###|\r\n");
 
         static {
-            String types = Arrays.stream(BdMovieType.values()).map(BdMovieType::getText)
+            String types = Arrays.stream(BdMovieType.values()).map(CodeSupplier::getCode)
                 .collect(Collectors.joining("|"));
             ITEM_URL_REGEX = Pattern.compile(
                 "https?://www\\.(bd2020|bd-film)\\.com/(?<t>" + types + ")/(?<id>\\d+)\\.htm");

@@ -1,17 +1,16 @@
 package wsg.tools.internet.movie.common.enums;
 
-import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
+import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Contract;
+import wsg.tools.common.util.function.AliasSupplier;
 
 /**
- * Enum for genres of a movie or series, with text as English display name and title as Chinese
- * display name.
+ * Enum for genres of a movie or series, with an English display name and a Chinese display name.
  *
  * @author Kingen
  * @since 2020/6/17
  */
-public enum MovieGenre implements TextSupplier, TitleSupplier, AkaPredicate<String> {
+public enum MovieGenre implements AliasSupplier {
     /**
      * Kinds of genres
      */
@@ -50,26 +49,26 @@ public enum MovieGenre implements TextSupplier, TitleSupplier, AkaPredicate<Stri
     WESTERN("Western", "西部"),
     NEWS("News", "资讯");
 
-    private final String text;
-    private final String title;
+    private final String enName;
+    private final String zhName;
 
-    MovieGenre(String text, String title) {
-        this.text = text;
-        this.title = title;
+    MovieGenre(String enName, String zhName) {
+        this.enName = enName;
+        this.zhName = zhName;
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public String getEnName() {
+        return enName;
     }
 
-    @Override
-    public String getText() {
-        return text;
+    public String getZhName() {
+        return zhName;
     }
 
+    @Nonnull
+    @Contract(value = " -> new", pure = true)
     @Override
-    public boolean alsoKnownAs(String other) {
-        return text.equals(other) || title.equals(other);
+    public String[] getAlias() {
+        return new String[]{enName, zhName};
     }
 }

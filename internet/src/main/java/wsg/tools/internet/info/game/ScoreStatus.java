@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.game;
 
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * The status of a tournament or a match.
@@ -9,7 +9,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/12
  */
-public enum ScoreStatus implements IntCodeSupplier, TextSupplier {
+public enum ScoreStatus implements IntCodeSupplier, PathSupplier {
     /**
      * Not started
      */
@@ -18,20 +18,20 @@ public enum ScoreStatus implements IntCodeSupplier, TextSupplier {
     FINISHED(2, "end");
 
     private final int code;
-    private final String text;
+    private final String path;
 
-    ScoreStatus(int code, String text) {
+    ScoreStatus(int code, String path) {
         this.code = code;
-        this.text = text;
+        this.path = path;
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getAsPath() {
+        return path;
     }
 }

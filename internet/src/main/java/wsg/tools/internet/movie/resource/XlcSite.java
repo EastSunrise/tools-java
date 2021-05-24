@@ -149,7 +149,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         String href = header.previousElementSibling().attr(CssSelectors.ATTR_HREF);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_PATH_REGEX, href);
         int typeId = Integer.parseInt(matcher.group("id"));
-        XlcType type = EnumUtilExt.valueOfCode(XlcType.class, typeId);
+        XlcType type = EnumUtilExt.valueOfIntCode(XlcType.class, typeId);
         if (type.isMovie()) {
             return Pair.of(type, ResourceState.FINISHED);
         }

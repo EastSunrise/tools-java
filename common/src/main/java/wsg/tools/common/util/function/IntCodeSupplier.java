@@ -7,6 +7,12 @@ package wsg.tools.common.util.function;
  * @since 2021/2/21
  */
 @FunctionalInterface
-public interface IntCodeSupplier extends CodeSupplier<Integer> {
+public interface IntCodeSupplier {
 
+    /**
+     * Returns the code.
+     *
+     * @return the code
+     */
+    int getCode();
 }

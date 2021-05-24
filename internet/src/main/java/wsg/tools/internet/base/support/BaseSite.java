@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
@@ -19,8 +21,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
@@ -85,18 +87,18 @@ public class BaseSite implements SiteClient, Closeable {
         return new HttpHost(hostname, -1, "https");
     }
 
-    private static CloseableHttpClient defaultClient() {
-        return CachingHttpClientBuilder.create().setDefaultHeaders(List.of(USER_AGENT))
+    protected static CloseableHttpClient defaultClient() {
+        return DecoratedHttpClientBuilder.create().setDefaultHeaders(List.of(USER_AGENT))
             .setConnectionManager(new PoolingHttpClientConnectionManager()).build();
     }
 
     @Nonnull
-    private static HttpClientContext defaultContext() {
-        HttpClientContext context = HttpClientContext.create();
+    protected static HttpClientContext defaultContext() {
+        HttpClientContext clientContext = HttpClientContext.create();
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(DEFAULT_TIME_OUT)
             .setSocketTimeout(DEFAULT_TIME_OUT).build();
-        context.setRequestConfig(requestConfig);
-        return context;
+        clientContext.setRequestConfig(requestConfig);
+        return clientContext;
     }
 
     @Override
@@ -200,10 +202,6 @@ public class BaseSite implements SiteClient, Closeable {
         }
     }
 
-    public HttpClientContext getContext() {
-        return context;
-    }
-
     @Override
     public void close() throws IOException {
         if (client != null) {
@@ -216,7 +214,9 @@ public class BaseSite implements SiteClient, Closeable {
      *
      * @param args arguments to format the path
      */
-    protected RequestBuilder httpGet(@Nonnull String path, Object... args) {
+    @Nonnull
+    @Contract("_, _ -> new")
+    protected final RequestBuilder httpGet(@Nonnull String path, Object... args) {
         return RequestBuilder.get(String.format(path, args));
     }
 
@@ -225,12 +225,37 @@ public class BaseSite implements SiteClient, Closeable {
      *
      * @param args arguments to format the path
      */
-    protected RequestBuilder create(String substation, String method, String path, Object... args) {
+    protected final RequestBuilder create(String substation, String method, String path,
+        Object... args) {
         HttpHost target = host;
         if (StringUtils.isNotBlank(substation)) {
             String hostname = substation + "." + host.getHostName();
             target = new HttpHost(hostname, host.getPort(), host.getSchemeName());
         }
         return RequestBuilder.create(method).setUri(target.toURI() + String.format(path, args));
+    }
+
+    protected final HttpClientContext getContext() {
+        return context;
+    }
+
+    /**
+     * Returns the cookie of the given name in current context.
+     *
+     * @param name name of the cookie to be queried
+     * @return value of the cookie, may null
+     */
+    @Nullable
+    protected final Cookie getCookie(String name) {
+        CookieStore cookieStore = context.getCookieStore();
+        if (cookieStore == null) {
+            return null;
+        }
+        for (Cookie cookie : cookieStore.getCookies()) {
+            if (Objects.equals(cookie.getName(), name)) {
+                return cookie;
+            }
+        }
+        return null;
     }
 }

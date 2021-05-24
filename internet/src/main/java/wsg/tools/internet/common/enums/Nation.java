@@ -1,12 +1,8 @@
 package wsg.tools.internet.common.enums;
 
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Contract;
-import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.CodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * The nation of a person.
@@ -14,8 +10,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2021/2/24
  */
-public enum Nation implements CodeSupplier<String>, TextSupplier, TitleSupplier,
-    AkaPredicate<String> {
+public enum Nation implements CodeSupplier {
 
     /**
      * Part domestic nations
@@ -23,7 +18,7 @@ public enum Nation implements CodeSupplier<String>, TextSupplier, TitleSupplier,
      * @see <a href="http://www.gov.cn/test/2006-04/04/content_244533.htm">
      * Names of Nationalities of China in Romanization with Codes</a>
      */
-    HA("Han", "汉族", "汉"),
+    HA("Han", "汉族"),
     ZH("Zhuang", "壮族"),
     HU("Hui", "回族"),
     MA("Man", "满族"),
@@ -45,24 +40,17 @@ public enum Nation implements CodeSupplier<String>, TextSupplier, TitleSupplier,
     /**
      * Nations in other regions, with three-letter abbreviation as code
      */
-    YAM("Yamato", "大和民族", "大和族", "大和", "和族", "やまとみんぞく"),
+    YAM("Yamato", "大和民族"),
     KOR("Korean nationality", "韩民族"),
-    MAL("Ethnic Malay", "马来族", "巫族"),
+    MAL("Ethnic Malay", "马来族"),
     MIX("Mixed", "混血");
 
-    private final String text;
-    private final String title;
-    private final String[] aka;
+    private final String enName;
+    private final String zhName;
 
-    Nation(String text, String title, String... aka) {
-        this.text = text;
-        this.title = title;
-        this.aka = aka;
-    }
-
-    @Override
-    public boolean alsoKnownAs(String other) {
-        return text.equals(other) || title.equals(other) || ArrayUtils.contains(aka, other);
+    Nation(String enName, String zhName) {
+        this.enName = enName;
+        this.zhName = zhName;
     }
 
     @Nonnull
@@ -72,13 +60,11 @@ public enum Nation implements CodeSupplier<String>, TextSupplier, TitleSupplier,
         return name();
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public String getEnName() {
+        return enName;
     }
 
-    @Override
-    public String getText() {
-        return text;
+    public String getZhName() {
+        return zhName;
     }
 }

@@ -11,9 +11,6 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.lang.EnumUtilExt;
-import wsg.tools.common.util.function.AkaPredicate;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Utility for {@link Map}.
@@ -60,33 +57,6 @@ public final class MapUtilsExt {
             return getValue(map, s -> Enum.valueOf(eClass, s.toUpperCase(Locale.ROOT)), keys);
         }
         return getValue(map, s -> Enum.valueOf(eClass, s), keys);
-    }
-
-    /**
-     * Obtains a titled enum from the given map and remove the key.
-     *
-     * @return the enum matching the title, or null if not found
-     */
-    public static <E extends Enum<E> & TitleSupplier>
-    E getEnumOfTitle(@Nonnull Map<String, String> map, @Nonnull Class<E> eClass, boolean ignoreCase,
-        String... keys) {
-        return getValue(map, s -> EnumUtilExt.valueOfTitle(eClass, s, ignoreCase), keys);
-    }
-
-    /**
-     * Obtains an also-known-as enum from the given map and remove the key.
-     *
-     * @return the enum matching the aka, or null if not found or not matching the aka
-     */
-    public static <E extends Enum<E> & AkaPredicate<String>>
-    E getEnumOfAka(@Nonnull Map<String, String> map, @Nonnull Class<E> eClass, String... keys) {
-        return getValue(map, s -> {
-            try {
-                return EnumUtilExt.valueOfAka(eClass, s);
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
-        }, keys);
     }
 
     /**

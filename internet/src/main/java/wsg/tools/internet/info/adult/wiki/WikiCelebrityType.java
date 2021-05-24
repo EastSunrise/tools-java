@@ -1,6 +1,6 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * Type of a celebrity.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/2/24
  */
-public enum WikiCelebrityType implements TextSupplier {
+public enum WikiCelebrityType implements PathSupplier {
     /**
      * @see <a href="http://www.mrenbaike.net/yule/">Entertainment Stars</a>
      */
@@ -42,14 +42,14 @@ public enum WikiCelebrityType implements TextSupplier {
      */
     OTHER("other");
 
-    private final String text;
+    private final String path;
 
-    WikiCelebrityType(String text) {
-        this.text = text;
+    WikiCelebrityType(String path) {
+        this.path = path;
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getAsPath() {
+        return path;
     }
 }

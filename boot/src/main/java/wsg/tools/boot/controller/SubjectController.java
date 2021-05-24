@@ -2,7 +2,6 @@ package wsg.tools.boot.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,6 @@ import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.SubjectService;
 import wsg.tools.boot.service.intf.VideoManager;
 import wsg.tools.common.io.Rundll32;
-import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.movie.common.enums.DoubanMark;
@@ -94,15 +92,15 @@ public class SubjectController extends AbstractController {
      */
     @PostMapping("/import/douban")
     @ResponseBody
-    public ResponseEntity<BatchResult<Long>> importDouban(Long user, LocalDate since) {
+    public ResponseEntity<BatchResult<Long>> importDouban(Long user) {
         if (user == null) {
             return BAD_REQUEST.build();
         }
         BatchResult<Long> result = BatchResult.create();
         for (DoubanMark mark : DoubanMark.values()) {
             try {
-                result = result.plus(subjectService.importDouban(user, since, mark));
-            } catch (OtherResponseException | LoginException e) {
+                result = result.plus(subjectService.importDouban(user, mark));
+            } catch (OtherResponseException e) {
                 log.error(e.getMessage());
                 return SERVER_ERROR.build();
             } catch (NotFoundException e) {
@@ -121,7 +119,7 @@ public class SubjectController extends AbstractController {
         }
         try {
             subjectService.importSubjectByDb(id);
-        } catch (OtherResponseException | DataIntegrityException | LoginException e) {
+        } catch (OtherResponseException | DataIntegrityException e) {
             return SERVER_ERROR.body(e.getMessage());
         } catch (NotFoundException e) {
             return NOT_FOUND.body(e.getMessage());
@@ -137,7 +135,7 @@ public class SubjectController extends AbstractController {
                 movie.setStatus(videoManager.getStatus(entity));
                 return movie;
             }).sorted((o1, o2) -> {
-                int dif = o2.getStatus().getCode().compareTo(o1.getStatus().getCode());
+                int dif = Integer.compare(o2.getStatus().getCode(), o1.getStatus().getCode());
                 if (dif != 0) {
                     return dif;
                 }

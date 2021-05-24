@@ -1,7 +1,5 @@
 package wsg.tools.internet.info.adult.west;
 
-import java.util.Objects;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.PathSupplier;
 
 /**
@@ -12,40 +10,22 @@ import wsg.tools.internet.base.view.PathSupplier;
  * @see PornTubeSite#findAllByTag(PornTubeTag)
  * @since 2021/4/4
  */
-public class PornTubeTag implements PathSupplier, TitleSupplier {
+public class PornTubeTag implements PathSupplier {
 
-    private final String titlePath;
-    private final String title;
+    private final String path;
+    private final String tag;
 
-    PornTubeTag(String titlePath, String title) {
-        this.titlePath = titlePath;
-        this.title = title;
+    PornTubeTag(String path, String tag) {
+        this.path = path;
+        this.tag = tag;
     }
 
     @Override
     public String getAsPath() {
-        return titlePath;
+        return path;
     }
 
-    @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PornTubeTag tag = (PornTubeTag) o;
-        return titlePath.equals(tag.titlePath);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(titlePath);
+    public String getTag() {
+        return tag;
     }
 }

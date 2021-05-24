@@ -1,8 +1,6 @@
 package wsg.tools.boot.common.enums;
 
-import wsg.tools.common.util.function.AkaPredicate;
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.support.BaiduDiskLink;
 import wsg.tools.internet.download.support.Ed2kLink;
@@ -18,61 +16,52 @@ import wsg.tools.internet.download.support.YyetsLink;
  * @author Kingen
  * @since 2020/11/3
  */
-public enum ResourceType implements IntCodeSupplier, AkaPredicate<Class<? extends Link>>,
-    TextSupplier {
+public enum ResourceType implements IntCodeSupplier {
 
     /**
      * @see Ed2kLink
      */
-    ED2K(11, Ed2kLink.class, "ed2k"),
+    ED2K(11, Ed2kLink.class),
     /**
      * @see MagnetLink
      */
-    MAGNET(12, MagnetLink.class, "magnet"),
+    MAGNET(12, MagnetLink.class),
     /**
      * @see HttpLink
      */
-    HTTP(13, HttpLink.class, "HTTP/HTTPS/FTP"),
+    HTTP(13, HttpLink.class),
     /**
      * @see BaiduDiskLink
      */
-    BAIDU_DISK(21, BaiduDiskLink.class, "Baidu Yun Disk"),
+    BAIDU_DISK(21, BaiduDiskLink.class),
     /**
      * @see UcDiskLink
      */
-    UC_DISK(22, UcDiskLink.class, "UC Yun Disk"),
+    UC_DISK(22, UcDiskLink.class),
     /**
      * @see ThunderDiskLink
      */
-    THUNDER_DISK(23, ThunderDiskLink.class, "Thunder Disk"),
+    THUNDER_DISK(23, ThunderDiskLink.class),
     /**
      * @see YyetsLink
      */
-    YYETS(31, YyetsLink.class, "yyets"),
+    YYETS(31, YyetsLink.class),
     ;
 
     private final int code;
-    private final Class<? extends Link> clazz;
-    private final String text;
+    private final Class<? extends Link> linkClass;
 
-    ResourceType(int code, Class<? extends Link> clazz, String text) {
+    ResourceType(int code, Class<? extends Link> linkClass) {
         this.code = code;
-        this.clazz = clazz;
-        this.text = text;
+        this.linkClass = linkClass;
     }
 
     @Override
-    public boolean alsoKnownAs(Class<? extends Link> other) {
-        return clazz.equals(other);
-    }
-
-    @Override
-    public String getText() {
-        return text;
-    }
-
-    @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
+    }
+
+    public Class<? extends Link> getLinkClass() {
+        return linkClass;
     }
 }

@@ -1,6 +1,5 @@
 package wsg.tools.boot.dao.api.adapter;
 
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 import wsg.tools.internet.info.adult.view.ImagesSupplier;
@@ -12,7 +11,12 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @author Kingen
  * @since 2021/4/29
  */
-public interface AdultEntryAdapter
-    extends TitleSupplier, CoverSupplier, DurationSupplier, Tagged, ImagesSupplier {
+public interface AdultEntryAdapter extends CoverSupplier, DurationSupplier, Tagged, ImagesSupplier {
 
+    /**
+     * Returns the title of the entry.
+     *
+     * @return the title
+     */
+    String getTitle();
 }

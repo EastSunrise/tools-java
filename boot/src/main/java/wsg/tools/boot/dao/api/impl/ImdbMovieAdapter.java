@@ -1,6 +1,6 @@
 package wsg.tools.boot.dao.api.impl;
 
-import wsg.tools.boot.dao.api.intf.ImdbMovieView;
+import wsg.tools.boot.dao.api.ImdbMovieView;
 import wsg.tools.internet.movie.imdb.ImdbMovie;
 
 /**

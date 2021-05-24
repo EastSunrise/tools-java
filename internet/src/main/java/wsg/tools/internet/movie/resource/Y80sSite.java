@@ -22,12 +22,12 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -94,7 +94,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
         Elements lis = document.selectFirst("#path").select(CssSelectors.TAG_LI);
         String typeHref = lis.get(1).selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
         String typeStr = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref).group("t");
-        Y80sType realType = EnumUtilExt.valueOfText(Y80sType.class, typeStr, false);
+        Y80sType realType = EnumUtilExt.valueOfKey(Y80sType.class, typeStr, Y80sType::getAsPath);
         String dateStr = ((TextNode) info.get("资源更新：").nextSibling()).text().strip();
         LocalDate updateDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
         Y80sItem item = new Y80sItem(realType, id, lis.last().text().strip(), updateDate);
@@ -150,7 +150,7 @@ public final class Y80sSite extends AbstractListResourceSite<Y80sItem> {
         private static final Pattern DOUBAN_HREF_REGEX = Pattern.compile("/subject/(?<id>\\d+)");
 
         static {
-            String types = Arrays.stream(Y80sType.values()).map(TextSupplier::getText)
+            String types = Arrays.stream(Y80sType.values()).map(PathSupplier::getAsPath)
                 .collect(Collectors.joining("|"));
             TYPE_HREF_REGEX = Pattern.compile("//m\\.y80s\\.com/(?<t>" + types + ")/\\d+(-\\d){6}");
             PLAY_HREF_REGEX = Pattern

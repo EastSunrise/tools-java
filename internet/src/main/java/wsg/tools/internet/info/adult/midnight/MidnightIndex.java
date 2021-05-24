@@ -1,7 +1,7 @@
 package wsg.tools.internet.info.adult.midnight;
 
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
+import wsg.tools.internet.common.TitleSupplier;
 
 /**
  * An index pointing to a {@link BaseMidnightItem} in the {@link MidnightSite}.

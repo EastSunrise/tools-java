@@ -9,18 +9,18 @@ import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Deserialize a value of type {@code T} to an enum with {@link #deserialize(Class, Object)}.
+ * Deserializes a value of type {@code T} to an enum with {@link #valueOf(Class, Object)}.
  *
  * @author Kingen
  * @since 2021/3/5
  */
 public abstract class AbstractEnumDeserializer<T, E extends Enum<E>> extends StdDeserializer<E> {
 
-    private final Class<T> tClass;
+    private final Class<T> valueType;
 
-    AbstractEnumDeserializer(Class<T> tClass, Class<E> eClass) {
+    protected AbstractEnumDeserializer(Class<T> valueType, Class<E> eClass) {
         super(eClass);
-        this.tClass = tClass;
+        this.valueType = valueType;
     }
 
     @Override
@@ -29,21 +29,21 @@ public abstract class AbstractEnumDeserializer<T, E extends Enum<E>> extends Std
         if (p.hasToken(JsonToken.VALUE_NULL)) {
             return null;
         }
-        T t = p.readValueAs(tClass);
-        if (t instanceof String && StringUtils.isBlank((CharSequence) t)
+        T t = p.readValueAs(valueType);
+        if (t instanceof String && StringUtils.isEmpty((CharSequence) t)
             && ctxt.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {
             return null;
         }
-        return deserialize((Class<E>) handledType(), t);
+        return valueOf((Class<E>) handledType(), t);
     }
 
     /**
-     * Deserialize the value to an enum.
+     * Converts the value to an enum.
      *
      * @param eClass type of the target enum
      * @param value  value to deserialize
      * @return the enum
      * @throws IllegalArgumentException if can't deserialize
      */
-    public abstract E deserialize(Class<E> eClass, T value);
+    public abstract E valueOf(Class<E> eClass, T value);
 }

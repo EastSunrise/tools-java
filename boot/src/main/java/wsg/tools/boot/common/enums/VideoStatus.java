@@ -1,7 +1,6 @@
 package wsg.tools.boot.common.enums;
 
 import wsg.tools.common.util.function.IntCodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
 
 /**
  * Status when archiving a subject.
@@ -9,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2020/10/9
  */
-public enum VideoStatus implements IntCodeSupplier, TextSupplier {
+public enum VideoStatus implements IntCodeSupplier {
 
     /**
      * If archived
@@ -42,20 +41,19 @@ public enum VideoStatus implements IntCodeSupplier, TextSupplier {
     TO_ARCHIVE(40, "To archive");
 
     private final int code;
-    private final String text;
+    private final String displayText;
 
-    VideoStatus(int code, String text) {
+    VideoStatus(int code, String displayText) {
         this.code = code;
-        this.text = text;
+        this.displayText = displayText;
+    }
+
+    public String getDisplayText() {
+        return displayText;
     }
 
     @Override
-    public String getText() {
-        return text;
-    }
-
-    @Override
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 }

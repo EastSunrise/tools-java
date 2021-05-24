@@ -10,8 +10,7 @@ import java.time.Duration;
 import java.util.List;
 import javax.persistence.Converter;
 import wsg.tools.boot.pojo.error.AppException;
-import wsg.tools.common.jackson.deserializer.CodeEnumDeserializer;
-import wsg.tools.common.jackson.serializer.CodeSerializer;
+import wsg.tools.common.jackson.deserializer.EnumDeserializers;
 import wsg.tools.internet.common.enums.Language;
 
 /**
@@ -70,9 +69,7 @@ public class ContainerJsonJpaConverters {
             .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule())
             .registerModule(new SimpleModule()
-                .addSerializer(CodeSerializer.getInstance(Language.class))
-                .addDeserializer(Language.class,
-                    new CodeEnumDeserializer<>(String.class, Language.class)));
+                .addDeserializer(Language.class, EnumDeserializers.ofCode(Language.class)));
 
         private final TypeReference<C> type;
 

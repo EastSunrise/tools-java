@@ -130,7 +130,7 @@ public enum MovieHeavenType implements IntCodeSupplier {
     }
 
     @Override
-    public Integer getCode() {
+    public int getCode() {
         return id;
     }
 

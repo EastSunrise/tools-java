@@ -1,6 +1,6 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * Type of an album.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/2/26
  */
-public enum WikiAlbumType implements TextSupplier {
+public enum WikiAlbumType implements PathSupplier {
 
     /**
      * @see <a href="http://www.mrenbaike.net/tuku/xiezhen/">Photos</a>
@@ -23,20 +23,20 @@ public enum WikiAlbumType implements TextSupplier {
      */
     SCENE("scene", 31);
 
-    private final String text;
+    private final String path;
     private final int first;
 
-    WikiAlbumType(String text, int first) {
-        this.text = text;
+    WikiAlbumType(String path, int first) {
+        this.path = path;
         this.first = first;
-    }
-
-    @Override
-    public String getText() {
-        return text;
     }
 
     public int first() {
         return first;
+    }
+
+    @Override
+    public String getAsPath() {
+        return path;
     }
 }

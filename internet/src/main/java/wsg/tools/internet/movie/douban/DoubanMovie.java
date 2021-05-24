@@ -6,8 +6,6 @@ package wsg.tools.internet.movie.douban;
  * @author Kingen
  * @since 2020/8/31
  */
-public class DoubanMovie extends BaseDoubanSubject {
+public class DoubanMovie extends AbstractMovie {
 
-    DoubanMovie() {
-    }
 }

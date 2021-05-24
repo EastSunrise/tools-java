@@ -1,7 +1,6 @@
 package wsg.tools.common.lang;
 
 import java.util.Objects;
-import wsg.tools.common.util.function.AkaPredicate;
 
 /**
  * Class for money.
@@ -43,7 +42,7 @@ public class Money {
         throw new IllegalArgumentException("Can't parse money from '" + text + "'.");
     }
 
-    public enum CurrencyEnum implements AkaPredicate<String> {
+    public enum CurrencyEnum {
         /**
          * RMB
          */
@@ -55,11 +54,6 @@ public class Money {
         CurrencyEnum(String code, String sign) {
             this.code = code;
             this.sign = sign;
-        }
-
-        @Override
-        public boolean alsoKnownAs(String other) {
-            return code.equals(other) || sign.equals(other);
         }
 
         public String getCode() {

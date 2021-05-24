@@ -1,8 +1,8 @@
 package wsg.tools.internet.info.adult.wiki;
 
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.base.view.SubtypeSupplier;
+import wsg.tools.internet.common.TitleSupplier;
 
 /**
  * An index pointing to a {@link WikiAlbum}.

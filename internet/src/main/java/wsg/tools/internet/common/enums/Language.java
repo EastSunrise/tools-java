@@ -1,11 +1,9 @@
 package wsg.tools.internet.common.enums;
 
 import java.util.Locale;
-import org.apache.commons.lang3.ArrayUtils;
-import wsg.tools.common.util.function.AkaPredicate;
+import javax.annotation.Nonnull;
+import wsg.tools.common.util.function.AliasSupplier;
 import wsg.tools.common.util.function.CodeSupplier;
-import wsg.tools.common.util.function.TextSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
 
 /**
  * Enum for languages.
@@ -13,8 +11,7 @@ import wsg.tools.common.util.function.TitleSupplier;
  * @author Kingen
  * @since 2020/6/26
  */
-public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplier,
-    AkaPredicate<String> {
+public enum Language implements CodeSupplier, AliasSupplier {
     /**
      * ISO languages
      *
@@ -107,33 +104,32 @@ public enum Language implements CodeSupplier<String>, TextSupplier, TitleSupplie
     NAP("Neapolitan", "那不勒斯语"),
     ;
 
-    private final String text;
-    private final String title;
-    private final String[] aka;
+    private final String enName;
+    private final String zhName;
+    private final String[] alias;
 
-    Language(String text, String title, String... aka) {
-        this.text = text;
-        this.title = title;
-        this.aka = aka;
+    Language(String enName, String zhName, String... alias) {
+        this.enName = enName;
+        this.zhName = zhName;
+        this.alias = alias;
     }
 
+    @Nonnull
     @Override
     public String getCode() {
         return name().toLowerCase(Locale.ENGLISH);
     }
 
-    @Override
-    public boolean alsoKnownAs(String other) {
-        return text.equals(other) || title.equals(other) || ArrayUtils.contains(aka, other);
+    public String getEnName() {
+        return enName;
+    }
+
+    public String getZhName() {
+        return zhName;
     }
 
     @Override
-    public String getText() {
-        return text;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
+    public String[] getAlias() {
+        return alias;
     }
 }

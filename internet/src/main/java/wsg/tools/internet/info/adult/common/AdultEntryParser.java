@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Contract;
 import wsg.tools.common.util.MapUtilsExt;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.AmateurSupplier;
@@ -26,8 +25,8 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @author Kingen
  * @since 2021/4/7
  */
-public final class AdultEntryParser implements SerialNumSupplier,
-    TitleSupplier, AmateurSupplier, DurationSupplier {
+public final class AdultEntryParser
+    implements SerialNumSupplier, AmateurSupplier, DurationSupplier {
 
     private final Map<String, String> info;
 
@@ -82,7 +81,6 @@ public final class AdultEntryParser implements SerialNumSupplier,
         return MapUtilsExt.getStringList(info, separatorChars, "女优", "演员");
     }
 
-    @Override
     public String getTitle() {
         return MapUtilsExt.getString(info, "名称");
     }

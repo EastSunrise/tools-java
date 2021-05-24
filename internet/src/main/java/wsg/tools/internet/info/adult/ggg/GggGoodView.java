@@ -1,10 +1,10 @@
 package wsg.tools.internet.info.adult.ggg;
 
 import java.net.URL;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.Describable;
+import wsg.tools.internet.common.TitleSupplier;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
 
 /**

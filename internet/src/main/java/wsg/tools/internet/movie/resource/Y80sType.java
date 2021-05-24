@@ -1,6 +1,6 @@
 package wsg.tools.internet.movie.resource;
 
-import wsg.tools.common.util.function.TextSupplier;
+import wsg.tools.internet.base.view.PathSupplier;
 
 /**
  * The subtype that an item belongs to in the {@link Y80sSite}.
@@ -8,7 +8,7 @@ import wsg.tools.common.util.function.TextSupplier;
  * @author Kingen
  * @since 2021/3/12
  */
-public enum Y80sType implements TextSupplier {
+public enum Y80sType implements PathSupplier {
     /**
      * @see <a href="http://m.y80s.com/movie/1-0-0-0-0-0-0">Movies</a>
      */
@@ -51,11 +51,11 @@ public enum Y80sType implements TextSupplier {
     MICRO(15, "weidianying");
 
     private final int id;
-    private final String text;
+    private final String path;
 
-    Y80sType(int id, String text) {
+    Y80sType(int id, String path) {
         this.id = id;
-        this.text = text;
+        this.path = path;
     }
 
     public int getId() {
@@ -63,7 +63,7 @@ public enum Y80sType implements TextSupplier {
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getAsPath() {
+        return path;
     }
 }

@@ -165,7 +165,7 @@ public final class MovieHeavenSite extends AbstractListResourceSite<MovieHeavenI
         String href = children.get(1).attr(CssSelectors.ATTR_HREF);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, href);
         int typeId = Integer.parseInt(matcher.group("id"));
-        MovieHeavenType type = EnumUtilExt.valueOfCode(MovieHeavenType.class, typeId);
+        MovieHeavenType type = EnumUtilExt.valueOfIntCode(MovieHeavenType.class, typeId);
         if (type.isMovie()) {
             return Pair.of(type, ResourceState.FINISHED);
         }

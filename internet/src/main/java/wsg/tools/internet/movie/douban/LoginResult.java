@@ -1,7 +1,6 @@
 package wsg.tools.internet.movie.douban;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
 import wsg.tools.internet.movie.douban.api.pojo.Account;
 
 /**
@@ -10,8 +9,7 @@ import wsg.tools.internet.movie.douban.api.pojo.Account;
  * @author Kingen
  * @since 2020/8/31
  */
-@Getter
-public class LoginResult {
+class LoginResult {
 
     @JsonProperty("status")
     private String status;
@@ -29,18 +27,63 @@ public class LoginResult {
         return "success".equals(status);
     }
 
-    @Getter
-    public static class Payload {
+    public String getStatus() {
+        return status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Payload getPayload() {
+        return payload;
+    }
+
+    static class Payload {
+
         @JsonProperty("account_info")
         private Account account;
 
         /**
          * When graph validate code is required.
          */
+        @JsonProperty("tc_app_id")
         private Long tcAppId;
+        @JsonProperty("captcha_signature_sample")
         private String captchaSignatureSample;
+        @JsonProperty("touch_cap_url")
         private String touchCapUrl;
+        @JsonProperty("captcha_id")
         private String captchaId;
+        @JsonProperty("captcha_image_url")
         private String captchaImageUrl;
+
+        public Account getAccount() {
+            return account;
+        }
+
+        public Long getTcAppId() {
+            return tcAppId;
+        }
+
+        public String getCaptchaSignatureSample() {
+            return captchaSignatureSample;
+        }
+
+        public String getTouchCapUrl() {
+            return touchCapUrl;
+        }
+
+        public String getCaptchaId() {
+            return captchaId;
+        }
+
+        public String getCaptchaImageUrl() {
+            return captchaImageUrl;
+        }
     }
 }

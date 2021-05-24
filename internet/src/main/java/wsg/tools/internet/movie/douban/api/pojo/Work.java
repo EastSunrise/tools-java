@@ -2,7 +2,6 @@ package wsg.tools.internet.movie.douban.api.pojo;
 
 import java.util.List;
 import lombok.Getter;
-import wsg.tools.internet.movie.common.enums.MovieRole;
 
 /**
  * Works of creators.
@@ -13,6 +12,6 @@ import wsg.tools.internet.movie.common.enums.MovieRole;
 @Getter
 public class Work {
 
-    private List<MovieRole> roles;
+    private List<String> roles;
     private SimpleSubject subject;
 }

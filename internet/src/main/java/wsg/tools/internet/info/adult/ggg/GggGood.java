@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.CodeSupplier;
-import wsg.tools.common.util.function.TitleSupplier;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.Describable;
+import wsg.tools.internet.common.TitleSupplier;
 import wsg.tools.internet.common.UpdateDateSupplier;
 import wsg.tools.internet.info.adult.view.ActressSupplier;
 import wsg.tools.internet.info.adult.view.ImageSupplier;
@@ -22,7 +22,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * @see GggSite#findPage(GggPageReq)
  * @since 2021/4/13
  */
-public class GggGood implements IntIdentifier, CodeSupplier<String>,
+public class GggGood implements IntIdentifier, CodeSupplier,
     TitleSupplier, UpdateDateSupplier, ImageSupplier, Tagged, ActressSupplier, Describable {
 
     private final int id;

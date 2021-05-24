@@ -3,17 +3,16 @@ package wsg.tools.internet.base;
 /**
  * Indicates the site is loggable.
  *
- * @param <T> type the users
+ * @param <T> type of the users
  * @author Kingen
  * @since 2021/2/11
  */
-@FunctionalInterface
 public interface Loggable<T> {
 
     /**
-     * Obtains current user.
+     * Returns current logged-in user.
      *
-     * @return current user, an identity, username, or something else
+     * @return current logged-in user, or {@literal null} if not logged in
      */
     T user();
 }

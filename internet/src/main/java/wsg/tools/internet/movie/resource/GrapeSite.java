@@ -28,11 +28,11 @@ import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.function.TextSupplier;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -127,7 +127,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
     @Nonnull
     public GrapeVodPageResult findPage(@Nonnull GrapeVodType type,
         @Nonnull GrapeVodPageReq pageRequest) throws NotFoundException, OtherResponseException {
-        String order = pageRequest.getOrderBy().getText();
+        String order = pageRequest.getOrderBy().getAsPath();
         int page = pageRequest.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
         RequestBuilder builder = httpGet("/index.php").addParameter("s", arg);
@@ -163,7 +163,8 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         Elements heads = document.selectFirst(".bread-crumbs").select(CssSelectors.TAG_A);
         String typeHref = heads.get(1).attr(CssSelectors.ATTR_HREF);
         String typeText = RegexUtils.matchesOrElseThrow(Lazy.TYPE_HREF_REGEX, typeHref).group("t");
-        GrapeVodType type = EnumUtilExt.valueOfText(GrapeVodType.class, typeText, false);
+        GrapeVodType type = EnumUtilExt
+            .valueOfKey(GrapeVodType.class, typeText, GrapeVodType::getAsPath);
         String timeStr = document.selectFirst("#addtime").text().strip();
         LocalDateTime addTime = LocalDateTime.parse(timeStr, Constants.YYYY_MM_DD_HH_MM);
         Element div = document.selectFirst(".detail-title");
@@ -219,7 +220,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
         private static final Pattern TYPE_HREF_REGEX;
 
         static {
-            String types = Arrays.stream(GrapeVodType.values()).map(TextSupplier::getText)
+            String types = Arrays.stream(GrapeVodType.values()).map(PathSupplier::getAsPath)
                 .collect(Collectors.joining("|"));
             TYPE_HREF_REGEX = Pattern.compile("/vod/list/(?<t>" + types + ")/");
         }

@@ -44,11 +44,11 @@ public class BasicPageReq implements PageReq, Serializable {
 
     @Override
     public BasicPageReq next() {
-        return new BasicPageReq(current + 1, getPageSize());
+        return new BasicPageReq(current + 1, pageSize);
     }
 
     @Override
     public BasicPageReq previous() {
-        return current == 0 ? this : new BasicPageReq(current - 1, getPageSize());
+        return current == 0 ? this : new BasicPageReq(current - 1, pageSize);
     }
 }
