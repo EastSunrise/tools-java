@@ -1,6 +1,7 @@
 package wsg.tools.internet.info.adult.west;
 
 import java.util.Objects;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.TitleSupplier;
 
@@ -9,7 +10,7 @@ import wsg.tools.internet.common.TitleSupplier;
  *
  * @author Kingen
  * @see PornTubeSite#findAllCategories()
- * @see PornTubeSite#findPageByCategory(int, PornTubePageReq)
+ * @see PornTubeSite#findPageByCategory(int, PageIndex)
  * @since 2021/4/1
  */
 public class PornTubeCategory implements IntIdentifier, TitleSupplier {

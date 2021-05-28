@@ -23,9 +23,12 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.net.NetUtils;
-import wsg.tools.common.util.TimeUtils;
+import wsg.tools.common.time.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ResponseWrapper;
+import wsg.tools.internet.base.page.CountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
@@ -100,7 +103,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
     /**
      * Retrieves all categories.
      *
-     * @see #findPageByCategory(int, PornTubePageReq)
+     * @see #findPageByCategory(int, PageIndex)
      */
     public List<PornTubeCategory> findAllCategories() throws OtherResponseException {
         Document document = findDocument(httpGet("/porn-categories/"));
@@ -122,10 +125,10 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
      *
      * @see #findAllCategories()
      */
-    public PornTubePageResult findPageByCategory(int categoryId, @Nonnull PornTubePageReq req)
-        throws NotFoundException, OtherResponseException {
+    public CountablePage<PornTubeSimpleVideo> findPageByCategory(int categoryId,
+        @Nonnull PageIndex page) throws NotFoundException, OtherResponseException {
         AssertUtils.requireRange(categoryId, 1, null);
-        Element wpb = redirect(categoryId, req.getCurrent() + 1).selectFirst(".wpb_wrapper");
+        Element wpb = redirect(categoryId, page.getCurrent() + 1).selectFirst(".wpb_wrapper");
         List<PornTubeSimpleVideo> videos = getVideos(wpb);
         Element last = wpb.select(".page-numbers").last();
         int totalPages;
@@ -136,7 +139,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
         } else {
             totalPages = Integer.parseInt(last.text());
         }
-        return new PornTubePageResult(videos, req, totalPages);
+        return Page.countable(videos, page, totalPages, 15);
     }
 
     private List<PornTubeSimpleVideo> getVideos(@Nonnull Element wrapper) throws NotFoundException {
@@ -214,7 +217,7 @@ public class PornTubeSite extends BaseSite implements RepoRetrievable<Integer, P
      *
      * @see #findAllVideoIndices()
      * @see #findAllByTag(PornTubeTag)
-     * @see #findPageByCategory(int, PornTubePageReq)
+     * @see #findPageByCategory(int, PageIndex)
      * @see PornTubeStar#getVideos()
      */
     @Override

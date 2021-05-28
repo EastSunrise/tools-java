@@ -3,7 +3,6 @@ package wsg.tools.internet.info.game;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
-import lombok.Getter;
 
 /**
  * A round in a tournament, like the play-off of a spring tournament.
@@ -11,7 +10,6 @@ import lombok.Getter;
  * @author Kingen
  * @since 2021/3/13
  */
-@Getter
 public class TournamentRound {
 
     @JsonProperty("roundID")
@@ -37,5 +35,41 @@ public class TournamentRound {
     private List<RoundItem> roundSon;
 
     TournamentRound() {
+    }
+
+    public int getRoundId() {
+        return roundId;
+    }
+
+    public RoundType getType() {
+        return type;
+    }
+
+    public int getTournamentId() {
+        return tournamentId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNameEn() {
+        return nameEn;
+    }
+
+    public boolean isNowWeek() {
+        return nowWeek;
+    }
+
+    public boolean isUseTree() {
+        return useTree;
+    }
+
+    public boolean isUsePoints() {
+        return usePoints;
+    }
+
+    public List<RoundItem> getRoundSon() {
+        return roundSon;
     }
 }

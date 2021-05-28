@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.west;
 
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CoverSupplier;
 
@@ -7,8 +8,7 @@ import wsg.tools.internet.common.CoverSupplier;
  * An index pointing to a model in the site.
  *
  * @author Kingen
- * @see BabesTubeSite#findModelPage(BabesModelPageReq)
- * @see BabesModelPageResult
+ * @see BabesTubeSite#findAllModel(PageIndex, BabesModelSortBy)
  * @since 2021/3/15
  */
 public interface BabesModelIndex extends PathSupplier, CoverSupplier {

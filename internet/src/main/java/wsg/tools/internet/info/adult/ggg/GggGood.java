@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import wsg.tools.common.util.function.CodeSupplier;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.Describable;
 import wsg.tools.internet.common.TitleSupplier;
@@ -19,7 +20,7 @@ import wsg.tools.internet.info.adult.view.Tagged;
  * A good on the site.
  *
  * @author Kingen
- * @see GggSite#findPage(GggPageReq)
+ * @see GggSite#findAll(GggReq, PageIndex)
  * @since 2021/4/13
  */
 public class GggGood implements IntIdentifier, CodeSupplier,

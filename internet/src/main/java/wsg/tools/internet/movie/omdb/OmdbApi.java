@@ -2,12 +2,13 @@ package wsg.tools.internet.movie.omdb;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
 /**
- * The interface provides methods to query IMDb movies from a open api.
+ * The interface provides methods to query IMDb movies from an open api.
  *
  * @author Kingen
  * @see <a href="https://www.omdbapi.com/">OMDb API</a>
@@ -26,14 +27,14 @@ public interface OmdbApi {
      * Searches movies by the specified arguments
      *
      * @param keyword     the keyword to search
-     * @param req         pagination information
+     * @param pageIndex   pagination information
      * @param optionalReq optional arguments
      * @return searched movies
      * @throws NotFoundException        if no movies are found
      * @throws OtherResponseException   if an unexpected error occurs
      * @throws IllegalArgumentException if the keyword is blank
      */
-    OmdbPageResult searchMovies(String keyword, @Nonnull FixedSizePageReq req,
+    Page<AbstractOmdbMovie> searchMovies(String keyword, @Nonnull PageIndex pageIndex,
         @Nullable OmdbOptionalReq optionalReq) throws NotFoundException, OtherResponseException;
 
     /**

@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +25,10 @@ import wsg.tools.boot.dao.api.ImdbMovieView;
 import wsg.tools.boot.dao.api.ImdbSeriesView;
 import wsg.tools.boot.dao.api.ImdbView;
 import wsg.tools.boot.dao.api.support.SiteManager;
-import wsg.tools.boot.dao.jpa.mapper.EpisodeRepository;
 import wsg.tools.boot.dao.jpa.mapper.MovieRepository;
 import wsg.tools.boot.dao.jpa.mapper.SeasonRepository;
 import wsg.tools.boot.dao.jpa.mapper.SeriesRepository;
 import wsg.tools.boot.pojo.entity.base.IdView;
-import wsg.tools.boot.pojo.entity.subject.EpisodeEntity;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
@@ -41,9 +38,9 @@ import wsg.tools.boot.pojo.error.UnknownTypeException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.base.BaseServiceImpl;
 import wsg.tools.boot.service.intf.SubjectService;
-import wsg.tools.common.constant.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -52,7 +49,6 @@ import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.AbstractMovie;
 import wsg.tools.internet.movie.douban.DoubanCatalog;
 import wsg.tools.internet.movie.douban.DoubanMovie;
-import wsg.tools.internet.movie.douban.DoubanPageResult;
 import wsg.tools.internet.movie.douban.DoubanSeries;
 import wsg.tools.internet.movie.douban.MarkedSubject;
 
@@ -71,7 +67,6 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     private MovieRepository movieRepository;
     private SeriesRepository seriesRepository;
     private SeasonRepository seasonRepository;
-    private EpisodeRepository episodeRepository;
     private SiteManager manager;
 
     @Override
@@ -227,10 +222,9 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      */
     private long insertSeries(String seriesImdbId, ImdbSeriesView seriesView)
         throws OtherResponseException, DataIntegrityException {
-        Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>> result =
+        Pair<List<SeasonEntity>, BatchResult<Integer>> pair =
             getSeasons(seriesView.getEpisodes(), seriesImdbId);
-        List<Pair<SeasonEntity, List<EpisodeEntity>>> seasons = result.getLeft();
-        Map<Integer, String> fails = result.getRight();
+        List<SeasonEntity> seasons = pair.getLeft();
         SeriesEntity series;
         try {
             Optional<SeriesEntity> optional = seriesRepository.findByImdbId(seriesImdbId);
@@ -241,9 +235,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 seriesEntity.setYear(seriesView.getYear());
                 seriesEntity.setLanguages(seriesView.getLanguages());
                 seriesEntity.setSeasonsCount(seriesView.getSeasonsCount());
-                List<SeasonEntity> seasonEntities = seasons.stream().map(Pair::getLeft)
-                    .collect(Collectors.toList());
-                seriesEntity.setZhTitle(extractTitle(seasonEntities));
+                seriesEntity.setZhTitle(extractTitle(seasons));
                 series = seriesRepository.insert(seriesEntity);
             } else {
                 series = optional.get();
@@ -253,39 +245,25 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 "Data of the series aren't integral: " + e.getMessage());
         }
 
-        for (Pair<SeasonEntity, List<EpisodeEntity>> pair : seasons) {
-            SeasonEntity season = pair.getLeft();
+        BatchResult<Integer> result = pair.getRight();
+        for (SeasonEntity season : seasons) {
             Optional<IdView<Long>> idViewOptional = seasonRepository.findByDbId(season.getDbId());
             try {
-                long seasonId;
                 if (idViewOptional.isEmpty()) {
                     season.setSeries(series);
-                    seasonId = seasonRepository.insert(season).getId();
-                } else {
-                    seasonId = idViewOptional.get().getId();
-                }
-                for (EpisodeEntity episode : pair.getRight()) {
-                    Optional<EpisodeEntity> entityOptional = episodeRepository
-                        .findByImdbId(episode.getImdbId());
-                    if (entityOptional.isEmpty()) {
-                        episode.setSeasonId(seasonId);
-                        episodeRepository.insert(episode);
-                    }
+                    seasonRepository.insert(season);
                 }
             } catch (DataIntegrityViolationException | IllegalArgumentException e) {
                 if (season.getYear() != null && season.getYear() > Year.now().getValue()) {
-                    fails.put(season.getCurrentSeason(), "The season isn't released yet.");
+                    result.fail(season.getCurrentSeason(), "The season isn't released yet.");
                 } else {
-                    fails.put(season.getCurrentSeason(), e.getMessage());
+                    result.fail(season.getCurrentSeason(), e.getMessage());
                 }
             }
         }
 
-        if (!fails.isEmpty()) {
-            throw new DataIntegrityException(fails.entrySet().stream()
-                .map(entry -> String
-                    .format("Season: %d, error: %s", entry.getKey(), entry.getValue()))
-                .collect(Collectors.joining(Constants.LINE_SEPARATOR)));
+        if (result.hasFailures()) {
+            throw new DataIntegrityException(result.toString());
         }
         return series.getId();
     }
@@ -316,15 +294,15 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
         return title;
     }
 
-    private Pair<List<Pair<SeasonEntity, List<EpisodeEntity>>>, Map<Integer, String>>
+    private Pair<List<SeasonEntity>, BatchResult<Integer>>
     getSeasons(List<String[]> allEpisodes, String seriesImdbId) throws OtherResponseException {
-        Map<Integer, String> fails = new HashMap<>(4);
-        List<Pair<SeasonEntity, List<EpisodeEntity>>> seasons = new ArrayList<>();
+        BatchResult<Integer> result = BatchResult.create();
+        List<SeasonEntity> seasons = new ArrayList<>();
         String[] season1Episodes = allEpisodes.isEmpty() ? new String[]{} : allEpisodes.get(0);
         try {
             seasons.add(getSeason(seriesImdbId, season1Episodes, 1));
         } catch (LoginException | NotFoundException e) {
-            fails.put(1, e.getMessage());
+            result.fail(1, e.getMessage());
         }
 
         if (allEpisodes.size() > 1) {
@@ -332,17 +310,17 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 String[] episodes = allEpisodes.get(index);
                 int currentSeason = index + 1;
                 if (episodes == null || episodes[1] == null) {
-                    fails.put(currentSeason, "None id of IMDb exists.");
+                    result.fail(currentSeason, "None id of IMDb exists.");
                 } else {
                     try {
                         seasons.add(getSeason(episodes[1], episodes, currentSeason));
                     } catch (LoginException | NotFoundException e) {
-                        fails.put(currentSeason, e.getMessage());
+                        result.fail(currentSeason, e.getMessage());
                     }
                 }
             }
         }
-        return Pair.of(seasons, fails);
+        return Pair.of(seasons, result);
     }
 
     /**
@@ -350,8 +328,7 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
      *
      * @throws NotFoundException if the subject of the given IMDb id is not found from Douban
      */
-    private Pair<SeasonEntity, List<EpisodeEntity>> getSeason(String seasonImdbId,
-        String[] episodes, int currentSeason)
+    private SeasonEntity getSeason(String seasonImdbId, String[] episodes, int currentSeason)
         throws OtherResponseException, NotFoundException, LoginException {
         long seasonDbId = manager.doubanRepo().getDbIdByImdbId(seasonImdbId);
         AbstractMovie movie = null;
@@ -381,47 +358,19 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
             seasonEntity.setEpisodesCount(episodes.length - 1);
         }
         seasonEntity.setCurrentSeason(currentSeason);
-
-        List<EpisodeEntity> episodeEntities = new ArrayList<>();
-        for (int i = 0; i < episodes.length; i++) {
-            String episodeImdbId = episodes[i];
-            if (StringUtils.isNotBlank(episodeImdbId)) {
-                episodeEntities.add(getEpisode(episodeImdbId, i));
-            }
-        }
-        return Pair.of(seasonEntity, episodeEntities);
-    }
-
-    /**
-     * Retrieves and converts an episode.
-     */
-    private EpisodeEntity getEpisode(String episodeImdbId, int currentEpisode)
-        throws OtherResponseException {
-        EpisodeEntity episodeEntity = new EpisodeEntity();
-        episodeEntity.setImdbId(episodeImdbId);
-
-        ImdbEpisodeView imdbEpisodeView;
-        try {
-            imdbEpisodeView = (ImdbEpisodeView) manager.imdbRepo().findSubjectById(episodeImdbId);
-        } catch (NotFoundException e) {
-            throw new ShouldExistException(e);
-        }
-        episodeEntity.setEnTitle(imdbEpisodeView.getEnTitle());
-        episodeEntity.setDurations(imdbEpisodeView.getDurations());
-        episodeEntity.setCurrentEpisode(currentEpisode);
-        return episodeEntity;
+        return seasonEntity;
     }
 
     @Override
     public BatchResult<Long> importDouban(long userId, @Nonnull DoubanMark mark)
         throws NotFoundException, OtherResponseException {
         log.info("Start to import collected subjects marked as {} of {}", mark, userId);
-        FixedSizePageReq req = FixedSizePageReq.first();
+        PageIndex pageIndex = PageIndex.first();
         BatchResult<Long> result = BatchResult.create();
         while (true) {
-            DoubanPageResult<MarkedSubject> subjects = manager.doubanRepo()
-                .findUserSubjects(DoubanCatalog.MOVIE, userId, mark, req);
-            for (MarkedSubject subject : subjects.getContent()) {
+            Page<MarkedSubject> page = manager.doubanRepo()
+                .findUserSubjects(DoubanCatalog.MOVIE, userId, mark, pageIndex);
+            for (MarkedSubject subject : page.getContent()) {
                 try {
                     importSubjectByDb(subject.getDbId());
                 } catch (DataIntegrityException | NotFoundException e) {
@@ -430,10 +379,10 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
                 }
                 result.succeed();
             }
-            if (!subjects.hasNext()) {
+            if (!page.hasNext()) {
                 break;
             }
-            req = subjects.nextPageRequest();
+            pageIndex = page.nextPageReq();
         }
         return result;
     }
@@ -486,11 +435,6 @@ public class SubjectServiceImpl extends BaseServiceImpl implements SubjectServic
     @Autowired
     public void setSeasonRepository(SeasonRepository seasonRepository) {
         this.seasonRepository = seasonRepository;
-    }
-
-    @Autowired
-    public void setEpisodeRepository(EpisodeRepository episodeRepository) {
-        this.episodeRepository = episodeRepository;
     }
 
     @Autowired

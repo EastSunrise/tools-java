@@ -2,6 +2,7 @@ package wsg.tools.internet.common.enums;
 
 import java.util.Locale;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.ArrayUtils;
 import wsg.tools.common.util.function.AliasSupplier;
 import wsg.tools.common.util.function.CodeSupplier;
 
@@ -130,6 +131,6 @@ public enum Language implements CodeSupplier, AliasSupplier {
 
     @Override
     public String[] getAlias() {
-        return alias;
+        return ArrayUtils.addAll(alias, enName, zhName);
     }
 }

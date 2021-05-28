@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,6 +31,9 @@ import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.page.AmountCountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.view.PathSupplier;
@@ -125,10 +129,11 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
      * @see GrapeVodType
      */
     @Nonnull
-    public GrapeVodPageResult findPage(@Nonnull GrapeVodType type,
-        @Nonnull GrapeVodPageReq pageRequest) throws NotFoundException, OtherResponseException {
-        String order = pageRequest.getOrderBy().getAsPath();
-        int page = pageRequest.getCurrent() + 1;
+    public AmountCountablePage<GrapeVodIndex> findAll(@Nonnull GrapeVodType type,
+        GrapeOrderBy orderBy, @Nonnull PageIndex pageIndex)
+        throws NotFoundException, OtherResponseException {
+        String order = Optional.ofNullable(orderBy).orElse(GrapeOrderBy.TIME).getAsPath();
+        int page = pageIndex.getCurrent() + 1;
         String arg = String.format("vod-type-id-%d-order-%s-p-%d", type.getId(), order, page);
         RequestBuilder builder = httpGet("/index.php").addParameter("s", arg);
         Document document = getDocument(builder);
@@ -147,7 +152,7 @@ public final class GrapeSite extends AbstractListResourceSite<GrapeNewsItem> {
             vodItem.setState(li.selectFirst(".mod_version").text());
             indices.add(vodItem);
         }
-        return new GrapeVodPageResult(indices, pageRequest, total);
+        return Page.amountCountable(indices, pageIndex, 35, total);
     }
 
     /**

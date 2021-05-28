@@ -1,14 +1,11 @@
 package wsg.tools.internet.download.support;
 
-import lombok.Getter;
-
 /**
  * Exception thrown when the target is not a valid link.
  *
  * @author Kingen
  * @since 2020/9/18
  */
-@Getter
 public class InvalidResourceException extends Exception {
 
     private static final long serialVersionUID = -6242451143908523308L;
@@ -29,5 +26,13 @@ public class InvalidResourceException extends Exception {
         super(reason);
         this.title = title;
         this.url = url;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }

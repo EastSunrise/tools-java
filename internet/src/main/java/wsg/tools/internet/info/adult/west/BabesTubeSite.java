@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,11 +24,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.common.time.TimeUtils;
 import wsg.tools.common.util.MapUtilsExt;
-import wsg.tools.common.util.TimeUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.SiteStatus;
+import wsg.tools.internet.base.page.CountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.CssSelectors;
@@ -45,9 +49,8 @@ import wsg.tools.internet.info.adult.common.VideoQuality;
  * @see <a href="https://www.babestube.com/">babestube</a>
  * @since 2021/3/15
  */
-@ConcreteSite
-public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq, BabesPageResult>,
-    RepoRetrievable<String, BabesVideo> {
+@ConcreteSite(status = SiteStatus.BLOCKED)
+public class BabesTubeSite extends BaseSite implements RepoRetrievable<String, BabesVideo> {
 
     private static final String NULL = "N/A";
     private static final String NOT_KNOWN = "Not known";
@@ -65,10 +68,10 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      * Retrieves paged indices of videos. May contain duplicate indices.
      */
     @Nonnull
-    @Override
-    public BabesPageResult findPage(@Nonnull BabesPageReq req)
-        throws NotFoundException, OtherResponseException {
-        return getVideoPage(req, "/" + req.getSortBy().getAsPath() + "/");
+    public CountablePage<BabesVideoIndex> findAll(@Nonnull PageIndex pageIndex,
+        BabesVideoSortBy sortBy) throws NotFoundException, OtherResponseException {
+        sortBy = Optional.ofNullable(sortBy).orElse(BabesVideoSortBy.LAST_UPDATE);
+        return getVideoPage("/" + sortBy.getAsPath() + "/", pageIndex, sortBy);
     }
 
     /**
@@ -159,20 +162,22 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
      *
      * @see BabesCategory#getAsPath()
      */
-    public BabesPageResult findPageByCategory(String categoryPath, BabesPageReq req)
+    public CountablePage<BabesVideoIndex> findAllByCategory(String categoryPath,
+        @Nonnull PageIndex pageIndex, BabesVideoSortBy sortBy)
         throws NotFoundException, OtherResponseException {
-        return getVideoPage(req, String.format("/categories/%s/", categoryPath));
+        sortBy = Optional.ofNullable(sortBy).orElse(BabesVideoSortBy.LAST_UPDATE);
+        return getVideoPage(String.format("/categories/%s/", categoryPath), pageIndex, sortBy);
     }
 
     /**
      * Retrieves paged indices of models.
      */
     @Nonnull
-    public BabesModelPageResult findModelPage(@Nonnull BabesModelPageReq req)
-        throws NotFoundException, OtherResponseException {
-        Block block = getBlock("list_models_models_list", "/models/", req.getCurrent(),
-            req.getSortBy().getAsPath()
-        );
+    public CountablePage<BabesModelIndex> findAllModel(@Nonnull PageIndex pageIndex,
+        BabesModelSortBy sortBy) throws NotFoundException, OtherResponseException {
+        String blockId = "list_models_models_list";
+        sortBy = Optional.ofNullable(sortBy).orElse(BabesModelSortBy.LAST_UPDATE);
+        Block block = getBlock(blockId, "/models/", pageIndex.getCurrent(), sortBy.getAsPath());
         List<BabesModelIndex> indices = new ArrayList<>(block.items.size());
         for (Element child : block.items) {
             String modelHref = child.selectFirst(CssSelectors.TAG_A).attr(CssSelectors.ATTR_HREF);
@@ -186,7 +191,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             int photos = Integer.parseInt(photosText.substring(0, photosText.length() - 7));
             indices.add(new BabesModel(p, name, NetUtils.createURL(cover), videos, photos));
         }
-        return new BabesModelPageResult(indices, req, block.totalPages);
+        return Page.countable(indices, pageIndex, 40, block.totalPages);
     }
 
     /**
@@ -262,18 +267,18 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             MapUtilsExt.getValue(info, s -> LocalDate.parse(s, Lazy.FORMATTER), "Birth date"));
         model.setBirthplace(MapUtilsExt.getString(info, "Birth place"));
         model.setWebsite(MapUtilsExt.getString(info, "Official website"));
-        BabesPageReq first = BabesPageReq.first();
         String path = String.format("/models/%s/", namePath);
-        model.setVideoIndices(SiteUtils.collectPage(req -> getVideoPage(req, path), first));
+        model.setVideoIndices(SiteUtils.collectPage(
+            req -> getVideoPage(path, req, BabesVideoSortBy.LAST_UPDATE), PageIndex.first()));
         return model;
     }
 
     @Nonnull
-    @Contract("_, _ -> new")
-    private BabesPageResult getVideoPage(@Nonnull BabesPageReq req, String path)
+    private CountablePage<BabesVideoIndex> getVideoPage(String path, @Nonnull PageIndex pageIndex,
+        @Nonnull BabesVideoSortBy sortBy)
         throws NotFoundException, OtherResponseException {
         String blockId = "list_videos_common_videos_list";
-        Block block = getBlock(blockId, path, req.getCurrent(), req.getSortBy().getArgument());
+        Block block = getBlock(blockId, path, pageIndex.getCurrent(), sortBy.getSortBy());
         List<BabesVideoIndex> indices = new ArrayList<>(block.items.size());
         for (Element item : block.items) {
             Element a = item.selectFirst(".th");
@@ -296,7 +301,7 @@ public class BabesTubeSite extends BaseSite implements RepoPageable<BabesPageReq
             }
             indices.add(index);
         }
-        return new BabesPageResult(indices, req, block.totalPages);
+        return Page.countable(indices, pageIndex, 50, block.totalPages);
     }
 
     @Nonnull

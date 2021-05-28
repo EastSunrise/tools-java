@@ -1,8 +1,8 @@
 package wsg.tools.internet.base.repository;
 
 import javax.annotation.Nonnull;
-import wsg.tools.internet.base.page.PageReq;
-import wsg.tools.internet.base.page.PageResult;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 
@@ -15,7 +15,8 @@ import wsg.tools.internet.common.OtherResponseException;
  * @author Kingen
  * @since 2021/3/28
  */
-public interface RepoPageable<P extends PageReq, R extends PageResult<?, P>> {
+@FunctionalInterface
+public interface RepoPageable<P extends PageIndex, R extends Page<?>> {
 
     /**
      * Retrieves a paged result of the indices by the given pagination information.

@@ -33,12 +33,13 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import wsg.tools.common.constant.Constants;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.support.AbstractLoggableSite;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
@@ -64,7 +65,6 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     public static final Pattern URL_MOVIE_SUBJECT_REGEX =
         Pattern.compile("https://movie.douban.com/subject/(?<id>\\d{7,8})/?");
-    protected static final int MAX_COUNT_ONCE = 100;
 
     public DoubanSite() {
         this("");
@@ -90,6 +90,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
+        // todo handle captcha
         if (!result.isSuccess()) {
             throw new LoginException(result.getMessage());
         }
@@ -119,13 +120,12 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     @Nonnull
     @Override
-    public DoubanPageResult<SubjectIndex> searchGlobally(String keyword,
-        @Nonnull FixedSizePageReq req, @Nullable DoubanCatalog catalog)
-        throws OtherResponseException {
+    public Page<SubjectIndex> searchGlobally(String keyword, @Nonnull PageIndex page,
+        @Nullable DoubanCatalog catalog) throws OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
         RequestBuilder builder = httpGet("/j/search")
             .addParameter("q", keyword)
-            .addParameter("start", String.valueOf(req.getCurrent() * 20));
+            .addParameter("start", String.valueOf(page.getCurrent() * 20));
         if (catalog != null) {
             builder.addParameter("cat", String.valueOf(catalog.getCode()));
         }
@@ -154,7 +154,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
             DoubanCatalog cat = EnumUtilExt.valueOfIntCode(DoubanCatalog.class, code);
             subjects.add(new BasicSubject(id, cat, nbg.attr(CssSelectors.ATTR_TITLE)));
         }
-        return new DoubanPageResult<>(subjects, req, result.getTotal(), 20);
+        return Page.amountCountable(subjects, page, 20, result.getTotal());
     }
 
     @Nonnull
@@ -167,12 +167,12 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     @Nonnull
     @Override
-    public DoubanPageResult<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
-        long userId, @Nonnull DoubanMark mark, @Nonnull FixedSizePageReq req)
+    public Page<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
+        long userId, @Nonnull DoubanMark mark, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
             "/people/%d/%s", userId, mark.getAsPath())
-            .addParameter("start", String.valueOf(req.getCurrent() * 30))
+            .addParameter("start", String.valueOf(page.getCurrent() * 30))
             .addParameter("sort", "time")
             .addParameter("rating", "all")
             .addParameter("filter", "all")
@@ -188,17 +188,17 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
         }
         String numStr = document.selectFirst(".subject-num").text();
         int total = Integer.parseInt(numStr.split("/")[1].strip());
-        return new DoubanPageResult<>(subjects, req, total, 30);
+        return Page.amountCountable(subjects, page, 30, total);
     }
 
     @Nonnull
     @Override
-    public DoubanPageResult<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog,
-        long userId, @Nonnull FixedSizePageReq req)
+    public Page<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog,
+        long userId, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
             "/people/%d/%s", userId, catalog.getPersonPlurality())
-            .addParameter("start", String.valueOf(req.getCurrent() * 15));
+            .addParameter("start", String.valueOf(page.getCurrent() * 15));
         Document document = getDocument(builder);
         Elements items = document.select(".item");
         List<PersonIndex> indices = new ArrayList<>(items.size());
@@ -212,7 +212,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
         String title = document.title();
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.CREATORS_PAGE_TITLE_REGEX, title);
         long total = Long.parseLong(matcher.group("t"));
-        return new DoubanPageResult<>(indices, req, total, 15);
+        return Page.amountCountable(indices, page, 15, total);
     }
 
     @Nonnull

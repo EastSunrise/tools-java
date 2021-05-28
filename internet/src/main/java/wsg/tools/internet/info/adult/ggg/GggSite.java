@@ -20,7 +20,7 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.CssSelectors;
@@ -33,8 +33,7 @@ import wsg.tools.internet.common.OtherResponseException;
  * @since 2021/4/13
  */
 @ConcreteSite(status = SiteStatus.INVALID)
-public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPageResult>,
-    RepoRetrievable<Integer, GggGoodView> {
+public class GggSite extends BaseSite implements RepoRetrievable<Integer, GggGoodView> {
 
     private static final String HOME = "http://buzz.ggg-av.com";
     private static final String BLANK_IMAGE = "images/goods_blank.jpg";
@@ -69,15 +68,14 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
     }
 
     @Nonnull
-    @Override
-    public GggPageResult findPage(@Nonnull GggPageReq req)
+    public GggPageResult findAll(@Nonnull GggReq req, PageIndex pageIndex)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = httpGet("/home/index.php")
             .addParameter("c", "CategoryAction")
             .addParameter("m", "listDetail")
             .addParameter("categoryNo", String.valueOf(req.getCategory().getCode()))
             .addParameter("orderField", req.getOrder().getAsPath())
-            .addParameter("page", String.valueOf(req.getCurrent() + 1));
+            .addParameter("page", String.valueOf(PageIndex.orFirst(pageIndex).getCurrent() + 1));
         Document document = getDocument(builder);
         Elements tables = document.selectFirst("#GoodsCarForm").select(".TableStyle");
         List<GggGood> goods = new ArrayList<>(tables.size());
@@ -116,7 +114,7 @@ public class GggSite extends BaseSite implements RepoPageable<GggPageReq, GggPag
             }
             goods.add(good);
         }
-        return new GggPageResult(goods, req);
+        return new GggPageResult(goods, pageIndex);
     }
 
     /**

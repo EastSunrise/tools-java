@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import wsg.tools.common.net.NetUtils;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.TitleSupplier;
@@ -19,9 +20,8 @@ import wsg.tools.internet.info.adult.view.ImagesSupplier;
  * An index pointing to a video on {@link BabesTubeSite}.
  *
  * @author Kingen
- * @see BabesTubeSite#findPage(BabesPageReq)
- * @see BabesTubeSite#findPageByCategory(String, BabesPageReq)
- * @see BabesPageResult
+ * @see BabesTubeSite#findAll(PageIndex, BabesVideoSortBy)
+ * @see BabesTubeSite#findAllByCategory(String, PageIndex, BabesVideoSortBy)
  * @since 2021/3/16
  */
 public class BabesVideoIndex implements IntIdentifier,

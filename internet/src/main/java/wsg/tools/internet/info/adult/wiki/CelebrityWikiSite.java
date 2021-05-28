@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
@@ -31,8 +32,10 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.page.AmountCountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.ListRepository;
-import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.repository.support.Repositories;
 import wsg.tools.internet.base.support.BaseSite;
@@ -52,8 +55,7 @@ import wsg.tools.internet.info.adult.common.CupEnum;
  */
 @ConcreteSite
 public final class CelebrityWikiSite extends BaseSite
-    implements RepoRetrievable<WikiCelebrityIndex, WikiCelebrity>,
-    RepoPageable<WikiPageReq, WikiPageResult> {
+    implements RepoRetrievable<WikiCelebrityIndex, WikiCelebrity> {
 
     private static final String TIP_MSG = "提示信息";
     private static final String VALUE_NULL = "暂无";
@@ -88,13 +90,13 @@ public final class CelebrityWikiSite extends BaseSite
     /**
      * Retrieves the paged result of the indices under the given subtype.
      */
-    @Override
     @Nonnull
-    public WikiPageResult findPage(@Nonnull WikiPageReq req)
+    public AmountCountablePage<WikiCelebrityIndex>
+    findAll(@Nonnull PageIndex pageIndex, @Nullable WikiCelebrityType type)
         throws NotFoundException, OtherResponseException {
-        int current = req.getCurrent();
+        int current = pageIndex.getCurrent();
         String page = current == 0 ? "" : ("_" + (current + 1));
-        String text = Optional.ofNullable(req.getSubtype()).map(WikiCelebrityType::getAsPath)
+        String text = Optional.ofNullable(type).map(WikiCelebrityType::getAsPath)
             .orElse("mingren");
         Document document = getDocument(httpGet("/%s/index%s.html", text, page));
 
@@ -111,14 +113,14 @@ public final class CelebrityWikiSite extends BaseSite
             Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.TOTAL_REGEX, a1.text());
             total = Integer.parseInt(matcher.group("t"));
         }
-        return new WikiPageResult(indices, req, total);
+        return Page.amountCountable(indices, pageIndex, 100, total);
     }
 
     /**
      * Retrieves the celebrity of the specified identifier.
      *
      * @see #findAllCelebrityIndices()
-     * @see #findPage(WikiPageReq)
+     * @see #findAll(PageIndex, WikiCelebrityType)
      */
     @Nonnull
     @Override

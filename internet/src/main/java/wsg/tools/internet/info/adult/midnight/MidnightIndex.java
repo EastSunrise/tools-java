@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.midnight;
 
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.TitleSupplier;
 
@@ -7,7 +8,7 @@ import wsg.tools.internet.common.TitleSupplier;
  * An index pointing to a {@link BaseMidnightItem} in the {@link MidnightSite}.
  *
  * @author Kingen
- * @see MidnightSite#findPage(MidnightPageReq)
+ * @see MidnightSite#findAll(PageIndex, MidnightColumn)
  * @since 2021/3/8
  */
 public class MidnightIndex implements IntIdentifier, TitleSupplier {

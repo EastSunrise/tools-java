@@ -4,13 +4,14 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.Objects;
 import wsg.tools.common.lang.AssertUtils;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.info.adult.view.DurationSupplier;
 
 /**
  * A simple video on the site.
  *
  * @author Kingen
- * @see PornTubeSite#findPageByCategory(int, PornTubePageReq)
+ * @see PornTubeSite#findPageByCategory(int, PageIndex)
  * @see PornTubeSite#findAllByTag(PornTubeTag)
  * @since 2021/3/31
  */

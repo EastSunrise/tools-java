@@ -21,8 +21,8 @@ import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.SiteStatus;
-import wsg.tools.internet.base.page.PageReq;
-import wsg.tools.internet.base.page.PageResult;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoPageable;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
@@ -122,22 +122,23 @@ public final class SiteUtils {
      *                 information
      * @param firstReq the first request with pagination information
      * @param action   action to be performed for the content of each page
-     * @param <I>      type of the content of each page
+     * @param <T>      type of the content of each page
      * @param <P>      type of requests with pagination information
      * @throws NotFoundException      if any page is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    public static <I, P extends PageReq> void
-    forEachPage(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
-        @Nonnull Consumer<List<I>> action) throws NotFoundException, OtherResponseException {
+    @SuppressWarnings("unchecked")
+    public static <T, P extends PageIndex> void
+    forEachPage(@Nonnull RepoPageable<P, ? extends Page<T>> pageable, P firstReq,
+        @Nonnull Consumer<List<T>> action) throws NotFoundException, OtherResponseException {
         P req = firstReq;
         while (true) {
-            PageResult<I, P> result = pageable.findPage(req);
+            Page<T> result = pageable.findPage(req);
             action.accept(result.getContent());
             if (!result.hasNext()) {
                 break;
             }
-            req = result.nextPageRequest();
+            req = (P) result.nextPageReq();
         }
     }
 
@@ -150,50 +151,51 @@ public final class SiteUtils {
      * @param firstReq  the first request with pagination information
      * @param action    action to be performed for content of each page
      * @param predicate predicate that ends the traversal
-     * @param <I>       type of the content of each page
+     * @param <T>       type of the content of each page
      * @param <P>       type of requests with pagination information
      * @throws NotFoundException      if any page is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
-    public static <I, P extends PageReq> void
-    forEachPageUntil(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq,
-        @Nonnull Consumer<I> action, @Nonnull Predicate<I> predicate)
+    @SuppressWarnings("unchecked")
+    public static <T, P extends PageIndex> void
+    forEachPageUntil(@Nonnull RepoPageable<P, ? extends Page<T>> pageable, P firstReq,
+        @Nonnull Consumer<T> action, @Nonnull Predicate<T> predicate)
         throws NotFoundException, OtherResponseException {
         P req = firstReq;
         boolean dead = false;
         while (true) {
-            PageResult<I, P> result = pageable.findPage(req);
-            for (I index : result.getContent()) {
-                if (predicate.test(index)) {
+            Page<T> page = pageable.findPage(req);
+            for (T t : page.getContent()) {
+                if (predicate.test(t)) {
                     dead = true;
                     break;
                 }
-                action.accept(index);
+                action.accept(t);
             }
-            if (dead || !result.hasNext()) {
+            if (dead || !page.hasNext()) {
                 break;
             }
-            req = result.nextPageRequest();
+            req = (P) page.nextPageReq();
         }
     }
 
     /**
      * Collects all indices by traversing the pages in a pageable repository.
      *
-     * @param <I>      type of the content of each page
-     * @param <P>      type of requests with pagination information
      * @param pageable the function to retrieve a page by a given request with pagination
      *                 information
      * @param firstReq the first request with pagination information
+     * @param <T>      type of the content of each page
+     * @param <P>      type of requests with pagination information
      * @return list of all indices found by pages
      * @throws NotFoundException      if any page is not found
      * @throws OtherResponseException if an unexpected error occurs when requesting
      */
     @Nonnull
-    public static <I, P extends PageReq>
-    List<I> collectPage(@Nonnull RepoPageable<P, ? extends PageResult<I, P>> pageable, P firstReq)
+    public static <T, P extends PageIndex>
+    List<T> collectPage(@Nonnull RepoPageable<P, ? extends Page<T>> pageable, P firstReq)
         throws NotFoundException, OtherResponseException {
-        List<I> indices = new ArrayList<>();
+        List<T> indices = new ArrayList<>();
         forEachPage(pageable, firstReq, indices::addAll);
         return indices;
     }

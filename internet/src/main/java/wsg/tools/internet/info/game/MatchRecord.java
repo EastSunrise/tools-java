@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import lombok.Getter;
-import wsg.tools.common.jackson.deserializer.TimestampDeserializer;
+import wsg.tools.common.jackson.TimestampDeserializer;
 
 /**
  * A record of the match.

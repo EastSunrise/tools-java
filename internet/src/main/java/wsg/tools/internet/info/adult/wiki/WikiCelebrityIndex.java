@@ -1,5 +1,6 @@
 package wsg.tools.internet.info.adult.wiki;
 
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.base.view.SubtypeSupplier;
 
@@ -8,7 +9,7 @@ import wsg.tools.internet.base.view.SubtypeSupplier;
  *
  * @author Kingen
  * @see CelebrityWikiSite#findAllCelebrityIndices()
- * @see CelebrityWikiSite#findPage(WikiPageReq)
+ * @see CelebrityWikiSite#findAll(PageIndex, WikiCelebrityType)
  * @since 2021/3/11
  */
 public interface WikiCelebrityIndex extends SubtypeSupplier<WikiCelebrityType>, IntIdentifier {

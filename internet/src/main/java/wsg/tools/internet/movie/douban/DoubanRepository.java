@@ -4,7 +4,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import wsg.tools.internet.base.Loggable;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -46,14 +47,14 @@ public interface DoubanRepository extends Loggable<Long> {
      * This method is limited to 10 times once.
      *
      * @param keyword keyword to search
-     * @param req     pagination information
+     * @param page    pagination information
      * @param catalog the catalog to filter subjects, may null
      * @return searched subjects in page
      * @throws OtherResponseException   if an unexpected error occurs
      * @throws IllegalArgumentException if the keyword is blank
      */
     @Nonnull
-    DoubanPageResult<SubjectIndex> searchGlobally(String keyword, @Nonnull FixedSizePageReq req,
+    Page<SubjectIndex> searchGlobally(String keyword, @Nonnull PageIndex page,
         @Nullable DoubanCatalog catalog) throws OtherResponseException;
 
     /**
@@ -75,14 +76,14 @@ public interface DoubanRepository extends Loggable<Long> {
      * @param catalog catalog of the subjects to be queried
      * @param userId  the id of the user to be queried
      * @param mark    type of marking
-     * @param req     pagination information
+     * @param page    pagination information
      * @return marked subjects in page
      * @throws NotFoundException      if the user is not found
      * @throws OtherResponseException if an unexpected error occurs
      */
     @Nonnull
-    DoubanPageResult<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog, long userId,
-        @Nonnull DoubanMark mark, @Nonnull FixedSizePageReq req)
+    Page<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog, long userId,
+        @Nonnull DoubanMark mark, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException;
 
     /**
@@ -90,14 +91,14 @@ public interface DoubanRepository extends Loggable<Long> {
      *
      * @param userId  the id of the user to be queried
      * @param catalog catalog of the creators to be queried
-     * @param req     pagination information
+     * @param page    pagination information
      * @return collected creators in page
      * @throws NotFoundException      if the user is not found
      * @throws OtherResponseException if an unexpected error occurs
      */
     @Nonnull
-    DoubanPageResult<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog, long userId,
-        @Nonnull FixedSizePageReq req) throws NotFoundException, OtherResponseException;
+    Page<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog, long userId,
+        @Nonnull PageIndex page) throws NotFoundException, OtherResponseException;
 
     /**
      * Retrieves the movie of the specified id.

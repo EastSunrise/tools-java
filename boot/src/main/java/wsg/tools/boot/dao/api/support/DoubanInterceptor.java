@@ -8,7 +8,8 @@ import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.boot.pojo.entity.subject.IdRelationEntity;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.common.LoginException;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -16,7 +17,6 @@ import wsg.tools.internet.movie.common.enums.DoubanMark;
 import wsg.tools.internet.movie.douban.AbstractMovie;
 import wsg.tools.internet.movie.douban.DoubanBook;
 import wsg.tools.internet.movie.douban.DoubanCatalog;
-import wsg.tools.internet.movie.douban.DoubanPageResult;
 import wsg.tools.internet.movie.douban.DoubanRepository;
 import wsg.tools.internet.movie.douban.MarkedSubject;
 import wsg.tools.internet.movie.douban.PersonIndex;
@@ -56,10 +56,9 @@ class DoubanInterceptor implements DoubanRepository, Closeable {
 
     @Nonnull
     @Override
-    public DoubanPageResult<SubjectIndex> searchGlobally(String keyword,
-        @Nonnull FixedSizePageReq req, @Nullable DoubanCatalog catalog)
-        throws OtherResponseException {
-        return doubanRepo.searchGlobally(keyword, req, catalog);
+    public Page<SubjectIndex> searchGlobally(String keyword, @Nonnull PageIndex page,
+        @Nullable DoubanCatalog catalog) throws OtherResponseException {
+        return doubanRepo.searchGlobally(keyword, page, catalog);
     }
 
     @Nonnull
@@ -71,18 +70,17 @@ class DoubanInterceptor implements DoubanRepository, Closeable {
 
     @Nonnull
     @Override
-    public DoubanPageResult<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
-        long userId, @Nonnull DoubanMark mark, @Nonnull FixedSizePageReq req)
+    public Page<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
+        long userId, @Nonnull DoubanMark mark, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException {
-        return doubanRepo.findUserSubjects(catalog, userId, mark, req);
+        return doubanRepo.findUserSubjects(catalog, userId, mark, page);
     }
 
     @Nonnull
     @Override
-    public DoubanPageResult<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog,
-        long userId, @Nonnull FixedSizePageReq req)
-        throws NotFoundException, OtherResponseException {
-        return doubanRepo.findUserCreators(catalog, userId, req);
+    public Page<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog, long userId,
+        @Nonnull PageIndex page) throws NotFoundException, OtherResponseException {
+        return doubanRepo.findUserCreators(catalog, userId, page);
     }
 
     /**

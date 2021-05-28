@@ -28,7 +28,9 @@ import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.TriFunction;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.page.AmountCountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.base.view.PathSupplier;
 import wsg.tools.internet.common.CssSelectors;
@@ -43,8 +45,7 @@ import wsg.tools.internet.info.adult.common.AdultEntryParser;
  * @since 2021/2/22
  */
 @ConcreteSite
-public final class MidnightSite extends BaseSite
-    implements RepoPageable<MidnightPageReq, MidnightPageResult> {
+public final class MidnightSite extends BaseSite {
 
     private static final String NAV_NAVIGATION = "nav.navigation";
 
@@ -56,12 +57,12 @@ public final class MidnightSite extends BaseSite
      * Retrieves the paged result of indices under the given column.
      */
     @Nonnull
-    @Override
-    @Contract("_ -> new")
-    public MidnightPageResult findPage(@Nonnull MidnightPageReq req)
+    @Contract("_, _ -> new")
+    public AmountCountablePage<MidnightIndex>
+    findAll(@Nonnull PageIndex pageIndex, @Nonnull MidnightColumn column)
         throws NotFoundException, OtherResponseException {
-        String page = req.getCurrent() == 0 ? "" : "_" + (req.getCurrent() + 1);
-        RequestBuilder builder = httpGet("/%s/index%s.html", req.getColumn().getAsPath(), page);
+        String page = pageIndex.getCurrent() == 0 ? "" : "_" + (pageIndex.getCurrent() + 1);
+        RequestBuilder builder = httpGet("/%s/index%s.html", column.getAsPath(), page);
         Document document = getDocument(builder);
         List<MidnightIndex> indices = new ArrayList<>();
         Element article = document.selectFirst(".article");
@@ -75,7 +76,7 @@ public final class MidnightSite extends BaseSite
             indices.add(new MidnightIndex(id, title));
         }
         int total = Integer.parseInt(article.selectFirst("#max-page").text());
-        return new MidnightPageResult(indices, req, total);
+        return Page.amountCountable(indices, pageIndex, 30, total);
     }
 
     /**

@@ -10,10 +10,11 @@ import javax.annotation.Nullable;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.RequestBuilder;
 import org.jetbrains.annotations.Contract;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.internet.base.ConcreteSite;
-import wsg.tools.internet.base.page.FixedSizePageReq;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -46,15 +47,15 @@ public final class OmdbSite extends BaseSite implements OmdbApi {
     @Nonnull
     @Contract("_, _, _ -> new")
     @Override
-    public OmdbPageResult searchMovies(String keyword, @Nonnull FixedSizePageReq req,
+    public Page<AbstractOmdbMovie> searchMovies(String keyword, @Nonnull PageIndex pageIndex,
         @Nullable OmdbOptionalReq optionalReq) throws NotFoundException, OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
         RequestBuilder builder = httpGet("/").addParameter("s", keyword);
         addOptionalReq(builder, optionalReq);
         builder.addParameter("r", "json");
-        builder.addParameter("page", String.valueOf(req.getCurrent() + 1));
+        builder.addParameter("page", String.valueOf(pageIndex.getCurrent() + 1));
         OmdbSearchResult result = getObject(builder, Lazy.MAPPER, OmdbSearchResult.class);
-        return new OmdbPageResult(result.getItems(), req, result.getTotal(), 10);
+        return Page.amountCountable(result.getItems(), pageIndex, 10, result.getTotal());
     }
 
     @Nonnull

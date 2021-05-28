@@ -31,13 +31,13 @@ import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.common.constant.Constants;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
 import wsg.tools.internet.info.adult.midnight.MidnightColumn;
 import wsg.tools.internet.info.adult.midnight.MidnightEntry;
-import wsg.tools.internet.info.adult.midnight.MidnightPageReq;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.info.adult.west.PornTubeSite;
 import wsg.tools.internet.info.adult.west.PornTubeVideo;
@@ -97,7 +97,11 @@ public class AdultScheduler {
                 }
             }
             log.info("Imported adult entries from {}:", sname);
-            result.print(String::valueOf);
+            if (result.hasFailures()) {
+                log.error(result.toString());
+            } else {
+                log.info(result.toString());
+            }
         } catch (OtherResponseException | NotFoundException e) {
             log.error(e.getMessage());
             throw new AppException(e);
@@ -124,22 +128,23 @@ public class AdultScheduler {
         int subtype = column.getId();
         Optional<LocalDateTime> timeOp = jaVideoRepository.getLatestTimestamp(sname, subtype);
         LocalDateTime startTime = timeOp.orElse(DEFAULT_START_TIME);
-        MidnightPageReq firstReq = MidnightPageReq.first(column);
         try {
             Deque<T> ts = new LinkedList<>();
-            SiteUtils.forEachPageUntil(site, firstReq, Constants.emptyConsumer(), index -> {
-                T t = null;
-                try {
-                    t = retrievable.findById(index.getId());
-                } catch (NotFoundException | OtherResponseException e) {
-                    throw new AppException(e);
-                }
-                if (t.getUpdate().isBefore(startTime)) {
-                    return true;
-                }
-                ts.addLast(t);
-                return false;
-            });
+            SiteUtils
+                .forEachPageUntil(pageIndex -> site.findAll(pageIndex, column), PageIndex.first(),
+                    Constants.emptyConsumer(), index -> {
+                        T t = null;
+                        try {
+                            t = retrievable.findById(index.getId());
+                        } catch (NotFoundException | OtherResponseException e) {
+                            throw new AppException(e);
+                        }
+                        if (t.getUpdate().isBefore(startTime)) {
+                            return true;
+                        }
+                        ts.addLast(t);
+                        return false;
+                    });
             if (ts.isEmpty()) {
                 return;
             }
@@ -179,7 +184,11 @@ public class AdultScheduler {
                 }
             }
             log.info("Imported {} entries from {}:", column, sname);
-            result.print(String::valueOf);
+            if (result.hasFailures()) {
+                log.error(result.toString());
+            } else {
+                log.info(result.toString());
+            }
         } catch (NotFoundException | OtherResponseException e) {
             log.error(e.getMessage());
             throw new AppException(e);
@@ -256,7 +265,11 @@ public class AdultScheduler {
                 });
             }
             log.info("Imported adult entries from {}:", sname);
-            result.print(String::valueOf);
+            if (result.hasFailures()) {
+                log.error(result.toString());
+            } else {
+                log.info(result.toString());
+            }
         } catch (OtherResponseException e) {
             log.error(e.getMessage());
             throw new AppException(e);

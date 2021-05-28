@@ -68,7 +68,7 @@
                   <span class="link video-open layui-icon layui-icon-video"
                         title="Open the video"></span>
                 <#else>
-                    ${season.status.text}
+                    ${season.status}
                 </#if>
             </td>
           </tr>

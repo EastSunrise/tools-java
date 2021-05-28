@@ -9,8 +9,11 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.RequestBuilder;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.EnumDeserializers;
 import wsg.tools.internet.base.ConcreteSite;
+import wsg.tools.internet.base.page.AmountCountablePage;
+import wsg.tools.internet.base.page.Page;
+import wsg.tools.internet.base.page.PageReq;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -30,21 +33,22 @@ public class ScoreSite extends BaseSite {
     /**
      * Finds paged result of tournaments by the given arguments.
      */
-    public TournamentPageResult findAllTournaments(@Nonnull TournamentPageReq request)
+    public AmountCountablePage<Tournament>
+    findAllTournaments(@Nonnull TournamentReq req, @Nonnull PageReq pageReq)
         throws NotFoundException, OtherResponseException {
-        String type = request.getStatus() == null ? "all" : request.getStatus().getAsPath();
+        String type = req.getStatus() == null ? "all" : req.getStatus().getAsPath();
         RequestBuilder builder = RequestBuilder.post("/services/api_url.php")
             .addParameter("api_path", "/services/match/web_tournament_group_list.php")
             .addParameter("method", "get")
             .addParameter("platform", "web")
             .addParameter("api_version", "9.9.9")
             .addParameter("language_id", String.valueOf(1))
-            .addParameter("gameID", String.valueOf(request.getGame().getCode()))
+            .addParameter("gameID", String.valueOf(req.getGame().getCode()))
             .addParameter("type", type)
-            .addParameter("page", String.valueOf(request.getCurrent() + 1))
-            .addParameter("limit", String.valueOf(request.getPageSize()));
-        if (request.getYear() != null) {
-            builder.addParameter("year", String.valueOf(request.getYear().getValue()));
+            .addParameter("page", String.valueOf(pageReq.getCurrent() + 1))
+            .addParameter("limit", String.valueOf(pageReq.getPageSize()));
+        if (req.getYear() != null) {
+            builder.addParameter("year", String.valueOf(req.getYear().getValue()));
         }
         TournamentPageResponse response = getObject(builder, Lazy.MAPPER,
             TournamentPageResponse.class);
@@ -55,7 +59,7 @@ public class ScoreSite extends BaseSite {
             throw new OtherResponseException(response.getStatusCode(), response.getMessage());
         }
         TournamentPageResponse.TournamentData data = response.getData();
-        return new TournamentPageResult(data.getList(), request, data.getCount());
+        return Page.amountCountable(data.getList(), pageReq, data.getCount());
     }
 
     /**

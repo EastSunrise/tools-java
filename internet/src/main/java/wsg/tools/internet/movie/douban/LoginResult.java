@@ -1,7 +1,6 @@
 package wsg.tools.internet.movie.douban;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import wsg.tools.internet.movie.douban.api.pojo.Account;
 
 /**
  * Base class of subjects from douban.
@@ -46,7 +45,7 @@ class LoginResult {
     static class Payload {
 
         @JsonProperty("account_info")
-        private Account account;
+        private String account;
 
         /**
          * When graph validate code is required.
@@ -62,7 +61,7 @@ class LoginResult {
         @JsonProperty("captcha_image_url")
         private String captchaImageUrl;
 
-        public Account getAccount() {
+        public String getAccount() {
             return account;
         }
 

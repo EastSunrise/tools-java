@@ -11,10 +11,10 @@ import javax.annotation.Nonnull;
 import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import wsg.tools.common.jackson.deserializer.EnumDeserializers;
+import wsg.tools.common.jackson.EnumDeserializers;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
-import wsg.tools.internet.base.repository.RepoPageable;
+import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.NotFoundException;
@@ -27,8 +27,7 @@ import wsg.tools.internet.movie.common.enums.MovieGenre;
  * @see <a href="http://m.rr.tv/">Renren Video</a>
  * @since 2021/3/22
  */
-public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, RenrenSeries>,
-    RepoPageable<RenrenPageReq, RenrenPageResult> {
+public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, RenrenSeries> {
 
     public RenrenSite() {
         super("RR TV", httpHost("rr.tv"));
@@ -38,8 +37,7 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
      * Only first 10 pages are available regardless of arguments of the request.
      */
     @Nonnull
-    @Override
-    public RenrenPageResult findPage(@Nonnull RenrenPageReq req)
+    public RenrenPageResult findAll(@Nonnull RenrenReq req, PageIndex pageIndex)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
@@ -47,10 +45,10 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
             Optional.ofNullable(req.getArea()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getGenre()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getStatus()).map(Object::toString).orElse("all"),
-            req.getSort(), req.getCurrent() + 1);
+            req.getSort(), PageIndex.orFirst(pageIndex).getCurrent() + 1);
         RenrenResponse response = getObject(builder, Lazy.MAPPER, RenrenResponse.class);
         RenrenResponse.Result result = response.getResult();
-        return new RenrenPageResult(result.getContent(), req, result.isEnd());
+        return new RenrenPageResult(result.getContent(), pageIndex, result.isEnd());
     }
 
     @Override
