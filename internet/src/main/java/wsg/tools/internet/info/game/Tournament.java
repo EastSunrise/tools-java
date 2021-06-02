@@ -2,7 +2,6 @@ package wsg.tools.internet.info.game;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
-import lombok.Getter;
 
 /**
  * A tournament.
@@ -10,7 +9,6 @@ import lombok.Getter;
  * @author Kingen
  * @since 2021/3/12
  */
-@Getter
 public class Tournament {
 
     @JsonProperty("tournamentID")
@@ -29,5 +27,33 @@ public class Tournament {
     private ScoreStatus status;
 
     Tournament() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public String getImageThumb() {
+        return imageThumb;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public ScoreStatus getStatus() {
+        return status;
     }
 }

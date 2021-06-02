@@ -9,8 +9,8 @@ import java.util.List;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import wsg.tools.internet.common.enums.Language;
+import wsg.tools.internet.common.jackson.JsonJoinedValue;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
-import wsg.tools.internet.movie.common.jackson.JoinedValue;
 import wsg.tools.internet.movie.imdb.pojo.base.BaseImdbObject;
 import wsg.tools.internet.movie.imdb.pojo.object.ImdbPerson;
 
@@ -38,7 +38,7 @@ public class ImdbTitle extends BaseImdbTitle {
     private LocalDate release;
     @JsonProperty("duration")
     private Duration duration;
-    @JoinedValue
+    @JsonJoinedValue
     private List<String> keywords;
     @JsonProperty("image")
     private String posterUrl;

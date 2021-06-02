@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.Contract;
@@ -32,6 +31,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.DocumentUtils;
 import wsg.tools.internet.common.NotFoundException;
@@ -49,13 +49,13 @@ import wsg.tools.internet.download.support.UnknownResourceException;
  */
 @Slf4j
 @ConcreteSite
-public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
+public final class BdMovieSite extends BaseSite implements ResourceRepository<BdMovieItem> {
 
     private static final int MIN_ID = 348;
-    private static final Range<Integer> EXCEPTS = Range.between(30508, 30508);
+    private static final int EXCEPT_ONE = 30508;
 
     public BdMovieSite() {
-        super("BD-Movie", httpsHost("bd2020.com"));
+        super("BD-Movie", httpsHost("www.bd2020.com"));
     }
 
     /**
@@ -65,8 +65,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
     @Override
     @Nonnull
     public ListRepository<Integer, BdMovieItem> getRepository() throws OtherResponseException {
-        IntStream stream = IntStream.rangeClosed(MIN_ID, latest())
-            .filter(id -> !EXCEPTS.contains(id));
+        IntStream stream = IntStream.rangeClosed(MIN_ID, latest()).filter(id -> id != EXCEPT_ONE);
         return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
     }
 
@@ -75,7 +74,7 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
      *
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
-    public int latest() throws OtherResponseException {
+    private int latest() throws OtherResponseException {
         Document document = findDocument(httpGet("/movies/index.htm"));
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
@@ -105,22 +104,9 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         String release = metadata.get("og:video:release_date");
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = metadata.get("og:title");
-        BdMovieItem item = new BdMovieItem(realType, id, title, updateTime);
-        item.setNext(getNext(document));
-        String cover = metadata.get("og:image");
-        if (!cover.isEmpty()) {
-            if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                cover = getHost().toURI() + cover;
-            }
-            item.setCover(NetUtils.createURL(cover));
-        }
 
         String varUrls = getVarUrls(document);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_REGEX, varUrls);
-        String db = matcher.group("db");
-        item.setDbId(db == null ? null : Long.parseLong(db));
-        item.setImdbId(matcher.group("imdb"));
-
         List<Link> links = new ArrayList<>();
         List<InvalidResourceException> exceptions = new ArrayList<>();
         String urls = decode(matcher.group("urls"));
@@ -139,8 +125,19 @@ public final class BdMovieSite extends AbstractListResourceSite<BdMovieItem> {
         if (StringUtils.isNotBlank(diskStr)) {
             getDiskResources(diskStr, links, exceptions);
         }
-        item.setLinks(links);
-        item.setExceptions(exceptions);
+        BdMovieItem item = new BdMovieItem(id, realType, title, links, exceptions, updateTime);
+        item.setNext(getNext(document));
+
+        String cover = metadata.get("og:image");
+        if (!cover.isEmpty()) {
+            if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
+                cover = getHost().toURI() + cover;
+            }
+            item.setCover(NetUtils.createURL(cover));
+        }
+        String db = matcher.group("db");
+        item.setDbId(db == null ? null : Long.parseLong(db));
+        item.setImdbId(matcher.group("imdb"));
 
         Element content = document.selectFirst("dl.content");
         if (content == null) {

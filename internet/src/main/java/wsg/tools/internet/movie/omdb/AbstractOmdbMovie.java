@@ -10,10 +10,10 @@ import wsg.tools.common.net.NetUtils;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.enums.Language;
 import wsg.tools.internet.common.enums.Region;
+import wsg.tools.internet.common.jackson.JsonJoinedValue;
 import wsg.tools.internet.movie.common.Runtime;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 import wsg.tools.internet.movie.common.enums.RatingSource;
-import wsg.tools.internet.movie.common.jackson.JoinedValue;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
 /**
@@ -39,24 +39,24 @@ public abstract class AbstractOmdbMovie extends OmdbResponse
     @JsonProperty("Runtime")
     private Runtime runtime;
     @JsonProperty("Genre")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<MovieGenre> genres;
     @JsonProperty("Director")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<String> directors;
     @JsonProperty("Writer")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<String> writers;
     @JsonProperty("Actors")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<String> actors;
     @JsonProperty("Plot")
     private String plot;
     @JsonProperty("Language")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<Language> languages;
     @JsonProperty("Country")
-    @JoinedValue(separator = SEPARATOR)
+    @JsonJoinedValue(separator = SEPARATOR)
     private List<Region> regions;
     @JsonProperty("Awards")
     private String awards;

@@ -46,7 +46,7 @@ import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
-import wsg.tools.internet.movie.resource.view.IdentifierItem;
+import wsg.tools.internet.movie.resource.IdentifierItem;
 
 /**
  * @author Kingen

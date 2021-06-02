@@ -1,4 +1,4 @@
-package wsg.tools.internet.movie.common.jackson;
+package wsg.tools.internet.common.jackson;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @JacksonAnnotationsInside
 @JsonDeserialize(using = JoinedValueDeserializer.class)
-public @interface JoinedValue {
+public @interface JsonJoinedValue {
 
     /**
      * separator which deserialized string is joined with.

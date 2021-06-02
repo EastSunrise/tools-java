@@ -1,9 +1,11 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import wsg.tools.internet.common.UpdateDateSupplier;
+import wsg.tools.internet.download.Link;
+import wsg.tools.internet.download.support.InvalidResourceException;
 import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.StateSupplier;
 import wsg.tools.internet.movie.common.YearSupplier;
@@ -19,11 +21,11 @@ public class XlcItem extends BaseIdentifiedItem<XlcType>
 
     private final LocalDate updateDate;
     private final ResourceState state;
-    private URL cover;
     private Integer year;
 
-    XlcItem(XlcType subtype, int id, String title, LocalDate updateDate, ResourceState state) {
-        super(subtype, id, title);
+    XlcItem(int id, XlcType subtype, String title, List<Link> links,
+        List<InvalidResourceException> exceptions, LocalDate updateDate, ResourceState state) {
+        super(id, subtype, title, links, exceptions);
         this.updateDate = Objects.requireNonNull(updateDate, "the update date of an item");
         this.state = state;
     }
@@ -45,14 +47,5 @@ public class XlcItem extends BaseIdentifiedItem<XlcType>
     @Override
     public LocalDate getUpdate() {
         return updateDate;
-    }
-
-    @Override
-    public URL getCoverURL() {
-        return cover;
-    }
-
-    void setCover(URL cover) {
-        this.cover = Objects.requireNonNull(cover, "the cover of an item");
     }
 }

@@ -21,7 +21,6 @@ import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
 import wsg.tools.boot.service.impl.ResourceDto;
-import wsg.tools.boot.service.intf.AdultService;
 import wsg.tools.boot.service.intf.ResourceService;
 import wsg.tools.boot.service.intf.SubjectService;
 
@@ -36,14 +35,11 @@ import wsg.tools.boot.service.intf.SubjectService;
 public class ResourceController extends AbstractController {
 
     private final ResourceService resourceService;
-    private final AdultService adultService;
     private final SubjectService subjectService;
 
     @Autowired
-    public ResourceController(ResourceService resourceService,
-        AdultService adultService, SubjectService subjectService) {
+    public ResourceController(ResourceService resourceService, SubjectService subjectService) {
         this.resourceService = resourceService;
-        this.adultService = adultService;
         this.subjectService = subjectService;
     }
 

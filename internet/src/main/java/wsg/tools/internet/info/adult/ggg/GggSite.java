@@ -68,14 +68,14 @@ public class GggSite extends BaseSite implements RepoRetrievable<Integer, GggGoo
     }
 
     @Nonnull
-    public GggPageResult findAll(@Nonnull GggReq req, PageIndex pageIndex)
+    public GggPageResult findAll(@Nonnull GggReq req, @Nonnull PageIndex pageIndex)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = httpGet("/home/index.php")
             .addParameter("c", "CategoryAction")
             .addParameter("m", "listDetail")
             .addParameter("categoryNo", String.valueOf(req.getCategory().getCode()))
             .addParameter("orderField", req.getOrder().getAsPath())
-            .addParameter("page", String.valueOf(PageIndex.orFirst(pageIndex).getCurrent() + 1));
+            .addParameter("page", String.valueOf(pageIndex.getCurrent() + 1));
         Document document = getDocument(builder);
         Elements tables = document.selectFirst("#GoodsCarForm").select(".TableStyle");
         List<GggGood> goods = new ArrayList<>(tables.size());

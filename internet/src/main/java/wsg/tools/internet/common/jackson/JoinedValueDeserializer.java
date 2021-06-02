@@ -1,4 +1,4 @@
-package wsg.tools.internet.movie.common.jackson;
+package wsg.tools.internet.common.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -53,7 +53,7 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
 
     @Override
     public JsonDeserializer<?> createContextual(DeserializationContext context, BeanProperty property) {
-        JoinedValue joinedValue = property.getAnnotation(JoinedValue.class);
+        JsonJoinedValue joinedValue = property.getAnnotation(JsonJoinedValue.class);
         if (joinedValue != null) {
             separator = joinedValue.separator();
         }

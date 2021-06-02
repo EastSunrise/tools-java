@@ -39,7 +39,7 @@
           <span class="link movie-input layui-icon layui-icon-edit"
                 title="Query resources with input key"></span>
         </td>
-        <td>${(movie.languages[0].title)!""}</td>
+        <td>${(movie.languages[0].zhName)!""}</td>
         <td>${movie.durations}</td>
         <td>
             <#assign sc = movie.status.code/>
@@ -55,7 +55,7 @@
             <#elseif sc==20>
               <i class="video-open layui-icon layui-icon-video" title="Open the video"></i>
             <#else>
-                ${movie.status.text}
+                ${movie.status.displayText}
             </#if>
         </td>
       </tr>

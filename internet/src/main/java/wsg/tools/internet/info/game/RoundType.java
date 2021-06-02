@@ -1,6 +1,5 @@
 package wsg.tools.internet.info.game;
 
-import lombok.Getter;
 import wsg.tools.common.util.function.IntCodeSupplier;
 
 /**
@@ -33,12 +32,15 @@ public enum RoundType implements IntCodeSupplier {
     ;
 
     private final int code;
-    @Getter
     private final String[] titles;
 
     RoundType(int code, String... titles) {
         this.code = code;
         this.titles = titles;
+    }
+
+    public String[] getTitles() {
+        return titles;
     }
 
     @Override

@@ -2,7 +2,6 @@ package wsg.tools.internet.info.game;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import lombok.Getter;
 
 /**
  * A part of a tournament round, like a week's matches in the tournament round.
@@ -10,7 +9,6 @@ import lombok.Getter;
  * @author Kingen
  * @since 2021/3/13
  */
-@Getter
 public class RoundItem {
 
     @JsonProperty("id")
@@ -24,5 +22,21 @@ public class RoundItem {
     private String nameEn;
 
     RoundItem() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isNowWeek() {
+        return nowWeek;
+    }
+
+    public String getNameEn() {
+        return nameEn;
     }
 }

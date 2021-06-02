@@ -12,13 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.cookie.Cookie;
@@ -55,7 +55,7 @@ public class BaseSite implements SiteClient, Closeable {
 
     private static final Header USER_AGENT = new BasicHeader(HTTP.USER_AGENT,
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-            + "Chrome/80.0.3987.132 Safari/537.36");
+            + "Chrome/91.0.4472.77 Safari/537.36 Edg/91.0.864.37");
 
     private final String name;
     private final HttpHost host;
@@ -112,9 +112,9 @@ public class BaseSite implements SiteClient, Closeable {
     }
 
     @Override
-    public <T> T execute(@Nonnull HttpRequest request, ResponseHandler<? extends T> responseHandler)
-        throws IOException {
-        return client.execute(host, request, responseHandler, context);
+    public <T> T execute(@Nonnull HttpUriRequest request,
+        ResponseHandler<? extends T> responseHandler) throws IOException {
+        return client.execute(request, responseHandler, context);
     }
 
     @Override
@@ -217,7 +217,7 @@ public class BaseSite implements SiteClient, Closeable {
     @Nonnull
     @Contract("_, _ -> new")
     protected final RequestBuilder httpGet(@Nonnull String path, Object... args) {
-        return RequestBuilder.get(String.format(path, args));
+        return create(null, METHOD_GET, path, args);
     }
 
     /**

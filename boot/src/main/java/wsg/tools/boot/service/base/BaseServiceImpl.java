@@ -21,7 +21,7 @@ public class BaseServiceImpl {
 
     protected static final char ESCAPE_CHAR = '%';
 
-    protected static Predicate like(CriteriaBuilder builder, Expression<String> expression,
+    protected Predicate like(CriteriaBuilder builder, Expression<String> expression,
         String key) {
         if (StringUtils.isBlank(key)) {
             return null;
@@ -29,14 +29,13 @@ public class BaseServiceImpl {
         return builder.like(expression, ESCAPE_CHAR + key + ESCAPE_CHAR, ESCAPE_CHAR);
     }
 
-    protected static <Q extends BaseQueryDto, E extends BaseEntity> Example<E> convertQuery(Q q,
+    protected <Q extends BaseQueryDto, E extends BaseEntity> Example<E> convertQuery(Q q,
         Class<E> eClass) {
         return Example.of(BeanUtilExt.convert(q, eClass));
     }
 
-    protected static <Q extends BaseQueryDto, E extends BaseEntity> Predicate getPredicate(Q q,
-        Root<E> root,
-        CriteriaBuilder builder, Class<E> eClass) {
+    protected <Q extends BaseQueryDto, E extends BaseEntity> Predicate getPredicate(Q q,
+        Root<E> root, CriteriaBuilder builder, Class<E> eClass) {
         return QueryByExamplePredicateBuilder.getPredicate(root, builder, convertQuery(q, eClass));
     }
 }

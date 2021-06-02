@@ -17,8 +17,8 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.TitleSupplier;
+import wsg.tools.internet.common.jackson.JsonJoinedValue;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
-import wsg.tools.internet.movie.common.jackson.JoinedValue;
 
 /**
  * An index which points to a series on the site.
@@ -35,7 +35,7 @@ public class RenrenSeriesIndex implements IntIdentifier, TitleSupplier, CoverSup
     @JsonProperty("cover")
     private URL cover;
     @JsonProperty("type")
-    @JoinedValue(separator = "/")
+    @JsonJoinedValue(separator = "/")
     private List<MovieGenre> genres;
     @JsonProperty("score")
     private double score;

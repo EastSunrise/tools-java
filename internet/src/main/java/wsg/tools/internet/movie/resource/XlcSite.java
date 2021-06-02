@@ -30,6 +30,7 @@ import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.base.repository.support.Repositories;
+import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.CssSelectors;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
@@ -48,7 +49,7 @@ import wsg.tools.internet.movie.common.VideoConstants;
  */
 @Slf4j
 @ConcreteSite
-public final class XlcSite extends AbstractListResourceSite<XlcItem> {
+public final class XlcSite extends BaseSite implements ResourceRepository<XlcItem> {
 
     private static final int TITLE_SUFFIX_LENGTH = 14;
     private static final String NO_PIC = "nopic.jpg";
@@ -56,7 +57,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     private static final String SYSTEM_TIP = "迅雷仓-系统提示";
 
     public XlcSite() {
-        super("XLC", httpsHost("xunleicang.in"));
+        super("XLC", httpsHost("www.xunleicang.in"));
     }
 
     /**
@@ -73,7 +74,7 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
     /**
      * @see <a href="https://www.xunleicang.in/ajax-show-id-new.html">Last Update</a>
      */
-    public int latest() throws OtherResponseException {
+    private int latest() throws OtherResponseException {
         Document document = findDocument(httpGet("/ajax-show-id-new.html"));
         Elements as = document.selectFirst("ul.f6").select(CssSelectors.TAG_A);
         int max = 1;
@@ -106,22 +107,8 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
         XlcType type = pair.getLeft();
         ResourceState state = pair.getRight();
         title = title.substring(0, title.length() - TITLE_SUFFIX_LENGTH);
-        XlcItem item = new XlcItem(type, id, title, updateDate, state);
 
-        String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
-        if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
-            item.setCover(NetUtils.createURL(cover));
-        }
-        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
-        Element font = header.selectFirst(CssSelectors.TAG_FONT);
-        if (font != null) {
-            int year = Integer.parseInt(StringUtils.strip(font.text(), "()"));
-            if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
-                item.setYear(year);
-            }
-        }
-
-        List<Link> resources = new ArrayList<>();
+        List<Link> links = new ArrayList<>();
         List<InvalidResourceException> exceptions = new ArrayList<>();
         Elements lis = document.select("ul.down-list").select("li.item");
         for (Element li : lis) {
@@ -132,14 +119,28 @@ public final class XlcSite extends AbstractListResourceSite<XlcItem> {
             }
             String linkTitle = a.text().strip();
             try {
-                resources.add(LinkFactory
+                links.add(LinkFactory
                     .create(linkTitle, href, () -> LinkFactory.getPassword(linkTitle, href)));
             } catch (InvalidResourceException e) {
                 exceptions.add(e);
             }
         }
-        item.setLinks(resources);
-        item.setExceptions(exceptions);
+        XlcItem item = new XlcItem(id, type, title, links, exceptions, updateDate, state);
+
+        String cover = document.selectFirst(".pics3").attr(CssSelectors.ATTR_SRC);
+        if (!cover.isBlank() && !cover.endsWith(NO_PIC) && !cover.endsWith(NO_PHOTO)) {
+            item.setCover(NetUtils.createURL(cover));
+        }
+
+        Element header = pLeft.selectFirst(CssSelectors.TAG_H3).select(CssSelectors.TAG_A).last();
+        Element font = header.selectFirst(CssSelectors.TAG_FONT);
+        if (font != null) {
+            int year = Integer.parseInt(StringUtils.strip(font.text(), "()"));
+            if (year >= VideoConstants.MOVIE_START_YEAR && year <= Year.now().getValue()) {
+                item.setYear(year);
+            }
+        }
+
         return item;
     }
 

@@ -16,12 +16,13 @@ import wsg.tools.internet.movie.common.ResourceState;
 import wsg.tools.internet.movie.common.YearSupplier;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
+import wsg.tools.internet.movie.resource.IdentifierItem;
 
 /**
  * Items of resources.
  *
  * @author Kingen
- * @see wsg.tools.internet.movie.resource.view.IdentifierItem
+ * @see IdentifierItem
  * @since 2020/11/3
  */
 @Getter

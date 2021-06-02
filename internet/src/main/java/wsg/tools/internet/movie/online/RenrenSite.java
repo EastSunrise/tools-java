@@ -1,5 +1,6 @@
 package wsg.tools.internet.movie.online;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.util.ArrayList;
@@ -12,32 +13,35 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import wsg.tools.common.jackson.EnumDeserializers;
+import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.util.regex.RegexUtils;
+import wsg.tools.internet.base.ConcreteSite;
 import wsg.tools.internet.base.page.PageIndex;
-import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.base.support.BaseSite;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
+import wsg.tools.internet.common.UnexpectedException;
 import wsg.tools.internet.common.enums.Region;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
  * @author Kingen
- * @see <a href="http://m.rr.tv/">Renren Video</a>
  * @since 2021/3/22
  */
-public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, RenrenSeries> {
+@ConcreteSite
+public class RenrenSite extends BaseSite implements RenrenTube {
 
     public RenrenSite() {
-        super("RR TV", httpHost("rr.tv"));
+        super("RR TV", httpsHost("rr.tv"));
     }
 
     /**
      * Only first 10 pages are available regardless of arguments of the request.
      */
+    @Override
     @Nonnull
-    public RenrenPageResult findAll(@Nonnull RenrenReq req, PageIndex pageIndex)
+    public RenrenPageResult findAll(@Nonnull RenrenReq req, @Nonnull PageIndex pageIndex)
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = create("content.json", METHOD_GET,
             "/morpheus/filter/%s/%s/%s/all/%s/%s/%d",
@@ -45,10 +49,27 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
             Optional.ofNullable(req.getArea()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getGenre()).map(Object::toString).orElse("all"),
             Optional.ofNullable(req.getStatus()).map(Object::toString).orElse("all"),
-            req.getSort(), PageIndex.orFirst(pageIndex).getCurrent() + 1);
+            req.getSort(), pageIndex.getCurrent() + 1);
         RenrenResponse response = getObject(builder, Lazy.MAPPER, RenrenResponse.class);
         RenrenResponse.Result result = response.getResult();
         return new RenrenPageResult(result.getContent(), pageIndex, result.isEnd());
+    }
+
+
+    @Override
+    public List<SearchedItem> search(String keyword, int size)
+        throws OtherResponseException {
+        if (size < 1) {
+            size = 3;
+        }
+        RequestBuilder builder = create("web-api", METHOD_GET, "/search/season_h5")
+            .addParameter("keywords", AssertUtils.requireNotBlank(keyword))
+            .addParameter("size", String.valueOf(size));
+        try {
+            return getObject(builder, Lazy.MAPPER, SearchResult.class).getItems();
+        } catch (NotFoundException e) {
+            throw new UnexpectedException(e);
+        }
     }
 
     @Override
@@ -97,8 +118,13 @@ public class RenrenSite extends BaseSite implements RepoRetrievable<Integer, Ren
     private static class Lazy {
 
         private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
             .registerModule(new SimpleModule()
-                .addDeserializer(MovieGenre.class, EnumDeserializers.ofAlias(MovieGenre.class)));
+                .addDeserializer(MovieGenre.class, EnumDeserializers.ofAlias(MovieGenre.class))
+                .addDeserializer(Region.class, EnumDeserializers.ofAlias(Region.class))
+                .addDeserializer(Classification.class,
+                    EnumDeserializers.ofAlias(Classification.class))
+            );
         private static final Pattern YEAR_REGEX = Pattern
             .compile("(?<y>\\d{4})(?:-\\d{2}-\\d{2})?");
     }

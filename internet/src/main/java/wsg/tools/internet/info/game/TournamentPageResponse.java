@@ -2,7 +2,6 @@ package wsg.tools.internet.info.game;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import lombok.Getter;
 
 /**
  * The response when requesting for tournaments from the {@link ScoreSite}.
@@ -10,7 +9,6 @@ import lombok.Getter;
  * @author Kingen
  * @since 2021/3/13
  */
-@Getter
 class TournamentPageResponse {
 
     @JsonProperty("code")
@@ -28,7 +26,30 @@ class TournamentPageResponse {
     @JsonProperty("event")
     private List<Object> event;
 
-    @Getter
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public TournamentData getData() {
+        return data;
+    }
+
+    public List<Object> getBadge() {
+        return badge;
+    }
+
+    public Object getTaskData() {
+        return taskData;
+    }
+
+    public List<Object> getEvent() {
+        return event;
+    }
+
     static class TournamentData {
 
         @JsonProperty("count")
@@ -39,5 +60,21 @@ class TournamentPageResponse {
         private String page;
         @JsonProperty("year")
         private List<String> year;
+
+        public long getCount() {
+            return count;
+        }
+
+        public List<Tournament> getList() {
+            return list;
+        }
+
+        public String getPage() {
+            return page;
+        }
+
+        public List<String> getYear() {
+            return year;
+        }
     }
 }

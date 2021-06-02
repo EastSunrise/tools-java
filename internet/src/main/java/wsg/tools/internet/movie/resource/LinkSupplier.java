@@ -1,4 +1,4 @@
-package wsg.tools.internet.movie.resource.view;
+package wsg.tools.internet.movie.resource;
 
 import java.util.List;
 import wsg.tools.internet.download.Link;

@@ -61,7 +61,7 @@
                                  data-db-id="${seasons?first.dbId?c}">
                         <#else>
                           <select class="resource-choose" data-id="${item.id?c}"
-                                  style="width: 100px">
+                                  style="width: 100px;">
                             <option value="">--Choose--</option>
                             <option value="${series.imdbId}">mixed</option>
                               <#list seasons as season>
@@ -79,7 +79,7 @@
           </tbody>
         </table>
       <#else>
-        <h3 style="text-align: center">None Resources!</h3>
+        <h3 style="text-align: center;">None Resources!</h3>
       </#if>
   </div>
 </div>

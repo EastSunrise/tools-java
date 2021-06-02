@@ -1,10 +1,12 @@
 package wsg.tools.internet.movie.resource;
 
-import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import wsg.tools.internet.base.view.NextSupplier;
 import wsg.tools.internet.common.UpdateDatetimeSupplier;
+import wsg.tools.internet.download.Link;
+import wsg.tools.internet.download.support.InvalidResourceException;
 import wsg.tools.internet.movie.douban.DoubanIdentifier;
 import wsg.tools.internet.movie.imdb.ImdbIdentifier;
 
@@ -21,10 +23,10 @@ public class BdMovieItem extends BaseIdentifiedItem<BdMovieType>
     private Long dbId;
     private String imdbId;
     private Integer next;
-    private URL cover;
 
-    BdMovieItem(BdMovieType subtype, int id, String title, LocalDateTime updateTime) {
-        super(subtype, id, title);
+    BdMovieItem(int id, BdMovieType subtype, String title, List<Link> links,
+        List<InvalidResourceException> exceptions, LocalDateTime updateTime) {
+        super(id, subtype, title, links, exceptions);
         this.updateTime = Objects.requireNonNull(updateTime, "the update time of an item");
     }
 
@@ -53,15 +55,6 @@ public class BdMovieItem extends BaseIdentifiedItem<BdMovieType>
 
     void setNext(Integer next) {
         this.next = next;
-    }
-
-    @Override
-    public URL getCoverURL() {
-        return cover;
-    }
-
-    void setCover(URL cover) {
-        this.cover = Objects.requireNonNull(cover, "the cover of an item");
     }
 
     @Override
