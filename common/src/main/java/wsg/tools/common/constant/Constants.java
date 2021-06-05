@@ -2,11 +2,8 @@ package wsg.tools.common.constant;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Common constant variables
@@ -33,18 +30,18 @@ public final class Constants {
     public static final int DEFAULT_MAP_CAPACITY = 16;
     public static final int KILOBYTE = 1024;
     /**
-     * Common datetime formatters.
-     */
-    public static final DateTimeFormatter YYYY_MM_DD_HH_MM = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd HH:mm");
-    public static final DateTimeFormatter YYYY_MM_DD_HH_MM_SS =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.CHINESE)
-            .withZone(ZoneId.systemDefault());
-    /**
      * Common charsets.
      */
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
     public static final Charset GBK = Charset.forName("GBK");
+    /**
+     * Common datetime formatters.
+     */
+    public static final DateTimeFormatter YYYY_MM_DD_HH_MM = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm");
+    public static final String P_YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
+    public static final DateTimeFormatter YYYY_MM_DD_HH_MM_SS = DateTimeFormatter
+        .ofPattern(P_YYYY_MM_DD_HH_MM_SS);
 
     private Constants() {
     }
@@ -55,12 +52,5 @@ public final class Constants {
     public static <T> Consumer<T> emptyConsumer() {
         return t -> {
         };
-    }
-
-    /**
-     * Self function.
-     */
-    public static <T> Function<T, T> self() {
-        return t -> t;
     }
 }

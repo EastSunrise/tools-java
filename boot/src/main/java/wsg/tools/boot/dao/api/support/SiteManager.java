@@ -10,7 +10,6 @@ import wsg.tools.boot.dao.api.ImdbRepo;
 import wsg.tools.boot.dao.jpa.mapper.IdRelationRepository;
 import wsg.tools.internet.download.Downloader;
 import wsg.tools.internet.download.FileExistStrategy;
-import wsg.tools.internet.download.support.BasicDownloader;
 import wsg.tools.internet.info.adult.ggg.GggSite;
 import wsg.tools.internet.info.adult.midnight.MidnightSite;
 import wsg.tools.internet.info.adult.west.PornTubeSite;
@@ -87,7 +86,7 @@ public class SiteManager implements DisposableBean {
 
     public Downloader downloader() {
         if (downloader == null) {
-            downloader = new BasicDownloader().strategy(FileExistStrategy.FINISH);
+            downloader = new Downloader().strategy(FileExistStrategy.FINISH);
         }
         return downloader;
     }

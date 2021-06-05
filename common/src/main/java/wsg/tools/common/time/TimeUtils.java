@@ -1,7 +1,7 @@
 package wsg.tools.common.time;
 
+import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,78 +39,19 @@ public final class TimeUtils {
             throw new DateTimeParseException("Text cannot be parsed to a Duration: " + text,
                 text, 0);
         }
-        Duration duration = Duration.ofMinutes(Long.parseLong(matcher.group("m")))
-            .plusSeconds(Long.parseLong(matcher.group("s")));
-        String millis = matcher.group("mi");
-        if (millis != null) {
-            duration = duration.plusMillis(Long.parseLong(millis) * 100);
-        }
+        Duration duration = Duration.ofMinutes(Long.parseLong(matcher.group("m")));
         String hour = matcher.group("h");
-        if (hour == null) {
-            return duration;
+        if (hour != null) {
+            duration = duration.plusHours(Long.parseLong(hour));
         }
-        return duration.plusHours(Long.parseLong(hour));
-    }
-
-    public static LocalDateTime offset(LocalDateTime base, @Nonnull String text) {
-        if (text.endsWith(Lazy.MINUTES_AGO)) {
-            text = text.substring(0, text.length() - Lazy.MINUTES_AGO.length() - 1);
-            return base.minusMinutes(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.HOURS_AGO)) {
-            text = text.substring(0, text.length() - Lazy.HOURS_AGO.length() - 1);
-            return base.minusHours(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.DAY_AGO)) {
-            text = text.substring(0, text.length() - Lazy.DAY_AGO.length() - 1);
-            return base.minusDays(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.DAYS_AGO)) {
-            text = text.substring(0, text.length() - Lazy.DAYS_AGO.length() - 1);
-            return base.minusDays(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.WEEK_AGO)) {
-            text = text.substring(0, text.length() - Lazy.WEEK_AGO.length() - 1);
-            return base.minusWeeks(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.WEEKS_AGO)) {
-            text = text.substring(0, text.length() - Lazy.WEEKS_AGO.length() - 1);
-            return base.minusWeeks(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.MONTH_AGO)) {
-            text = text.substring(0, text.length() - Lazy.MONTH_AGO.length() - 1);
-            return base.minusMonths(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.MONTHS_AGO)) {
-            text = text.substring(0, text.length() - Lazy.MONTHS_AGO.length() - 1);
-            return base.minusMonths(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.YEAR_AGO)) {
-            text = text.substring(0, text.length() - Lazy.YEAR_AGO.length() - 1);
-            return base.minusYears(Integer.parseInt(text));
-        }
-        if (text.endsWith(Lazy.YEARS_AGO)) {
-            text = text.substring(0, text.length() - Lazy.YEARS_AGO.length() - 1);
-            return base.minusYears(Integer.parseInt(text));
-        }
-        throw new IllegalArgumentException("Unknown text: " + text);
+        BigDecimal seconds = new BigDecimal(matcher.group("s"));
+        return duration.plusNanos(seconds.scaleByPowerOfTen(9).longValueExact());
     }
 
     private static class Lazy {
 
-        private static final String MINUTES_AGO = "minutes ago";
-        private static final String HOURS_AGO = "hours ago";
-        private static final String DAY_AGO = "day ago";
-        private static final String DAYS_AGO = "days ago";
-        private static final String WEEK_AGO = "week ago";
-        private static final String WEEKS_AGO = "weeks ago";
-        private static final String MONTH_AGO = "month ago";
-        private static final String MONTHS_AGO = "months ago";
-        private static final String YEAR_AGO = "year ago";
-        private static final String YEARS_AGO = "years ago";
-
         private static final Pattern DURATION_REGEX = Pattern
-            .compile("((?<h>\\d{1,2}):)?(?<m>\\d{1,2}):(?<s>\\d{1,2})(\\.?(?<mi>\\d{1,3}))?");
+            .compile("(?:(?<h>\\d{1,2}):)?(?<m>\\d{1,2}):(?<s>\\d{1,2}(?:\\.\\d{1,9})?)");
     }
 
 }

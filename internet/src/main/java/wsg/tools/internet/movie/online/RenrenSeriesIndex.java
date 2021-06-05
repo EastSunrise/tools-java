@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import wsg.tools.common.jackson.JsonJoinedValue;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.view.IntIdentifier;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.TitleSupplier;
-import wsg.tools.internet.common.jackson.JsonJoinedValue;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**

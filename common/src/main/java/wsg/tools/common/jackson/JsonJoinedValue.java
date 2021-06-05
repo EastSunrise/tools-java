@@ -1,4 +1,4 @@
-package wsg.tools.internet.common.jackson;
+package wsg.tools.common.jackson;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

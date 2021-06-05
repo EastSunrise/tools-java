@@ -3,10 +3,10 @@ package wsg.tools.internet.movie.online;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URL;
 import java.util.List;
+import wsg.tools.common.jackson.JsonJoinedValue;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.enums.Region;
-import wsg.tools.internet.common.jackson.JsonJoinedValue;
 import wsg.tools.internet.movie.common.enums.MovieGenre;
 
 /**
