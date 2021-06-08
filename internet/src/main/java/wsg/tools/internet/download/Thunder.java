@@ -5,7 +5,7 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.util.regex.RegexUtils;
 
 /**
@@ -42,15 +42,15 @@ public final class Thunder {
      * Decode a thunder to a common url.
      */
     public static String decodeThunder(@Nonnull String url, Charset charset) {
-        url = url.strip();
-        while (StringUtils.startsWithIgnoreCase(url, THUNDER_PREFIX)) {
-            url = StringUtils.replace(url, "%2b", "+");
-            url = StringUtils.replace(url, "%20", "+");
-            url = StringUtils.replace(url, "%3D", "=");
-            url = RegexUtils.matchesOrElseThrow(THUNDER_REGEX, url).group("c");
-            url = new String(Base64.getDecoder().decode(url.getBytes(charset)), charset);
-            url = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, url).group("u").strip();
+        String decoded = url.strip();
+        while (StringUtils.startsWithIgnoreCase(decoded, THUNDER_PREFIX)) {
+            decoded = StringUtils.replace(decoded, "%2b", "+");
+            decoded = StringUtils.replace(decoded, "%20", "+");
+            decoded = StringUtils.replace(decoded, "%3D", "=");
+            decoded = RegexUtils.matchesOrElseThrow(THUNDER_REGEX, decoded).group("c");
+            decoded = new String(Base64.getDecoder().decode(decoded.getBytes(charset)), charset);
+            decoded = RegexUtils.matchesOrElseThrow(SRC_URL_REGEX, decoded).group("u").strip();
         }
-        return url;
+        return decoded;
     }
 }

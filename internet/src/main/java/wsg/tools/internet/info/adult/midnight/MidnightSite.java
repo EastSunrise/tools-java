@@ -21,7 +21,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
@@ -62,8 +62,8 @@ public final class MidnightSite extends BaseSite {
     findAll(@Nonnull PageIndex pageIndex, @Nonnull MidnightColumn column)
         throws NotFoundException, OtherResponseException {
         String page = pageIndex.getCurrent() == 0 ? "" : "_" + (pageIndex.getCurrent() + 1);
-        RequestBuilder builder = httpGet("/%s/index%s.html", column.getAsPath(), page);
-        Document document = getDocument(builder);
+        RequestBuilder builder = this.httpGet("/%s/index%s.html", column.getAsPath(), page);
+        Document document = this.getDocument(builder);
         List<MidnightIndex> indices = new ArrayList<>();
         Element article = document.selectFirst(".article");
         Elements lis = article.select(CssSelectors.TAG_LI);
@@ -87,7 +87,7 @@ public final class MidnightSite extends BaseSite {
     @Nonnull
     public MidnightCollection findCollection(int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(MidnightColumn.COLLECTION, id, (title, addTime, contents) -> {
+        return this.getItem(MidnightColumn.COLLECTION, id, (title, addTime, contents) -> {
             List<Pair<String, URL>> works = new ArrayList<>();
             for (Element content : contents) {
                 Element nav = content.selectFirst(NAV_NAVIGATION);
@@ -119,9 +119,9 @@ public final class MidnightSite extends BaseSite {
      */
     @Nonnull
     public MidnightAlbum findAlbum(int id) throws NotFoundException, OtherResponseException {
-        return getItem(MidnightColumn.ALBUM, id,
+        return this.getItem(MidnightColumn.ALBUM, id,
             (title, addTime, contents) -> new MidnightAlbum(id, title, addTime,
-                getImages(contents)));
+                this.getImages(contents)));
     }
 
     /**
@@ -135,10 +135,10 @@ public final class MidnightSite extends BaseSite {
         if (!column.isAmateur()) {
             throw new IllegalArgumentException("Not an amateur column");
         }
-        return getItem(column, id, (title, addTime, contents) -> {
-            List<URL> images = getImages(contents);
+        return this.getItem(column, id, (title, addTime, contents) -> {
+            List<URL> images = this.getImages(contents);
             MidnightAmateurEntry entry = new MidnightAmateurEntry(id, title, addTime, images);
-            AdultEntryParser parser = AdultEntryParser.create(getInfo(contents));
+            AdultEntryParser parser = AdultEntryParser.create(this.getInfo(contents));
             entry.setSerialNum(parser.getSerialNum());
             entry.setPerformer(parser.getPerformer());
             entry.setDuration(parser.getDuration());
@@ -158,10 +158,10 @@ public final class MidnightSite extends BaseSite {
     @Nonnull
     public MidnightFormalEntry findFormalEntry(int id)
         throws NotFoundException, OtherResponseException {
-        return getItem(MidnightColumn.ENTRY, id, (title, addTime, contents) -> {
-            List<URL> images = getImages(contents);
+        return this.getItem(MidnightColumn.ENTRY, id, (title, addTime, contents) -> {
+            List<URL> images = this.getImages(contents);
             MidnightFormalEntry entry = new MidnightFormalEntry(id, title, addTime, images);
-            AdultEntryParser parser = AdultEntryParser.create(getInfo(contents));
+            AdultEntryParser parser = AdultEntryParser.create(this.getInfo(contents));
             entry.setSerialNum(parser.getSerialNum());
             entry.setActresses(parser.getActresses(", "));
             entry.setDuration(parser.getDuration());
@@ -184,12 +184,12 @@ public final class MidnightSite extends BaseSite {
     private <T extends BaseMidnightItem> T getItem(@Nonnull MidnightColumn column,
         int id, @Nonnull TriFunction<String, LocalDateTime, List<Element>, T> constructor)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = httpGet("/%s/%d.html", column.getAsPath(), id);
-        Document document = getDocument(builder);
+        RequestBuilder builder = this.httpGet("/%s/%d.html", column.getAsPath(), id);
+        Document document = this.getDocument(builder);
         String datetime = document.selectFirst("time.data-time").text();
         LocalDateTime addTime = LocalDateTime.parse(datetime, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = document.selectFirst("h1.title").text();
-        T t = constructor.apply(title, addTime, getContents(document));
+        T t = constructor.apply(title, addTime, this.getContents(document));
         String keywords = DocumentUtils.getMetadata(document).get("keywords");
         if (StringUtils.isNotBlank(keywords)) {
             t.setKeywords(keywords.split(","));
@@ -220,7 +220,7 @@ public final class MidnightSite extends BaseSite {
                 break;
             }
             String nextHref = next.attr(CssSelectors.ATTR_HREF);
-            document = getDocument(httpGet(URI.create(nextHref).getPath()));
+            document = this.getDocument(this.httpGet(URI.create(nextHref).getPath()));
         }
         return contents;
     }
@@ -261,7 +261,7 @@ public final class MidnightSite extends BaseSite {
                     for (Element img : elements) {
                         String href = img.attr(CssSelectors.ATTR_SRC);
                         if (href.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                            href = getHost().toURI() + href;
+                            href = this.getHost().toURI() + href;
                         }
                         images.add(NetUtils.createURL(href));
                     }

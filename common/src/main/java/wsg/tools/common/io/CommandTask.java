@@ -3,6 +3,7 @@ package wsg.tools.common.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,7 +54,7 @@ public class CommandTask {
 
     public CommandTask(CommandExecutor executor, String... args) {
         this.executor = executor;
-        this.args = args;
+        this.args = args.clone();
     }
 
     /**
@@ -63,7 +64,7 @@ public class CommandTask {
      */
     public void execute() throws IOException {
         String[] cmd = new String[args.length + 1];
-        cmd[0] = executor.executablePath;
+        cmd[0] = executor.getExecutablePath();
         System.arraycopy(args, 0, cmd, 1, args.length);
         if (log.isDebugEnabled()) {
             log.debug("Start to execute '{}'.", StringUtils.join(cmd, ' '));
@@ -81,35 +82,35 @@ public class CommandTask {
      * If there's a task in progress, it kills it.
      */
     public void destroy() {
-        if (inputStream != null) {
+        if (null != inputStream) {
             try {
                 inputStream.close();
-            } catch (Throwable t) {
+            } catch (IOException t) {
                 log.warn("Error closing input stream", t);
             }
             inputStream = null;
         }
-        if (outputStream != null) {
+        if (null != outputStream) {
             try {
                 outputStream.close();
-            } catch (Throwable t) {
+            } catch (IOException t) {
                 log.warn("Error closing output stream", t);
             }
             outputStream = null;
         }
-        if (errorStream != null) {
+        if (null != errorStream) {
             try {
                 errorStream.close();
-            } catch (Throwable t) {
+            } catch (IOException t) {
                 log.warn("Error closing error stream", t);
             }
             errorStream = null;
         }
-        if (process != null) {
+        if (null != process) {
             process.destroy();
             process = null;
         }
-        if (killer != null) {
+        if (null != killer) {
             Runtime.getRuntime().removeShutdownHook(killer);
             killer = null;
         }
@@ -122,9 +123,7 @@ public class CommandTask {
      * @return exit value
      */
     public int exitValue() {
-        if (process == null) {
-            throw new NullPointerException("The process has been destroyed.");
-        }
+        Objects.requireNonNull(process, "The process has been destroyed.");
         try {
             process.waitFor();
         } catch (InterruptedException ex) {
@@ -145,11 +144,12 @@ public class CommandTask {
         return errorStream;
     }
 
-    static class KillThread extends Thread {
+    private static class KillThread extends Thread {
 
         private final Process process;
 
         KillThread(Process process) {
+            super();
             this.process = process;
         }
 

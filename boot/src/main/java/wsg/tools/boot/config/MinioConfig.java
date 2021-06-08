@@ -40,7 +40,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import wsg.tools.boot.dao.api.support.SiteManager;
 import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.io.FileUtilExt;
 import wsg.tools.common.io.Filetype;
 import wsg.tools.common.lang.StringUtilsExt;
@@ -96,7 +96,7 @@ public class MinioConfig implements InitializingBean {
     public String uploadPreview(@Nonnull PreviewSupplier supplier, @Nonnull Source source)
         throws NotFoundException {
         URL url = supplier.getPreviewURL();
-        return uploadURL(url, Filetype.VIDEO, BUCKET_VIDEO, source, "preview", -1);
+        return this.uploadURL(url, Filetype.VIDEO, BUCKET_VIDEO, source, "preview", -1);
     }
 
     /**
@@ -105,7 +105,7 @@ public class MinioConfig implements InitializingBean {
     public String uploadVideo(@Nonnull VideoSupplier supplier, @Nonnull Source source)
         throws NotFoundException {
         URL url = supplier.getVideoURL();
-        if (url == null) {
+        if (null == url) {
             return null;
         }
         // todo upload video
@@ -117,7 +117,7 @@ public class MinioConfig implements InitializingBean {
      */
     public String uploadCover(@Nonnull CoverSupplier supplier, @Nonnull Source source)
         throws NotFoundException {
-        return uploadURL(supplier.getCoverURL(), Filetype.IMAGE, BUCKET_COVER, source, "", -1);
+        return this.uploadURL(supplier.getCoverURL(), Filetype.IMAGE, BUCKET_COVER, source, "", -1);
     }
 
     /**
@@ -128,10 +128,10 @@ public class MinioConfig implements InitializingBean {
         List<String> result = new ArrayList<>(images.size());
         for (int i = 0, albumSize = images.size(); i < albumSize; i++) {
             URL url = images.get(i);
-            if (url == null) {
+            if (null == url) {
                 continue;
             }
-            result.add(uploadURL(url, Filetype.IMAGE, BUCKET_ALBUM, source, "", i));
+            result.add(this.uploadURL(url, Filetype.IMAGE, BUCKET_ALBUM, source, "", i));
         }
         return result;
     }
@@ -154,12 +154,12 @@ public class MinioConfig implements InitializingBean {
             return null;
         }
         Objects.requireNonNull(source.getSname());
-        if (!filetype.test(url.getFile())) {
+        if (!filetype.check(url.getFile())) {
             return url.toString();
         }
         File file = null;
         try {
-            file = download(url);
+            file = this.download(url);
         } catch (OtherResponseException e) {
             return url.toString();
         }
@@ -174,7 +174,7 @@ public class MinioConfig implements InitializingBean {
             folder += Constants.URL_PATH_SEPARATOR + source.getRid();
             basename = String.valueOf(index);
         }
-        return uploadLocal(file, bucket, folder, basename);
+        return this.uploadLocal(file, bucket, folder, basename);
     }
 
     /**
@@ -200,9 +200,9 @@ public class MinioConfig implements InitializingBean {
             target = folder + Constants.URL_PATH_SEPARATOR + target;
         }
         try {
-            client().putObject(bucket.getName(), target, file.getPath());
+            this.client().putObject(bucket.getName(), target, file.getPath());
             log.trace("Uploaded {} to {}/{}", file, bucket.getName(), target);
-            return client().getObjectUrl(bucket.getName(), target);
+            return this.client().getObjectUrl(bucket.getName(), target);
         } catch (InvalidBucketNameException | XmlPullParserException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | NoResponseException | ErrorResponseException | InternalException | InvalidArgumentException e) {
             throw new AppException(e);
         }
@@ -251,7 +251,7 @@ public class MinioConfig implements InitializingBean {
     @Override
     public void afterPropertiesSet()
         throws InvalidBucketNameException, NoSuchAlgorithmException, InsufficientDataException, IOException, InvalidKeyException, NoResponseException, XmlPullParserException, ErrorResponseException, InternalException, io.minio.errors.RegionConflictException, io.minio.errors.InvalidObjectPrefixException {
-        MinioClient client = client();
+        MinioClient client = this.client();
         for (MinioBucket bucket : BUCKETS) {
             String name = bucket.getName();
             if (!client.bucketExists(name)) {

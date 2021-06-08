@@ -52,22 +52,23 @@ public final class CsvTemplate<T> {
         for (PropertyDescriptor propertyDescriptor : beanInfo.getPropertyDescriptors()) {
             MapUtilsExt.putIfAbsent(descriptors, propertyDescriptor.getName(), propertyDescriptor);
         }
-        if (ArrayUtils.isEmpty(properties)) {
-            properties = descriptors.keySet().toArray(new String[0]);
+        String[] props = properties;
+        if (ArrayUtils.isEmpty(props)) {
+            props = descriptors.keySet().toArray(new String[0]);
         }
         CsvTemplate<T> template = new CsvTemplate<>();
         TypeFactory factory = mapper.getTypeFactory();
-        for (String property : properties) {
+        for (String property : props) {
             PropertyDescriptor descriptor = descriptors.get(property);
-            if (descriptor == null) {
+            if (null == descriptor) {
                 throw new IllegalArgumentException(
                     String.format("%s doesn't contain a property of '%s'.", clazz, property));
             }
             Method getter = descriptor.getReadMethod();
             Method setter = descriptor.getWriteMethod();
-            if (getter != null) {
+            if (null != getter) {
                 // exclude getClass()
-                if ("getClass".equals(getter.getName()) && getter.getParameterCount() == 0) {
+                if ("getClass".equals(getter.getName()) && 0 == getter.getParameterCount()) {
                     continue;
                 }
                 template.putGetter(property, t -> {
@@ -78,7 +79,7 @@ public final class CsvTemplate<T> {
                     }
                 });
             }
-            if (setter != null) {
+            if (null != setter) {
                 Type type = setter.getGenericParameterTypes()[0];
                 template.putSetter(property, (bean, value) -> {
                     JavaType javaType = factory.constructType(type);

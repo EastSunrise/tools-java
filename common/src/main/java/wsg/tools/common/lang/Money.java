@@ -10,7 +10,7 @@ import java.util.Objects;
  */
 public class Money {
 
-    private final CurrencyEnum currency;
+    private final Currency currency;
     private final long value;
 
     public Money(String text) {
@@ -21,14 +21,14 @@ public class Money {
         this(other.currency, other.value);
     }
 
-    public Money(CurrencyEnum currency, long value) {
+    public Money(Currency currency, long value) {
         this.currency = currency;
         this.value = value;
     }
 
     public static Money parse(String text) {
         Objects.requireNonNull(text, "Text can't be null.");
-        for (Money.CurrencyEnum currency : Money.CurrencyEnum.values()) {
+        for (Currency currency : Currency.values()) {
             String value;
             if (text.startsWith(currency.getCode())) {
                 value = text.substring(currency.getCode().length());
@@ -42,16 +42,26 @@ public class Money {
         throw new IllegalArgumentException("Can't parse money from '" + text + "'.");
     }
 
-    public enum CurrencyEnum {
+    @Override
+    public String toString() {
+        return "Money{" +
+            "currency=" + currency +
+            ", value=" + value +
+            '}';
+    }
+
+    public enum Currency {
         /**
          * RMB
          */
-        YUAN("CNY", "￥"), DOLLAR("USD", "$"), POUND("GBP", "£");
+        YUAN("CNY", "￥"),
+        DOLLAR("USD", "$"),
+        POUND("GBP", "£");
 
         private final String code;
         private final String sign;
 
-        CurrencyEnum(String code, String sign) {
+        Currency(String code, String sign) {
             this.code = code;
             this.sign = sign;
         }

@@ -17,7 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
 import wsg.tools.boot.pojo.error.AppException;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 
 /**
  * Utility extension for bean operations.
@@ -38,7 +38,7 @@ public final class BeanUtilExt {
     @SuppressWarnings("unchecked")
     public static <T> BeanOpt<T> getBeanOpt(@Nonnull Class<T> clazz) {
         BeanOpt<T> opt = (BeanOpt<T>) OPTS.get(clazz);
-        if (opt != null) {
+        if (null != opt) {
             return opt;
         }
         try {
@@ -50,10 +50,7 @@ public final class BeanUtilExt {
         return opt;
     }
 
-    public static <From, To> To convert(From from, Class<To> toClass) {
-        if (null == from) {
-            return null;
-        }
+    public static <From, To> To convert(@Nonnull From from, Class<To> toClass) {
         To to = BeanUtils.instantiateClass(toClass);
         copyPropertiesExceptNull(to, from, true, true);
         return to;
@@ -125,8 +122,7 @@ public final class BeanUtilExt {
     }
 
     private static List<PropertyDescriptor> getDescriptorsExceptClass(Class<?> type,
-        boolean readable,
-        boolean writeable) {
+        boolean readable, boolean writeable) {
         return Arrays.stream(BeanUtils.getPropertyDescriptors(type))
             .filter(descriptor -> !PROPERTY_NAME_CLASS.equals(descriptor.getName()))
             .filter(descriptor -> !readable || null != descriptor.getReadMethod())

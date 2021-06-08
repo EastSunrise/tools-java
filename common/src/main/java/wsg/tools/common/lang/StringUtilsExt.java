@@ -2,6 +2,7 @@ package wsg.tools.common.lang;
 
 import java.util.Set;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,7 +24,7 @@ public final class StringUtilsExt {
      */
     private static final Set<Character> SPECIAL_CHARS = Set.of('?', '*', '.', '(', ')');
     private static final char[] UNITS = {'零', '一', '二', '三', '四', '五', '六', '七', '八', '九'};
-    private static final char TEN = '十';
+    private static final int TEN = '十';
 
     private StringUtilsExt() {
     }
@@ -33,23 +34,20 @@ public final class StringUtilsExt {
      *
      * @param text the string to be converted
      */
-    public static String convertFullWidth(String text) {
-        if (text == null) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
+    public static String convertFullWidth(@Nonnull String text) {
+        StringBuilder sb = new StringBuilder(text.length());
         for (char ch : text.toCharArray()) {
             // [!-}]
-            if (65281 <= ch && ch < 65374) {
-                sb.append((char) ((int) ch - 65248));
+            if (65281 <= ch && 65374 > ch) {
+                sb.append((char) (ch - 65248));
                 continue;
             }
             // space
-            if (ch == 12288) {
+            if (12288 == ch) {
                 sb.append((char) 32);
                 continue;
             }
-            if (ch == 8226) {
+            if (8226 == ch) {
                 sb.append((char) 183);
                 continue;
             }
@@ -62,10 +60,10 @@ public final class StringUtilsExt {
      * Encode a string as a pattern with special chars escaped.
      */
     public static String encodeAsPattern(String str) {
-        if (str == null) {
+        if (null == str) {
             return null;
         }
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder(str.length());
         for (char c : str.toCharArray()) {
             if (SPECIAL_CHARS.contains(c)) {
                 builder.append("\\");
@@ -76,24 +74,24 @@ public final class StringUtilsExt {
     }
 
     public static String chineseNumeric(int num) {
-        if (num < 0) {
+        if (0 > num) {
             throw new IllegalArgumentException("Number must be positive.");
         }
-        if (num == 0) {
+        if (0 == num) {
             return String.valueOf(UNITS[0]);
         }
         int ten = UNITS.length;
         if (num < ten * ten) {
             int tens = num / ten;
             int units = num % ten;
-            StringBuilder builder = new StringBuilder();
-            if (tens > 1) {
+            StringBuilder builder = new StringBuilder(3);
+            if (1 < tens) {
                 builder.append(UNITS[tens]);
             }
-            if (tens > 0) {
+            if (0 < tens) {
                 builder.append("十");
             }
-            if (units > 0) {
+            if (0 < units) {
                 builder.append(UNITS[units]);
             }
             return builder.toString();
@@ -112,29 +110,29 @@ public final class StringUtilsExt {
         int cursor = text.length() - 1;
         char ch = text.charAt(cursor);
         int index = ArrayUtils.indexOf(UNITS, ch);
-        if (index != ArrayUtils.INDEX_NOT_FOUND) {
+        if (ArrayUtils.INDEX_NOT_FOUND != index) {
             result += index;
             cursor--;
         }
-        if (cursor < 0) {
+        if (0 > cursor) {
             return result;
         }
         ch = text.charAt(cursor);
-        if (ch != TEN) {
+        if (TEN != ch) {
             String message = String.format("Can't parse the text '%s' at index %d", text, cursor);
             throw new IllegalArgumentException(message);
         }
         result += 10;
         cursor--;
-        if (cursor < 0) {
+        if (0 > cursor) {
             return result;
         }
-        if (cursor > 0) {
+        if (0 < cursor) {
             throw new IllegalArgumentException("The text to parse is too long: " + text);
         }
         ch = text.charAt(cursor);
         index = ArrayUtils.indexOf(UNITS, ch);
-        if (index <= 0) {
+        if (0 >= index) {
             String message = String.format("Can't parse the text '%s' at index %d", text, cursor);
             throw new IllegalArgumentException(message);
         }
@@ -144,7 +142,7 @@ public final class StringUtilsExt {
     /**
      * Check if the string contain a Chinese character.
      */
-    public static boolean hasChinese(String text) {
+    public static boolean hasChinese(CharSequence text) {
         if (StringUtils.isBlank(text)) {
             return false;
         }

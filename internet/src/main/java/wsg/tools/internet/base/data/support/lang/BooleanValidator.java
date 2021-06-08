@@ -25,6 +25,6 @@ public class BooleanValidator extends AbstractParsableValidator<Boolean> {
 
     @Override
     public void describe(List<Boolean> values) {
-        Descriptors.<Boolean, Boolean>enumerate(Function.identity()).describe(values);
+        Descriptors.enumerate(values, Function.identity());
     }
 }

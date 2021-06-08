@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 
 /**
  * An implementation of {@link wsg.tools.internet.base.WrappedResponseHandler} that assumes the

@@ -43,7 +43,7 @@ public final class AssertUtils {
         E previous = iterator.next();
         while (iterator.hasNext()) {
             E current = iterator.next();
-            if (comparator.compare(previous, current) > 0) {
+            if (0 < comparator.compare(previous, current)) {
                 return false;
             }
             previous = current;
@@ -57,22 +57,22 @@ public final class AssertUtils {
     public static <T extends Comparable<T>> T requireRange(T target, T fromInclusive,
         T toExclusive) {
         Objects.requireNonNull(target);
-        if (fromInclusive == null && toExclusive == null) {
+        if (null == fromInclusive && null == toExclusive) {
             return target;
         }
-        if (fromInclusive == null) {
-            if (target.compareTo(toExclusive) >= 0) {
+        if (null == fromInclusive) {
+            if (0 <= target.compareTo(toExclusive)) {
                 throw new IllegalArgumentException("Target must be less than " + toExclusive);
             }
             return target;
         }
-        if (toExclusive == null) {
-            if (target.compareTo(fromInclusive) < 0) {
+        if (null == toExclusive) {
+            if (0 > target.compareTo(fromInclusive)) {
                 throw new IllegalArgumentException("Target mustn't be less than " + fromInclusive);
             }
             return target;
         }
-        if (target.compareTo(fromInclusive) < 0 || target.compareTo(toExclusive) >= 0) {
+        if (0 > target.compareTo(fromInclusive) || 0 <= target.compareTo(toExclusive)) {
             throw new IllegalArgumentException(
                 "Target must be within range fromInclusive " + fromInclusive + " toExclusive "
                     + toExclusive);

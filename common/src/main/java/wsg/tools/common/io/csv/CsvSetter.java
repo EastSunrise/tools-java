@@ -9,6 +9,7 @@ import wsg.tools.common.util.function.Setter;
  * @author Kingen
  * @since 2021/3/31
  */
+@FunctionalInterface
 public interface CsvSetter<T> extends Setter<T, String> {
 
     /**

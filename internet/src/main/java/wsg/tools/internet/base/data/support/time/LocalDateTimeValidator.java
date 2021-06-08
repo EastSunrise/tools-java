@@ -2,10 +2,9 @@ package wsg.tools.internet.base.data.support.time;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import javax.annotation.Nonnull;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.internet.base.data.support.Descriptors;
 
 /**
@@ -29,12 +28,12 @@ public class LocalDateTimeValidator extends AbstractTimeValidator<LocalDateTime>
     }
 
     @Override
-    protected LocalDateTime parse(@Nonnull String text) throws DateTimeParseException {
+    protected LocalDateTime parse(@Nonnull String text) {
         return LocalDateTime.parse(text, formatter);
     }
 
     @Override
     public void describe(List<LocalDateTime> values) {
-        Descriptors.<LocalDateTime>range().describe(values);
+        Descriptors.range(values);
     }
 }

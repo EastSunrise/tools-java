@@ -23,7 +23,7 @@ abstract class AbstractNumberValidator<N extends Number & Comparable<N>>
     @Override
     protected N parseText(@Nonnull String text) throws InvalidValueException {
         try {
-            return parseValue(text);
+            return this.parseValue(text);
         } catch (NumberFormatException e) {
             throw new InvalidValueException(e.getMessage());
         }
@@ -39,6 +39,6 @@ abstract class AbstractNumberValidator<N extends Number & Comparable<N>>
 
     @Override
     public void describe(List<N> values) {
-        Descriptors.<N>range().describe(values);
+        Descriptors.range(values);
     }
 }

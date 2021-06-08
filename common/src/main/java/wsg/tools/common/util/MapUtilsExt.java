@@ -2,7 +2,6 @@ package wsg.tools.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -30,9 +29,10 @@ public final class MapUtilsExt {
      */
     public static <K, V> void putIfAbsent(Map<K, V> map, K key, V value) {
         V prev = map.putIfAbsent(key, value);
-        if (prev != null) {
-            throw new IllegalStateException(String
-                .format("Duplicate key %s (attempted merging values %s and %s)", key, prev, value));
+        if (null != prev) {
+            String format = String
+                .format("Duplicate key %s (attempted merging values %s and %s)", key, prev, value);
+            throw new IllegalStateException(format);
         }
     }
 
@@ -46,20 +46,6 @@ public final class MapUtilsExt {
     }
 
     /**
-     * Obtains an enum from the given map and remove the key.
-     *
-     * @return the enum matching the name, or null if not found
-     */
-    public static <E extends Enum<E>>
-    E getEnumOf(@Nonnull Map<String, String> map, @Nonnull Class<E> eClass, boolean ignoreCase,
-        String... keys) {
-        if (ignoreCase) {
-            return getValue(map, s -> Enum.valueOf(eClass, s.toUpperCase(Locale.ROOT)), keys);
-        }
-        return getValue(map, s -> Enum.valueOf(eClass, s), keys);
-    }
-
-    /**
      * Obtains a list of values from the given map and remove the key.
      *
      * @param separatorChars chars to split the string
@@ -67,14 +53,15 @@ public final class MapUtilsExt {
      */
     @Nonnull
     public static <T> List<T> getValues(@Nonnull Map<String, String> map,
-        @Nonnull Function<? super String, T> function, String separatorChars, String... keys) {
+        @Nonnull Function<? super String, ? extends T> function, String separatorChars,
+        String... keys) {
         return Optional.ofNullable(getValue(map, s -> {
-            List<T> list = new ArrayList<>();
+            List<T> list = new ArrayList<>(1);
             for (String part : StringUtils.split(s, separatorChars)) {
                 CollectionUtils.addIgnoreNull(list, function.apply(part));
             }
             return list;
-        }, keys)).orElse(new ArrayList<>());
+        }, keys)).orElse(new ArrayList<>(0));
     }
 
     /**
@@ -108,8 +95,7 @@ public final class MapUtilsExt {
      * @return target value, or {@literal null} if none key is found in the map
      */
     public static <T> T getValue(@Nonnull Map<String, String> map,
-        @Nonnull Function<? super String, T> function,
-        String... keys) {
+        @Nonnull Function<? super String, T> function, String... keys) {
         for (String key : keys) {
             String value = map.remove(key);
             if (StringUtils.isNotBlank(value)) {

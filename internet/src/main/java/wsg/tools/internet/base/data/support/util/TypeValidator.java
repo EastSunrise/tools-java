@@ -23,6 +23,6 @@ public class TypeValidator extends Validator<Class<?>> {
 
     @Override
     public void describe(@Nonnull List<Class<?>> classes) {
-        Descriptors.<Class<?>, Class<?>>enumerate(Function.identity()).describe(classes);
+        Descriptors.enumerate(classes, Function.identity());
     }
 }

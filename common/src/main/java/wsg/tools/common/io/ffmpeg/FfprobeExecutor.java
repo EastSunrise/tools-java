@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.math.Fraction;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.io.CommandExecutor;
 import wsg.tools.common.io.CommandTask;
 
@@ -24,8 +26,15 @@ import wsg.tools.common.io.CommandTask;
  */
 public class FfprobeExecutor extends CommandExecutor {
 
+    private final Charset charset;
+
     public FfprobeExecutor(String executablePath) {
+        this(executablePath, Constants.UTF_8);
+    }
+
+    public FfprobeExecutor(String executablePath, Charset charset) {
         super(executablePath);
+        this.charset = Objects.requireNonNull(charset);
     }
 
     /**
@@ -36,7 +45,7 @@ public class FfprobeExecutor extends CommandExecutor {
      * @throws IOException if an I/O error occurs
      */
     public Format showFormat(String path) throws IOException {
-        return getResult(path, "-show_format").format;
+        return this.getResult(path, "-show_format").format;
     }
 
     /**
@@ -47,7 +56,7 @@ public class FfprobeExecutor extends CommandExecutor {
      * @throws IOException if an I/O error occurs
      */
     public List<AbstractStream> showStreams(String path) throws IOException {
-        return getResult(path, "-show_streams").streams;
+        return this.getResult(path, "-show_streams").streams;
     }
 
     /**
@@ -58,7 +67,7 @@ public class FfprobeExecutor extends CommandExecutor {
      * @throws IOException if an I/O error occurs
      */
     public List<VideoStream> showVideoStreams(String path) throws IOException {
-        return showStreams(path, "v", VideoStream.class);
+        return this.showStreams(path, "v", VideoStream.class);
     }
 
     /**
@@ -69,23 +78,22 @@ public class FfprobeExecutor extends CommandExecutor {
      * @throws IOException if an I/O error occurs
      */
     public List<AudioStream> showAudioStreams(String path) throws IOException {
-        return showStreams(path, "a", AudioStream.class);
+        return this.showStreams(path, "a", AudioStream.class);
     }
 
     private <T extends AbstractStream> List<T>
     showStreams(String path, String arg, Class<T> clazz) throws IOException {
-        return getResult(path, "-show_streams", "-select_streams", arg).streams
+        return this.getResult(path, "-show_streams", "-select_streams", arg).streams
             .stream().map(clazz::cast).collect(Collectors.toList());
     }
 
     private Result getResult(String path, String... args) throws IOException {
-        path = "\"" + path + "\"";
-        String[] commands = ArrayUtils.addAll(args, "-v", "quiet", "-of", "json", "-i", path);
-        CommandTask task = createTask(commands);
+        String[] commands = ArrayUtils
+            .addAll(args, "-v", "quiet", "-of", "json", "-i", "\"" + path + "\"");
+        CommandTask task = this.createTask(commands);
         task.execute();
         try {
-            // todo other charsets
-            String json = IOUtils.toString(task.getInputStream(), Constants.UTF_8);
+            String json = IOUtils.toString(task.getInputStream(), charset);
             return Lazy.MAPPER.readValue(json, Result.class);
         } finally {
             task.destroy();
@@ -108,6 +116,14 @@ public class FfprobeExecutor extends CommandExecutor {
         private Format format;
 
         Result() {
+        }
+
+        private List<AbstractStream> getStreams() {
+            return streams;
+        }
+
+        private Format getFormat() {
+            return format;
         }
     }
 }

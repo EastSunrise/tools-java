@@ -11,7 +11,7 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 
 /**
  * Common types of files. The type of a file is decided by its extension, ignoring case.
@@ -49,7 +49,7 @@ public enum Filetype {
 
     @Nonnull
     public String[] getSuffixes() {
-        String[] suffixes = new String[getExtensions().length];
+        String[] suffixes = new String[this.getExtensions().length];
         for (int i = 0; i < extensions.length; i++) {
             suffixes[i] = Constants.EXTENSION_SEPARATOR + extensions[i];
         }
@@ -57,7 +57,7 @@ public enum Filetype {
     }
 
     public String[] getExtensions() {
-        return extensions;
+        return extensions.clone();
     }
 
     /**
@@ -65,7 +65,7 @@ public enum Filetype {
      *
      * @param filename name of the file to be test, not null
      */
-    public boolean test(@Nonnull String filename) {
+    public boolean check(@Nonnull String filename) {
         String extension = FilenameUtils.getExtension(filename);
         return StringUtils.equalsAnyIgnoreCase(extension, extensions);
     }
@@ -75,8 +75,8 @@ public enum Filetype {
      *
      * @param file the file to be test, not null
      */
-    public boolean test(@Nonnull File file) {
-        return test(file.getName());
+    public boolean check(@Nonnull File file) {
+        return this.check(file.getName());
     }
 
     /**
@@ -84,7 +84,7 @@ public enum Filetype {
      */
     @Nonnull
     public SuffixFileFilter filter() {
-        return new SuffixFileFilter(getSuffixes(), IOCase.INSENSITIVE);
+        return new SuffixFileFilter(this.getSuffixes(), IOCase.INSENSITIVE);
     }
 
     /**
@@ -95,6 +95,6 @@ public enum Filetype {
     @Nonnull
     public Collection<File> listFiles(File directory, boolean recursive) {
         IOFileFilter filter = recursive ? TrueFileFilter.TRUE : FalseFileFilter.FALSE;
-        return FileUtils.listFiles(directory, filter(), filter);
+        return FileUtils.listFiles(directory, this.filter(), filter);
     }
 }

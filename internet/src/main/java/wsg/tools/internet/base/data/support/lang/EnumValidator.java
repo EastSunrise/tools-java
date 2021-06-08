@@ -25,6 +25,6 @@ public class EnumValidator extends Validator<Object> {
 
     @Override
     public void describe(@Nonnull List<Object> values) {
-        Descriptors.enumerate(Function.identity()).describe(values);
+        Descriptors.enumerate(values, Function.identity());
     }
 }

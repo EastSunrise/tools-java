@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 
 /**
  * Configurations for Jackson.

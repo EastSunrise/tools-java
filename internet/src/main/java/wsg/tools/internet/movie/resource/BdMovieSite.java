@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
@@ -65,7 +65,8 @@ public final class BdMovieSite extends BaseSite implements ResourceRepository<Bd
     @Override
     @Nonnull
     public ListRepository<Integer, BdMovieItem> getRepository() throws OtherResponseException {
-        IntStream stream = IntStream.rangeClosed(MIN_ID, latest()).filter(id -> id != EXCEPT_ONE);
+        IntStream stream = IntStream.rangeClosed(MIN_ID, this.latest())
+            .filter(id -> id != EXCEPT_ONE);
         return Repositories.list(this, stream.boxed().collect(Collectors.toList()));
     }
 
@@ -75,7 +76,7 @@ public final class BdMovieSite extends BaseSite implements ResourceRepository<Bd
      * @see <a href="https://www.bd2020.com/movies/index.htm">Last Update</a>
      */
     private int latest() throws OtherResponseException {
-        Document document = findDocument(httpGet("/movies/index.htm"));
+        Document document = this.findDocument(this.httpGet("/movies/index.htm"));
         Elements lis = document.selectFirst("#content_list").select(".list-item");
         int latest = 1;
         for (Element li : lis) {
@@ -92,7 +93,7 @@ public final class BdMovieSite extends BaseSite implements ResourceRepository<Bd
     @Override
     public BdMovieItem findById(@Nonnull Integer id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/zx/%d.htm", id));
+        Document document = this.getDocument(this.httpGet("/zx/%d.htm", id));
         Map<String, String> metadata = DocumentUtils.getMetadata(document);
         String location = Objects.requireNonNull(metadata.get("og:url"));
         Matcher urlMatcher = Lazy.ITEM_URL_REGEX.matcher(location);
@@ -105,11 +106,11 @@ public final class BdMovieSite extends BaseSite implements ResourceRepository<Bd
         LocalDateTime updateTime = LocalDateTime.parse(release, Constants.YYYY_MM_DD_HH_MM_SS);
         String title = metadata.get("og:title");
 
-        String varUrls = getVarUrls(document);
+        String varUrls = this.getVarUrls(document);
         Matcher matcher = RegexUtils.matchesOrElseThrow(Lazy.VAR_REGEX, varUrls);
         List<Link> links = new ArrayList<>();
         List<InvalidResourceException> exceptions = new ArrayList<>();
-        String urls = decode(matcher.group("urls"));
+        String urls = this.decode(matcher.group("urls"));
         urls = StringEscapeUtils.unescapeHtml4(urls).replace("<p>", "").replace("</p>", "");
         for (String url : Lazy.URLS_SEPARATOR.split(urls)) {
             if (StringUtils.isNotBlank(url)) {
@@ -121,17 +122,17 @@ public final class BdMovieSite extends BaseSite implements ResourceRepository<Bd
             }
         }
 
-        String diskStr = decode(matcher.group("disk"));
+        String diskStr = this.decode(matcher.group("disk"));
         if (StringUtils.isNotBlank(diskStr)) {
-            getDiskResources(diskStr, links, exceptions);
+            this.getDiskResources(diskStr, links, exceptions);
         }
         BdMovieItem item = new BdMovieItem(id, realType, title, links, exceptions, updateTime);
-        item.setNext(getNext(document));
+        item.setNext(this.getNext(document));
 
         String cover = metadata.get("og:image");
         if (!cover.isEmpty()) {
             if (cover.startsWith(Constants.URL_PATH_SEPARATOR)) {
-                cover = getHost().toURI() + cover;
+                cover = this.getHost().toURI() + cover;
             }
             item.setCover(NetUtils.createURL(cover));
         }

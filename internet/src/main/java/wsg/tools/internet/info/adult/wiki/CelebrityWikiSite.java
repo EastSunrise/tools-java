@@ -25,7 +25,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.EnumUtilExt;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
@@ -74,7 +74,7 @@ public final class CelebrityWikiSite extends BaseSite
     @Contract(" -> new")
     public ListRepository<WikiCelebrityIndex, WikiCelebrity> getRepository()
         throws OtherResponseException {
-        return Repositories.list(this, findAllCelebrityIndices());
+        return Repositories.list(this, this.findAllCelebrityIndices());
     }
 
     /**
@@ -82,7 +82,7 @@ public final class CelebrityWikiSite extends BaseSite
      */
     @Nonnull
     public List<WikiCelebrityIndex> findAllCelebrityIndices() throws OtherResponseException {
-        Document document = findDocument(httpGet("/comp/sitemap"));
+        Document document = this.findDocument(this.httpGet("/comp/sitemap"));
         return document.select(".ulist").last().select(CssSelectors.TAG_A)
             .stream().map(this::getIndex).collect(Collectors.toList());
     }
@@ -98,7 +98,7 @@ public final class CelebrityWikiSite extends BaseSite
         String page = current == 0 ? "" : ("_" + (current + 1));
         String text = Optional.ofNullable(type).map(WikiCelebrityType::getAsPath)
             .orElse("mingren");
-        Document document = getDocument(httpGet("/%s/index%s.html", text, page));
+        Document document = this.getDocument(this.httpGet("/%s/index%s.html", text, page));
 
         Element box = document.selectFirst(".personbox");
         Elements as = box.selectFirst(CssSelectors.TAG_UL).select(CssSelectors.TAG_A);
@@ -128,7 +128,8 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiCelebrityType subtype = index.getSubtype();
-        Document document = getDocument(httpGet("/%s/m%d/info.html", subtype.getAsPath(), id));
+        Document document = this
+            .getDocument(this.httpGet("/%s/m%d/info.html", subtype.getAsPath(), id));
         Elements ems = document.selectFirst("div.datacon").select(CssSelectors.TAG_EM);
         Map<String, String> map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         for (Element em : ems) {
@@ -146,8 +147,8 @@ public final class CelebrityWikiSite extends BaseSite
                 map.put(key, preValue + SEPARATOR + text);
             }
         }
-        BasicInfo info = getBasicInfo(map);
-        WikiCelebrity celebrity = initCelebrity(document,
+        BasicInfo info = this.getBasicInfo(map);
+        WikiCelebrity celebrity = this.initCelebrity(document,
             (id0, name, type0) -> new WikiCelebrity(id0, name, type0, info));
         Objects.requireNonNull(celebrity);
         Element ext = document.selectFirst("div.dataext");
@@ -160,16 +161,17 @@ public final class CelebrityWikiSite extends BaseSite
                     MapUtilsExt.putIfAbsent(extInfo, key, ele.nextElementSibling());
                 }
             }
-            setExtStringList(extInfo, celebrity, WikiCelebrity::setDescriptions, "人物介绍", "人物点评");
-            setExtStringList(extInfo, celebrity, WikiCelebrity::setExperiences, "演艺阅历");
-            setExtStringList(extInfo, celebrity, WikiCelebrity::setGroupLives, "团体生活");
-            setExtStringList(extInfo, celebrity, WikiCelebrity::setAwards, "获奖记载");
+            this.setExtStringList(extInfo, celebrity, WikiCelebrity::setDescriptions, "人物介绍",
+                "人物点评");
+            this.setExtStringList(extInfo, celebrity, WikiCelebrity::setExperiences, "演艺阅历");
+            this.setExtStringList(extInfo, celebrity, WikiCelebrity::setGroupLives, "团体生活");
+            this.setExtStringList(extInfo, celebrity, WikiCelebrity::setAwards, "获奖记载");
             Element prompt = extInfo.remove("fanghao");
             if (prompt != null) {
-                celebrity.setWorks(getWorks(prompt.nextElementSibling()));
+                celebrity.setWorks(this.getWorks(prompt.nextElementSibling()));
             }
         }
-        celebrity.setAlbums(getSimpleAlbums(subtype, id));
+        celebrity.setAlbums(this.getSimpleAlbums(subtype, id));
         return celebrity;
     }
 
@@ -181,7 +183,8 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         int id = index.getId();
         WikiAlbumType type = index.getSubtype();
-        Document document = getDocument(httpGet("/tuku/%s/%d.html", type.getAsPath(), id));
+        Document document = this
+            .getDocument(this.httpGet("/tuku/%s/%d.html", type.getAsPath(), id));
         Element show = document.selectFirst("div.picshow");
         String title = show.selectFirst(CssSelectors.TAG_H1).text();
         String timeStr = ((TextNode) show.selectFirst(".info").childNode(0)).text();
@@ -197,7 +200,7 @@ public final class CelebrityWikiSite extends BaseSite
             if (href.isEmpty() || HOME_PAGE.equals(href)) {
                 continue;
             }
-            related.add(getIndex(a));
+            related.add(this.getIndex(a));
         }
         if (!related.isEmpty()) {
             album.setRelatedCelebrities(related);
@@ -225,12 +228,12 @@ public final class CelebrityWikiSite extends BaseSite
         throws NotFoundException, OtherResponseException {
         RequestBuilder builder = null;
         try {
-            builder = httpGet("/fanhao/%s.html", id);
+            builder = this.httpGet("/fanhao/%s.html", id);
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
         }
-        Document document = getDocument(builder);
-        WikiSimpleCelebrity celebrity = initCelebrity(document, WikiSimpleCelebrity::new);
+        Document document = this.getDocument(builder);
+        WikiSimpleCelebrity celebrity = this.initCelebrity(document, WikiSimpleCelebrity::new);
         Element div = document.selectFirst("div.fanhao");
         if (div.childNodeSize() == 1) {
             throw new NotFoundException(div.text());
@@ -271,7 +274,7 @@ public final class CelebrityWikiSite extends BaseSite
         if (current == null) {
             return null;
         }
-        WikiCelebrityIndex index = getIndex(current);
+        WikiCelebrityIndex index = this.getIndex(current);
         String name = document.selectFirst(".mx_name").text();
         T t = constructor.apply(index.getId(), name, index.getSubtype());
         Element block01 = document.selectFirst("div.cm_block01");
@@ -384,7 +387,8 @@ public final class CelebrityWikiSite extends BaseSite
     @Nonnull
     private Set<WikiAlbumIndex> getSimpleAlbums(WikiCelebrityType type, int id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/%s/m%s/pic.html", type.getAsPath(), id));
+        Document document = this
+            .getDocument(this.httpGet("/%s/m%s/pic.html", type.getAsPath(), id));
         Elements lis = document.selectFirst("#xiezhen").select(CssSelectors.TAG_LI);
         Set<WikiAlbumIndex> albums = new HashSet<>(lis.size());
         for (Element li : lis) {

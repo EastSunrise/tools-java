@@ -36,14 +36,14 @@ public class URLValidator extends Validator<URL> {
      */
     @Override
     public void describe(@Nonnull List<URL> urls) {
-        Descriptors.<URL, String>enumerate(url -> {
-            StringBuilder builder = new StringBuilder()
+        Descriptors.enumerate(urls, url -> {
+            StringBuilder builder = new StringBuilder(url.toString().length())
                 .append(url.getProtocol()).append("://")
                 .append(url.getHost());
-            if (url.getPort() != -1) {
+            if (-1 != url.getPort()) {
                 builder.append(":").append(url.getPort());
             }
             return builder.toString();
-        }).describe(urls);
+        });
     }
 }

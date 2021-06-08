@@ -13,7 +13,7 @@ public class CommandExecutor {
     /**
      * path of the executable.
      */
-    final String executablePath;
+    private final String executablePath;
 
     public CommandExecutor(String executablePath) {
         // todo if executable
@@ -38,5 +38,9 @@ public class CommandExecutor {
         } finally {
             task.destroy();
         }
+    }
+
+    public String getExecutablePath() {
+        return executablePath;
     }
 }

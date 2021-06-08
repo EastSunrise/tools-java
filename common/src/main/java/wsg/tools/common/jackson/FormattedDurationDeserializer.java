@@ -38,47 +38,49 @@ public class FormattedDurationDeserializer extends StdScalarDeserializer<Duratio
 
     @Override
     public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        if (format == JsonDurationFormat.Format.LONG) {
-            long value;
+        if (JsonDurationFormat.Format.LONG == format) {
             if (p.hasToken(JsonToken.VALUE_NUMBER_INT)) {
-                value = p.getLongValue();
-            } else if (p.hasToken(JsonToken.VALUE_STRING)) {
-                value = Long.parseLong(p.getText());
-            } else {
-                return (Duration) ctxt.handleUnexpectedToken(Duration.class, p);
+                return ofLong(p.getLongValue(), ctxt);
             }
-            if (ctxt.isEnabled(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)) {
-                return Duration.ofSeconds(value);
+            if (p.hasToken(JsonToken.VALUE_STRING)) {
+                return ofLong(Long.parseLong(p.getText()), ctxt);
             }
-            return Duration.ofMillis(value);
         }
-        if (format == JsonDurationFormat.Format.DOUBLE) {
-            BigDecimal bigDecimal;
+        if (JsonDurationFormat.Format.DOUBLE == format) {
             if (p.hasToken(JsonToken.VALUE_NUMBER_FLOAT)) {
-                bigDecimal = p.getDecimalValue();
-            } else if (p.hasToken(JsonToken.VALUE_STRING)) {
-                bigDecimal = new BigDecimal(p.getText());
-            } else {
-                return (Duration) ctxt.handleUnexpectedToken(Duration.class, p);
+                return DecimalUtils
+                    .extractSecondsAndNanos(p.getDecimalValue(), Duration::ofSeconds);
             }
-            return DecimalUtils.extractSecondsAndNanos(bigDecimal, Duration::ofSeconds);
+            if (p.hasToken(JsonToken.VALUE_STRING)) {
+                return DecimalUtils
+                    .extractSecondsAndNanos(new BigDecimal(p.getText()), Duration::ofSeconds);
+            }
         }
-        if (format == JsonDurationFormat.Format.DURATION) {
+        if (JsonDurationFormat.Format.DURATION == format) {
             if (p.hasToken(JsonToken.VALUE_STRING)) {
                 return TimeUtils.parseDuration(p.getText().trim());
             }
         }
-
-        if (p.hasToken(JsonToken.VALUE_STRING)) {
-            return Duration.parse(p.getText().trim());
+        if (JsonDurationFormat.Format.DEFAULT == format) {
+            if (p.hasToken(JsonToken.VALUE_STRING)) {
+                return Duration.parse(p.getText().trim());
+            }
         }
         return (Duration) ctxt.handleUnexpectedToken(Duration.class, p);
     }
 
+    private Duration ofLong(long value, DeserializationContext ctxt) {
+        if (ctxt.isEnabled(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)) {
+            return Duration.ofSeconds(value);
+        }
+        return Duration.ofMillis(value);
+    }
+
     @Override
-    public JsonDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty prop) {
-        JsonDurationFormat jdf = prop.getAnnotation(JsonDurationFormat.class);
-        if (jdf == null) {
+    public JsonDeserializer<?> createContextual(DeserializationContext ctxt,
+        BeanProperty property) {
+        JsonDurationFormat jdf = property.getAnnotation(JsonDurationFormat.class);
+        if (null == jdf) {
             return new FormattedDurationDeserializer();
         }
         return new FormattedDurationDeserializer(jdf.format());

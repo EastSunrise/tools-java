@@ -41,7 +41,7 @@ public final class TimeUtils {
         }
         Duration duration = Duration.ofMinutes(Long.parseLong(matcher.group("m")));
         String hour = matcher.group("h");
-        if (hour != null) {
+        if (null != hour) {
             duration = duration.plusHours(Long.parseLong(hour));
         }
         BigDecimal seconds = new BigDecimal(matcher.group("s"));

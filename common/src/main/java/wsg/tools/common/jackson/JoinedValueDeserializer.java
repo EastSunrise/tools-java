@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -42,23 +42,24 @@ public class JoinedValueDeserializer extends JsonDeserializer<Object> implements
             }
             String[] values = StringUtils.splitByWholeSeparator(text, separator);
             ObjectMapper mapper = (ObjectMapper) p.getCodec();
-            List<Object> list = new ArrayList<>();
+            Collection<Object> collection = new ArrayList<>(values.length);
             for (String value : values) {
-                list.add(mapper.convertValue(value.strip(), targetType.getContentType()));
+                collection.add(mapper.convertValue(value.strip(), targetType.getContentType()));
             }
-            return list;
+            return collection;
         }
         return ctxt.handleUnexpectedToken(targetType, p);
     }
 
     @Override
-    public JsonDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty prop) {
-        JsonJoinedValue joinedValue = prop.getAnnotation(JsonJoinedValue.class);
+    public JsonDeserializer<?> createContextual(DeserializationContext ctxt,
+        BeanProperty property) {
+        JsonJoinedValue joinedValue = property.getAnnotation(JsonJoinedValue.class);
         JoinedValueDeserializer deserializer = new JoinedValueDeserializer();
-        if (joinedValue != null) {
+        if (null != joinedValue) {
             deserializer.separator = joinedValue.separator();
         }
-        deserializer.targetType = prop.getType();
+        deserializer.targetType = property.getType();
         return deserializer;
     }
 }

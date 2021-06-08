@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
@@ -60,7 +60,7 @@ public class LicencePlateSite extends BaseSite
     @Override
     public LicencePlateItem findById(@Nonnull String path)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/%s", path));
+        Document document = this.getDocument(this.httpGet("/%s", path));
         Element span = document.selectFirst(".single_info").selectFirst(".date");
         LocalDateTime update = LocalDateTime.parse(span.text().strip(), Constants.YYYY_MM_DD_HH_MM);
         Element article = document.selectFirst(CssSelectors.TAG_ARTICLE);
@@ -79,7 +79,7 @@ public class LicencePlateSite extends BaseSite
         if (!lines.isEmpty()) {
             desc += lines.removeLast();
         }
-        SiblingSupplier<String> sibling = getSibling(document);
+        SiblingSupplier<String> sibling = this.getSibling(document);
         LicencePlateItem item = new LicencePlateItem(id, serialNum, desc, update,
             sibling.getPreviousId(), sibling.getNextId());
         Element img = content.selectFirst(CssSelectors.TAG_IMG);

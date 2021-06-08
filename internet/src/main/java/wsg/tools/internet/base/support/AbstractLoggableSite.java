@@ -3,6 +3,7 @@ package wsg.tools.internet.base.support;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.StringUtilsExt;
 import wsg.tools.internet.base.Loggable;
 import wsg.tools.internet.common.UnexpectedException;
@@ -58,11 +59,11 @@ public abstract class AbstractLoggableSite<U> extends BaseSite implements Loggab
 
     @Override
     public void close() throws IOException {
-        String filepath = StringUtilsExt.toFilename(getHost().toString()) + ".cookie";
+        String filepath = StringUtilsExt.toFilename(this.getHost().toString()) + ".cookie";
         File file = new File(StringUtils.joinWith(File.separator, TMPDIR, "context", filepath));
-        try (ObjectOutputStream stream = new ObjectOutputStream(FileUtils.openOutputStream(file))) {
-            log.trace("Synchronize cookies of {}.", getHost());
-            stream.writeObject(getContext().getCookieStore());
+        try (ObjectOutput stream = new ObjectOutputStream(FileUtils.openOutputStream(file))) {
+            log.trace("Synchronize cookies of {}.", this.getHost());
+            stream.writeObject(this.getContext().getCookieStore());
         }
         super.close();
     }

@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.function.AliasSupplier;
 import wsg.tools.common.util.function.CodeSupplier;
@@ -38,13 +38,13 @@ public final class EnumUtilExt {
     public static <K, E extends Enum<E>>
     E valueOfKey(@Nonnull Class<E> clazz, @Nonnull K key, Function<E, K> keyMapper) {
         Map<?, String> map = KEYS.get(clazz);
-        if (map == null) {
+        if (null == map) {
             map = Arrays.stream(clazz.getEnumConstants())
                 .collect(Collectors.toMap(keyMapper, Enum::name));
             KEYS.put(clazz, map);
         }
         String name = map.get(key);
-        if (name != null) {
+        if (null != name) {
             return Enum.valueOf(clazz, name);
         }
         throw new IllegalArgumentException(String.format("Unknown key '%s' for '%s'", key, clazz));
@@ -60,13 +60,13 @@ public final class EnumUtilExt {
     public static <E extends Enum<E>>
     E valueOfIgnoreCase(Class<E> clazz, @Nonnull String target) {
         Map<String, String> map = NAMES.get(clazz);
-        if (map == null) {
+        if (null == map) {
             map = Arrays.stream(clazz.getEnumConstants())
                 .collect(Collectors.toMap(e -> e.name().toUpperCase(Locale.ROOT), Enum::name));
             NAMES.put(clazz, map);
         }
         String name = map.get(target.toUpperCase(Locale.ROOT));
-        if (name != null) {
+        if (null != name) {
             return Enum.valueOf(clazz, name);
         }
         throw new IllegalArgumentException(
@@ -84,13 +84,13 @@ public final class EnumUtilExt {
     public static <E extends Enum<E> & CodeSupplier>
     E valueOfCode(Class<E> clazz, @Nonnull String code) {
         Map<String, String> map = CODES.get(clazz);
-        if (map == null) {
+        if (null == map) {
             map = Arrays.stream(clazz.getEnumConstants())
                 .collect(Collectors.toMap(CodeSupplier::getCode, Enum::name));
             CODES.put(clazz, map);
         }
         String name = map.get(code);
-        if (name != null) {
+        if (null != name) {
             return Enum.valueOf(clazz, name);
         }
         throw new IllegalArgumentException(
@@ -107,13 +107,13 @@ public final class EnumUtilExt {
     @Nonnull
     public static <E extends Enum<E> & IntCodeSupplier> E valueOfIntCode(Class<E> clazz, int code) {
         Map<Integer, String> map = INT_CODES.get(clazz);
-        if (map == null) {
+        if (null == map) {
             map = Arrays.stream(clazz.getEnumConstants())
                 .collect(Collectors.toMap(IntCodeSupplier::getCode, Enum::name));
             INT_CODES.put(clazz, map);
         }
         String name = map.get(code);
-        if (name != null) {
+        if (null != name) {
             return Enum.valueOf(clazz, name);
         }
         throw new IllegalArgumentException(
@@ -129,7 +129,7 @@ public final class EnumUtilExt {
     public static <E extends Enum<E> & AliasSupplier>
     E valueOfAlias(Class<E> clazz, @Nonnull String alias) {
         Map<String, String> map = ALIAS.get(clazz);
-        if (map == null) {
+        if (null == map) {
             map = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
             for (E e : clazz.getEnumConstants()) {
                 for (String t : e.getAlias()) {
@@ -139,7 +139,7 @@ public final class EnumUtilExt {
             ALIAS.put(clazz, map);
         }
         String name = map.get(alias);
-        if (name != null) {
+        if (null != name) {
             return Enum.valueOf(clazz, name);
         }
         throw new IllegalArgumentException(

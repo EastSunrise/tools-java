@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import wsg.tools.boot.pojo.entity.subject.MovieEntity;
 import wsg.tools.boot.pojo.entity.subject.SeasonEntity;
 import wsg.tools.boot.pojo.entity.subject.SeriesEntity;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.StringUtilsExt;
 
@@ -42,7 +42,7 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
     public String getLocation(MovieEntity entity) {
         String title = entity.getZhTitle();
-        if (entity.getOriginalTitle() != null) {
+        if (null != entity.getOriginalTitle()) {
             title += NAME_SEPARATOR + entity.getOriginalTitle();
         }
         return cdn + File.separator + MOVIE_DIR + File.separator + entity.getYear() + NAME_SEPARATOR
@@ -56,8 +56,8 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
 
     public String getLocation(SeasonEntity season) {
         SeriesEntity series = season.getSeries();
-        String location = getLocation(series);
-        if (series.getSeasonsCount() > 1) {
+        String location = this.getLocation(series);
+        if (1 < series.getSeasonsCount()) {
             location += File.separator + String.format("S%02d", season.getCurrentSeason());
         }
         return location;
@@ -67,7 +67,7 @@ public class PathConfiguration implements InitializingBean, WebMvcConfigurer {
         Integer episodeCount = AssertUtils
             .requireRange(currentEpisode, 1, season.getEpisodesCount() + 1);
         String format = String.format("E%%0%dd", ((int) StrictMath.log10(episodeCount)) + 1);
-        return getLocation(season) + File.separator + String.format(format, currentEpisode);
+        return this.getLocation(season) + File.separator + String.format(format, currentEpisode);
     }
 
     public File tmpdir(String title) {

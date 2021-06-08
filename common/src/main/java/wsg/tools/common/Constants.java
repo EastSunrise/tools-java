@@ -1,9 +1,8 @@
-package wsg.tools.common.constant;
+package wsg.tools.common;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
-import java.util.function.Consumer;
 
 /**
  * Common constant variables
@@ -44,13 +43,5 @@ public final class Constants {
         .ofPattern(P_YYYY_MM_DD_HH_MM_SS);
 
     private Constants() {
-    }
-
-    /**
-     * Empty consumer.
-     */
-    public static <T> Consumer<T> emptyConsumer() {
-        return t -> {
-        };
     }
 }

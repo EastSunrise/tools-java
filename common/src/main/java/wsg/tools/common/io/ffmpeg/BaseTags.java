@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.jackson.JsonDurationFormat;
 import wsg.tools.common.jackson.JsonJoinedValue;
 

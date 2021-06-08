@@ -20,7 +20,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.util.regex.RegexUtils;
 import wsg.tools.internet.base.ConcreteSite;
@@ -55,12 +55,12 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
     @Override
     public ImdbTitle findById(@Nonnull String imdbId)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/title/%s", imdbId));
+        Document document = this.getDocument(this.httpGet("/title/%s", imdbId));
         Map<String, String> dataset = document.selectFirst("a.e_modify_btn").dataset();
-        RequestBuilder builder = httpGet("/index/video.editform/index.html")
+        RequestBuilder builder = this.httpGet("/index/video.editform/index.html")
             .addParameter("m_id", dataset.get("movie_id"))
             .addParameter("location", dataset.get("location"));
-        Document editForm = getDocument(builder);
+        Document editForm = this.getDocument(builder);
         Map<String, Element> fields = new HashMap<>(Constants.DEFAULT_MAP_CAPACITY);
         Elements items = editForm.select(".item");
         for (Element item : items) {
@@ -94,7 +94,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             if (seriesId.equals(imdbId)) {
                 ImdbSeries series = new ImdbSeries();
                 series.setRangeYear(new RangeYear(year));
-                series.setEpisodes(getEpisodes(imdbId));
+                series.setEpisodes(this.getEpisodes(imdbId));
                 imdbTitle = series;
             } else {
                 ImdbEpisode episode = new ImdbEpisode();
@@ -123,9 +123,9 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
 
     private List<String[]> getEpisodes(String seriesId)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = httpGet("/title/%s/episodelist", seriesId)
+        RequestBuilder builder = this.httpGet("/title/%s/episodelist", seriesId)
             .addParameter("season", String.valueOf(1));
-        Document document = getDocument(builder);
+        Document document = this.getDocument(builder);
         int seasonsCount =
             document.selectFirst("select#ep_season").select(CssSelectors.TAG_OPTION).size() - 1;
 
@@ -154,7 +154,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
                     break;
                 }
                 page++;
-                document = getDocument(httpGet("/title/%s/episodelist", seriesId)
+                document = this.getDocument(this.httpGet("/title/%s/episodelist", seriesId)
                     .addParameter("season", String.valueOf(currentSeason))
                     .addParameter("page", String.valueOf(page)));
             }
@@ -170,7 +170,7 @@ public final class ImdbCnSite extends BaseSite implements ImdbRepository<ImdbTit
             if (currentSeason > seasonsCount) {
                 break;
             }
-            document = getDocument(httpGet("/title/%s/episodelist", seriesId)
+            document = this.getDocument(this.httpGet("/title/%s/episodelist", seriesId)
                 .addParameter("season", String.valueOf(currentSeason)));
         }
         return result;

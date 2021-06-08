@@ -30,7 +30,7 @@ import wsg.tools.boot.pojo.entity.base.Source;
 import wsg.tools.boot.pojo.error.AppException;
 import wsg.tools.boot.pojo.result.BatchResult;
 import wsg.tools.boot.service.intf.AdultService;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.util.function.Functions;
 import wsg.tools.internet.base.page.PageIndex;
 import wsg.tools.internet.base.repository.RepoRetrievable;
 import wsg.tools.internet.common.NotFoundException;
@@ -113,14 +113,14 @@ public class AdultScheduler {
         MidnightSite site = manager.midnightSite();
         String sname = site.getName();
         for (MidnightColumn column : MidnightColumn.amateurs()) {
-            importMidnight(sname, column, site, id -> site.findAmateurEntry(column, id));
+            this.importMidnight(sname, column, site, id -> site.findAmateurEntry(column, id));
         }
     }
 
     @Scheduled(cron = "0 30 17 * * ?")
     public void importMidnightFormally() {
         MidnightSite site = manager.midnightSite();
-        importMidnight(site.getName(), MidnightColumn.ENTRY, site, site::findFormalEntry);
+        this.importMidnight(site.getName(), MidnightColumn.ENTRY, site, site::findFormalEntry);
     }
 
     private <T extends MidnightEntry> void importMidnight(String sname,
@@ -132,7 +132,7 @@ public class AdultScheduler {
             Deque<T> ts = new LinkedList<>();
             SiteUtils
                 .forEachPageUntil(pageIndex -> site.findAll(pageIndex, column), PageIndex.first(),
-                    Constants.emptyConsumer(), index -> {
+                    Functions.emptyConsumer(), index -> {
                         T t = null;
                         try {
                             t = retrievable.findById(index.getId());
@@ -150,7 +150,7 @@ public class AdultScheduler {
             }
             Set<Source> exists = Collections.emptySet();
             if (timeOp.isPresent()) {
-                exists = findSourcesByTime(sname, subtype, startTime);
+                exists = this.findSourcesByTime(sname, subtype, startTime);
             }
             BatchResult<Integer> result = BatchResult.create();
             // items updated at the start time

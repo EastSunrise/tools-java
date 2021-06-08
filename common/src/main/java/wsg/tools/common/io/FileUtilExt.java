@@ -3,7 +3,7 @@ package wsg.tools.common.io;
 import javax.annotation.Nonnull;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 
 /**
  * Extension of {@link FileUtils} and {@link FilenameUtils}.
@@ -27,7 +27,7 @@ public final class FileUtilExt {
      */
     @Nonnull
     public static String copyExtension(@Nonnull String filename, String basename) {
-        if (basename == null) {
+        if (null == basename) {
             return filename;
         }
         String extension = FilenameUtils.getExtension(filename);

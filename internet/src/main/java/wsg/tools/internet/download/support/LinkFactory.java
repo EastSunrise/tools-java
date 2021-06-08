@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Functions;
 import org.apache.commons.lang3.StringUtils;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.internet.download.Thunder;
 
 /**
@@ -45,52 +45,57 @@ public final class LinkFactory {
     /**
      * Create a resource based on the given url and title.
      */
-    public static AbstractLink create(String title, String url, @Nonnull Charset charset,
+    public static AbstractLink create(String title, @Nonnull String url, @Nonnull Charset charset,
         @Nullable Functions.FailableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
-        Objects.requireNonNull(url);
-        if (StringUtils.startsWithIgnoreCase(url, Thunder.THUNDER_PREFIX)) {
+        String decoded = decode(url, charset, title);
+        if (StringUtils.startsWithIgnoreCase(decoded, Ed2kLink.ED2K_PREFIX)) {
+            return Ed2kLink.of(title, decoded);
+        }
+        if (StringUtils.startsWithIgnoreCase(decoded, MagnetLink.MAGNET_PREFIX)) {
+            return MagnetLink.of(title, decoded);
+        }
+        if (StringUtils.startsWithIgnoreCase(decoded, YyetsLink.YYETS_PREFIX)) {
+            return YyetsLink.of(title, decoded);
+        }
+        if (StringUtils.containsIgnoreCase(decoded, BaiduDiskLink.BAIDU_DISK_HOST)) {
+            if (null != passwordProvider) {
+                return BaiduDiskLink.of(title, decoded, passwordProvider.get());
+            }
+            throw new InvalidPasswordException(BaiduDiskLink.class, title, decoded);
+        }
+        if (StringUtils.containsIgnoreCase(decoded, ThunderDiskLink.THUNDER_DISK_HOST)) {
+            if (null != passwordProvider) {
+                return ThunderDiskLink.of(title, decoded, passwordProvider.get());
+            }
+            throw new InvalidPasswordException(ThunderDiskLink.class, title, decoded);
+        }
+        if (StringUtils.containsIgnoreCase(decoded, UcDiskLink.UC_DISK_HOST)) {
+            return UcDiskLink.of(title, decoded);
+        }
+        for (String prefix : HttpLink.HTTP_PREFIXES) {
+            if (StringUtils.startsWithIgnoreCase(decoded, prefix)) {
+                return HttpLink.of(title, decoded);
+            }
+        }
+        throw new UnknownResourceException("Unknown type of resource", title, decoded);
+    }
+
+    private static String decode(String url, Charset charset, String title)
+        throws InvalidResourceException {
+        String decoded = Objects.requireNonNull(url);
+        if (StringUtils.startsWithIgnoreCase(decoded, Thunder.THUNDER_PREFIX)) {
             try {
-                url = Thunder.decodeThunder(url, charset);
+                decoded = Thunder.decodeThunder(decoded, charset);
             } catch (IllegalArgumentException e) {
-                throw new InvalidResourceException("Not a valid thunder url", title, url);
+                throw new InvalidResourceException("Not a valid thunder url", title, decoded);
             }
         }
         try {
-            url = URLDecoder.decode(url, charset);
+            decoded = URLDecoder.decode(decoded, charset);
         } catch (IllegalArgumentException ignored) {
         }
-
-        if (StringUtils.startsWithIgnoreCase(url, Ed2kLink.ED2K_PREFIX)) {
-            return Ed2kLink.of(title, url);
-        }
-        if (StringUtils.startsWithIgnoreCase(url, MagnetLink.MAGNET_PREFIX)) {
-            return MagnetLink.of(title, url);
-        }
-        if (StringUtils.startsWithIgnoreCase(url, YyetsLink.YYETS_PREFIX)) {
-            return YyetsLink.of(title, url);
-        }
-        if (StringUtils.containsIgnoreCase(url, BaiduDiskLink.BAIDU_DISK_HOST)) {
-            if (passwordProvider != null) {
-                return BaiduDiskLink.of(title, url, passwordProvider.get());
-            }
-            throw new InvalidPasswordException(BaiduDiskLink.class, title, url);
-        }
-        if (StringUtils.containsIgnoreCase(url, ThunderDiskLink.THUNDER_DISK_HOST)) {
-            if (passwordProvider != null) {
-                return ThunderDiskLink.of(title, url, passwordProvider.get());
-            }
-            throw new InvalidPasswordException(ThunderDiskLink.class, title, url);
-        }
-        if (StringUtils.containsIgnoreCase(url, UcDiskLink.UC_DISK_HOST)) {
-            return UcDiskLink.of(title, url);
-        }
-        for (String prefix : HttpLink.HTTP_PREFIXES) {
-            if (StringUtils.startsWithIgnoreCase(url, prefix)) {
-                return HttpLink.of(title, url);
-            }
-        }
-        throw new UnknownResourceException("Unknown type of resource", title, url);
+        return decoded;
     }
 
     /**

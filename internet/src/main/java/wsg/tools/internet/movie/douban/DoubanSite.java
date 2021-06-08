@@ -32,7 +32,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.jackson.EnumDeserializers;
 import wsg.tools.common.lang.AssertUtils;
 import wsg.tools.common.lang.EnumUtilExt;
@@ -78,15 +78,15 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     @Override
     public void login(String username, String password)
         throws OtherResponseException, LoginException {
-        logout();
-        RequestBuilder builder = create("accounts", METHOD_POST, "/j/mobile/login/basic")
+        this.logout();
+        RequestBuilder builder = this.create("accounts", METHOD_POST, "/j/mobile/login/basic")
             .addParameter("ck", "")
             .addParameter("remember", String.valueOf(true))
             .addParameter("name", username)
             .addParameter("password", password);
         LoginResult result = null;
         try {
-            result = getObject(builder, Lazy.MAPPER, LoginResult.class);
+            result = this.getObject(builder, Lazy.MAPPER, LoginResult.class);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -98,7 +98,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     @Override
     public Long user() {
-        Cookie cookie = getCookie("dbcl2");
+        Cookie cookie = this.getCookie("dbcl2");
         if (cookie == null) {
             return null;
         }
@@ -108,14 +108,14 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     @Override
     public void logout() throws OtherResponseException {
-        if (user() == null) {
+        if (this.user() == null) {
             return;
         }
-        findDocument(httpGet(""));
-        RequestBuilder builder = httpGet("/accounts/logout")
+        this.findDocument(this.httpGet(""));
+        RequestBuilder builder = this.httpGet("/accounts/logout")
             .addParameter("source", "main")
-            .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue());
-        findDocument(builder);
+            .addParameter("ck", Objects.requireNonNull(this.getCookie("ck")).getValue());
+        this.findDocument(builder);
     }
 
     @Nonnull
@@ -123,7 +123,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     public Page<SubjectIndex> searchGlobally(String keyword, @Nonnull PageIndex page,
         @Nullable DoubanCatalog catalog) throws OtherResponseException {
         AssertUtils.requireNotBlank(keyword);
-        RequestBuilder builder = httpGet("/j/search")
+        RequestBuilder builder = this.httpGet("/j/search")
             .addParameter("q", keyword)
             .addParameter("start", String.valueOf(page.getCurrent() * 20));
         if (catalog != null) {
@@ -131,7 +131,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
         }
         SearchResult result = null;
         try {
-            result = getObject(builder, Lazy.MAPPER, SearchResult.class);
+            result = this.getObject(builder, Lazy.MAPPER, SearchResult.class);
         } catch (NotFoundException e) {
             throw new UnexpectedException(e);
         }
@@ -170,14 +170,14 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     public Page<MarkedSubject> findUserSubjects(@Nonnull DoubanCatalog catalog,
         long userId, @Nonnull DoubanMark mark, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
+        RequestBuilder builder = this.create(catalog.getAsPath(), METHOD_GET,
             "/people/%d/%s", userId, mark.getAsPath())
             .addParameter("start", String.valueOf(page.getCurrent() * 30))
             .addParameter("sort", "time")
             .addParameter("rating", "all")
             .addParameter("filter", "all")
             .addParameter("mode", "list");
-        Document document = getDocument(builder);
+        Document document = this.getDocument(builder);
         Elements lis = document.selectFirst(".list-view").select(".item");
         List<MarkedSubject> subjects = new ArrayList<>(lis.size());
         for (Element li : lis) {
@@ -196,10 +196,10 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     public Page<PersonIndex> findUserCreators(@Nonnull DoubanCatalog catalog,
         long userId, @Nonnull PageIndex page)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET,
+        RequestBuilder builder = this.create(catalog.getAsPath(), METHOD_GET,
             "/people/%d/%s", userId, catalog.getPersonPlurality())
             .addParameter("start", String.valueOf(page.getCurrent() * 15));
-        Document document = getDocument(builder);
+        Document document = this.getDocument(builder);
         Elements items = document.select(".item");
         List<PersonIndex> indices = new ArrayList<>(items.size());
         for (Element item : items) {
@@ -219,7 +219,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     @Override
     public AbstractMovie findMovieById(long id)
         throws NotFoundException, OtherResponseException {
-        return getSubject(DoubanCatalog.MOVIE, id,
+        return this.getSubject(DoubanCatalog.MOVIE, id,
             (subject, document) -> {
                 AbstractMovie movie = (AbstractMovie) subject;
                 String title = document.title();
@@ -238,7 +238,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
                 Element rating = document.selectFirst("div.rating_right");
                 movie.setReleased(!rating.hasClass("not_showed"));
 
-                Map<String, Element> metadata = getMetadata(document);
+                Map<String, Element> metadata = this.getMetadata(document);
                 Element ls = metadata.get("语言:");
                 if (null != ls) {
                     String[] languages = StringUtils
@@ -248,7 +248,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
                         .collect(Collectors.toList()));
                 }
                 if (movie instanceof DoubanMovie) {
-                    movie.setRuntimes(getRuntimes(metadata.get("片长:")));
+                    movie.setRuntimes(this.getRuntimes(metadata.get("片长:")));
                 }
                 if (movie instanceof DoubanSeries) {
                     DoubanSeries series = (DoubanSeries) movie;
@@ -257,7 +257,7 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
                         String episodesCount = ((TextNode) episodes.nextSibling()).text().strip();
                         series.setEpisodesCount(Integer.parseInt(episodesCount));
                     }
-                    movie.setRuntimes(getRuntimes(metadata.get("单集片长:")));
+                    movie.setRuntimes(this.getRuntimes(metadata.get("单集片长:")));
 
                     Element season = document.selectFirst("#season");
                     if (season != null) {
@@ -283,14 +283,14 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
 
     @Override
     public DoubanBook findBookById(long id) throws NotFoundException, OtherResponseException {
-        return getSubject(DoubanCatalog.BOOK, id, (subject, document) -> (DoubanBook) subject);
+        return this.getSubject(DoubanCatalog.BOOK, id, (subject, document) -> (DoubanBook) subject);
     }
 
     private <T extends AbstractSubject> T getSubject(DoubanCatalog catalog, long id,
         BiFunction<AbstractSubject, Document, T> decorator)
         throws NotFoundException, OtherResponseException {
-        RequestBuilder builder = create(catalog.getAsPath(), METHOD_GET, "/subject/%d/", id);
-        Document document = getDocument(builder);
+        RequestBuilder builder = this.create(catalog.getAsPath(), METHOD_GET, "/subject/%d/", id);
+        Document document = this.getDocument(builder);
         String text = document.selectFirst("script[type=application/ld+json]").html();
         text = StringUtils.replaceChars(text, "\n\t", "");
         AbstractSubject subject;
@@ -326,19 +326,19 @@ public class DoubanSite extends AbstractLoggableSite<Long> implements DoubanRepo
     @Override
     public long getDbIdByImdbId(String imdbId)
         throws NotFoundException, OtherResponseException, LoginException {
-        if (user() == null) {
+        if (this.user() == null) {
             throw new LoginException("Please log in first.");
         }
         AssertUtils.requireNotBlank(imdbId);
         String substation = DoubanCatalog.MOVIE.getAsPath();
-        RequestBuilder builder = create(substation, METHOD_POST, "/new_subject")
-            .addParameter("ck", Objects.requireNonNull(getCookie("ck")).getValue())
+        RequestBuilder builder = this.create(substation, METHOD_POST, "/new_subject")
+            .addParameter("ck", Objects.requireNonNull(this.getCookie("ck")).getValue())
             .addParameter("type", "0")
             .addParameter("p_title", imdbId)
             .addParameter("p_uid", imdbId)
             .addParameter("cat", String.valueOf(DoubanCatalog.MOVIE.getCode()))
             .addParameter("subject_submit", "下一步");
-        Document document = findDocument(builder);
+        Document document = this.findDocument(builder);
         Element fieldset = document.selectFirst("div#content")
             .selectFirst(CssSelectors.TAG_FIELDSET);
         Element input = fieldset.selectFirst("input#p_uid");

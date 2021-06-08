@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Contract;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import wsg.tools.common.constant.Constants;
+import wsg.tools.common.Constants;
 import wsg.tools.common.net.NetUtils;
 import wsg.tools.common.util.MapUtilsExt;
 import wsg.tools.common.util.regex.RegexUtils;
@@ -99,7 +99,7 @@ public final class AmateurCatSite extends BaseSite
     @Override
     public AmateurCatItem findById(@Nonnull String id)
         throws NotFoundException, OtherResponseException {
-        Document document = getDocument(httpGet("/%s", id));
+        Document document = this.getDocument(this.httpGet("/%s", id));
 
         Element main = document.selectFirst("#main");
         String serialNum = main.selectFirst("h1.entry-title").text();
@@ -110,10 +110,10 @@ public final class AmateurCatSite extends BaseSite
         LocalDateTime updated = LocalDateTime.parse(updatedStr, FORMATTER);
         String publishedStr = main.selectFirst("time.published").attr(CssSelectors.ATTR_DATETIME);
         LocalDateTime published = LocalDateTime.parse(publishedStr, FORMATTER);
-        String next = getNext(document);
+        String next = this.getNext(document);
 
         Element content = main.selectFirst("div.entry-content");
-        Pair<String, List<String>> pair = getDescAndLines(content);
+        Pair<String, List<String>> pair = this.getDescAndLines(content);
         AmateurCatItem item = new AmateurCatItem(id, serialNum, image, pair.getLeft(), author,
             updated, published, next);
         if (pair.getRight() != null) {

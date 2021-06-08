@@ -34,7 +34,7 @@ public final class RegexUtils {
      * If the pattern is found in the text, performs the given action with the value, otherwise does
      * nothing.
      */
-    public static void ifFind(Pattern pattern, String text, Consumer<Matcher> consumer) {
+    public static void ifFind(Pattern pattern, CharSequence text, Consumer<Matcher> consumer) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             consumer.accept(matcher);
