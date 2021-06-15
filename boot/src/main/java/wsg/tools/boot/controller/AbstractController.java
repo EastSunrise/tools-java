@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
  * @author Kingen
  * @since 2020/6/22
  */
-public abstract class AbstractController {
+class AbstractController {
 
     static final String ERROR_NOT_FOUND = "error/notFound";
 

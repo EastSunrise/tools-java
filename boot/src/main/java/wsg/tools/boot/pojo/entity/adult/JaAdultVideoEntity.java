@@ -80,7 +80,7 @@ public class JaAdultVideoEntity extends IdentityEntity
         inverseForeignKey = @ForeignKey(name = "fk_ja_adult_video_tag_on_tag")
     )
     @ManyToMany(fetch = FetchType.LAZY)
-    private Set<JaAdultTagEntity> tags = new HashSet<>();
+    private Set<JaAdultTagEntity> tags = new HashSet<>(0);
 
     @MinioStored(type = Filetype.IMAGE)
     @ElementCollection(fetch = FetchType.LAZY)
@@ -90,7 +90,7 @@ public class JaAdultVideoEntity extends IdentityEntity
         foreignKey = @ForeignKey(name = "fk_ja_adult_video_image_on_video_id")
     )
     @Column(name = "image", nullable = false, length = 127)
-    private Set<String> images = new HashSet<>();
+    private Set<String> images = new HashSet<>(0);
 
     @JoinTable(
         name = "ja_adult_video_actress",
@@ -100,7 +100,7 @@ public class JaAdultVideoEntity extends IdentityEntity
         inverseForeignKey = @ForeignKey(name = "fk_ja_adult_video_actress_on_actress_id")
     )
     @ManyToMany(fetch = FetchType.LAZY)
-    private Set<JaAdultActressEntity> actresses = new HashSet<>();
+    private Set<JaAdultActressEntity> actresses = new HashSet<>(0);
 
     @Embedded
     private Source source;
@@ -135,7 +135,7 @@ public class JaAdultVideoEntity extends IdentityEntity
         this.cover = cover;
     }
 
-    public Boolean getMosaic() {
+    public Boolean hasMosaic() {
         return mosaic;
     }
 

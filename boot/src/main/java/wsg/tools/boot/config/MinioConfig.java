@@ -48,8 +48,6 @@ import wsg.tools.internet.common.CoverSupplier;
 import wsg.tools.internet.common.NotFoundException;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.SiteUtils;
-import wsg.tools.internet.info.adult.view.PreviewSupplier;
-import wsg.tools.internet.info.adult.view.VideoSupplier;
 
 /**
  * Configurations for MinIO.
@@ -93,23 +91,18 @@ public class MinioConfig implements InitializingBean {
     /**
      * Uploads the preview to the server with the given arguments as the path in the bucket.
      */
-    public String uploadPreview(@Nonnull PreviewSupplier supplier, @Nonnull Source source)
+    public String uploadPreview(@Nonnull URL previewUrl, @Nonnull Source source)
         throws NotFoundException {
-        URL url = supplier.getPreviewURL();
-        return this.uploadURL(url, Filetype.VIDEO, BUCKET_VIDEO, source, "preview", -1);
+        return this.uploadURL(previewUrl, Filetype.VIDEO, BUCKET_VIDEO, source, "preview", -1);
     }
 
     /**
      * Uploads the video to the server with the given arguments as the path in the bucket.
      */
-    public String uploadVideo(@Nonnull VideoSupplier supplier, @Nonnull Source source)
+    public String uploadVideo(@Nonnull URL videoUrl, @Nonnull Source source)
         throws NotFoundException {
-        URL url = supplier.getVideoURL();
-        if (null == url) {
-            return null;
-        }
         // todo upload video
-        return url.toString();
+        return videoUrl.toString();
     }
 
     /**
@@ -148,11 +141,9 @@ public class MinioConfig implements InitializingBean {
      * @return the path where the file is stored in the server, or the source url if failed
      * @throws NotFoundException if the file is not found
      */
-    public String uploadURL(URL url, Filetype filetype, MinioBucket bucket, @Nonnull Source source,
-        String prefix, int index) throws NotFoundException {
-        if (url == null) {
-            return null;
-        }
+    public String uploadURL(URL url, @Nonnull Filetype filetype, MinioBucket bucket,
+        @Nonnull Source source, String prefix, int index) throws NotFoundException {
+        Objects.requireNonNull(url, "the url to upload must not be null");
         Objects.requireNonNull(source.getSname());
         if (!filetype.check(url.getFile())) {
             return url.toString();
@@ -203,7 +194,9 @@ public class MinioConfig implements InitializingBean {
             this.client().putObject(bucket.getName(), target, file.getPath());
             log.trace("Uploaded {} to {}/{}", file, bucket.getName(), target);
             return this.client().getObjectUrl(bucket.getName(), target);
-        } catch (InvalidBucketNameException | XmlPullParserException | NoSuchAlgorithmException | InsufficientDataException | IOException | InvalidKeyException | NoResponseException | ErrorResponseException | InternalException | InvalidArgumentException e) {
+        } catch (InvalidBucketNameException | XmlPullParserException | NoSuchAlgorithmException
+            | InsufficientDataException | IOException | InvalidKeyException | NoResponseException
+            | ErrorResponseException | InternalException | InvalidArgumentException e) {
             throw new AppException(e);
         }
     }
@@ -250,7 +243,10 @@ public class MinioConfig implements InitializingBean {
 
     @Override
     public void afterPropertiesSet()
-        throws InvalidBucketNameException, NoSuchAlgorithmException, InsufficientDataException, IOException, InvalidKeyException, NoResponseException, XmlPullParserException, ErrorResponseException, InternalException, io.minio.errors.RegionConflictException, io.minio.errors.InvalidObjectPrefixException {
+        throws InvalidBucketNameException, NoSuchAlgorithmException, InsufficientDataException,
+        IOException, InvalidKeyException, NoResponseException, XmlPullParserException,
+        ErrorResponseException, InternalException, io.minio.errors.RegionConflictException,
+        io.minio.errors.InvalidObjectPrefixException {
         MinioClient client = this.client();
         for (MinioBucket bucket : BUCKETS) {
             String name = bucket.getName();

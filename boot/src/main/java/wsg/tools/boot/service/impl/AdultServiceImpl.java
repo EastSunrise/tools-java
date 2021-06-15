@@ -1,6 +1,7 @@
 package wsg.tools.boot.service.impl;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -220,9 +221,12 @@ public class AdultServiceImpl extends BaseServiceImpl implements AdultService {
         } catch (NotFoundException ignored) {
         }
         entity.setDuration(adapter.getDuration());
-        try {
-            entity.setVideo(config.uploadVideo(adapter, source));
-        } catch (NotFoundException ignored) {
+        URL videoUrl = adapter.getVideoURL();
+        if (videoUrl != null) {
+            try {
+                entity.setVideo(config.uploadVideo(videoUrl, source));
+            } catch (NotFoundException ignored) {
+            }
         }
         entity.setTags(new ArrayList<>(adapter.getTags()));
         entity.setCategories(new ArrayList<>(adapter.getCategories()));
