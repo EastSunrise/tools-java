@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Functions;
 import org.apache.commons.lang3.StringUtils;
 import wsg.tools.common.Constants;
+import wsg.tools.internet.download.Link;
 import wsg.tools.internet.download.Thunder;
 
 /**
@@ -27,16 +28,16 @@ public final class LinkFactory {
     private LinkFactory() {
     }
 
-    public static AbstractLink create(String title, String url) throws InvalidResourceException {
+    public static Link create(String title, String url) throws InvalidResourceException {
         return create(title, url, Constants.UTF_8);
     }
 
-    public static AbstractLink create(String title, String url, @Nonnull Charset charset)
+    public static Link create(String title, String url, @Nonnull Charset charset)
         throws InvalidResourceException {
         return create(title, url, charset, null);
     }
 
-    public static AbstractLink create(String title, String url,
+    public static Link create(String title, String url,
         @Nullable Functions.FailableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         return create(title, url, Constants.UTF_8, passwordProvider);
@@ -45,7 +46,7 @@ public final class LinkFactory {
     /**
      * Create a resource based on the given url and title.
      */
-    public static AbstractLink create(String title, @Nonnull String url, @Nonnull Charset charset,
+    public static Link create(String title, @Nonnull String url, @Nonnull Charset charset,
         @Nullable Functions.FailableSupplier<String, InvalidPasswordException> passwordProvider)
         throws InvalidResourceException {
         String decoded = decode(url, charset, title);
