@@ -76,6 +76,20 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     void importIntListRepository(@Nonnull ListRepository<Integer, T> repository,
         String sname, Function<E, Integer> subtypeFunc) throws OtherResponseException {
         long start = itemRepository.findMaxRid(sname).orElse(0L);
+        importIntListRepository(repository, sname, start, subtypeFunc);
+    }
+
+    @Override
+    public <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
+    void importIntListRepository(ListRepository<Integer, T> repository, String sname, int subtype)
+        throws OtherResponseException {
+        long start = itemRepository.findMaxRid(sname, subtype).orElse(0L);
+        importIntListRepository(repository, sname, start, e -> subtype);
+    }
+
+    private <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
+    void importIntListRepository(ListRepository<Integer, T> repository, String sname, long start,
+        Function<E, Integer> subtypeFunc) throws OtherResponseException {
         List<Integer> indices = repository.indices().stream()
             .filter(id -> id > start).sorted().collect(Collectors.toList());
         int success = 0, total = 0, notFound = 0;
@@ -160,7 +174,7 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
     public List<ResourceItemEntity> search(@Nullable String key, @Nullable Long dbId,
         @Nullable String imdbId, @Nullable Boolean identified) {
         Specification<ResourceItemEntity> specification = (root, query, builder) -> {
-            List<Predicate> predicates = new ArrayList<>();
+            List<Predicate> predicates = new ArrayList<>(3);
             if (dbId != null) {
                 predicates.add(builder.equal(root.get(ResourceItemEntity_.dbId), dbId));
             }
@@ -212,12 +226,12 @@ public class ResourceServiceImpl extends BaseServiceImpl implements ResourceServ
         List<ResourceLinkEntity> links = linkRepository.findAllByItemIdIsIn(itemIds);
         Map<Long, List<ResourceLinkEntity>> linkMap =
             links.stream().collect(Collectors.groupingBy(ResourceLinkEntity::getItemId));
-        List<ResourceDto> resources = new ArrayList<>();
+        List<ResourceDto> resources = new ArrayList<>(items.size());
         for (ResourceItemEntity item : items) {
             ResourceDto resource = new ResourceDto(item.getTitle(), item.getIdentified());
             List<ResourceLinkEntity> linkEntities = linkMap.get(item.getId());
             if (linkEntities != null) {
-                List<LinkDto> linkDtos = new ArrayList<>();
+                List<LinkDto> linkDtos = new ArrayList<>(linkEntities.size());
                 for (ResourceLinkEntity link : linkEntities) {
                     LinkDto linkDto = BeanUtilExt.convert(link, LinkDto.class);
                     if (linkDto.getFilename() == null) {

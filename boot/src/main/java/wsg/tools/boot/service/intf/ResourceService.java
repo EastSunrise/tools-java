@@ -34,6 +34,19 @@ public interface ResourceService {
         Function<E, Integer> subtypeFunc) throws OtherResponseException;
 
     /**
+     * Imports latest resources of a specified type from a {@link ListRepository} whose entities
+     * support integer identifiers and can be classified.
+     *
+     * @param repository the target repository
+     * @param sname      the name of the site
+     * @param subtype    the subtype of items to be imported
+     * @throws OtherResponseException if an unexpected error occurs when requesting
+     */
+    <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>>
+    void importIntListRepository(ListRepository<Integer, T> repository, String sname, int subtype)
+        throws OtherResponseException;
+
+    /**
      * Search resources of the given key.
      *
      * @param key    key to search

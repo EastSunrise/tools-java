@@ -14,6 +14,8 @@ import wsg.tools.internet.base.repository.ListRepository;
 import wsg.tools.internet.common.OtherResponseException;
 import wsg.tools.internet.common.UpdateTemporalSupplier;
 import wsg.tools.internet.movie.resource.BdMovieType;
+import wsg.tools.internet.movie.resource.EightyMovieSite;
+import wsg.tools.internet.movie.resource.EightyType;
 import wsg.tools.internet.movie.resource.IdentifierItem;
 import wsg.tools.internet.movie.resource.ResourceRepository;
 import wsg.tools.internet.movie.resource.XlcType;
@@ -47,7 +49,17 @@ public class ResourceScheduler extends BaseServiceImpl {
         importIntRange(manager.xlcSite(), XlcType::getId);
     }
 
-    private <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>, S extends ResourceRepository<T> & SiteClient>
+    public void import80s() throws OtherResponseException {
+        EightyMovieSite site = manager.eightyMovieSite();
+        String sname = site.getName();
+        for (EightyType type : EightyType.values()) {
+            int subtype = type.ordinal();
+            resourceService.importIntListRepository(site.getRepository(type), sname, subtype);
+        }
+    }
+
+    private <E extends Enum<E>, T extends IdentifierItem<E> & UpdateTemporalSupplier<?>,
+        S extends ResourceRepository<T> & SiteClient>
     void importIntRange(@Nonnull S site, Function<E, Integer> subtypeFunc) {
         try {
             ListRepository<Integer, T> repository = site.getRepository();

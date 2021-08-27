@@ -18,6 +18,7 @@ import wsg.tools.internet.movie.douban.DoubanRepository;
 import wsg.tools.internet.movie.douban.DoubanSite;
 import wsg.tools.internet.movie.omdb.OmdbSite;
 import wsg.tools.internet.movie.resource.BdMovieSite;
+import wsg.tools.internet.movie.resource.EightyMovieSite;
 import wsg.tools.internet.movie.resource.XlcSite;
 
 /**
@@ -41,6 +42,7 @@ public class SiteManager implements DisposableBean {
     private CelebrityWikiSite celebrityWikiSite;
     private GggSite gggSite;
     private PornTubeSite pornTubeSite;
+    private EightyMovieSite eightyMovieSite;
 
     @Autowired
     public SiteManager(PathConfiguration configuration, IdRelationRepository relationRepository) {
@@ -112,9 +114,16 @@ public class SiteManager implements DisposableBean {
         return pornTubeSite;
     }
 
+    public EightyMovieSite eightyMovieSite() {
+        if (eightyMovieSite == null) {
+            eightyMovieSite = new EightyMovieSite();
+        }
+        return eightyMovieSite;
+    }
+
     @Override
     public void destroy() throws IOException {
-        close(doubanRepo, imdbRepo, bdMovieSite, xlcSite,
+        close(doubanRepo, imdbRepo, bdMovieSite, xlcSite, eightyMovieSite,
             midnightSite, celebrityWikiSite, gggSite, pornTubeSite);
     }
 

@@ -248,14 +248,18 @@ public class MinioConfig implements InitializingBean {
         ErrorResponseException, InternalException, io.minio.errors.RegionConflictException,
         io.minio.errors.InvalidObjectPrefixException {
         MinioClient client = this.client();
-        for (MinioBucket bucket : BUCKETS) {
-            String name = bucket.getName();
-            if (!client.bucketExists(name)) {
-                client.makeBucket(name);
+        try {
+            for (MinioBucket bucket : BUCKETS) {
+                String name = bucket.getName();
+                if (!client.bucketExists(name)) {
+                    client.makeBucket(name);
+                }
+                for (Map.Entry<String, PolicyType> entry : bucket.getPolicies().entrySet()) {
+                    client.setBucketPolicy(name, entry.getKey(), entry.getValue());
+                }
             }
-            for (Map.Entry<String, PolicyType> entry : bucket.getPolicies().entrySet()) {
-                client.setBucketPolicy(name, entry.getKey(), entry.getValue());
-            }
+        } catch (ConnectException e) {
+            log.error(e.getMessage());
         }
     }
 }

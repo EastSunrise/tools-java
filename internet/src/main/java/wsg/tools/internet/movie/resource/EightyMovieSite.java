@@ -44,7 +44,7 @@ public class EightyMovieSite extends BaseSite implements RepoRetrievable<EightyI
     private static final String NO_POSTER = "/images/load.png";
 
     public EightyMovieSite() {
-        super("80s Movie", httpsHost("www.80sdy1.com"));
+        super("80s Movies", httpsHost("www.80sdy1.com"));
     }
 
     /**
@@ -105,7 +105,7 @@ public class EightyMovieSite extends BaseSite implements RepoRetrievable<EightyI
         item.setAka(Arrays.stream(parts).map(String::strip).collect(Collectors.toList()));
         String src = document.selectFirst("#poster").child(0).attr(CssSelectors.ATTR_SRC);
         if (!NO_POSTER.equals(src)) {
-            item.setCover(NetUtils.createURL(this.getHost().toURI() + src));
+            item.setCover(NetUtils.createURL(src));
         }
         return item;
     }

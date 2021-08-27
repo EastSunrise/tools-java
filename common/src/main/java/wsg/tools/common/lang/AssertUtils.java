@@ -52,6 +52,19 @@ public final class AssertUtils {
     }
 
     /**
+     * Checks that the specified object reference is not {@code null} and throws a customized {@link
+     * IllegalArgumentException} if it is.
+     *
+     * @throws IllegalArgumentException if the object is {@code null}
+     */
+    public static <T> T requireNonNull(T obj, String message) {
+        if (obj == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return obj;
+    }
+
+    /**
      * Validate range of an object, [fromInclusive, toExclusive)
      */
     public static <T extends Comparable<T>> T requireRange(T target, T fromInclusive,
